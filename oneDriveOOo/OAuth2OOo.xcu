@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<oor:component-data
+  xml:lang="en-US"
+  xmlns:oor="http://openoffice.org/2001/registry"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  oor:package="com.gmail.prrvchr.extensions"
+  oor:name="OAuth2OOo">
+    <node oor:name="Urls">
+        <node oor:name="vnd.microsoft-apps" oor:op="fuse">
+            <prop oor:name="Scope">
+                <value>Microsoft OneDrive</value>
+            </prop>
+        </node>
+    </node>
+    <node oor:name="Scopes">
+        <node oor:name="Microsoft OneDrive" oor:op="fuse">
+            <prop oor:name="Provider">
+                <value>Microsoft</value>
+            </prop>
+            <prop oor:name="Values">
+                <value>Files.ReadWrite.All</value>
+            </prop>
+        </node>
+    </node>
+</oor:component-data>

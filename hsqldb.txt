@@ -1,0 +1,10 @@
+CREATE VIEW PUBLIC."Uri1" ("Id","Name","Uri","Parent") AS SELECT "I"."Id","I"."Name",CASEWHEN("I"."Position"=1,"I"."Name",INSERT("I"."Name", LENGTH("I"."Name") - POSITION('.' IN REVERSE("I"."Name")) + 1,0,CONCAT('~',"I"."Position"))),"I"."Parent" FROM (SELECT "C"."Id" AS "Id","I"."Name" AS "Name",CARDINALITY("I"."Idx") AS "Length",POSITION_ARRAY("C"."Id" IN "I"."Idx") AS "Position","I"."Parent" AS "Parent" FROM (SELECT "I"."Id" AS "Id","I"."Name" AS "Name","C"."ItemId" AS "Parent" FROM PUBLIC."Items" AS "I" JOIN PUBLIC."Children" AS "C" ON "I"."Id"="C"."ChildId" WHERE "I"."Trashed"=FALSE) AS "C" JOIN (SELECT ARRAY_AGG("I"."Id" ORDER BY "I"."DateCreated","I"."Id") AS "Idx","I"."Name" AS "Name","C"."Parent" AS "Parent" FROM PUBLIC."Items" AS "I" JOIN (SELECT "I"."Id" AS "Id","I"."Name" AS "Name","C"."ItemId" AS "Parent" FROM PUBLIC."Items" AS "I" JOIN PUBLIC."Children" AS "C" ON "I"."Id"="C"."ChildId"  WHERE "I"."Trashed"=FALSE) AS "C" ON "I"."Id"="C"."Id" GROUP BY "I"."Name","C"."Parent") AS "I" ON "C"."Name"="I"."Name" AND "C"."Parent"="I"."Parent") AS "I"
+COMMENT ON TABLE PUBLIC."Uri1" IS 'Just for testing performance'
+CREATE INDEX "TrashedIndex" ON PUBLIC."Items"("Trashed")
+CREATE INDEX "MimeTypeIndex" ON PUBLIC."Items"("MimeType")
+CREATE INDEX "ItemIndex" ON PUBLIC."Item"("UserId", "Id")
+CREATE INDEX "ChildUriIndex" ON PUBLIC."ChildUri"("Id","Parent")
+CREATE INDEX "IdentifierUriIndex" ON PUBLIC."IdentifierUri"("Idx","Parent")
+CREATE INDEX "ItemUriIndex" ON PUBLIC."ItemUri"("Id","Parent")
+CREATE INDEX "UriIndex" ON PUBLIC."Uri"("Id","Parent")
+CREATE INDEX "ChildIndex" ON PUBLIC."Child"("UserId", "Parent")

@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<oor:component-data
+  xml:lang="en-US"
+  xmlns:oor="http://openoffice.org/2001/registry"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  oor:package="org.openoffice.ucb"
+  oor:name="Configuration">
+    <node oor:name="ContentProviders">
+        <node oor:name="Local">
+            <node oor:name="SecondaryKeys">
+                <node oor:name="Office">
+                    <node oor:name="ProviderData">
+                        <node oor:name="Provider67" oor:op="fuse">
+                            <prop oor:name="ServiceName">
+                                <value>com.gmail.prrvchr.extensions.oneDriveOOo.ContentProviderProxy</value>
+                            </prop>
+                            <prop oor:name="URLTemplate">
+                                <value>vnd.microsoft-apps</value>
+                            </prop>
+                            <prop oor:name="Arguments">
+                                <value>com.gmail.prrvchr.extensions.oneDriveOOo</value>
+                            </prop>
+                        </node>
+                    </node>
+                </node>
+            </node>
+        </node>
+    </node>
+</oor:component-data>
