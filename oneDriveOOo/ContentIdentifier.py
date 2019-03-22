@@ -20,6 +20,7 @@ from com.sun.star.util import XUpdatable
 try:
     from clouducp import Initialization
     from clouducp import PropertySet
+    from clouducp import createContent
     from clouducp import createContentIdentifier
     from clouducp import getNamedValueSet
     from clouducp import getProperty
@@ -28,6 +29,7 @@ try:
 except ImportError:
     from onedrive import Initialization
     from onedrive import PropertySet
+    from onedrive import createContent
     from onedrive import createContentIdentifier
     from onedrive import getNamedValueSet
     from onedrive import getProperty
@@ -45,7 +47,6 @@ from onedrive import selectItem
 from onedrive import insertJsonItem
 
 from onedrive import isIdentifier
-from onedrive import getNewIdentifier
 
 from onedrive import selectChildId
 from onedrive import updateChildren
@@ -53,7 +54,9 @@ from onedrive import updateChildren
 from onedrive import g_doc_map
 from onedrive import g_folder
 from onedrive import g_link
+from onedrive import g_office
 from onedrive import g_plugin
+from onedrive import g_provider
 
 #requests is only available after OAuth2OOo as been loaded...
 try:
@@ -61,9 +64,8 @@ try:
 except ImportError:
     pass
 
+import binascii
 import traceback
-
-g_OfficeDocument = 'application/vnd.oasis.opendocument'
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
@@ -108,14 +110,19 @@ class ContentIdentifier(unohelper.Base,
         return self.Url if self.IsRoot else '%s/%s' % (self.Url, self.Id)
     @property
     def SourceURL(self):
-        return getResourceLocation(self.ctx, self.getContentProviderScheme())
+        return getResourceLocation(self.ctx, g_plugin, self.getContentProviderScheme())
+    @property
+    def Properties(self):
+        print("oneDriveOOo.ContentIdentifier.Properties")
+        return ('Name', 'DateCreated', 'DateModified', 'MimeType',
+                'Size', 'Trashed', 'Loaded')
     @property
     def Error(self):
         return self._Error if self.User.Error is None else self.User.Error
 
     # XInputStreamProvider
     def createInputStream(self):
-        return InputStream(self.Session, self.Id, self.Size, self.MimeType)
+        return InputStream(self.Session, self.Id, self.Size)
 
     # XUpdatable
     def update(self):
@@ -129,39 +136,27 @@ class ContentIdentifier(unohelper.Base,
         self.Updated = False
         if self.User.Mode == ONLINE:
             with self.Session as session:
-                self.Updated = updateChildren(session, self.User.Connection, self.User.Id, self.Id)
+                self.Updated = updateChildren(session, self.User.Connection, self.User.Id, self.Id, self.User.RootId)
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, title=''):
-        id = getNewIdentifier(self.User.Connection, self.User.Id)
+        id = binascii.hexlify(uno.generateUuid().value).decode('utf-8')
         title = title if title else id
         uri = getUri(self.ctx, '%s/%s#%s' % (self.BaseURL, title, id))
-        plugin = 'com.gmail.prrvchr.extensions.gDriveOOo'
-        return createContentIdentifier(self.ctx, plugin, self.User, uri)
+        identifier = createContentIdentifier(self.ctx, g_plugin, self.User, uri)
+        print("ContentIdentifier.createContentIdentifier %s" % identifier.getContentIdentifier())
+        return identifier
 
     # XInstanceProvider
     def getInstance(self, mimetype):
-        service, content, data = None, None, {}
-        if mimetype == '':
-            mimetype = 'application/octet-stream'
+        data = {'MimeType': mimetype}
+        if not mimetype:
             item = self._getItem()
             if item is not None:
                 data = item.get('Data', {})
-                mimetype = data.get('MimeType', 'application/octet-stream')
-        if mimetype == g_folder:
-            service = 'com.gmail.prrvchr.extensions.CloudUcpOOo.FolderContent'
-        elif mimetype == g_link:
-            pass
-        elif mimetype in (g_doc_map):
-            service = 'com.gmail.prrvchr.extensions.gDriveOOo.DocumentContent'
-        elif mimetype.startswith(g_OfficeDocument):
-            service = 'com.gmail.prrvchr.extensions.CloudUcpOOo.DocumentContent'
-        if service is not None:
-            namedvalue = getNamedValueSet({'Identifier': self})
-            namedvalue += getNamedValueSet(data)
-            content = self.ctx.ServiceManager.createInstanceWithArgumentsAndContext(service, namedvalue, self.ctx)
-        else:
-            message = "ERROR: Can't handle mimetype: %s" % mimetype
+        content = createContent(self.ctx, self, data, g_plugin, g_folder, g_link, g_doc_map)
+        if content is None:
+            message = "ERROR: Can't handle mimetype: %s" % data.get('MimeType', 'application/octet-stream')
             self._Error = IllegalIdentifierException(message, self)
         return content
 
@@ -174,8 +169,7 @@ class ContentIdentifier(unohelper.Base,
     # XChild
     def getParent(self):
         uri = getUri(self.ctx, self.Url)
-        plugin = 'com.gmail.prrvchr.extensions.gDriveOOo'
-        return createContentIdentifier(self.ctx, plugin, self.User, uri)
+        return createContentIdentifier(self.ctx, g_plugin, self.User, uri)
     def setParent(self, parent):
         raise NoSupportException('Parent can not be set', self)
 
@@ -195,17 +189,18 @@ class ContentIdentifier(unohelper.Base,
             id = self.User.RootId
         elif self.IsNew:
             id = self.Uri.getFragment()
-        elif isIdentifier(self.User.Connection, title):
+        elif isIdentifier(self.User.Connection, self.User.Id, title):
+            print("ContentIdentifier._parseUri() isIdentifier: %s" % title)
             id = title
         else:
-            id = selectChildId(self.User.Connection, parentid, title)
+            id = selectChildId(self.User.Connection, self.User.Id, parentid, title)
         for i in range(position):
             paths.append(self.Uri.getPathSegment(i).strip())
         if id is None:
             id = self._searchId(paths[::-1], title)
         if id is None:
             message = "ERROR: Can't retrieve Uri: %s" % self.Uri.getUriReference()
-            print("contentlib.ContentIdentifier._parseUri() Error: %s" % message)
+            print("ContentIdentifier._parseUri() Error: %s" % message)
             self._Error = IllegalIdentifierException(message, self)
         paths.insert(0, self.Uri.getAuthority())
         url = '%s://%s' % (self.Uri.getScheme(), '/'.join(paths))
@@ -215,13 +210,13 @@ class ContentIdentifier(unohelper.Base,
         # Needed for be able to create a folder in a just created folder...
         paths.append(self.User.RootId)
         for index, path in enumerate(paths):
-            if isIdentifier(self.User.Connection, path):
+            if isIdentifier(self.User.Connection, self.User.Id, path):
                 id = path
                 break
         for i in range(index -1, -1, -1):
             path = self._unquote(paths[i])
-            id = selectChildId(self.User.Connection, id, path)
-        id = selectChildId(self.User.Connection, id, title)
+            id = selectChildId(self.User.Connection, self.User.Id, id, path)
+        id = selectChildId(self.User.Connection, self.User.Id, id, title)
         return id
 
     def _unquote(self, text):
@@ -240,7 +235,7 @@ class ContentIdentifier(unohelper.Base,
             with self.Session as session:
                 data = getItem(session, self.Id)
             if data is not None:
-                item = insertJsonItem(self.User.Connection, self.User.Id, data)
+                item = insertJsonItem(self.User.Connection, self.User.Id, self.User.RootId ,data)
             else:
                 message = "ERROR: Can't retrieve Id from provider: %s" % self.Id
                 self._Error = IllegalIdentifierException(message, self)
@@ -266,6 +261,7 @@ class ContentIdentifier(unohelper.Base,
         properties['Updated'] = getProperty('Updated', 'boolean', bound | readonly)
         properties['Size'] = getProperty('Size', 'long', maybevoid | bound)
         properties['MimeType'] = getProperty('MimeType', 'string', maybevoid | bound)
+        properties['Properties'] = getProperty('Properties', '[]string', bound | readonly)
         properties['Error'] = getProperty('Error', 'com.sun.star.ucb.IllegalIdentifierException', maybevoid | bound | readonly)
         return properties
 

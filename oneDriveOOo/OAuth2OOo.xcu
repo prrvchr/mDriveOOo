@@ -19,7 +19,7 @@
                 <value>Microsoft</value>
             </prop>
             <prop oor:name="Values">
-                <value>Files.ReadWrite.All</value>
+                <value>offline_access user.read Files.ReadWrite.All</value>
             </prop>
         </node>
     </node>

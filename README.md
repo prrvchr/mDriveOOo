@@ -12,6 +12,12 @@ You must install this extention first!!!
 
 Restart LibreOffice / OpenOffice after installation.
 
+### Install [CloudUcpOOo](https://github.com/prrvchr/CloudUcpOOo/raw/master/OCloudUcpOOo.oxt) extention v 0.0.1.
+
+You must install this extention first!!!
+
+Restart LibreOffice / OpenOffice after installation.
+
 ### Install [oneDriveOOo](https://github.com/prrvchr/oneDriveOOo/releases/download/0.0.1/oneDriveOOo.oxt) extention v 0.0.1.
 
 Restart LibreOffice / OpenOffice after installation.

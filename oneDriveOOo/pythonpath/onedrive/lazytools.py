@@ -5,6 +5,9 @@ CREATED = None
 FILE = None
 
 
+def createContent(*arg):
+    pass
+
 def createContentIdentifier(*arg):
     pass
 
@@ -31,6 +34,10 @@ def getPropertiesValues(*arg):
 
 def getProperty(*arg):
     pass
+
+def getResourceLocation(ctx, identifier, path=None):
+    from clouducp import getResourceLocation
+    return getResourceLocation(ctx, identifier, path)
 
 def getSession(*arg):
     pass
