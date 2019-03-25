@@ -6,7 +6,7 @@
 
 ## Use:
 
-### Install [OAuth2OOo](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt) extention v 0.0.2.
+### Install [OAuth2OOo](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt) extention v 0.0.3.
 
 You must install this extention first!!!
 
@@ -38,9 +38,9 @@ Edit or change "true" to "false" (set it to "false")
 
 ### Open your OneDrive:
 
-In File - Open - File name enter: vnd.microsoft-apps://youraccount@gmail.com/ or vnd.microsoft-apps:///
+In File - Open - File name enter: vnd.microsoft-apps://your_account/ or vnd.microsoft-apps:///
 
-If you don't give your account, you will be asked for...
+If you don't give your_account, you will be asked for...
 
 After authorizing the OAuthOOo application to access your OneDrive, your OneDrive should open!!! normally  ;-)
 
