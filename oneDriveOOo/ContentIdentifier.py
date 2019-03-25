@@ -4,65 +4,36 @@
 import uno
 import unohelper
 
-from com.sun.star.bridge import XInstanceProvider
-from com.sun.star.container import XChild
-from com.sun.star.io import XInputStreamProvider
-from com.sun.star.lang import NoSupportException
 from com.sun.star.lang import XServiceInfo
-from com.sun.star.ucb.ConnectionMode import OFFLINE
-from com.sun.star.ucb.ConnectionMode import ONLINE
 from com.sun.star.ucb import IllegalIdentifierException
-from com.sun.star.ucb import XContentIdentifier
-from com.sun.star.ucb import XContentIdentifierFactory
-from com.sun.star.util import XLinkUpdate
-from com.sun.star.util import XUpdatable
-
-try:
-    from clouducp import Initialization
-    from clouducp import PropertySet
-    from clouducp import createContent
-    from clouducp import createContentIdentifier
-    from clouducp import getNamedValueSet
-    from clouducp import getProperty
-    from clouducp import getSession
-    from clouducp import getUri
-except ImportError:
-    from onedrive import Initialization
-    from onedrive import PropertySet
-    from onedrive import createContent
-    from onedrive import createContentIdentifier
-    from onedrive import getNamedValueSet
-    from onedrive import getProperty
-    from onedrive import getSession
-    from onedrive import getUri
 
 from onedrive import InputStream
-
 from onedrive import doSync
+from onedrive import updateChildren
 
 from onedrive import getItem
-from onedrive import getResourceLocation
-
 from onedrive import selectItem
 from onedrive import insertJsonItem
-
 from onedrive import isIdentifier
-
 from onedrive import selectChildId
-from onedrive import updateChildren
 
 from onedrive import g_doc_map
 from onedrive import g_folder
 from onedrive import g_link
-from onedrive import g_office
 from onedrive import g_plugin
-from onedrive import g_provider
 
-#requests is only available after OAuth2OOo as been loaded...
+# clouducp is only available after CloudUcpOOo as been loaded...
 try:
-    from requests.compat import unquote_plus
+    from clouducp import ContentIdentifierBase
 except ImportError:
-    pass
+    class ContentIdentifierBase():
+        pass
+# requests is only available after OAuth2OOo as been loaded...
+try:
+    from oauth2.requests.compat import unquote_plus
+except ImportError:
+    def unquote_plus():
+        pass
 
 import binascii
 import traceback
@@ -72,198 +43,44 @@ g_ImplementationHelper = unohelper.ImplementationHelper()
 g_ImplementationName = '%s.ContentIdentifier' % g_plugin
 
 
-class ContentIdentifier(unohelper.Base,
-                        XServiceInfo,
-                        Initialization,
-                        PropertySet,
-                        XContentIdentifier,
-                        XChild,
-                        XInputStreamProvider,
-                        XUpdatable,
-                        XLinkUpdate,
-                        XContentIdentifierFactory,
-                        XInstanceProvider):
+class ContentIdentifier(ContentIdentifierBase,
+                        XServiceInfo):
     def __init__(self, ctx, *namedvalues):
-        try:
-            self.ctx = ctx
-            self.User = None
-            self.Uri = None
-            self.initialize(namedvalues)
-            self.IsNew = self.Uri.hasFragment()
-            self._Error = None
-            self.Size = 0
-            self.MimeType = None
-            self.Updated = False
-            self.Id, self.Title, self.Url = self._parseUri() if self.User.IsValid else (None, None, None)
-            self.Session = getSession(self.ctx, self.Uri.getScheme(), self.User.Name) if self.IsValid else None
-        except Exception as e:
-            print("ContentIdentifier.__init__().Error: %s - %s" % (e, traceback.print_exc()))
-
-    @property
-    def IsRoot(self):
-        return self.Id == self.User.RootId
-    @property
-    def IsValid(self):
-        return all((self.Id, self._Error is None))
-    @property
-    def BaseURL(self):
-        return self.Url if self.IsRoot else '%s/%s' % (self.Url, self.Id)
-    @property
-    def SourceURL(self):
-        return getResourceLocation(self.ctx, g_plugin, self.getContentProviderScheme())
+        ContentIdentifierBase.__init__(self, ctx, namedvalues)
     @property
     def Properties(self):
         print("oneDriveOOo.ContentIdentifier.Properties")
         return ('Name', 'DateCreated', 'DateModified', 'MimeType',
                 'Size', 'Trashed', 'Loaded')
-    @property
-    def Error(self):
-        return self._Error if self.User.Error is None else self.User.Error
 
-    # XInputStreamProvider
-    def createInputStream(self):
+    def getPlugin(self):
+        return g_plugin
+    def getFolder(self):
+        return g_folder
+    def getLink(self):
+        return g_link
+    def getDocument(self):
+        return g_doc_map
+    def getInputStream(self):
         return InputStream(self.Session, self.Id, self.Size)
-
-    # XUpdatable
-    def update(self):
-        self.Updated = True
-        if self.User.Mode == ONLINE:
-            with self.Session as session:
-                self.Updated = doSync(self.ctx, self.getContentProviderScheme(), self.User.Connection, session, self.User.Id)
-
-    # XLinkUpdate
-    def updateLinks(self):
-        self.Updated = False
-        if self.User.Mode == ONLINE:
-            with self.Session as session:
-                self.Updated = updateChildren(session, self.User.Connection, self.User.Id, self.Id, self.User.RootId)
-
-    # XContentIdentifierFactory
-    def createContentIdentifier(self, title=''):
-        id = binascii.hexlify(uno.generateUuid().value).decode('utf-8')
-        title = title if title else id
-        uri = getUri(self.ctx, '%s/%s#%s' % (self.BaseURL, title, id))
-        identifier = createContentIdentifier(self.ctx, g_plugin, self.User, uri)
-        print("ContentIdentifier.createContentIdentifier %s" % identifier.getContentIdentifier())
-        return identifier
-
-    # XInstanceProvider
-    def getInstance(self, mimetype):
-        data = {'MimeType': mimetype}
-        if not mimetype:
-            item = self._getItem()
-            if item is not None:
-                data = item.get('Data', {})
-        content = createContent(self.ctx, self, data, g_plugin, g_folder, g_link, g_doc_map)
-        if content is None:
-            message = "ERROR: Can't handle mimetype: %s" % data.get('MimeType', 'application/octet-stream')
-            self._Error = IllegalIdentifierException(message, self)
-        return content
-
-    # XContentIdentifier
-    def getContentIdentifier(self):
-        return self.Uri.getUriReference()
-    def getContentProviderScheme(self):
-        return self.Uri.getScheme()
-
-    # XChild
-    def getParent(self):
-        uri = getUri(self.ctx, self.Url)
-        return createContentIdentifier(self.ctx, g_plugin, self.User, uri)
-    def setParent(self, parent):
-        raise NoSupportException('Parent can not be set', self)
-
-    def _parseUri(self):
-        title, position, url = None, -1, None
-        parentid, paths = self.User.RootId, []
-        for i in range(self.Uri.getPathSegmentCount() -1, -1, -1):
-            path = self.Uri.getPathSegment(i).strip()
-            if path not in ('','.'):
-                if title is None:
-                    title = self._unquote(path)
-                    position = i
-                else:
-                    parentid = path
-                    break
-        if title is None:
-            id = self.User.RootId
-        elif self.IsNew:
-            id = self.Uri.getFragment()
-        elif isIdentifier(self.User.Connection, self.User.Id, title):
-            print("ContentIdentifier._parseUri() isIdentifier: %s" % title)
-            id = title
-        else:
-            id = selectChildId(self.User.Connection, self.User.Id, parentid, title)
-        for i in range(position):
-            paths.append(self.Uri.getPathSegment(i).strip())
-        if id is None:
-            id = self._searchId(paths[::-1], title)
-        if id is None:
-            message = "ERROR: Can't retrieve Uri: %s" % self.Uri.getUriReference()
-            print("ContentIdentifier._parseUri() Error: %s" % message)
-            self._Error = IllegalIdentifierException(message, self)
-        paths.insert(0, self.Uri.getAuthority())
-        url = '%s://%s' % (self.Uri.getScheme(), '/'.join(paths))
-        return id, title, url
-
-    def _searchId(self, paths, title):
-        # Needed for be able to create a folder in a just created folder...
-        paths.append(self.User.RootId)
-        for index, path in enumerate(paths):
-            if isIdentifier(self.User.Connection, self.User.Id, path):
-                id = path
-                break
-        for i in range(index -1, -1, -1):
-            path = self._unquote(paths[i])
-            id = selectChildId(self.User.Connection, self.User.Id, id, path)
-        id = selectChildId(self.User.Connection, self.User.Id, id, title)
-        return id
-
-    def _unquote(self, text):
-        # Needed for OpenOffice / LibreOffice compatibility
-        if isinstance(text, str):
-            text = unquote_plus(text)
-        else:
-            text = unquote_plus(text.encode('utf-8')).decode('utf-8')
-        return text
-
-    def _getItem(self):
-        item = selectItem(self.User.Connection, self.User.Id, self.Id)
-        if item is not None:
-            return item
-        if self.User.Mode == ONLINE:
-            with self.Session as session:
-                data = getItem(session, self.Id)
-            if data is not None:
-                item = insertJsonItem(self.User.Connection, self.User.Id, self.User.RootId ,data)
-            else:
-                message = "ERROR: Can't retrieve Id from provider: %s" % self.Id
-                self._Error = IllegalIdentifierException(message, self)
-        else:
-            message = "ERROR: Can't retrieve Content: %s Network is Offline" % self.Id
-            self._Error = IllegalIdentifierException(message, self)
-        return item
-
-    def _getPropertySetInfo(self):
-        properties = {}
-        maybevoid = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.MAYBEVOID')
-        bound = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.BOUND')
-        readonly = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.READONLY')
-        properties['User'] = getProperty('User', 'com.sun.star.uno.XInterface', maybevoid | bound | readonly)
-        properties['Uri'] = getProperty('Uri', 'com.sun.star.uri.XUriReference', bound | readonly)
-        properties['Id'] = getProperty('Id', 'string', maybevoid | bound | readonly)
-        properties['IsRoot'] = getProperty('IsRoot', 'boolean', bound | readonly)
-        properties['IsValid'] = getProperty('IsValid', 'boolean', bound | readonly)
-        properties['IsNew'] = getProperty('IsNew', 'boolean', bound | readonly)
-        properties['BaseURL'] = getProperty('BaseURL', 'string', bound | readonly)
-        properties['SourceURL'] = getProperty('SourceURL', 'string', bound | readonly)
-        properties['Title'] = getProperty('Title', 'string', maybevoid | bound | readonly)
-        properties['Updated'] = getProperty('Updated', 'boolean', bound | readonly)
-        properties['Size'] = getProperty('Size', 'long', maybevoid | bound)
-        properties['MimeType'] = getProperty('MimeType', 'string', maybevoid | bound)
-        properties['Properties'] = getProperty('Properties', '[]string', bound | readonly)
-        properties['Error'] = getProperty('Error', 'com.sun.star.ucb.IllegalIdentifierException', maybevoid | bound | readonly)
-        return properties
+    def doSync(self, session):
+        return doSync(self.ctx, self.getContentProviderScheme(), self.User.Connection, session, self.User.Id)
+    def updateChildren(self, session):
+        return updateChildren(session, self.User.Connection, self.User.Id, self.Id, self.User.RootId)
+    def getNewIdentifier(self):
+        return binascii.hexlify(uno.generateUuid().value).decode('utf-8')
+    def getItem(self, session):
+        return getItem(session, self.Id)
+    def selectItem(self):
+        return selectItem(self.User.Connection, self.User.Id, self.Id)
+    def insertJsonItem(self, data):
+        return insertJsonItem(self.User.Connection, self.User.Id, self.User.RootId, data)
+    def isIdentifier(self, title):
+        return isIdentifier(self.User.Connection, self.User.Id, title)
+    def selectChildId(self, parent, title):
+        return selectChildId(self.User.Connection, self.User.Id, parent, title)
+    def unquote(self, text):
+        return unquote_plus(text)
 
     # XServiceInfo
     def supportsService(self, service):
