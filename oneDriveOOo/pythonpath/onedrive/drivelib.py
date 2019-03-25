@@ -133,7 +133,7 @@ class Downloader():
             r.close()
             self.closed = True
             raise StopIteration
-        return r.iter_content(chunk_size=g_length)
+        return r.iter_content(g_length)
     # for python v2.xx
     def next(self):
         return self.__next__()

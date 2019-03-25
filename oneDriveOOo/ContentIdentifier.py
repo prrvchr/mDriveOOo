@@ -64,7 +64,7 @@ class ContentIdentifier(ContentIdentifierBase,
     def getInputStream(self):
         return InputStream(self.Session, self.Id, self.Size)
     def doSync(self, session):
-        return doSync(self.ctx, self.getContentProviderScheme(), self.User.Connection, session, self.User.Id)
+        return doSync(self.ctx, self.User.Connection, session, self.SourceURL, self.User.Id)
     def updateChildren(self, session):
         return updateChildren(session, self.User.Connection, self.User.Id, self.Id, self.User.RootId)
     def getNewIdentifier(self):

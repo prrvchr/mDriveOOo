@@ -19,8 +19,6 @@ from .drivetools import RENAMED
 from .drivetools import REWRITED
 from .drivetools import TRASHED
 
-from .lazytools import getResourceLocation
-
 
 def selectUser(connection, username):
     user = None
@@ -85,7 +83,7 @@ def mergeJsonItem(merge, data, rootid, index=1):
     merge.execute()
     return merge.getLong(index +1)
 
-def doSync(ctx, scheme, connection, session, userid):
+def doSync(ctx, connection, session, path, userid):
     items = []
     select = connection.prepareCall('CALL "selectSync"(?, ?)')
     select.setString(1, userid)
@@ -93,7 +91,7 @@ def doSync(ctx, scheme, connection, session, userid):
     result = select.executeQuery()
     while result.next():
         item = _getItemFromResult(result, None, None)
-        id = _syncItem(ctx, scheme, connection, session, userid, item)
+        id = _syncItem(ctx, connection, session, path, userid, item)
         if id is not None:
             _updateSync(connection, userid, id)
             print("items.doSync(): all -> Ok")
@@ -102,7 +100,7 @@ def doSync(ctx, scheme, connection, session, userid):
     select.close()
     return all(items)
 
-def _syncItem(ctx, scheme, connection, session, userid, item):
+def _syncItem(ctx, connection, session, path, userid, item):
     result = False
     id = item.get('id')
     mode = item.get('mode')
@@ -117,12 +115,12 @@ def _syncItem(ctx, scheme, connection, session, userid, item):
             _updateItemId(update, newid)
         if mode & FILE:
             update = _getUpdateItemId(connection, userid, id)
-            _uploadItem(ctx, scheme, session, id, parent, name, data, True, update)
+            _uploadItem(ctx, session, path, id, parent, name, data, True, update)
     else:
         if mode & REWRITED:
             data = {'item': {'@microsoft.graph.conflictBehavior': 'replace',
                              'name': name}}
-            result = _uploadItem(ctx, scheme, session, id, parent, name, data, False, None)
+            result = _uploadItem(ctx, session, path, id, parent, name, data, False, None)
         if mode & RENAMED:
             data = {'name': name}
             result = updateItem(session, id, parent, data, False)
@@ -154,8 +152,8 @@ def _updateItemId(update, newid):
     update.close()
     return result
 
-def _uploadItem(ctx, scheme, session, id, parent, name, data, new, update):
-    size, stream = _getInputStream(ctx, scheme, id)
+def _uploadItem(ctx, session, path, id, parent, name, data, new, update):
+    size, stream = _getInputStream(ctx, path, id)
     if size:
         location = getUploadLocation(session, id, parent, name, size, data, new)
         if location is not None:
@@ -166,9 +164,9 @@ def _uploadItem(ctx, scheme, session, id, parent, name, data, new, update):
             return id
     return False
 
-def _getInputStream(ctx, scheme, id):
+def _getInputStream(ctx, path, id):
     sf = ctx.ServiceManager.createInstance('com.sun.star.ucb.SimpleFileAccess')
-    url = getResourceLocation(ctx, g_plugin, '%s/%s' % (scheme, id))
+    url = '%s/%s' % (path, id)
     if sf.exists(url):
         return sf.getSize(url), sf.openFileRead(url)
     return 0, None

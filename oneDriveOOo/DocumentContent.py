@@ -6,7 +6,6 @@ import unohelper
 
 from com.sun.star.lang import XServiceInfo
 
-
 from onedrive import g_doc_map
 from onedrive import g_plugin
 
@@ -25,7 +24,7 @@ g_ImplementationName = '%s.DocumentContent' % g_plugin
 class DocumentContent(DocumentContentBase,
                       XServiceInfo):
     def __init__(self, ctx, *namedvalues):
-        super(DocumentContent, self).__init__(ctx, namedvalues)
+        DocumentContentBase.__init__(self, ctx, namedvalues)
         self.ContentType = 'application/vnd.microsoft-apps.document'
 
     def getDocumentMap(self):

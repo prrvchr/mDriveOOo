@@ -23,7 +23,7 @@ g_capabilityfields = 'canEdit,canRename,canAddChildren,canReadRevisions'
 #g_itemfields = 'id,parents,name,mimeType,size,createdTime,modifiedTime,trashed,capabilities(%s)' % g_capabilityfields
 g_childfields = 'kind,nextPageToken,files(%s)' % g_itemfields
 
-g_upload = 4194304 
+g_upload = 4194304
 # Minimun chunk: 327680 (320Ko) no more uploads if less... (must be a multiple of 64Ko (and 32Ko))
 g_chunk = 327680  # Http request maximum data size, must be a multiple of 'g_length'
 g_length = 32768  # InputStream (Downloader) maximum 'Buffers' size
