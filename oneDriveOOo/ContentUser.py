@@ -6,8 +6,7 @@ import unohelper
 from com.sun.star.lang import XServiceInfo
 
 from onedrive import getUser
-from onedrive import mergeJsonUser
-from onedrive import selectUser
+from onedrive import setJsonData
 from onedrive import g_host
 from onedrive import g_plugin
 
@@ -31,13 +30,30 @@ class ContentUser(ContentUserBase,
     def getHost(self):
         return g_host
     def selectUser(self):
-        return selectUser(self.Connection, self.Name)
+        user = None
+        select = self.Connection.prepareCall('CALL "selectUser"(?)')
+        select.setString(1, self.Name)
+        result = select.executeQuery()
+        if result.next():
+            user = self.getItemFromResult(result)
+        select.close()
+        return user
     def getUser(self, session):
         return getUser(session)
     def checkIdentifiers(self, session):
         pass
-    def mergeJsonUser(self, data, root):
-        return mergeJsonUser(self.Connection, data, root)
+    def mergeJsonUser(self, user, data):
+        root = None
+        merge = self.Connection.prepareCall('CALL "mergeJsonUser"(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        merge.setString(1, user.get('id'))
+        merge.setString(2, user.get('userPrincipalName'))
+        merge.setString(3, user.get('displayName'))
+        index = setJsonData(merge, data, self.getDateTimeParser(), self.unparseDateTime(), 4)
+        result = merge.executeQuery()
+        if result.next():
+            root = self.getItemFromResult(result)
+        merge.close()
+        return root
 
     # XServiceInfo
     def supportsService(self, service):
