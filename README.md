@@ -49,6 +49,6 @@ After authorizing the OAuthOOo application to access your OneDrive, your OneDriv
 * LibreOffice 6.0.4.2 - Ubuntu 17.10 -  LxQt 0.11.1
 
 * OpenOffice 4.1.5 x86_64 - Ubuntu 17.10 - LxQt 0.11.1
-	
+
 I encourage you in case of problem to create an [issue](https://github.com/prrvchr/oneDriveOOo/issues/new)
 I will try to solve it :-)
