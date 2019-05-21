@@ -1,22 +1,22 @@
 #!
 # -*- coding: utf-8 -*-
 
-from .drivelib import ChildGenerator
-from .drivelib import InputStream
-from .drivelib import OutputStream
-
-from .drivetools import getUser
-from .drivetools import getItem
-from .drivetools import updateItem
-from .drivetools import getUploadLocation
-from .drivetools import setJsonData
-from .drivetools import selectChildId
-from .drivetools import isIdentifier
-from .drivetools import g_doc_map
-from .drivetools import g_folder
-from .drivetools import g_host
-from .drivetools import g_link
-from .drivetools import g_office
-from .drivetools import g_plugin
-from .drivetools import g_provider
-from .drivetools import g_scheme
+from .configuration import g_doc_map
+from .configuration import g_folder
+from .configuration import g_host
+from .configuration import g_link
+from .configuration import g_office
+from .configuration import g_plugin
+from .configuration import g_provider
+from .configuration import g_scheme
+from .configuration import g_url
+from .configuration import g_upload
+from .configuration import g_userkeys
+from .configuration import g_userfields
+from .configuration import g_drivekeys
+from .configuration import g_drivefields
+from .configuration import g_itemkeys
+from .configuration import g_itemfields
+from .configuration import g_pages
+from .configuration import g_chunk
+from .configuration import g_buffer
