@@ -13,6 +13,7 @@ from com.sun.star.ucb import XParameterizedContentProvider
 
 from onedrive import g_plugin
 from onedrive import g_provider
+from onedrive import g_oauth2
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
@@ -37,7 +38,9 @@ class ContentProviderProxy(unohelper.Base,
 
     # XContentProviderFactory
     def createContentProvider(self, service):
-        ucp = self.ctx.ServiceManager.createInstanceWithContext(service, self.ctx)
+        # First We must to load OAuth2Service to make the import available (lazy loading)
+        oauth2 = self.ctx.ServiceManager.createInstanceWithContext(g_oauth2, self.ctx)
+        ucp = self.ctx.ServiceManager.createInstanceWithContext(g_provider, self.ctx)
         provider = ucp.registerInstance(self.template, self.arguments, self.replace)
         return provider
 
@@ -45,7 +48,7 @@ class ContentProviderProxy(unohelper.Base,
     def getContentProvider(self):
         provider = self._getUcp()
         if provider.supportsService('com.sun.star.ucb.ContentProviderProxy'):
-            provider = self.createContentProvider('%s.ContentProvider' % g_provider)
+            provider = self.createContentProvider(g_provider)
         return provider
 
     # XParameterizedContentProvider

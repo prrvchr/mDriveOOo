@@ -4,16 +4,16 @@
 import uno
 import unohelper
 
-from com.sun.star.ucb.RestRequestTokenType import TOKEN_NONE
-from com.sun.star.ucb.RestRequestTokenType import TOKEN_URL
-from com.sun.star.ucb.RestRequestTokenType import TOKEN_REDIRECT
-from com.sun.star.ucb.RestRequestTokenType import TOKEN_QUERY
-from com.sun.star.ucb.RestRequestTokenType import TOKEN_JSON
+from com.sun.star.auth.RestRequestTokenType import TOKEN_NONE
+from com.sun.star.auth.RestRequestTokenType import TOKEN_URL
+from com.sun.star.auth.RestRequestTokenType import TOKEN_REDIRECT
+from com.sun.star.auth.RestRequestTokenType import TOKEN_QUERY
+from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
 
 # clouducp is only available after CloudUcpOOo as been loaded...
 try:
     from clouducp import ProviderBase
-    from clouducp import KeyMap
+    from oauth2 import KeyMap
 except ImportError:
     class ProviderBase():
         pass
@@ -51,12 +51,6 @@ class Provider(ProviderBase):
     def UploadUrl(self):
         return g_upload
     @property
-    def Folder(self):
-        return g_folder
-    @property
-    def Link(self):
-        return g_link
-    @property
     def Office(self):
         return g_office
     @property
@@ -73,7 +67,7 @@ class Provider(ProviderBase):
         return '%Y-%m-%dT%H:%M:%S.0'
 
     def getRequestParameter(self, method, data=None):
-        parameter = uno.createUnoStruct('com.sun.star.ucb.RestRequestParameter')
+        parameter = uno.createUnoStruct('com.sun.star.auth.RestRequestParameter')
         parameter.Name = method
         if method == 'getUser':
             parameter.Method = 'GET'
@@ -91,10 +85,10 @@ class Provider(ProviderBase):
             parameter.Method = 'GET'
             parameter.Url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.getValue('Id'))
             parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)
-            token = uno.createUnoStruct('com.sun.star.ucb.RestRequestToken')
+            token = uno.createUnoStruct('com.sun.star.auth.RestRequestToken')
             token.Type = TOKEN_REDIRECT
             token.Field = '@odata:nextLink'
-            enumerator = uno.createUnoStruct('com.sun.star.ucb.RestRequestEnumerator')
+            enumerator = uno.createUnoStruct('com.sun.star.auth.RestRequestEnumerator')
             enumerator.Field = 'value'
             enumerator.Token = token
             parameter.Enumerator = enumerator
@@ -194,7 +188,7 @@ class Provider(ProviderBase):
 
     def getUpdateParameter(self, identifier, new, key):
         if new:
-             parameter = self.getRequestParameter('insertContent', identifier)
+            parameter = self.getRequestParameter('insertContent', identifier)
         elif key == 'Title':
             parameter = self.getRequestParameter('updateTitle', identifier)
         elif key == 'Trashed':

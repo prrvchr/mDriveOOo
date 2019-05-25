@@ -1,6 +1,7 @@
 #!
 # -*- coding: utf-8 -*-
 
+from .configuration import g_oauth2
 from .configuration import g_doc_map
 from .configuration import g_folder
 from .configuration import g_host

@@ -2,10 +2,11 @@
 # -*- coding: utf_8 -*-
 
 
-g_scheme = 'vnd.microsoft-apps'    #vnd.microsoft-apps
+g_scheme = 'vnd.microsoft-apps'
 
 g_plugin = 'com.gmail.prrvchr.extensions.oneDriveOOo'
-g_provider = 'com.gmail.prrvchr.extensions.CloudUcpOOo'
+g_provider = 'com.gmail.prrvchr.extensions.CloudUcpOOo.ContentProvider'
+g_oauth2 = 'com.gmail.prrvchr.extensions.OAuth2OOo.OAuth2Service'
 
 g_host = 'graph.microsoft.com'
 g_version = 'v1.0' # v1.0 or beta
