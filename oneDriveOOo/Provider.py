@@ -102,21 +102,20 @@ class Provider(ProviderBase):
             parameter.NoAuth = True
         elif method == 'updateTitle':
             parameter.Method = 'PATCH'
-            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('id'))
+            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
             parameter.Json = '{"name": "%s"}' % data.getValue('name')
         elif method == 'updateTrashed':
             parameter.Method = 'DELETE'
-            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('id'))
+            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
         elif method == 'insertContent':
             parameter.Method = 'POST'
-            url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.getValue('parent'))
+            url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.getValue('ParentId'))
             parameter.Url = url
             rename = '"@microsoft.graph.conflictBehavior": "replace"'
-            parameter.Json = '{"name": "%s", "folder": { }, %s}' % (data.getValue('name'), rename)
-
-        elif method == 'getUploadLocation':
+            parameter.Json = '{"name": "%s", "folder": { }, %s}' % (data.getValue('Title'), rename)
+        elif method in ('getUploadLocation', 'getNewUploadLocation'):
             parameter.Method = 'POST'
-            url, parent, name = self.BaseUrl, data.getValue('parent'), data.getValue('name')
+            url, parent, name = self.BaseUrl, data.getValue('ParentId'), data.getValue('Title')
             parameter.Url = '%s/me/drive/items/%s:/%s:/createUploadSession' % (url, parent, name)
             odata = '"@odata.type": "microsoft.graph.driveItemUploadableProperties"'
             onconflict = '"@microsoft.graph.conflictBehavior": "replace"'
@@ -125,7 +124,6 @@ class Provider(ProviderBase):
             parameter.Method = 'PUT'
             parameter.Url = data.getValue('uploadUrl')
             parameter.NoAuth = True
-            parameter.Optional = 'id'
         return parameter
 
     def getUserId(self, user):
@@ -142,7 +140,7 @@ class Provider(ProviderBase):
 
     def getItemId(self, item):
         return item.getDefaultValue('id', None)
-    def getItemName(self, item):
+    def getItemTitle(self, item):
         return item.getDefaultValue('name', None)
     def getItemCreated(self, item, timestamp=None):
         created = item.getDefaultValue('createdDateTime', None)
@@ -176,22 +174,6 @@ class Provider(ProviderBase):
             parameter = self.getRequestParameter('getDocumentContent', response.Value)
             return self.Request.getInputStream(parameter, self.Chunk, self.Buffer)
         return None
-
-    def getUploadParameter(self, identifier, new):
-        parameter = self.getRequestParameter('getUploadLocation', identifier)
-        response = self.Request.execute(parameter)
-        if response.IsPresent:
-            return self.getRequestParameter('getUploadStream', response.Value)
-        return None
-
-    def getUpdateParameter(self, identifier, new, key):
-        if new:
-            parameter = self.getRequestParameter('insertContent', identifier)
-        elif key == 'Title':
-            parameter = self.getRequestParameter('updateTitle', identifier)
-        elif key == 'Trashed':
-            parameter = self.getRequestParameter('updateTrashed', identifier)
-        return parameter
 
     # XServiceInfo
     def supportsService(self, service):
