@@ -107,7 +107,7 @@ class Provider(ProviderBase):
         elif method == 'updateTrashed':
             parameter.Method = 'DELETE'
             parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
-        elif method == 'insertContent':
+        elif method == 'createNewFolder':
             parameter.Method = 'POST'
             url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.getValue('ParentId'))
             parameter.Url = url
