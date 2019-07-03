@@ -10,10 +10,13 @@ from com.sun.star.ucb import XContentProvider
 from com.sun.star.ucb import XContentProviderFactory
 from com.sun.star.ucb import XContentProviderSupplier
 from com.sun.star.ucb import XParameterizedContentProvider
+from com.sun.star.logging.LogLevel import INFO
+from com.sun.star.logging.LogLevel import SEVERE
 
 from onedrive import g_plugin
 from onedrive import g_provider
 from onedrive import g_oauth2
+
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
@@ -32,36 +35,43 @@ class ContentProviderProxy(unohelper.Base,
         self.template = ''
         self.arguments = ''
         self.replace = True
+        self.Logger = self._getLogger()
+        msg = "ContentProviderProxy for plugin: %s loading ... Done" % g_plugin
+        self.Logger.logp(INFO, 'ContentProviderProxy', '__init__()', msg)
 
     def __del__(self):
-        print("ContentProviderProxy.__del__(): %s - %s" % (g_plugin, g_provider))
+        msg = "ContentProviderProxy for plugin: %s unloading ... Done" % g_plugin
+        self.Logger.logp(INFO, 'ContentProviderProxy', '__del__()', msg)
 
     # XContentProviderFactory
     def createContentProvider(self, service):
-        print("ContentProviderProxy.createContentProvider() %s" % service)
         ucp = self.ctx.ServiceManager.createInstanceWithContext(g_provider, self.ctx)
         provider = ucp.registerInstance(self.template, self.arguments, self.replace)
+        msg = "ContentProviderProxy createContentProvider: %s ... Done" % service
+        self.Logger.logp(INFO, 'ContentProviderProxy', 'createContentProvider()', msg)
         return provider
 
     # XContentProviderSupplier
     def getContentProvider(self):
-        print("ContentProviderProxy.getContentProvider() 1")
         provider = self._getUcp()
         if provider.supportsService('com.sun.star.ucb.ContentProviderProxy'):
-            print("ContentProviderProxy.getContentProvider() 2")
             provider = self.createContentProvider(g_provider)
-        print("ContentProviderProxy.getContentProvider() 3")
+        msg = "ContentProviderProxy getContentProvider: %s ... Done" % g_provider
+        self.Logger.logp(INFO, 'ContentProviderProxy', 'getContentProvider()', msg)
         return provider
 
     # XParameterizedContentProvider
     def registerInstance(self, template, arguments, replace):
-        print("ContentProviderProxy.registerInstance(): %s - %s" % (template, arguments))
         self.template = template
         self.arguments = arguments
         self.replace = replace
+        msg = "ContentProviderProxy.registerInstance(): %s - %s ... Done" % (template, arguments)
+        self.Logger.logp(INFO, 'ContentProviderProxy', 'registerInstance()', msg)
         return self
     def deregisterInstance(self, template, argument):
         self.getContentProvider().deregisterInstance(template, argument)
+        msg = "ContentProviderProxy.deregisterInstance(): %s - %s ... Done" % (template, argument)
+        self.Logger.logp(INFO, 'ContentProviderProxy', 'deregisterInstance()', msg)
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, identifier):
@@ -87,6 +97,10 @@ class ContentProviderProxy(unohelper.Base,
 
     def _getUcp(self):
         return self._getUcb().queryContentProvider('%s://' % self.template)
+
+    def _getLogger(self, logger='org.openoffice.logging.DefaultLogger'):
+        singleton = '/singletons/com.sun.star.logging.LoggerPool'
+        return self.ctx.getValueByName(singleton).getNamedLogger(logger)
 
 
 g_ImplementationHelper.addImplementation(ContentProviderProxy,
