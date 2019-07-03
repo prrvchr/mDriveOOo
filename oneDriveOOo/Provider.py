@@ -13,7 +13,6 @@ from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
 # clouducp is only available after CloudUcpOOo as been loaded...
 try:
     from clouducp import ProviderBase
-    from oauth2 import KeyMap
 except ImportError:
     class ProviderBase():
         pass
@@ -134,7 +133,7 @@ class Provider(ProviderBase):
         return user.getValue('displayName')
 
     def getItemParent(self, item, rootid):
-        ref = item.getDefaultValue('parentReference', KeyMap())
+        ref = item.getDefaultValue('parentReference', self.Request.getKeyMap())
         parent = ref.getDefaultValue('id', rootid)
         return (parent, )
 
@@ -153,7 +152,7 @@ class Provider(ProviderBase):
             return self.parseDateTime(modified)
         return timestamp
     def getItemMediaType(self, item):
-        return item.getDefaultValue('file', KeyMap()).getDefaultValue('mimeType', self.Folder)
+        return item.getDefaultValue('file', self.Request.getKeyMap()).getDefaultValue('mimeType', self.Folder)
     def getItemSize(self, item):
         return int(item.getDefaultValue('size', 0))
     def getItemTrashed(self, item):

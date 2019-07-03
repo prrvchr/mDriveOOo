@@ -34,25 +34,28 @@ class ContentProviderProxy(unohelper.Base,
         self.replace = True
 
     def __del__(self):
-         print("ContentProviderProxy.__del__(): %s - %s" % (g_plugin, g_provider))
+        print("ContentProviderProxy.__del__(): %s - %s" % (g_plugin, g_provider))
 
     # XContentProviderFactory
     def createContentProvider(self, service):
-        # First We must to load OAuth2Service to make the import available (lazy loading)
-        oauth2 = self.ctx.ServiceManager.createInstanceWithContext(g_oauth2, self.ctx)
+        print("ContentProviderProxy.createContentProvider() %s" % service)
         ucp = self.ctx.ServiceManager.createInstanceWithContext(g_provider, self.ctx)
         provider = ucp.registerInstance(self.template, self.arguments, self.replace)
         return provider
 
     # XContentProviderSupplier
     def getContentProvider(self):
+        print("ContentProviderProxy.getContentProvider() 1")
         provider = self._getUcp()
         if provider.supportsService('com.sun.star.ucb.ContentProviderProxy'):
+            print("ContentProviderProxy.getContentProvider() 2")
             provider = self.createContentProvider(g_provider)
+        print("ContentProviderProxy.getContentProvider() 3")
         return provider
 
     # XParameterizedContentProvider
     def registerInstance(self, template, arguments, replace):
+        print("ContentProviderProxy.registerInstance(): %s - %s" % (template, arguments))
         self.template = template
         self.arguments = arguments
         self.replace = replace
