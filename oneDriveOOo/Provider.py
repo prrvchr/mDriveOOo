@@ -38,8 +38,9 @@ g_ImplementationName = '%s.Provider' % g_plugin
 
 class Provider(ProviderBase):
     def __init__(self, ctx):
+        self.ctx = ctx
         #ProviderBase.__init__(self, ctx)
-        super(Provider, self).__init__(ctx)
+        super(Provider, self).__init__()
 
     @property
     def Host(self):
