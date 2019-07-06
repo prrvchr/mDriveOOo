@@ -4,6 +4,8 @@
 import uno
 import unohelper
 
+from com.sun.star.ucb.ConnectionMode import OFFLINE
+from com.sun.star.ucb.ConnectionMode import ONLINE
 from com.sun.star.auth.RestRequestTokenType import TOKEN_NONE
 from com.sun.star.auth.RestRequestTokenType import TOKEN_URL
 from com.sun.star.auth.RestRequestTokenType import TOKEN_REDIRECT
@@ -17,6 +19,7 @@ except ImportError:
     class ProviderBase():
         pass
 
+from onedrive import g_oauth2
 from onedrive import g_plugin
 from onedrive import g_host
 from onedrive import g_url
@@ -39,8 +42,14 @@ g_ImplementationName = '%s.Provider' % g_plugin
 class Provider(ProviderBase):
     def __init__(self, ctx):
         self.ctx = ctx
-        #ProviderBase.__init__(self, ctx)
-        super(Provider, self).__init__()
+        self.Request = self._getRequest(self.ctx)
+        self.Scheme = None
+        self.Plugin = None
+        self.Link = None
+        self.Folder = None
+        self.SourceURL = None
+        self.SessionMode = OFFLINE
+        self._Error = ''
 
     @property
     def Host(self):
