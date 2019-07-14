@@ -15,8 +15,10 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from onedrive import g_plugin
 from onedrive import g_provider
-from onedrive import g_oauth2
+from onedrive import getLogger
+from onedrive import getUcp
 
+g_proxy = 'com.sun.star.ucb.ContentProviderProxy'
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
@@ -31,46 +33,61 @@ class ContentProviderProxy(unohelper.Base,
                            XContentProviderSupplier,
                            XParameterizedContentProvider):
     def __init__(self, ctx):
+        msg = "ContentProviderProxy for plugin: %s loading ..." % g_plugin
         self.ctx = ctx
-        self.template = ''
-        self.arguments = ''
+        self.scheme = ''
+        self.plugin = ''
         self.replace = True
-        self.Logger = self._getLogger()
-        msg = "ContentProviderProxy for plugin: %s loading ... Done" % g_plugin
+        self.Logger = getLogger(self.ctx)
+        msg += " Done"
         self.Logger.logp(INFO, 'ContentProviderProxy', '__init__()', msg)
-
-    def __del__(self):
-        msg = "ContentProviderProxy for plugin: %s unloading ... Done" % g_plugin
-        self.Logger.logp(INFO, 'ContentProviderProxy', '__del__()', msg)
 
     # XContentProviderFactory
     def createContentProvider(self, service):
+        provider = None
+        level = INFO
+        msg = "Service: %s loading ..." % service
         ucp = self.ctx.ServiceManager.createInstanceWithContext(g_provider, self.ctx)
-        provider = ucp.registerInstance(self.template, self.arguments, self.replace)
-        msg = "ContentProviderProxy createContentProvider: %s ... Done" % service
-        self.Logger.logp(INFO, 'ContentProviderProxy', 'createContentProvider()', msg)
+        if not ucp:
+            level = SEVERE
+            msg += " ERROR: requested service is not available..."
+        else:
+            msg += " Done"
+            provider = ucp.registerInstance(self.scheme, self.plugin, self.replace)
+        self.Logger.logp(level, 'ContentProviderProxy', 'createContentProvider()', msg)
         return provider
 
     # XContentProviderSupplier
     def getContentProvider(self):
-        provider = self._getUcp()
-        if provider.supportsService('com.sun.star.ucb.ContentProviderProxy'):
+        provider = None
+        level = INFO
+        msg = "Need to get UCP: %s ..." % g_provider
+        ucp = getUcp(self.ctx, self.scheme)
+        if ucp.supportsService(g_proxy):
             provider = self.createContentProvider(g_provider)
-        msg = "ContentProviderProxy getContentProvider: %s ... Done" % g_provider
-        self.Logger.logp(INFO, 'ContentProviderProxy', 'getContentProvider()', msg)
+            if not provider:
+                level = SEVERE
+                msg += " ERROR: requested service is not available..."
+            else:
+               msg += " Done"
+        else:
+            msg += " Done"
+            provider = ucp
+        self.Logger.logp(level, 'ContentProviderProxy', 'getContentProvider()', msg)
         return provider
 
     # XParameterizedContentProvider
-    def registerInstance(self, template, arguments, replace):
-        self.template = template
-        self.arguments = arguments
+    def registerInstance(self, scheme, plugin, replace):
+        msg = "Register Scheme/Plugin/Replace: %s/%s/%s ..." % (scheme, plugin, replace)
+        self.scheme = scheme
+        self.plugin = plugin
         self.replace = replace
-        msg = "ContentProviderProxy.registerInstance(): %s - %s ... Done" % (template, arguments)
+        msg += " Done"
         self.Logger.logp(INFO, 'ContentProviderProxy', 'registerInstance()', msg)
         return self
-    def deregisterInstance(self, template, argument):
-        self.getContentProvider().deregisterInstance(template, argument)
-        msg = "ContentProviderProxy.deregisterInstance(): %s - %s ... Done" % (template, argument)
+    def deregisterInstance(self, scheme, plugin):
+        self.getContentProvider().deregisterInstance(scheme, plugin)
+        msg = "ContentProviderProxy.deregisterInstance(): %s - %s ... Done" % (scheme, plugin)
         self.Logger.logp(INFO, 'ContentProviderProxy', 'deregisterInstance()', msg)
 
     # XContentIdentifierFactory
@@ -91,18 +108,7 @@ class ContentProviderProxy(unohelper.Base,
     def getSupportedServiceNames(self):
         return g_ImplementationHelper.getSupportedServiceNames(g_ImplementationName)
 
-    def _getUcb(self, arguments=('Local', 'Office')):
-        name = 'com.sun.star.ucb.UniversalContentBroker'
-        return self.ctx.ServiceManager.createInstanceWithArguments(name, (arguments, ))
-
-    def _getUcp(self):
-        return self._getUcb().queryContentProvider('%s://' % self.template)
-
-    def _getLogger(self, logger='org.openoffice.logging.DefaultLogger'):
-        singleton = '/singletons/com.sun.star.logging.LoggerPool'
-        return self.ctx.getValueByName(singleton).getNamedLogger(logger)
-
 
 g_ImplementationHelper.addImplementation(ContentProviderProxy,
                                          g_ImplementationName,
-                                        (g_ImplementationName, 'com.sun.star.ucb.ContentProviderProxy'))
+                                        (g_ImplementationName, g_proxy))
