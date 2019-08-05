@@ -10,13 +10,18 @@ from com.sun.star.ucb import XContentProvider
 from com.sun.star.ucb import XContentProviderFactory
 from com.sun.star.ucb import XContentProviderSupplier
 from com.sun.star.ucb import XParameterizedContentProvider
+from com.sun.star.beans.PropertyAttribute import BOUND
+from com.sun.star.beans.PropertyAttribute import READONLY
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from onedrive import g_scheme
 from onedrive import g_plugin
 from onedrive import g_provider
 from onedrive import getLogger
 from onedrive import getUcp
+from onedrive import PropertySet
+from onedrive import getProperty
 
 g_proxy = 'com.sun.star.ucb.ContentProviderProxy'
 
@@ -31,7 +36,14 @@ class ContentProviderProxy(unohelper.Base,
                            XContentProvider,
                            XContentProviderFactory,
                            XContentProviderSupplier,
-                           XParameterizedContentProvider):
+                           PropertySet):
+
+    _Provider = None
+
+    @property
+    def IsLoaded(self):
+        return ContentProviderProxy._Provider is not None
+
     def __init__(self, ctx):
         msg = "ContentProviderProxy for plugin: %s loading ..." % g_plugin
         self.ctx = ctx
@@ -44,40 +56,40 @@ class ContentProviderProxy(unohelper.Base,
 
     # XContentProviderFactory
     def createContentProvider(self, service):
+        print('ContentProviderProxy.createContentProvider()')
         provider = None
         level = INFO
         msg = "Service: %s loading ..." % service
-        ucp = self.ctx.ServiceManager.createInstanceWithContext(g_provider, self.ctx)
+        ucp = self.ctx.ServiceManager.createInstanceWithContext(service, self.ctx)
         if not ucp:
             level = SEVERE
             msg += " ERROR: requested service is not available..."
         else:
             msg += " Done"
-            provider = ucp.registerInstance(self.scheme, self.plugin, self.replace)
+            provider = ucp.registerInstance(g_scheme, g_plugin, True)
         self.Logger.logp(level, 'ContentProviderProxy', 'createContentProvider()', msg)
         return provider
 
     # XContentProviderSupplier
     def getContentProvider(self):
-        provider = None
+        print('ContentProviderProxy.getContentProvider()')
         level = INFO
         msg = "Need to get UCP: %s ..." % g_provider
-        ucp = getUcp(self.ctx, self.scheme)
-        if ucp.supportsService(g_proxy):
+        if not self.IsLoaded:
             provider = self.createContentProvider(g_provider)
             if not provider:
                 level = SEVERE
                 msg += " ERROR: requested service is not available..."
             else:
+               ContentProviderProxy._Provider = provider
                msg += " Done"
         else:
             msg += " Done"
-            provider = ucp
         self.Logger.logp(level, 'ContentProviderProxy', 'getContentProvider()', msg)
-        return provider
+        return ContentProviderProxy._Provider
 
     # XParameterizedContentProvider
-    def registerInstance(self, scheme, plugin, replace):
+    def registerInstance1(self, scheme, plugin, replace):
         msg = "Register Scheme/Plugin/Replace: %s/%s/%s ..." % (scheme, plugin, replace)
         self.scheme = scheme
         self.plugin = plugin
@@ -85,7 +97,7 @@ class ContentProviderProxy(unohelper.Base,
         msg += " Done"
         self.Logger.logp(INFO, 'ContentProviderProxy', 'registerInstance()', msg)
         return self
-    def deregisterInstance(self, scheme, plugin):
+    def deregisterInstance1(self, scheme, plugin):
         self.getContentProvider().deregisterInstance(scheme, plugin)
         msg = "ContentProviderProxy.deregisterInstance(): %s - %s ... Done" % (scheme, plugin)
         self.Logger.logp(INFO, 'ContentProviderProxy', 'deregisterInstance()', msg)
@@ -108,6 +120,10 @@ class ContentProviderProxy(unohelper.Base,
     def getSupportedServiceNames(self):
         return g_ImplementationHelper.getSupportedServiceNames(g_ImplementationName)
 
+    def _getPropertySetInfo(self):
+        properties = {}
+        properties['IsLoaded'] = getProperty('IsLoaded', 'boolean', BOUND | READONLY)
+        return properties
 
 g_ImplementationHelper.addImplementation(ContentProviderProxy,
                                          g_ImplementationName,

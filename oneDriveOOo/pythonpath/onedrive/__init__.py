@@ -31,5 +31,8 @@ from .logger import isLoggerEnabled
 from .unotools import getFileSequence
 from .unotools import getStringResource
 from .unotools import getResourceLocation
+from .unotools import getProperty
+
+from .unolib import PropertySet
 
 from .contenttools import getUcp
