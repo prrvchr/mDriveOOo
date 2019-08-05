@@ -42,11 +42,11 @@ g_ImplementationName = '%s.Provider' % g_plugin
 class Provider(ProviderBase):
     def __init__(self, ctx):
         self.ctx = ctx
-        self.Scheme = None
-        self.Plugin = None
-        self.Link = None
-        self.Folder = None
-        self.SourceURL = None
+        self.Scheme = ''
+        self.Plugin = ''
+        self.Link = ''
+        self.Folder = ''
+        self.SourceURL = ''
         self.SessionMode = OFFLINE
         self._Error = ''
         self.Request = self._getRequest()
@@ -144,7 +144,7 @@ class Provider(ProviderBase):
         return user.getValue('displayName')
 
     def getItemParent(self, item, rootid):
-        ref = item.getDefaultValue('parentReference', self.Request.getKeyMap())
+        ref = item.getDefaultValue('parentReference', self._getKeyMap())
         parent = ref.getDefaultValue('id', rootid)
         return (parent, )
 
@@ -163,7 +163,7 @@ class Provider(ProviderBase):
             return self.parseDateTime(modified)
         return timestamp
     def getItemMediaType(self, item):
-        return item.getDefaultValue('file', self.Request.getKeyMap()).getDefaultValue('mimeType', self.Folder)
+        return item.getDefaultValue('file', self._getKeyMap()).getDefaultValue('mimeType', self.Folder)
     def getItemSize(self, item):
         return int(item.getDefaultValue('size', 0))
     def getItemTrashed(self, item):
