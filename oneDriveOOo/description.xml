@@ -17,8 +17,8 @@
     </publisher>
     <registration>
         <simple-license accept-by="admin" suppress-on-update="true" >
-            <license-text xlink:href="registration/license_fr-FR.txt" lang="fr-FR" />
-            <license-text xlink:href="registration/license_en-US.txt" lang="en-US" />
+            <license-text xlink:href="registration/TermsOfUse_fr.md" lang="fr-FR" />
+            <license-text xlink:href="registration/TermsOfUse_en.md" lang="en-US" />
         </simple-license>
     </registration>
     <release-notes>
