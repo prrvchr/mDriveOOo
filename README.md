@@ -1,34 +1,36 @@
-# oneDriveOOo v.0.0.3
+**The use of this software subjects you to our** [Terms Of Use](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_en) **and** [Data Protection Policy](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_en)
 
-## Microsotf OneDrive implementation for LibreOffice / OpenOffice.
+## oneDriveOOo v.0.0.3
+
+### Microsotf OneDrive implementation for LibreOffice / OpenOffice.
 
 ![oneDriveOOo screenshot](oneDrive.png)
 
-## Use:
+### Use:
 
-### Install [OAuth2OOo](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt) extention v 0.0.3.
-
-You must install this extention first!!!
-
-Restart LibreOffice / OpenOffice after installation.
-
-### Install [CloudUcpOOo](https://github.com/prrvchr/CloudUcpOOo/raw/master/CloudUcpOOo.oxt) extention v 0.0.3.
+#### Install [OAuth2OOo](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt) extention v 0.0.3.
 
 You must install this extention first!!!
 
 Restart LibreOffice / OpenOffice after installation.
 
-### Install [oneDriveOOo](https://github.com/prrvchr/oneDriveOOo/raw/master/oneDriveOOo.oxt) extention v 0.0.3.
+#### Install [CloudUcpOOo](https://github.com/prrvchr/CloudUcpOOo/raw/master/CloudUcpOOo.oxt) extention v 0.0.3.
+
+You must install this extention first!!!
 
 Restart LibreOffice / OpenOffice after installation.
 
-### Configure LibreOffice Open / Save dialogs:
+#### Install [oneDriveOOo](https://github.com/prrvchr/oneDriveOOo/raw/master/oneDriveOOo.oxt) extention v 0.0.3.
 
-#### For LibreOffice V5.x and before:
+Restart LibreOffice / OpenOffice after installation.
+
+#### Configure LibreOffice Open / Save dialogs:
+
+##### For LibreOffice V5.x and before:
 
 In menu Tools - Options - LibreOffice - General: check use LibreOffice dialogs.
 
-#### For LibreOffice V6.x and above:
+##### For LibreOffice V6.x and above:
 
 In menu Tools - Options - LibreOffice - Advanced - Open Expert Configuration
 
@@ -36,7 +38,7 @@ Search for: UseSystemFileDialog (Found under: org.openoffice.Office.Common > Mis
 
 Edit or change "true" to "false" (set it to "false")
 
-### Open your OneDrive:
+#### Open your OneDrive:
 
 In File - Open - File name enter: vnd.microsoft-apps://your_account/ or vnd.microsoft-apps:///
 
@@ -44,7 +46,7 @@ If you don't give your_account, you will be asked for...
 
 After authorizing the OAuthOOo application to access your OneDrive, your OneDrive should open!!! normally  ;-)
 
-## Has been tested with:
+### Has been tested with:
 
 * LibreOffice 6.0.4.2 - Ubuntu 17.10 -  LxQt 0.11.1
 
