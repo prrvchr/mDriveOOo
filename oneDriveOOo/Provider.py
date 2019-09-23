@@ -33,6 +33,7 @@ from onedrive import g_link
 from onedrive import g_doc_map
 from onedrive import g_chunk
 from onedrive import g_buffer
+from onedrive import getLogger
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
@@ -49,7 +50,8 @@ class Provider(ProviderBase):
         self.SourceURL = ''
         self.SessionMode = OFFLINE
         self._Error = ''
-        self.Request = self._getRequest()
+        self.Logger = getLogger(self.ctx)
+        #self.Request = self._getRequest()
 
     @property
     def Host(self):

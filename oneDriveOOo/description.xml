@@ -10,10 +10,10 @@
         <OpenOffice.org-minimal-version value="4.1" d:name="OpenOffice.org 4.1"/>
     </dependencies>
     <update-information>
-        <src xlink:href="https://raw.githubusercontent.com/prrvchr/oneDriveOOo/master/oneDriveOOo.update.xml" />
+        <src xlink:href="https://prrvchr.github.io/oneDriveOOo/oneDriveOOo.update.xml" />
     </update-information>
     <publisher>
-        <name xlink:href="https://github.com/prrvchr/oneDriveOOo" lang="en">Microsoft OneDrive for LibreOffice / OpenOffice</name>
+        <name xlink:href="https://prrvchr.github.io/oneDriveOOo" lang="en">Microsoft OneDrive for LibreOffice / OpenOffice</name>
     </publisher>
     <registration>
         <simple-license accept-by="admin" suppress-on-update="true" >
@@ -22,7 +22,7 @@
         </simple-license>
     </registration>
     <release-notes>
-        <src xlink:href="https://github.com/prrvchr/oneDriveOOo/blob/master/README.md" lang="en" />
+        <src xlink:href="https://prrvchr.github.io/oneDriveOOo" lang="en" />
     </release-notes>
     <display-name>
         <name lang="en">oneDriveOOo</name>
