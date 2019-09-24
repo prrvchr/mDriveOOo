@@ -11,6 +11,13 @@ from com.sun.star.auth.RestRequestTokenType import TOKEN_URL
 from com.sun.star.auth.RestRequestTokenType import TOKEN_REDIRECT
 from com.sun.star.auth.RestRequestTokenType import TOKEN_QUERY
 from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
+from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_RETRIEVED
+from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_CREATED
+from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_FOLDER
+from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_FILE
+from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_RENAMED
+from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_REWRITED
+from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
 # clouducp is only available after CloudUcpOOo as been loaded...
 try:
