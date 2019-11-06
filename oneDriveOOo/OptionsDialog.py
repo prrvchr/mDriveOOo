@@ -7,16 +7,16 @@ import unohelper
 from com.sun.star.lang import XServiceInfo
 from com.sun.star.awt import XContainerWindowEventHandler
 
-from onedrive import getFileSequence
-from onedrive import getLoggerUrl
-from onedrive import getLoggerSetting
-from onedrive import getStringResource
-from onedrive import getUcb
-from onedrive import getUcp
-from onedrive import registerDataBase
-from onedrive import setLoggerSetting
-from onedrive import g_scheme
-from onedrive import getSession
+from clouducp import g_scheme
+from clouducp import getFileSequence
+from clouducp import getLoggerUrl
+from clouducp import getLoggerSetting
+from clouducp import getStringResource
+from clouducp import getUcb
+from clouducp import getUcp
+from clouducp import registerDataBase
+from clouducp import setLoggerSetting
+from clouducp import getSession
 
 import traceback
 
@@ -94,7 +94,7 @@ class OptionsDialog(unohelper.Base,
         print("PyOptionsDialog._initialize()")
         provider = getUcp(self.ctx, g_scheme)
         loaded = provider.supportsService('com.sun.star.ucb.ContentProvider')
-        print("OptionsDialog._initialize() %s" % loaded) 
+        print("OptionsDialog._initialize() %s" % loaded)
         self._toogleSync(dialog, loaded)
         self._loadLoggerSetting(dialog)
 
@@ -126,7 +126,7 @@ class OptionsDialog(unohelper.Base,
             dialog.dispose()
         except Exception as e:
             print("PyOptionsDialog._doViewLog().Error: %s - %s" % (e, traceback.print_exc()))
-    
+
     def _doLoadUcp(self, dialog):
         try:
             print("PyOptionsDialog._doLoadUcp() 1")

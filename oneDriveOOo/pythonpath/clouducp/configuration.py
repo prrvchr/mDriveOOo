@@ -1,12 +1,23 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
+# Request / OAuth2 configuration
+g_oauth2 = 'com.gmail.prrvchr.extensions.OAuth2OOo.OAuth2Service'
+g_timeout = (15, 60)
 
+# DataSource configuration
+g_protocol = 'jdbc:hsqldb:'
+g_path = 'hsqldb'
+g_jar = 'hsqldb.jar'
+g_class = 'org.hsqldb.jdbcDriver'
+g_options = ';default_schema=true;hsqldb.default_table_type=cached;get_column_name=false;ifexists=false'
+g_shutdown = ';shutdown=true'
+g_csv = '%s.csv;fs=|;ignore_first=true;encoding=UTF-8;quoted=true'
+
+# Provider configuration
 g_scheme = 'vnd.microsoft-apps'
 
 g_plugin = 'com.gmail.prrvchr.extensions.oneDriveOOo'
-g_provider = 'com.gmail.prrvchr.extensions.CloudUcpOOo.ContentProvider'
-g_oauth2 = 'com.gmail.prrvchr.extensions.OAuth2OOo.OAuth2Service'
 
 g_host = 'graph.microsoft.com'
 g_version = 'v1.0' # v1.0 or beta
@@ -24,7 +35,7 @@ g_pages = 100
 # If your app splits a file into multiple byte ranges, the size of each byte range MUST be
 # a multiple of 320 KiB (327,680 bytes). Using a fragment size that does not divide evenly
 # by 320 KiB will result in errors committing some files
-g_chunk = 327680  # Http request maximum data size, must be a multiple of 'g_length'
+g_chunk = 327680  # Http request maximum data size, must be a multiple of 'g_buffer'
 g_buffer = 32768  # InputStream (Downloader) maximum 'Buffers' size
 
 g_office = 'application/vnd.oasis.opendocument'

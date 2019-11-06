@@ -1,6 +1,6 @@
 **The use of this software subjects you to our** [Terms Of Use](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_en) **and** [Data Protection Policy](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_en)
 
-## oneDriveOOo v.0.0.3
+## oneDriveOOo v.0.0.4
 
 ### Microsotf OneDrive implementation for LibreOffice / OpenOffice.
 
