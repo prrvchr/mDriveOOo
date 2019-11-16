@@ -1,7 +1,7 @@
-Table|Name|Identity
-0|Users|0
-1|Items|4
-2|Parents|
-3|Capabilities|
-4|Identifiers|
-5|Synchronizes|
+Table|Name|Identity|View
+0|Users|0|
+1|Items|4|
+2|Parents||
+3|Capabilities||
+4|Identifiers||
+5|Synchronizes||
