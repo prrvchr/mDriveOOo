@@ -8,13 +8,13 @@
 
 ### Use:
 
-#### Install [OAuth2OOo](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt) extention v 0.0.3.
+#### Install [OAuth2OOo](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt) extention v 0.0.4.
 
 You must install this extention first!!!
 
 Restart LibreOffice / OpenOffice after installation.
 
-#### Install [oneDriveOOo](https://github.com/prrvchr/oneDriveOOo/raw/master/oneDriveOOo.oxt) extention v 0.0.3.
+#### Install [oneDriveOOo](https://github.com/prrvchr/oneDriveOOo/raw/master/oneDriveOOo.oxt) extention v 0.0.4.
 
 Restart LibreOffice / OpenOffice after installation.
 
