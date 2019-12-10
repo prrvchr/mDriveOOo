@@ -16,10 +16,11 @@ try:
 
     from com.sun.star.ucb import XRestContentProvider
 
+    from oauth2 import logMessage
+
     from .datasource import DataSource
     from .user import User
     from .identifier import Identifier
-    from .logger import logMessage
 
 except Exception as e:
     print("clouducp.__init__() ERROR: %s - %s" % (e, traceback.print_exc()))

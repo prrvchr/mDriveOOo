@@ -18,23 +18,18 @@ from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_RENAMED
 from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_REWRITED
 from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
-from .dbinit import getDataSourceUrl
-
-from .dbtools import getDataSourceConnection
-from .dbtools import getKeyMapFromResult
-from .dbtools import getSequenceFromResult
-
-from .dbqueries import getSqlQuery
-
-from .unotools import getResourceLocation
-from .unotools import getPropertyValue
-from .unotools import parseDateTime
-
-from .keymap import KeyMap
+from oauth2 import KeyMap
+from oauth2 import getDataSourceConnection
+from oauth2 import getKeyMapFromResult
+from oauth2 import getSequenceFromResult
+from oauth2 import getResourceLocation
+from oauth2 import parseDateTime
+from oauth2 import logMessage
 
 from .user import User
+from .dbinit import getDataSourceUrl
+from .dbqueries import getSqlQuery
 
-from .logger import logMessage
 
 import binascii
 import traceback

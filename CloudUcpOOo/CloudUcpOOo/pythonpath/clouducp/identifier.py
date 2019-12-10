@@ -17,16 +17,15 @@ from com.sun.star.beans.PropertyAttribute import TRANSIENT
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 from com.sun.star.ucb.ConnectionMode import ONLINE
 
-#from .configuration import g_plugin
-from .content import Content
+from oauth2 import KeyMap
+from oauth2 import getUserNameFromHandler
+from oauth2 import logMessage
+from oauth2 import getProperty
+from oauth2 import getResourceLocation
+from oauth2 import parseDateTime
 
+from .content import Content
 from .contenttools import getUri
-from .oauth2core import getUserNameFromHandler
-from .unotools import getProperty
-from .unotools import getResourceLocation
-from .unotools import parseDateTime
-from .keymap import KeyMap
-from .logger import logMessage
 
 import traceback
 

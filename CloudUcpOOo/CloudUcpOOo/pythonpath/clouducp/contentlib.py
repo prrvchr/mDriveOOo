@@ -17,11 +17,12 @@ from com.sun.star.ucb import XCommandInfo
 from com.sun.star.ucb import XCommandInfoChangeNotifier
 from com.sun.star.ucb import UnsupportedCommandException
 
-from .oauth2config import g_oauth2
+from oauth2 import g_oauth2
+from oauth2 import PropertySet
+from oauth2 import getProperty
+
 from .contenttools import getUcb
 from .contenttools import getParametersRequest
-from .unolib import PropertySet
-from .unotools import getProperty
 
 import traceback
 

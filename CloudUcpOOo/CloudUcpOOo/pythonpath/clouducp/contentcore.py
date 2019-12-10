@@ -13,13 +13,14 @@ from com.sun.star.ucb.ContentAction import EXCHANGED
 from com.sun.star.beans.PropertyAttribute import READONLY
 from com.sun.star.uno import Exception as UnoException
 
+from oauth2 import getNamedValue
+from oauth2 import getPropertyValueSet
+from oauth2 import logMessage
+
 from .contenttools import getCommand
 from .contenttools import getContentEvent
 from .contenttools import getUcp
 from .contenttools import getInteractiveAugmentedIOException
-from .unotools import getNamedValue
-from .unotools import getPropertyValueSet
-from .logger import logMessage
 
 
 def getPropertiesValues(ctx, source, properties):

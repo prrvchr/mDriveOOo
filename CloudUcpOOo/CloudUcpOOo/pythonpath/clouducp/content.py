@@ -29,12 +29,15 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb import XRestContent
 
+from oauth2 import getSimpleFile
+from oauth2 import getProperty
+from oauth2 import getPropertyValueSet
+from oauth2 import logMessage
+from oauth2 import PropertySetInfo
 
 from .contentlib import CommandInfo
 from .contentlib import Row
 from .contentlib import DynamicResultSet
-from .unolib import PropertySetInfo
-
 from .contentcore import getPropertiesValues
 from .contentcore import setPropertiesValues
 from .contenttools import getCommandInfo
@@ -43,10 +46,7 @@ from .contenttools import getUcb
 from .contenttools import getUcp
 from .contenttools import getUri
 from .contenttools import getMimeType
-from .unotools import getSimpleFile
-from .unotools import getProperty
-from .unotools import getPropertyValueSet
-from .logger import logMessage
+
 
 import traceback
 

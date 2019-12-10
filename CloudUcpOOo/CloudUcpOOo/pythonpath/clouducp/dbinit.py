@@ -2,15 +2,15 @@
 # -*- coding: utf_8 -*-
 
 
-from .unotools import getResourceLocation
-from .unotools import getSimpleFile
+from oauth2 import getResourceLocation
+from oauth2 import getSimpleFile
 
-from .dbtools import getTablesAndStatements
-from .dbtools import registerDataSource
-from .dbtools import executeQueries
-from .dbtools import getDataSourceLocation
-from .dbtools import getDataSourceInfo
-from .dbtools import getDataSourceJavaInfo
+from oauth2 import getTablesAndStatements
+from oauth2 import registerDataSource
+from oauth2 import executeQueries
+from oauth2 import getDataSourceLocation
+from oauth2 import getDataSourceInfo
+from oauth2 import getDataSourceJavaInfo
 
 from .dbqueries import getSqlQuery
 from .dbconfig import g_path

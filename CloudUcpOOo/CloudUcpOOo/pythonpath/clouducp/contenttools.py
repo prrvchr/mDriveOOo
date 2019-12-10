@@ -9,9 +9,9 @@ from com.sun.star.ucb import InteractiveAugmentedIOException
 from com.sun.star.ucb.ConnectionMode import ONLINE
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 
-from .unotools import getProperty
-from .unotools import getPropertyValue
-from .unotools import getNamedValueSet
+from oauth2 import getProperty
+from oauth2 import getPropertyValue
+from oauth2 import getNamedValueSet
 
 
 def getConnectionMode(ctx, host):
