@@ -1,6 +1,8 @@
 #!
 # -*- coding: utf-8 -*-
 
+from .configuration import g_oauth2
+
 from .oauth2setting import OAuth2Setting
 from .wizardcontroller import WizardController
 
@@ -31,21 +33,40 @@ from .oauth2core import getUserNameFromHandler
 from .unolib import InteractionHandler
 from .unolib import Initialization
 from .unolib import PropertySet
+from .unolib import PropertySetInfo
+from .unolib import PropertiesChangeNotifier
+from .unolib import PropertySetInfoChangeNotifier
 
 from .unotools import createMessageBox
 from .unotools import createService
 from .unotools import getProperty
+from .unotools import getPropertyValue
+from .unotools import getPropertyValueSet
 from .unotools import getResourceLocation
 from .unotools import getCurrentLocale
 from .unotools import getFileSequence
 from .unotools import getConfiguration
 from .unotools import getStringResource
 from .unotools import generateUuid
+from .unotools import getNamedValue
 from .unotools import getNamedValueSet
 from .unotools import getInteractionHandler
 from .unotools import getDialog
+from .unotools import parseDateTime
+
+from .unocore import PropertyContainer
 
 from .dialoghandler import DialogHandler
+
+from .dbtools import getTablesAndStatements
+from .dbtools import registerDataSource
+from .dbtools import executeQueries
+from .dbtools import getDataSourceLocation
+from .dbtools import getDataSourceInfo
+from .dbtools import getDataSourceJavaInfo
+from .dbtools import getDataSourceConnection
+from .dbtools import getKeyMapFromResult
+from .dbtools import getSequenceFromResult
 
 from .logger import getLogger
 from .logger import getLoggerSetting

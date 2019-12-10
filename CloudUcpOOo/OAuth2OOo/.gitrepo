@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/prrvchr/OAuth2OOo.git
 	branch = master
-	commit = a2580fb6adde80e90c3648dd32c150c2f488c696
-	parent = b456d98ab6dfc21e55175a4d46f7a65e3e84de3a
+	commit = 62a01657c429b41b77154134b4e487b278a1836e
+	parent = af3ff18eadbb3f33da179e17d9746142c7e63d05
 	method = merge
 	cmdver = 0.4.0

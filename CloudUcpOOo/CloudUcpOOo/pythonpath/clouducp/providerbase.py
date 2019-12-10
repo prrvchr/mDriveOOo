@@ -19,9 +19,9 @@ from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_RENAMED
 from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_REWRITED
 from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
-from .unotools import parseDateTime
-from .unotools import getResourceLocation
-from .keymap import KeyMap
+from oauth2 import KeyMap
+from oauth2 import parseDateTime
+from oauth2 import getResourceLocation
 
 import datetime
 import traceback

@@ -14,20 +14,6 @@ from oauth2 import getPropertyValue
 from oauth2 import getNamedValueSet
 
 
-def getConnectionMode(ctx, host):
-    return getSessionMode(ctx, host)
-
-def getSessionMode(ctx, host):
-    connector = ctx.ServiceManager.createInstance('com.sun.star.connection.Connector')
-    try:
-        connection = connector.connect('socket,host=%s,port=80' % host)
-    except NoConnectException:
-        mode = OFFLINE
-    else:
-        connection.close()
-        mode = ONLINE
-    return mode
-
 def propertyChange(source, name, oldvalue, newvalue):
     if name in source.propertiesListener:
         events = (_getPropertyChangeEvent(source, name, oldvalue, newvalue), )

@@ -25,8 +25,6 @@ try:
     from .contenttools import getUri
     from .contenttools import getMimeType
     from .contenttools import getCommandInfo
-    from .contenttools import getConnectionMode
-    from .contenttools import getSessionMode
     from .contenttools import getContentEvent
     from .contenttools import getContentInfo
     from .contenttools import propertyChange
