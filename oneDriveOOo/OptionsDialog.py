@@ -7,7 +7,6 @@ import unohelper
 from com.sun.star.lang import XServiceInfo
 from com.sun.star.awt import XContainerWindowEventHandler
 
-from clouducp import g_scheme
 from clouducp import getFileSequence
 from clouducp import getLoggerUrl
 from clouducp import getLoggerSetting
@@ -18,13 +17,15 @@ from clouducp import registerDataBase
 from clouducp import setLoggerSetting
 from clouducp import getSession
 
+from onedrive import g_scheme
+from onedrive import g_plugin
+
 import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = 'com.gmail.prrvchr.extensions.gDriveOOo.OptionsDialog'
+g_ImplementationName = '%s.OptionsDialog' % g_plugin
 
-g_scheme = 'vnd.google-apps'
 
 class OptionsDialog(unohelper.Base,
                     XServiceInfo,
@@ -32,7 +33,7 @@ class OptionsDialog(unohelper.Base,
     def __init__(self, ctx):
         try:
             self.ctx = ctx
-            self.stringResource = getStringResource(self.ctx, None, 'OptionsDialog')
+            self.stringResource = getStringResource(self.ctx, g_plugin, 'oneDriveOOo', 'OptionsDialog')
             print("PyOptionsDialog.__init__() 1")
             #identifier = getUcb(self.ctx).createContentIdentifier('%s:///' % g_scheme)
             #print("PyOptionsDialog.__init__() 2 %s" % identifier.getContentIdentifier())

@@ -1,6 +1,9 @@
 #!/bin/bash
 
-cd ./oneDriveOOo/
+cd ./CloudUcpOOo/
+./make_rdb.sh
+
+cd ../oneDriveOOo/
 zip -0 oneDriveOOo.zip mimetype
 zip -r oneDriveOOo.zip *
 cd ..
