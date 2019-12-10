@@ -15,11 +15,13 @@ from com.sun.star.beans.PropertyAttribute import READONLY
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from oauth2 import PropertySet
+from oauth2 import getProperty
+from oauth2 import logMessage
+
 from clouducp import ContentProvider
-from clouducp import logMessage
 from clouducp import getUcp
-from clouducp import PropertySet
-from clouducp import getProperty
+
 from onedrive import g_scheme
 from onedrive import g_plugin
 

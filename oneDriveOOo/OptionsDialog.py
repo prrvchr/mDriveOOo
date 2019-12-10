@@ -7,15 +7,14 @@ import unohelper
 from com.sun.star.lang import XServiceInfo
 from com.sun.star.awt import XContainerWindowEventHandler
 
-from clouducp import getFileSequence
-from clouducp import getLoggerUrl
-from clouducp import getLoggerSetting
-from clouducp import getStringResource
+from oauth2 import getFileSequence
+from oauth2 import getStringResource
+from oauth2 import getLoggerUrl
+from oauth2 import getLoggerSetting
+from oauth2 import setLoggerSetting
+
 from clouducp import getUcb
 from clouducp import getUcp
-from clouducp import registerDataBase
-from clouducp import setLoggerSetting
-from clouducp import getSession
 
 from onedrive import g_scheme
 from onedrive import g_plugin
@@ -79,7 +78,7 @@ class OptionsDialog(unohelper.Base,
     def _doViewDataBase(self, dialog):
         try:
             print("PyOptionsDialog._doConnect() 1")
-            url = registerDataBase(self.ctx, g_scheme)
+            #url = registerDataBase(self.ctx, g_scheme)
             desktop = self.ctx.ServiceManager.createInstance('com.sun.star.frame.Desktop')
             desktop.loadComponentFromURL(url, '_default', 0, ())
             #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
