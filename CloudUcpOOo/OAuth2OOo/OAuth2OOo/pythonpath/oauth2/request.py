@@ -40,6 +40,9 @@ import json
 g_auth = 'com.gmail.prrvchr.extensions.OAuth2OOo'
 
 
+def getConnectionMode(ctx, host):
+    return getSessionMode(ctx, host)
+
 def getSessionMode(ctx, host, port=80):
     connector = ctx.ServiceManager.createInstance('com.sun.star.connection.Connector')
     try:

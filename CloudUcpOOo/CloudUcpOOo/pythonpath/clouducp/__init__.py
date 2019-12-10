@@ -29,5 +29,16 @@ try:
     from .contenttools import getContentInfo
     from .contenttools import propertyChange
 
+    from .dbtools import getTablesAndStatements
+    from .dbtools import registerDataSource
+    from .dbtools import executeQueries
+    from .dbtools import getDataSourceLocation
+    from .dbtools import getDataSourceInfo
+    from .dbtools import getDataSourceJavaInfo
+    from .dbtools import getDataSourceConnection
+    from .dbtools import getKeyMapFromResult
+    from .dbtools import getSequenceFromResult
+    from .dbtools import registerDataBase
+
 except Exception as e:
     print("clouducp.__init__() ERROR: %s - %s" % (e, traceback.print_exc()))

@@ -19,17 +19,16 @@ from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_REWRITED
 from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
 from oauth2 import KeyMap
-from oauth2 import getDataSourceConnection
-from oauth2 import getKeyMapFromResult
-from oauth2 import getSequenceFromResult
-from oauth2 import getResourceLocation
 from oauth2 import parseDateTime
 from oauth2 import logMessage
+from oauth2 import getResourceLocation
 
 from .user import User
 from .dbinit import getDataSourceUrl
 from .dbqueries import getSqlQuery
-
+from .dbtools import getDataSourceConnection
+from .dbtools import getKeyMapFromResult
+from .dbtools import getSequenceFromResult
 
 import binascii
 import traceback

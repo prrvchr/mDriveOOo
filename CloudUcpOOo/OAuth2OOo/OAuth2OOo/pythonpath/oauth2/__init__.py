@@ -13,6 +13,7 @@ from .request import Enumerator
 from .request import InputStream
 from .request import Uploader
 from .request import getSessionMode
+from .request import getConnectionMode
 from .request import execute
 
 from .oauth2lib import InteractionRequest
@@ -67,6 +68,7 @@ from .dbtools import getDataSourceJavaInfo
 from .dbtools import getDataSourceConnection
 from .dbtools import getKeyMapFromResult
 from .dbtools import getSequenceFromResult
+from .dbtools import registerDataBase
 
 from .logger import getLogger
 from .logger import getLoggerSetting
