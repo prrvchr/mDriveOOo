@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<oor:component-schema
+  xml:lang="en-US"
+  xmlns:oor="http://openoffice.org/2001/registry"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  oor:package="com.gmail.prrvchr.extensions"
+  oor:name="OAuth2OOo">
+    <templates>
+        <group oor:name="UserSet">
+            <prop oor:name="RefreshToken" oor:type="xs:string" />
+            <prop oor:name="AccessToken" oor:type="xs:string" />
+            <prop oor:name="NeverExpires" oor:type="xs:boolean" />
+            <prop oor:name="TimeStamp" oor:type="xs:int" />
+            <prop oor:name="Scopes" oor:type="oor:string-list" />
+        </group>
+        <group oor:name="UrlSet">
+            <prop oor:name="Scope" oor:type="xs:string" />
+        </group>
+        <group oor:name="ScopeSet">
+            <prop oor:name="Provider" oor:type="xs:string" />
+            <prop oor:name="Values" oor:type="oor:string-list" />
+        </group>
+        <group oor:name="ProviderSet">
+            <prop oor:name="ClientId" oor:type="xs:string" />
+            <prop oor:name="ClientSecret" oor:type="xs:string" />
+            <prop oor:name="AuthorizationUrl" oor:type="xs:string" />
+            <prop oor:name="AuthorizationParameters" oor:type="xs:string" />
+            <prop oor:name="TokenUrl" oor:type="xs:string" />
+            <prop oor:name="TokenParameters" oor:type="xs:string" />
+            <prop oor:name="CodeChallenge" oor:type="xs:boolean" />
+            <prop oor:name="CodeChallengeMethod" oor:type="xs:string" />
+            <prop oor:name="HttpHandler" oor:type="xs:boolean" />
+            <prop oor:name="RedirectAddress" oor:type="xs:string" />
+            <prop oor:name="RedirectPort" oor:type="xs:short" />
+            <set oor:name="Users" oor:node-type="UserSet" />
+        </group>
+    </templates>
+    <component>
+        <prop oor:name="ConnectTimeout" oor:type="xs:short" />
+        <prop oor:name="ReadTimeout" oor:type="xs:short" />
+        <prop oor:name="HandlerTimeout" oor:type="xs:short" />
+        <set oor:name="Urls" oor:node-type="UrlSet" />
+        <set oor:name="Scopes" oor:node-type="ScopeSet" />
+        <set oor:name="Providers" oor:node-type="ProviderSet" />
+    </component>
+</oor:component-schema>

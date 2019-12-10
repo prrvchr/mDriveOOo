@@ -1,0 +1,27 @@
+#ifndef __com_sun_star_auth_RestRequestParameter_idl__
+#define __com_sun_star_auth_RestRequestParameter_idl__
+
+#include <com/sun/star/auth/RestRequestEnumerator.idl>
+
+module com { module sun { module star { module auth {
+
+struct RestRequestParameter
+{
+
+    string Name;
+    string Method;
+    string Url;
+    string Header;
+    string Query;
+    string Data;
+    string Json;
+    string Optional;
+    ::com::sun::star::auth::RestRequestEnumerator Enumerator;
+    boolean NoAuth;
+    boolean NoRedirect;
+
+};
+
+}; }; }; };
+
+#endif

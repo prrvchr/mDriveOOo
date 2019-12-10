@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<oor:component-data
+  xml:lang="en-US"
+  xmlns:oor="http://openoffice.org/2001/registry"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  oor:package="com.gmail.prrvchr.extensions"
+  oor:name="OAuth2OOo">
+    <prop oor:name="ConnectTimeout">
+        <value>5</value>
+    </prop>
+    <prop oor:name="ReadTimeout">
+        <value>30</value>
+    </prop>
+    <prop oor:name="HandlerTimeout">
+        <value>120</value>
+    </prop>
+    <node oor:name="Urls">
+        <node oor:name="smtp.gmail.com/send" oor:op="fuse">
+            <prop oor:name="Scope">
+                <value>Google Mail Send</value>
+            </prop>
+        </node>
+        <node oor:name="smtp.gmail.com/compose" oor:op="fuse">
+            <prop oor:name="Scope">
+                <value>Google Mail Compose</value>
+            </prop>
+        </node>
+        <node oor:name="smtp-mail.outlook.com" oor:op="fuse">
+            <prop oor:name="Scope">
+                <value>Microsoft Mail Send</value>
+            </prop>
+        </node>
+    </node>
+    <node oor:name="Scopes">
+        <node oor:name="Google Mail Send" oor:op="fuse">
+            <prop oor:name="Provider">
+                <value>Google</value>
+            </prop>
+            <prop oor:name="Values">
+                <value>https://www.googleapis.com/auth/gmail.send</value>
+            </prop>
+        </node>
+        <node oor:name="Google Mail Compose" oor:op="fuse">
+            <prop oor:name="Provider">
+                <value>Google</value>
+            </prop>
+            <prop oor:name="Values">
+                <value>https://www.googleapis.com/auth/gmail.compose</value>
+            </prop>
+        </node>
+        <node oor:name="Microsoft Mail Send" oor:op="fuse">
+            <prop oor:name="Provider">
+                <value>Microsoft</value>
+            </prop>
+            <prop oor:name="Values">
+                <value>offline_access https://graph.microsoft.com/mail.send</value>
+            </prop>
+        </node>
+    </node>
+    <node oor:name="Providers">
+        <node oor:name="Google" oor:op="fuse">
+            <prop oor:name="ClientId">
+                <value>398845255454-npksu301220b4f52g3ktevk4pd9lu8t9.apps.googleusercontent.com</value>
+            </prop>
+            <prop oor:name="ClientSecret">
+                <value></value>
+            </prop>
+            <prop oor:name="AuthorizationUrl">
+                <value>https://accounts.google.com/o/oauth2/v2/auth</value>
+            </prop>
+            <prop oor:name="AuthorizationParameters">
+                <value>{"prompt": "consent", "response_mode": "query", "scope": null, "login_hint": "current_user", "hl": "current_language"}</value>
+            </prop>
+            <prop oor:name="TokenUrl">
+                <value>https://www.googleapis.com/oauth2/v4/token</value>
+            </prop>
+            <prop oor:name="TokenParameters">
+                <value>{"scope": null}</value>
+            </prop>
+            <prop oor:name="CodeChallenge">
+                <value>true</value>
+            </prop>
+            <prop oor:name="CodeChallengeMethod">
+                <value>S256</value>
+            </prop>
+            <prop oor:name="HttpHandler">
+                <value>true</value>
+            </prop>
+            <prop oor:name="RedirectAddress">
+                <value>127.0.0.1</value>
+            </prop>
+            <prop oor:name="RedirectPort">
+                <value>8080</value>
+            </prop>
+        </node>
+        <node oor:name="Microsoft" oor:op="fuse">
+            <prop oor:name="ClientId">
+                <value>ccaf8c05-7245-41bb-b0ef-ee9f790080b4</value>
+            </prop>
+            <prop oor:name="ClientSecret">
+                <value>skeFFY$zdooVXHJ91917]?-</value>
+            </prop>
+            <prop oor:name="AuthorizationUrl">
+                <value>https://login.microsoftonline.com/common/oauth2/v2.0/authorize</value>
+            </prop>
+            <prop oor:name="AuthorizationParameters">
+                <value>{"prompt": "consent", "response_mode": "query", "client_secret": null, "scope": null, "login_hint": "current_user", "hl": "current_language"}</value>
+            </prop>
+            <prop oor:name="TokenUrl">
+                <value>https://login.microsoftonline.com/common/oauth2/v2.0/token</value>
+            </prop>
+            <prop oor:name="TokenParameters">
+                <value>{"client_secret": null, "scope": null}</value>
+            </prop>
+            <prop oor:name="CodeChallenge">
+                <value>false</value>
+            </prop>
+            <prop oor:name="CodeChallengeMethod">
+                <value>S256</value>
+            </prop>
+            <prop oor:name="HttpHandler">
+                <value>true</value>
+            </prop>
+            <prop oor:name="RedirectAddress">
+                <value>localhost</value>
+            </prop>
+            <prop oor:name="RedirectPort">
+                <value>8080</value>
+            </prop>
+        </node>
+    </node>
+</oor:component-data>

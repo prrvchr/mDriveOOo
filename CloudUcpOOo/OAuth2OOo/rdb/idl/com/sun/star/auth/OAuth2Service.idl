@@ -1,0 +1,20 @@
+#ifndef __com_sun_star_auth_OAuth2Service_idl__
+#define __com_sun_star_auth_OAuth2Service_idl__
+
+#include <com/sun/star/lang/XServiceInfo.idl>
+#include <com/sun/star/auth/XOAuth2Service.idl>
+
+module com { module sun { module star { module auth {
+
+service OAuth2Service
+{
+
+    interface ::com::sun::star::lang::XServiceInfo;
+    interface ::com::sun::star::auth::XOAuth2Service;
+
+};
+
+
+}; }; }; };
+
+#endif

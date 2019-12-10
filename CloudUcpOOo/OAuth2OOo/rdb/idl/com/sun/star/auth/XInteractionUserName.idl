@@ -1,0 +1,17 @@
+#ifndef __com_sun_star_auth_XInteractionUserName_idl__
+#define __com_sun_star_auth_XInteractionUserName_idl__
+
+#include <com/sun/star/task/XInteractionContinuation.idl>
+
+module com { module sun { module star { module auth {
+
+interface XInteractionUserName: com::sun::star::task::XInteractionContinuation
+{
+
+    void setUserName([in] string UserName);
+
+};
+
+}; }; }; };
+
+#endif

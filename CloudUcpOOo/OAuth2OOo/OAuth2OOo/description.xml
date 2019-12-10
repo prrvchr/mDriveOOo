@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<description
+  xmlns="http://openoffice.org/extensions/description/2006"
+  xmlns:d="http://openoffice.org/extensions/description/2006"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+    <version value="0.0.4" />
+    <identifier value="com.gmail.prrvchr.extensions.OAuth2OOo" />
+    <platform value="all" />
+    <dependencies>
+        <OpenOffice.org-minimal-version value="4.1" d:name="OpenOffice.org 4.1"/>
+    </dependencies>
+    <update-information>
+        <src xlink:href="https://prrvchr.github.io/OAuth2OOo/OAuth2OOo.update.xml" />
+    </update-information>
+    <publisher>
+        <name xlink:href="https://prrvchr.github.io/OAuth2OOo" lang="en">OAuth2.0 for LibreOffice / OpenOffice</name>
+    </publisher>
+    <registration>
+        <simple-license accept-by="admin" suppress-on-update="true" >
+            <license-text xlink:href="registration/TermsOfUse_fr.md" lang="fr-FR" />
+            <license-text xlink:href="registration/TermsOfUse_en.md" lang="en-US" />
+        </simple-license>
+    </registration>
+    <release-notes>
+        <src xlink:href="https://prrvchr.github.io/OAuth2OOo" lang="en" />
+    </release-notes>
+    <display-name>
+        <name lang="en">OAuth2OOo</name>
+    </display-name>
+    <icon>
+        <default xlink:href="OAuth2OOo/OAuth2.png" />
+        <high-contrast xlink:href="OAuth2OOo/OAuth2.png" />
+    </icon>
+    <extension-description>
+        <src xlink:href="description/desc_en.txt" lang="en" />
+        <src xlink:href="description/desc_fr.txt" lang="fr" />
+    </extension-description>
+</description>

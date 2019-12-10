@@ -1,0 +1,1 @@
+OAuth2OOo is a OAuth2.0 implementation for LibreOffice / OpenOffice.

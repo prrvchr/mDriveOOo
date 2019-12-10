@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="_License" script:language="StarBasic">
+&apos;                                Copyright 2015-2016 Pierre Vacher
+
+REM =======================================================================================================================
+REM ===                             The OAuth2OOo library is a part of a personnal project.                             ===
+REM ===                     Full documentation is available on https://github.com/prrvchr/OAuth2OOo                     ===
+REM =======================================================================================================================
+
+&apos;    OAuth2OOo is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+&apos;    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+&apos;
+&apos;    OAuth2OOo is free software; you can redistribute it and/or modify it under the terms of either (at your option):
+&apos;
+&apos;    1) The Mozilla Public License, v. 2.0. If a copy of the MPL was not
+&apos;    distributed with this file, you can obtain one at http://mozilla.org/MPL/2.0/.
+&apos;
+&apos;    2) The GNU Lesser General Public License as published by
+&apos;    the Free Software Foundation, either version 3 of the License, or
+&apos;    (at your option) any later version. If a copy of the LGPL was not
+&apos;    distributed with this file, see http://www.gnu.org/licenses/.
+
+Sub Main
+
+End Sub
+
+</script:module>

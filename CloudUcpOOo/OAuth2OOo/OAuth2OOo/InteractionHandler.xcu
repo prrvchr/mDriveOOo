@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<oor:component-data
+  xml:lang="en-US"
+  xmlns:oor="http://openoffice.org/2001/registry"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  oor:package="org.openoffice"
+  oor:name="Interaction">
+    <node oor:name="InteractionHandlers">
+        <node oor:name="org.openoffice.OAuth2.Interactions" oor:op="fuse">
+            <node oor:name="HandledRequestTypes">
+                <node oor:name="com.sun.star.auth.OAuth2Request" oor:op="fuse">
+                    <prop oor:name="Propagation">
+                        <value>named-and-derived</value>
+                    </prop>
+                </node>
+                <node oor:name="com.sun.star.task.ClassifiedInteractionRequest" oor:op="fuse">
+                    <prop oor:name="Propagation">
+                        <value>named-and-derived</value>
+                    </prop>
+                </node>
+            </node>
+            <prop oor:name="ServiceName">
+                <value>com.gmail.prrvchr.extensions.OAuth2OOo.OAuth2Service</value>
+            </prop>
+        </node>
+    </node>
+</oor:component-data>

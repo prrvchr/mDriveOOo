@@ -1,0 +1,18 @@
+#ifndef __com_sun_star_auth_XRestEnumeration_idl__
+#define __com_sun_star_auth_XRestEnumeration_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/container/XEnumeration.idl>
+
+module com { module sun { module star { module auth {
+
+interface XRestEnumeration: com::sun::star::container::XEnumeration
+{
+
+    [attribute, readonly] string SyncToken;
+
+};
+
+}; }; }; };
+
+#endif

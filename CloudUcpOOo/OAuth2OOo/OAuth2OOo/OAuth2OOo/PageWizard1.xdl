@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="PageWizard1" dlg:left="85" dlg:top="0" dlg:width="285" dlg:height="180" dlg:help-text="&amp;PageWizard1.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;PageWizard1.Title" dlg:withtitlebar="false">
+ <dlg:styles>
+  <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
+ </dlg:styles>
+ <dlg:bulletinboard>
+  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="0" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="65" dlg:help-text="&amp;PageWizard1.FrameControl1.HelpText">
+   <dlg:title dlg:value="&amp;PageWizard1.FrameControl1.Label"/>
+  </dlg:titledbox>
+  <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:left="20" dlg:top="25" dlg:width="40" dlg:height="15" dlg:help-text="&amp;PageWizard1.Label1.HelpText" dlg:value="&amp;PageWizard1.Label1.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:textfield dlg:id="TextField1" dlg:tab-index="2" dlg:left="65" dlg:top="25" dlg:width="202" dlg:height="15" dlg:tag="User" dlg:help-text="&amp;PageWizard1.TextField1.HelpText" dlg:value="&amp;PageWizard1.TextField1.Text">
+   <script:event script:event-name="on-textchange" script:macro-name="vnd.sun.star.UNO:Changed" script:language="UNO"/>
+  </dlg:textfield>
+  <dlg:text dlg:id="Label2" dlg:tab-index="3" dlg:left="20" dlg:top="50" dlg:width="40" dlg:height="15" dlg:help-text="&amp;PageWizard1.Label2.HelpText" dlg:value="&amp;PageWizard1.Label2.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:combobox dlg:id="ComboBox1" dlg:tab-index="4" dlg:left="65" dlg:top="50" dlg:width="124" dlg:height="15" dlg:tag="Url" dlg:help-text="&amp;PageWizard1.ComboBox1.HelpText" dlg:value="&amp;PageWizard1.ComboBox1.Text" dlg:spin="true">
+   <script:event script:event-name="on-textchange" script:macro-name="vnd.sun.star.UNO:TextChange" script:language="UNO"/>
+  </dlg:combobox>
+  <dlg:button dlg:id="CommandButton1" dlg:tab-index="5" dlg:disabled="true" dlg:left="192" dlg:top="50" dlg:width="35" dlg:height="15" dlg:tag="Url" dlg:help-text="&amp;PageWizard1.CommandButton1.HelpText" dlg:value="&amp;PageWizard1.CommandButton1.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Add" script:language="UNO"/>
+  </dlg:button>
+  <dlg:button dlg:id="CommandButton2" dlg:tab-index="6" dlg:disabled="true" dlg:left="230" dlg:top="50" dlg:width="35" dlg:height="15" dlg:tag="Url" dlg:help-text="&amp;PageWizard1.CommandButton2.HelpText" dlg:value="&amp;PageWizard1.CommandButton2.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Remove" script:language="UNO"/>
+  </dlg:button>
+  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl2" dlg:tab-index="7" dlg:left="10" dlg:top="85" dlg:width="265" dlg:height="67" dlg:help-text="&amp;PageWizard1.FrameControl2.HelpText">
+   <dlg:title dlg:value="&amp;PageWizard1.FrameControl2.Label"/>
+  </dlg:titledbox>
+  <dlg:text dlg:id="Label3" dlg:tab-index="8" dlg:left="20" dlg:top="100" dlg:width="40" dlg:height="15" dlg:help-text="&amp;PageWizard1.Label3.HelpText" dlg:value="&amp;PageWizard1.Label3.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:combobox dlg:id="ComboBox2" dlg:tab-index="9" dlg:left="65" dlg:top="100" dlg:width="86" dlg:height="15" dlg:tag="Provider" dlg:help-text="&amp;PageWizard1.ComboBox2.HelpText" dlg:value="&amp;PageWizard1.ComboBox2.Text" dlg:spin="true">
+   <script:event script:event-name="on-textchange" script:macro-name="vnd.sun.star.UNO:TextChange" script:language="UNO"/>
+  </dlg:combobox>
+  <dlg:button dlg:id="CommandButton3" dlg:tab-index="10" dlg:disabled="true" dlg:left="154" dlg:top="100" dlg:width="35" dlg:height="15" dlg:tag="Provider" dlg:help-text="&amp;PageWizard1.CommandButton3.HelpText" dlg:value="&amp;PageWizard1.CommandButton3.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Add" script:language="UNO"/>
+  </dlg:button>
+  <dlg:button dlg:id="CommandButton4" dlg:tab-index="11" dlg:disabled="true" dlg:left="192" dlg:top="100" dlg:width="35" dlg:height="15" dlg:tag="Provider" dlg:help-text="&amp;PageWizard1.CommandButton4.HelpText" dlg:value="&amp;PageWizard1.CommandButton4.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Edit" script:language="UNO"/>
+  </dlg:button>
+  <dlg:button dlg:id="CommandButton5" dlg:tab-index="12" dlg:disabled="true" dlg:left="230" dlg:top="100" dlg:width="35" dlg:height="15" dlg:tag="Provider" dlg:help-text="&amp;PageWizard1.CommandButton5.HelpText" dlg:value="&amp;PageWizard1.CommandButton5.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Remove" script:language="UNO"/>
+  </dlg:button>
+  <dlg:text dlg:id="Label4" dlg:tab-index="13" dlg:left="20" dlg:top="125" dlg:width="40" dlg:height="15" dlg:help-text="&amp;PageWizard1.Label4.HelpText" dlg:value="&amp;PageWizard1.Label4.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:combobox dlg:id="ComboBox3" dlg:tab-index="14" dlg:left="65" dlg:top="125" dlg:width="86" dlg:height="15" dlg:tag="Scope" dlg:help-text="&amp;PageWizard1.ComboBox3.HelpText" dlg:value="&amp;PageWizard1.ComboBox3.Text" dlg:spin="true">
+   <script:event script:event-name="on-textchange" script:macro-name="vnd.sun.star.UNO:TextChange" script:language="UNO"/>
+  </dlg:combobox>
+  <dlg:button dlg:id="CommandButton6" dlg:tab-index="15" dlg:disabled="true" dlg:left="154" dlg:top="125" dlg:width="35" dlg:height="15" dlg:tag="Scope" dlg:help-text="&amp;PageWizard1.CommandButton6.HelpText" dlg:value="&amp;PageWizard1.CommandButton6.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Add" script:language="UNO"/>
+  </dlg:button>
+  <dlg:button dlg:id="CommandButton7" dlg:tab-index="16" dlg:disabled="true" dlg:left="192" dlg:top="125" dlg:width="35" dlg:height="15" dlg:tag="Scope" dlg:help-text="&amp;PageWizard1.CommandButton7.HelpText" dlg:value="&amp;PageWizard1.CommandButton7.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Edit" script:language="UNO"/>
+  </dlg:button>
+  <dlg:button dlg:id="CommandButton8" dlg:tab-index="17" dlg:disabled="true" dlg:left="230" dlg:top="125" dlg:width="35" dlg:height="15" dlg:tag="Scope" dlg:help-text="&amp;PageWizard1.CommandButton8.HelpText" dlg:value="&amp;PageWizard1.CommandButton8.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Remove" script:language="UNO"/>
+  </dlg:button>
+ </dlg:bulletinboard>
+</dlg:window>

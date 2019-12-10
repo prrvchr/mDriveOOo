@@ -1,0 +1,27 @@
+#ifndef __com_sun_star_auth_XRestKeyMap_idl__
+#define __com_sun_star_auth_XRestKeyMap_idl__
+
+#include <com/sun/star/container/XStringKeyMap.idl>
+
+module com { module sun { module star { module auth {
+
+interface XRestKeyMap: com::sun::star::container::XStringKeyMap
+{
+
+    string getType([in] string Key);
+    sequence<string> getKeys();
+    void setValue([in] string Key,
+                 [in] any Value);
+    any getDefaultValue([in] string Key,
+                        [in] any Default);
+    void fromJson([in] string JsonStr);
+    void fromJsonKey([in] string Key,
+                     [in] string JsonStr);
+    string toJson();
+    string toJsonKey([in] string Key);
+
+};
+
+}; }; }; };
+
+#endif

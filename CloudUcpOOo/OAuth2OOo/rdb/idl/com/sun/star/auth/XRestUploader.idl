@@ -1,0 +1,20 @@
+#ifndef __com_sun_star_auth_XRestUploader_idl__
+#define __com_sun_star_auth_XRestUploader_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/auth/XRestKeyMap.idl>
+#include <com/sun/star/auth/RestRequestParameter.idl>
+
+module com { module sun { module star { module auth {
+
+interface XRestUploader: com::sun::star::uno::XInterface
+{
+
+    boolean start([in] ::com::sun::star::auth::XRestKeyMap Item,
+                  [in] ::com::sun::star::auth::RestRequestParameter Parameter);
+
+};
+
+}; }; }; };
+
+#endif

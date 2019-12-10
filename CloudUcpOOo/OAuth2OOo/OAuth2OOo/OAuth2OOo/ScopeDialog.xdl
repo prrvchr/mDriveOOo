@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="ScopeDialog" dlg:left="88" dlg:top="10" dlg:width="225" dlg:height="137" dlg:help-text="&amp;ScopeDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;ScopeDialog.Title">
+ <dlg:styles>
+  <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
+ </dlg:styles>
+ <dlg:bulletinboard>
+  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="0" dlg:left="5" dlg:top="5" dlg:width="215" dlg:height="107" dlg:help-text="&amp;ScopeDialog.FrameControl1.HelpText">
+   <dlg:title dlg:value="&amp;ScopeDialog.FrameControl1.Label"/>
+  </dlg:titledbox>
+  <dlg:menulist dlg:id="ListBox1" dlg:tab-index="1" dlg:left="12" dlg:top="17" dlg:width="200" dlg:height="65" dlg:tag="Scopes" dlg:help-text="&amp;ScopeDialog.ListBox1.HelpText">
+   <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:Change" script:language="UNO"/>
+  </dlg:menulist>
+  <dlg:textfield dlg:id="TextField1" dlg:tab-index="2" dlg:left="12" dlg:top="90" dlg:width="120" dlg:height="15" dlg:tag="Scope" dlg:help-text="&amp;ScopeDialog.TextField1.HelpText" dlg:value="&amp;ScopeDialog.TextField1.Text">
+   <script:event script:event-name="on-textchange" script:macro-name="vnd.sun.star.UNO:Change" script:language="UNO"/>
+  </dlg:textfield>
+  <dlg:button dlg:id="CommandButton1" dlg:tab-index="3" dlg:disabled="true" dlg:left="138" dlg:top="90" dlg:width="35" dlg:height="15" dlg:tag="Scope" dlg:help-text="&amp;ScopeDialog.CommandButton1.HelpText" dlg:value="&amp;ScopeDialog.CommandButton1.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Add" script:language="UNO"/>
+  </dlg:button>
+  <dlg:button dlg:id="CommandButton2" dlg:tab-index="4" dlg:disabled="true" dlg:left="178" dlg:top="90" dlg:width="35" dlg:height="15" dlg:tag="Scope" dlg:help-text="&amp;ScopeDialog.CommandButton2.HelpText" dlg:value="&amp;ScopeDialog.CommandButton2.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Remove" script:language="UNO"/>
+  </dlg:button>
+  <dlg:button dlg:id="CommandButton3" dlg:tab-index="5" dlg:left="105" dlg:top="117" dlg:width="55" dlg:height="15" dlg:help-text="&amp;ScopeDialog.Cancel.HelpText" dlg:value="&amp;ScopeDialog.Cancel.Label" dlg:button-type="cancel"/>
+  <dlg:button dlg:id="CommandButton4" dlg:tab-index="6" dlg:left="165" dlg:top="117" dlg:width="55" dlg:height="15" dlg:help-text="&amp;ScopeDialog.Ok.HelpText" dlg:default="true" dlg:value="&amp;ScopeDialog.Ok.Label" dlg:button-type="ok"/>
+ </dlg:bulletinboard>
+</dlg:window>

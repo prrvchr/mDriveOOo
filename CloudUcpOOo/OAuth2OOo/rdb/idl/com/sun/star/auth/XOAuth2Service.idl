@@ -1,0 +1,62 @@
+#ifndef __com_sun_star_auth_XOAuth2Service_idl__
+#define __com_sun_star_auth_XOAuth2Service_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/auth/RestRequestParameter.idl>
+#include <com/sun/star/auth/XRestKeyMap.idl>
+#include <com/sun/star/auth/XRestEnumeration.idl>
+#include <com/sun/star/beans/Optional.idl>
+#include <com/sun/star/io/XInputStream.idl>
+#include <com/sun/star/io/XOutputStream.idl>
+#include <com/sun/star/container/XEnumeration.idl>
+#include <com/sun/star/sdbc/XConnection.idl>
+#include <com/sun/star/logging/XLogger.idl>
+
+module com { module sun { module star { module auth {
+
+interface XOAuth2Service: com::sun::star::uno::XInterface
+{
+
+    any getWarnings();
+    void clearWarnings();
+
+    boolean isOnLine();
+    boolean isOffLine([in] string Host);
+
+    boolean initializeSession([in] string ResourceUrl,
+                              [in] string UserName);
+
+    boolean initializeUrl([in] string ResourceUrl);
+    boolean initializeUser([in] string UserName);
+    boolean getAuthorization([in] string ResourceUrl,
+                             [in] string UserName,
+                             [in] boolean AutoClose);
+    ::com::sun::star::auth::XRestKeyMap getKeyMap();
+    short getSessionMode([in] string Host);
+    string getToken([in] string Format);
+    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> execute([in] RestRequestParameter Parameter);
+    ::com::sun::star::auth::XRestEnumeration getEnumerator([in] RestRequestParameter Parameter);
+    ::com::sun::star::auth::XRestEnumeration getEnumeration([in] RestRequestParameter Parameter,
+                                                            [in] ::com::sun::star::uno::XInterface Parser);
+    ::com::sun::star::io::XInputStream getInputStream([in] RestRequestParameter Parameter,
+                                                      [in] long Chunk,
+                                                      [in] long Buffer);
+    ::com::sun::star::uno::XInterface getUploader([in] ::com::sun::star::uno::XInterface DataSource);
+
+    [attribute, readonly] ::com::sun::star::uno::XInterface Setting;
+    [attribute, readonly] ::com::sun::star::uno::XInterface Session;
+    [attribute, readonly] string ResourceUrl;
+    [attribute, readonly] string ProviderName;
+    [attribute, readonly] string RequiredScopes;
+    [attribute, readonly] string UserName;
+    [attribute, readonly] boolean IsAuthorized;
+    [attribute, readonly] boolean HasExpired;
+    [attribute, readonly] any Timeout;
+    [attribute] string Error;
+
+};
+
+
+}; }; }; };
+
+#endif

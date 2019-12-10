@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="PageWizard4" dlg:left="85" dlg:top="0" dlg:width="285" dlg:height="180" dlg:help-text="&amp;PageWizard4.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;PageWizard4.Title" dlg:withtitlebar="false">
+ <dlg:styles>
+  <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
+ </dlg:styles>
+ <dlg:bulletinboard>
+  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="0" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="45" dlg:help-text="&amp;PageWizard4.FrameControl1.HelpText">
+   <dlg:title dlg:value="&amp;PageWizard4.FrameControl1.Label"/>
+  </dlg:titledbox>
+  <dlg:textfield dlg:id="TextField1" dlg:tab-index="1" dlg:left="20" dlg:top="30" dlg:width="245" dlg:height="15" dlg:tag="AuthorizationCode" dlg:help-text="&amp;PageWizard4.TextField1.HelpText" dlg:value="&amp;PageWizard4.TextField1.Text">
+   <script:event script:event-name="on-textchange" script:macro-name="vnd.sun.star.UNO:Changed" script:language="UNO"/>
+  </dlg:textfield>
+ </dlg:bulletinboard>
+</dlg:window>

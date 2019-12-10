@@ -1,0 +1,17 @@
+#ifndef __com_sun_star_auth_XOAuth2Request_idl__
+#define __com_sun_star_auth_XOAuth2Request_idl__
+
+#include <com/sun/star/task/XInteractionRequest.idl>
+
+module com { module sun { module star { module auth {
+
+interface XOAuth2Request: com::sun::star::task::XInteractionRequest
+{
+
+    string getProviderName();
+
+};
+
+}; }; }; };
+
+#endif

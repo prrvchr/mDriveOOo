@@ -1,0 +1,20 @@
+#ifndef __com_sun_star_ucb_RestContentProvider_idl__
+#define __com_sun_star_ucb_RestContentProvider_idl__
+
+#include <com/sun/star/lang/XServiceInfo.idl>
+#include <com/sun/star/ucb/XRestContentProvider.idl>
+
+module com { module sun { module star { module ucb {
+
+service RestContentProvider
+{
+
+    interface ::com::sun::star::lang::XServiceInfo;
+    interface ::com::sun::star::ucb::XRestContentProvider;
+
+};
+
+
+}; }; }; };
+
+#endif
