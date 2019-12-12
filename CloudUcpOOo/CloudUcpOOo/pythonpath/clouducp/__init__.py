@@ -40,5 +40,7 @@ try:
     from .dbtools import getKeyMapFromResult
     from .dbtools import getSequenceFromResult
 
+    from .dbqueries import getSqlQuery
+
 except Exception as e:
     print("clouducp.__init__() ERROR: %s - %s" % (e, traceback.print_exc()))
