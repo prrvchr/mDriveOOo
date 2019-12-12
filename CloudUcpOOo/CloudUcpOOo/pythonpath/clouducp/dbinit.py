@@ -5,7 +5,7 @@
 from oauth2 import getResourceLocation
 from oauth2 import getSimpleFile
 
-from .configuration import g_path
+from .dbconfig import g_path
 from .dbqueries import getSqlQuery
 from .dbtools import getTablesAndStatements
 from .dbtools import registerDataSource

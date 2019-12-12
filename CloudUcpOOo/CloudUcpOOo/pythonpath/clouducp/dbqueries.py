@@ -1,7 +1,7 @@
 #!
 # -*- coding: utf_8 -*-
 
-from .configuration import g_csv
+from .dbconfig import g_csv
 
 
 def getSqlQuery(name, format=None):
