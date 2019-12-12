@@ -51,6 +51,7 @@ from .unotools import getStringResource
 from .unotools import generateUuid
 from .unotools import getNamedValue
 from .unotools import getNamedValueSet
+from .unotools import getSimpleFile
 from .unotools import getInteractionHandler
 from .unotools import getDialog
 from .unotools import parseDateTime
@@ -58,17 +59,6 @@ from .unotools import parseDateTime
 from .unocore import PropertyContainer
 
 from .dialoghandler import DialogHandler
-
-from .dbtools import getTablesAndStatements
-from .dbtools import registerDataSource
-from .dbtools import executeQueries
-from .dbtools import getDataSourceLocation
-from .dbtools import getDataSourceInfo
-from .dbtools import getDataSourceJavaInfo
-from .dbtools import getDataSourceConnection
-from .dbtools import getKeyMapFromResult
-from .dbtools import getSequenceFromResult
-from .dbtools import registerDataBase
 
 from .logger import getLogger
 from .logger import getLoggerSetting

@@ -24,8 +24,8 @@ from oauth2 import getProperty
 from oauth2 import getResourceLocation
 from oauth2 import parseDateTime
 
-from .content import Content
 from .contenttools import getUri
+from .content import Content
 
 import traceback
 

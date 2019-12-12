@@ -9,6 +9,7 @@ try:
     from .user import User
     from .identifier import Identifier
     from .providerbase import ProviderBase
+    from .content import Content
 
     from .contentcore import executeContentCommand
     from .contentcore import getPropertiesValues
@@ -38,7 +39,6 @@ try:
     from .dbtools import getDataSourceConnection
     from .dbtools import getKeyMapFromResult
     from .dbtools import getSequenceFromResult
-    from .dbtools import registerDataBase
 
 except Exception as e:
     print("clouducp.__init__() ERROR: %s - %s" % (e, traceback.print_exc()))
