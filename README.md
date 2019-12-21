@@ -24,13 +24,13 @@ Using a version of Hsqldb higher than 1.8 requires that LibreOffice users must h
 (check your Installed Application under Windows or your Packet Manager under Linux)  
 OpenOffice doesn't seem to need this workaround.
 
-#### Configure LibreOffice Open / Save dialogs:
+### Configure LibreOffice Open / Save dialogs:
 
-##### For LibreOffice V5.x and before:
+#### For LibreOffice V5.x and before:
 
 In menu Tools - Options - LibreOffice - General: check use LibreOffice dialogs.
 
-##### For LibreOffice V6.x and above:
+#### For LibreOffice V6.x and above:
 
 In menu Tools - Options - LibreOffice - Advanced - Open Expert Configuration
 
@@ -38,7 +38,7 @@ Search for: UseSystemFileDialog (Found under: org.openoffice.Office.Common > Mis
 
 Edit or change "true" to "false" (set it to "false")
 
-#### Open your OneDrive:
+### Open your OneDrive:
 
 In File - Open - File name enter: vnd.microsoft-apps://your_account/ or vnd.microsoft-apps:///
 
