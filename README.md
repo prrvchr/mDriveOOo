@@ -18,6 +18,12 @@ Restart LibreOffice / OpenOffice after installation.
 
 Restart LibreOffice / OpenOffice after installation.
 
+### Requirement:
+
+Using a version of Hsqldb higher than 1.8 requires that LibreOffice users must have no Hsqldb driver installed with LibreOffice  
+(check your Installed Application under Windows or your Packet Manager under Linux)  
+OpenOffice doesn't seem to need this workaround.
+
 #### Configure LibreOffice Open / Save dialogs:
 
 ##### For LibreOffice V5.x and before:
