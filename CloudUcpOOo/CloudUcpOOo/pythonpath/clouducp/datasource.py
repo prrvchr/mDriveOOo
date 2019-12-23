@@ -26,7 +26,7 @@ from oauth2 import getResourceLocation
 from .user import User
 from .dbinit import getDataSourceUrl
 from .dbqueries import getSqlQuery
-from .dbtools import getDataSourceConnection
+from .dbtools import getDataBaseConnection
 from .dbtools import getKeyMapFromResult
 from .dbtools import getSequenceFromResult
 
@@ -47,19 +47,20 @@ class DataSource(unohelper.Base,
         service = '%s.Provider' % plugin
         self.Provider = self.ctx.ServiceManager.createInstanceWithContext(service, self.ctx)
         dbcontext = self.ctx.ServiceManager.createInstance('com.sun.star.sdb.DatabaseContext')
-        url = getDataSourceUrl(self.ctx, dbcontext, scheme, plugin, True)
-        connection, error = getDataSourceConnection(dbcontext, url)
-        if error is not None:
-            msg += " ... Error: %s - %s" % (error, traceback.print_exc())
-            msg += "Could not connect to DataSource at URL: %s" % url
-            self._Error = msg
-        else:
-            # Piggyback DataBase Connections (easy and clean ShutDown ;-) )
-            self._Statement = connection.createStatement()
-            folder, link = self._getContentType()
-            self.Provider.initialize(scheme, plugin, folder, link)
-            level = INFO
-            msg += "Done"
+        url, error = getDataSourceUrl(self.ctx, dbcontext, scheme, plugin, True)
+        if error is None:
+            connection, error = getDataBaseConnection(dbcontext, url)
+            if error is not None:
+                msg += " ... Error: %s - %s" % (error, traceback.print_exc())
+                msg += "Could not connect to DataSource at URL: %s" % url
+                self._Error = msg
+            else:
+                # Piggyback DataBase Connections (easy and clean ShutDown ;-) )
+                self._Statement = connection.createStatement()
+                folder, link = self._getContentType()
+                self.Provider.initialize(scheme, plugin, folder, link)
+                level = INFO
+                msg += "Done"
         logMessage(self.ctx, level, msg, 'DataSource', '__init__()')
 
     @property

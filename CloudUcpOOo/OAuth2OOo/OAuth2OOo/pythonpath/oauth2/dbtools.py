@@ -23,17 +23,21 @@ from .dbconfig import g_jar
 from .dbconfig import g_class
 from .dbconfig import g_options
 from .dbconfig import g_shutdown
+from .dbconfig import g_version
 
 import traceback
 
 
-def getDataSourceConnection(dbcontext, url, name='', password=''):
-    connection = None
-    error = None
+def getDataBaseConnection(dbcontext, url, name='', password=''):
+    datasource = dbcontext.getByName(url)
+    connection, error = getDataSourceConnection(datasource, name, password)
+    print("dbtools.getDataSourceConnection()")
+    return connection, error
+
+def getDataSourceConnection(datasource, name='', password=''):
+    connection, error = None, None
     try:
-        datasource = dbcontext.getByName(url)
         connection = datasource.getConnection(name, password)
-        getDataBaseVersion(connection)
     except SQLException as e:
         error = e
     print("dbtools.getDataSourceConnection()")
@@ -44,13 +48,10 @@ def getDataSourceCall(connection, name, format=None):
     call = connection.prepareCall(query)
     return call
 
-def getDataBaseVersion(connection):
-    call = connection.prepareCall(getSqlQuery('getVerion'))
-    result = call.executeQuery()
-    while result.next():
-        data = getKeyMapFromResult(result, KeyMap())
-    for key in data.getKeys():
-        print("dbtools.getDataBaseVersion(): %s - %s" % (key, data.getValue(key)))
+def checkDataBase(connection):
+    version = connection.getMetaData().getDriverVersion()
+    print("dbtools.checkDataBase() %s - %s - %s" % (version, type(version), g_version))
+    return None
 
 def executeQueries(statement, queries):
     for query in queries:

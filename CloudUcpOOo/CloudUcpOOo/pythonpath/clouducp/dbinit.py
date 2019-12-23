@@ -13,36 +13,46 @@ from .dbtools import executeQueries
 from .dbtools import getDataSourceLocation
 from .dbtools import getDataSourceInfo
 from .dbtools import getDataSourceJavaInfo
+from .dbtools import getDataSourceConnection
+from .dbtools import checkDataBase
 
 import traceback
 
 
 def getDataSourceUrl(ctx, dbctx, dbname, plugin, register):
+    error = None
     location = getResourceLocation(ctx, plugin, g_path)
     url = '%s/%s.odb' % (location, dbname)
     if not getSimpleFile(ctx).exists(url):
-        _createDataSource(ctx, dbctx, url, location, dbname)
+        error = _createDataSource(ctx, dbctx, url, location, dbname)
         if register:
             registerDataSource(dbctx, dbname, url)
-    return url
+    return url, error
 
 def _createDataSource(ctx, dbcontext, url, location, dbname):
     datasource = dbcontext.createInstance()
     datasource.URL = getDataSourceLocation(location, dbname, False)
     datasource.Info = getDataSourceInfo() + getDataSourceJavaInfo(location)
     datasource.DatabaseDocument.storeAsURL(url, ())
-    _createDataBase(datasource)
+    error = _createDataBase(datasource)
     datasource.DatabaseDocument.store()
+    return error
 
 def _createDataBase(datasource):
-    connection = datasource.getConnection('', '')
-    statement = connection.createStatement()
-    _createStaticTable(statement, _getStaticTables())
-    tables, statements = getTablesAndStatements(statement)
-    _executeQueries(statement, tables)
-    executeQueries(statement, _getViews())
+    connection, error = getDataSourceConnection(datasource)
+    if error is not None:
+        return error
+    error = checkDataBase(connection)
+    if error is None:
+        print("dbinit._createDataBase()")
+        statement = connection.createStatement()
+        _createStaticTable(statement, _getStaticTables())
+        tables, statements = getTablesAndStatements(statement)
+        _executeQueries(statement, tables)
+        executeQueries(statement, _getViews())
     connection.close()
     connection.dispose()
+    return error
 
 def _createStaticTable(statement, tables):
     for table in tables:

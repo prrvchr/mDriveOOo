@@ -12,8 +12,9 @@ def getSqlQuery(name, format=None):
         c2 = '"Name" VARCHAR(100) NOT NULL'
         c3 = '"Identity" INTEGER DEFAULT NULL'
         c4 = '"View" BOOLEAN DEFAULT TRUE'
+        c5 = '"Versioned" BOOLEAN DEFAULT FALSE'
         k1 = 'CONSTRAINT "UniqueTablesName" UNIQUE("Name")'
-        c = (c1, c2, c3, c4, k1)
+        c = (c1, c2, c3, c4, c5, k1)
         query = 'CREATE TEXT TABLE "Tables"(%s)' % ','.join(c)
     elif name == 'createTableColumns':
         c1 = '"Column" INTEGER NOT NULL PRIMARY KEY'
@@ -244,7 +245,8 @@ def getSqlQuery(name, format=None):
         s13 = '"T2"."Name" AS "ForeignTable"'
         s14 = '"C2"."Name" AS "ForeignColumn"'
         s15 = '"T"."View"'
-        s = (s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15)
+        s16 = '"T"."Versioned"'
+        s = (s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16)
         f1 = '"Tables" AS "T"'
         f2 = 'JOIN "TableColumn" AS "TC" ON "T"."Table"="TC"."Table"'
         f3 = 'JOIN "Columns" AS "C" ON "TC"."Column"="C"."Column"'

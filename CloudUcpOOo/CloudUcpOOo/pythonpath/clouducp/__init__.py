@@ -36,7 +36,7 @@ try:
     from .dbtools import getDataSourceLocation
     from .dbtools import getDataSourceInfo
     from .dbtools import getDataSourceJavaInfo
-    from .dbtools import getDataSourceConnection
+    from .dbtools import getDataBaseConnection
     from .dbtools import getKeyMapFromResult
     from .dbtools import getSequenceFromResult
 

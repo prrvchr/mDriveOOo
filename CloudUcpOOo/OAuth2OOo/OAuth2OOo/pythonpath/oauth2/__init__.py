@@ -47,6 +47,7 @@ from .unotools import getResourceLocation
 from .unotools import getCurrentLocale
 from .unotools import getFileSequence
 from .unotools import getConfiguration
+from .unotools import getSimpleFile
 from .unotools import getStringResource
 from .unotools import generateUuid
 from .unotools import getNamedValue
