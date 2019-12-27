@@ -17,38 +17,39 @@ from com.sun.star.ui.dialogs.ExecutableDialogResults import CANCEL
 
 from com.sun.star.uno import Exception as UnoException
 
-from oauth2 import OAuth2OOo
-from oauth2 import NoOAuth2
+from unolib import OAuth2OOo
+from unolib import NoOAuth2
+from unolib import KeyMap
+from unolib import getStringResource
+from unolib import createService
+from unolib import getConfiguration
+from unolib import getDialog
+
 from oauth2 import Enumeration
 from oauth2 import Enumerator
 from oauth2 import InputStream
 from oauth2 import Uploader
-from oauth2 import KeyMap
 from oauth2 import DialogHandler
 from oauth2 import getSessionMode
 from oauth2 import execute
-from oauth2 import logMessage
-from oauth2 import getDialog
-from oauth2 import getStringResource
-
 from oauth2 import OAuth2Setting
 from oauth2 import WizardController
-from oauth2 import createService
-from oauth2 import getConfiguration
 from oauth2 import getRefreshToken
+from oauth2 import logMessage
 from oauth2 import g_identifier
+from oauth2 import g_oauth2
 from oauth2 import g_wizard_paths
 from oauth2 import g_refresh_overlap
+from oauth2 import requests
 
 import sys
 import time
-from oauth2 import requests
 
 import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.OAuth2Service' % g_identifier
+g_ImplementationName = g_oauth2
 
 
 class OAuth2Service(unohelper.Base,

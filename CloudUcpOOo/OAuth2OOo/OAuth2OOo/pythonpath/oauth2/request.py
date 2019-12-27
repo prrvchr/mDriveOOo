@@ -27,8 +27,9 @@ from com.sun.star.auth.RestRequestTokenType import TOKEN_QUERY
 from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
 from com.sun.star.auth.RestRequestTokenType import TOKEN_SYNC
 
-from .oauth2lib import NoOAuth2
-from .keymap import KeyMap
+from unolib import KeyMap
+from unolib import NoOAuth2
+
 from .logger import logMessage
 from . import requests
 

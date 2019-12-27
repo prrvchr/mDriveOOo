@@ -21,7 +21,6 @@ try:
     from clouducp import User
     from clouducp import Identifier
     from clouducp import logMessage
-    from clouducp import isLoggerEnabled
     from clouducp import g_plugin
 
 except Exception as e:

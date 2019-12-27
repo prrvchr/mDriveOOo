@@ -9,11 +9,11 @@ from com.sun.star.sdbc import SQLWarning
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from oauth2 import KeyMap
-from oauth2 import getPropertyValue
-from oauth2 import getPropertyValueSet
-from oauth2 import getResourceLocation
-from oauth2 import getSimpleFile
+from unolib import KeyMap
+from unolib import getPropertyValue
+from unolib import getPropertyValueSet
+from unolib import getResourceLocation
+from unolib import getSimpleFile
 
 from .dbqueries import getSqlQuery
 
@@ -48,10 +48,20 @@ def getDataSourceCall(connection, name, format=None):
     call = connection.prepareCall(query)
     return call
 
+def createDataSource(dbcontext, location, dbname, shutdown=False):
+    datasource = dbcontext.createInstance()
+    datasource.URL = getDataSourceLocation(location, dbname, shutdown)
+    datasource.Info = getDataSourceInfo() + getDataSourceJavaInfo(location)
+    return datasource
+
 def checkDataBase(connection):
+    error = None
     version = connection.getMetaData().getDriverVersion()
-    print("dbtools.checkDataBase() %s - %s - %s" % (version, type(version), g_version))
-    return None
+    if version != g_version:
+        error = SQLException()
+        error.Message = "DataBase ERROR: hsqldb driver %s is not the correct version... " % g_jar
+        error.Message += "Requiered version: %s - loaded version: %s" % (g_version, version)
+    return error
 
 def executeQueries(statement, queries):
     for query in queries:
@@ -197,6 +207,7 @@ def getTablesAndStatements(statement):
     call = getDataSourceCall(statement.getConnection(), 'getTables')
     for table in getSequenceFromResult(statement.executeQuery(getSqlQuery('getTableName'))):
         statement = False
+        versioned = False
         columns = []
         primary = []
         unique = []
@@ -206,6 +217,7 @@ def getTablesAndStatements(statement):
         while result.next():
             data = getKeyMapFromResult(result, KeyMap())
             statement = data.getValue('View')
+            versioned = data.getValue('Versioned')
             column = data.getValue('Column')
             definition = '"%s"' % column
             definition += ' %s' % data.getValue('Type')
@@ -231,8 +243,12 @@ def getTablesAndStatements(statement):
             columns.append(getSqlQuery('getUniqueConstraint', format))
         for format in constraint:
             columns.append(getSqlQuery('getForeignConstraint', format))
+        if versioned:
+            columns.append(getSqlQuery('getPeriodColumns'))
         format = (table, ','.join(columns))
         query = getSqlQuery('createTable', format)
+        if versioned:
+            query += getSqlQuery('getSystemVersioning')
         print("dbtool._createDynamicTable(): %s" % query)
         tables.append(query)
         if statement:
@@ -251,3 +267,16 @@ def getTablesAndStatements(statement):
             statements['update%s' % table] = update
     call.close()
     return tables, statements
+
+def createStaticTable(statement, tables, readonly=False):
+    for table in tables:
+        query = getSqlQuery('createTable' + table)
+        statement.executeQuery(query)
+    for table in tables:
+        statement.executeQuery(getSqlQuery('setTableSource', table))
+        if readonly:
+            statement.executeQuery(getSqlQuery('setTableReadOnly', table))
+
+def executeSqlQueries(statement, queries):
+    for query in queries:
+        statement.executeQuery(query)

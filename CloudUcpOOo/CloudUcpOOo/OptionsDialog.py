@@ -10,29 +10,26 @@ from com.sun.star.awt import XDialogEventHandler
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from unolib import createService
 from unolib import getFileSequence
 from unolib import getStringResource
-from unolib import getNamedValueSet
-from unolib import getConfiguration
-from unolib import getInteractionHandler
-from unolib import InteractionRequest
-from unolib import getUserNameFromHandler
+from unolib import getResourceLocation
 from unolib import getDialog
 
-from oauth2 import getLoggerUrl
-from oauth2 import getLoggerSetting
-from oauth2 import setLoggerSetting
-from oauth2 import clearLogger
-from oauth2 import logMessage
-from oauth2 import g_identifier
-from oauth2 import g_oauth2
+from clouducp import getLoggerUrl
+from clouducp import getLoggerSetting
+from clouducp import setLoggerSetting
+from clouducp import clearLogger
+from clouducp import logMessage
+
+from clouducp import g_scheme
+from clouducp import g_extension
+from clouducp import g_plugin
 
 import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.OptionsDialog' % g_identifier
+g_ImplementationName = '%s.OptionsDialog' % g_plugin
 
 
 class OptionsDialog(unohelper.Base,
@@ -42,12 +39,14 @@ class OptionsDialog(unohelper.Base,
     def __init__(self, ctx):
         try:
             self.ctx = ctx
-            self.stringResource = getStringResource(self.ctx, g_identifier, 'OAuth2OOo', 'OptionsDialog')
-            self.service = createService(self.ctx, g_oauth2)
-            logMessage(self.ctx, INFO, "Loading ... Done", 'OptionsDialog', '__init__()')
+            self.stringResource = getStringResource(self.ctx, g_plugin, g_extension, 'OptionsDialog')
+            print("PyOptionsDialog.__init__() 1")
         except Exception as e:
-            msg = "Error: %s - %s" % (e, traceback.print_exc())
-            logMessage(self.ctx, SEVERE, msg, 'OptionsDialog', '__init__()')
+            print("PyOptionsDialog.__init__().Error: %s - %s" % (e, traceback.print_exc()))
+
+    def __del__(self):
+        #self.Connection.close()
+        print("PyOptionsDialog.__del__()***********************")
 
     # XContainerWindowEventHandler, XDialogEventHandler
     def callHandlerMethod(self, dialog, event, method):
@@ -62,23 +61,6 @@ class OptionsDialog(unohelper.Base,
             elif event == 'initialize':
                 self._loadSetting(dialog)
                 handled = True
-        elif method == 'TextChanged':
-            self._doTextChanged(dialog, event.Source)
-            handled = True
-        elif method == 'SelectionChanged':
-            self._doSelectionChanged(dialog, event.Source)
-            handled = True
-        elif method == 'Connect':
-            self._doConnect(dialog)
-            handled = True
-        elif method == 'Remove':
-            self._doRemove(dialog)
-            handled = True
-        elif method == 'Reset':
-            self._doReset(dialog)
-            handled = True
-        elif method == 'AutoClose':
-            handled = True
         elif method == 'ToggleLogger':
             enabled = event.Source.State == 1
             self._toggleLogger(dialog, enabled)
@@ -95,60 +77,28 @@ class OptionsDialog(unohelper.Base,
         elif method == 'ClearLog':
             self._clearLog(dialog)
             handled = True
-
         return handled
     def getSupportedMethodNames(self):
-        return ('external_event', 'TextChanged', 'SelectionChanged', 'Connect', 'Remove', 'Reset',
-                'AutoClose', 'ToggleLogger', 'EnableViewer', 'DisableViewer', 'ViewLog', 'ClearLog')
+        return ('external_event', 'ToggleLogger', 'EnableViewer', 'DisableViewer',
+                'ViewLog', 'ClearLog')
 
-    def _doTextChanged(self, dialog, control):
-        enabled = control.Text != ''
-        dialog.getControl('CommandButton2').Model.Enabled = True
-
-    def _doSelectionChanged(self, dialog, control):
-        enabled = control.SelectedText != ''
-        dialog.getControl('CommandButton2').Model.Enabled = enabled
-
-    def _doConnect(self, dialog):
+    def _doViewDataBase(self, dialog):
         try:
-            user = ''
-            print("OptionDialog._doConnect() 1")
-            url = dialog.getControl('ComboBox2').SelectedText
-            if url != '':
-                message = "Authentication"
-                if self.service.initializeUrl(url):
-                    print("OptionDialog._doConnect() 2")
-                    provider = self.service.ProviderName
-                    user = getUserNameFromHandler(self.ctx, self, provider, message)
-            autoclose = bool(dialog.getControl('CheckBox2').State)
-            print("OptionDialog._doConnect() 3 %s - %s - %s" % (user, url, autoclose))
-            enabled = self.service.getAuthorization(url, user, autoclose)
-            print("OptionDialog._doConnect() 4")
+            path = getResourceLocation(ctx, g_plugin, 'hsqldb')
+            url = '%s/%s.odb' % (path, g_scheme)
+            desktop = self.ctx.ServiceManager.createInstance('com.sun.star.frame.Desktop')
+            desktop.loadComponentFromURL(url, '_default', 0, ())
+            #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
+            #mri.inspect(connection)
+            print("PyOptionsDialog._doConnect() 2")
         except Exception as e:
-            msg = "Error: %s - %s" % (e, traceback.print_exc())
-            logMessage(self.ctx, SEVERE, msg, "OptionsDialog", "_doConnect()")
+            print("PyOptionsDialog._doConnect().Error: %s - %s" % (e, traceback.print_exc()))
 
     def _loadSetting(self, dialog):
-        try:
-            dialog.getControl('NumericField1').setValue(self.service.Setting.ConnectTimeout)
-            dialog.getControl('NumericField2').setValue(self.service.Setting.ReadTimeout)
-            dialog.getControl('NumericField3').setValue(self.service.Setting.HandlerTimeout)
-            dialog.getControl('ComboBox2').Model.StringItemList = self.service.Setting.UrlList
-            self._loadLoggerSetting(dialog)
-        except Exception as e:
-            msg = "Error: %s - %s" % (e, traceback.print_exc())
-            logMessage(self.ctx, SEVERE, msg, "OptionsDialog", "_loadSetting()")
+        self._loadLoggerSetting(dialog)
 
     def _saveSetting(self, dialog):
-        try:
-            self._saveLoggerSetting(dialog)
-            self.service.Setting.ConnectTimeout = int(dialog.getControl('NumericField1').getValue())
-            self.service.Setting.ReadTimeout = int(dialog.getControl('NumericField2').getValue())
-            self.service.Setting.HandlerTimeout = int(dialog.getControl('NumericField3').getValue())
-            self.service.Setting.commit()
-        except Exception as e:
-            msg = "Error: %s - %s" % (e, traceback.print_exc())
-            logMessage(self.ctx, SEVERE, msg, "OptionsDialog", "_saveSetting()")
+        self._saveLoggerSetting(dialog)
 
     def _toggleLogger(self, dialog, enabled):
         dialog.getControl('Label1').Model.Enabled = enabled
@@ -162,7 +112,7 @@ class OptionsDialog(unohelper.Base,
         dialog.getControl('CommandButton1').Model.Enabled = enabled
 
     def _viewLog(self, window):
-        dialog = getDialog(self.ctx, window.Peer, self, 'OAuth2OOo', 'LogDialog')
+        dialog = getDialog(self.ctx, window.Peer, self, g_extension, 'LogDialog')
         url = getLoggerUrl(self.ctx)
         dialog.Title = url
         self._setDialogText(dialog, url)
@@ -219,6 +169,6 @@ class OptionsDialog(unohelper.Base,
         return g_ImplementationHelper.getSupportedServiceNames(g_ImplementationName)
 
 
-g_ImplementationHelper.addImplementation(OptionsDialog,
-                                         g_ImplementationName,
-                                        (g_ImplementationName,))
+g_ImplementationHelper.addImplementation(OptionsDialog,                             # UNO object class
+                                         g_ImplementationName,                      # Implementation name
+                                        (g_ImplementationName,))                    # List of implemented services

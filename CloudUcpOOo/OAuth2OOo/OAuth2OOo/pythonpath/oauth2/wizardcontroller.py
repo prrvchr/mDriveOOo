@@ -12,19 +12,18 @@ from com.sun.star.ui.dialogs.ExecutableDialogResults import CANCEL
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .unolib import PropertySet
+from unolib import PropertySet
+from unolib import createService
+from unolib import generateUuid
+from unolib import getCurrentLocale
+from unolib import getProperty
+from unolib import getStringResource
+from unolib import getContainerWindow
+from unolib import getDialogUrl
 
 from .wizardhandler import WizardHandler
 from .wizardserver import WizardServer
 from .wizardpage import WizardPage
-
-from .unotools import createService
-from .unotools import generateUuid
-from .unotools import getCurrentLocale
-from .unotools import getProperty
-from .unotools import getStringResource
-from .unotools import getContainerWindow
-from .unotools import getDialogUrl
 
 from .logger import logMessage
 
@@ -32,9 +31,10 @@ from .oauth2tools import getActivePath
 from .oauth2tools import getTokenParameters
 from .oauth2tools import getResponseFromRequest
 from .oauth2tools import registerTokenFromResponse
-from .oauth2tools import g_identifier
-from .oauth2tools import g_wizard_paths
-from .oauth2tools import g_advance_to
+
+from .configuration import g_identifier
+from .configuration import g_wizard_paths
+from .configuration import g_advance_to
 
 import traceback
 

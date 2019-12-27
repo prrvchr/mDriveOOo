@@ -9,9 +9,9 @@ from com.sun.star.ucb import InteractiveAugmentedIOException
 from com.sun.star.ucb.ConnectionMode import ONLINE
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 
-from oauth2 import getProperty
-from oauth2 import getPropertyValue
-from oauth2 import getNamedValueSet
+from unolib import getProperty
+from unolib import getPropertyValue
+from unolib import getNamedValueSet
 
 
 def propertyChange(source, name, oldvalue, newvalue):

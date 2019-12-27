@@ -8,23 +8,23 @@ from com.sun.star.ui.dialogs import XWizardPage
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .unolib import PropertySet
-
-from .unotools import createService
-from .unotools import getContainerWindow
-from .unotools import getProperty
-from .unotools import getStringResource
+from unolib import PropertySet
+from unolib import createService
+from unolib import getContainerWindow
+from unolib import getProperty
+from unolib import getStringResource
 
 from .logger import logMessage
 
-from .oauth2tools import g_identifier
-from .oauth2tools import g_wizard_paths
 from .oauth2tools import getActivePath
 from .oauth2tools import getAuthorizationStr
 from .oauth2tools import getAuthorizationUrl
 from .oauth2tools import checkUrl
 from .oauth2tools import openUrl
 from .oauth2tools import updatePageTokenUI
+
+from .configuration import g_identifier
+from .configuration import g_wizard_paths
 
 import traceback
 

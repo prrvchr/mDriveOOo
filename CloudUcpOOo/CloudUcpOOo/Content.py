@@ -31,10 +31,14 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb import XRestContent
 
+from unolib import PropertySetInfo
+from unolib import getSimpleFile
+from unolib import getProperty
+from unolib import getPropertyValueSet
+
 from clouducp import CommandInfo
 from clouducp import Row
 from clouducp import DynamicResultSet
-from clouducp import PropertySetInfo
 from clouducp import getPropertiesValues
 from clouducp import setPropertiesValues
 from clouducp import getCommandInfo
@@ -43,9 +47,6 @@ from clouducp import getUcb
 from clouducp import getUcp
 from clouducp import getUri
 from clouducp import getMimeType
-from clouducp import getSimpleFile
-from clouducp import getProperty
-from clouducp import getPropertyValueSet
 from clouducp import logMessage
 from clouducp import g_plugin
 

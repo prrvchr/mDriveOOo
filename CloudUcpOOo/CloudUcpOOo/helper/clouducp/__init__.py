@@ -42,5 +42,12 @@ try:
 
     from .dbqueries import getSqlQuery
 
+    from .logger import getLogger
+    from .logger import getLoggerSetting
+    from .logger import getLoggerUrl
+    from .logger import setLoggerSetting
+    from .logger import clearLogger
+    from .logger import logMessage
+
 except Exception as e:
     print("clouducp.__init__() ERROR: %s - %s" % (e, traceback.print_exc()))

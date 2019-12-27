@@ -8,10 +8,10 @@ import uno
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .unotools import getCurrentLocale
+from unolib import KeyMap
+from unolib import NoOAuth2
+from unolib import getCurrentLocale
 
-from .oauth2lib import NoOAuth2
-from .keymap import KeyMap
 from .requests.compat import urlencode
 
 import json
@@ -20,11 +20,6 @@ import hashlib
 import time
 
 import traceback
-
-g_advance_to = 0 # 0 to disable
-g_wizard_paths = ((1, 2, 3, 5), (1, 2, 4, 5), (1, 5))
-g_identifier = 'com.gmail.prrvchr.extensions.OAuth2OOo'
-g_refresh_overlap = 10 # must be positive, in second
 
 
 def getActivePath(configuration):
