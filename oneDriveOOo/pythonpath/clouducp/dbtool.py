@@ -1,1 +1,0 @@
-../../../CloudUcpOOo/CloudUcpOOo/pythonpath/clouducp/dbtools.py
