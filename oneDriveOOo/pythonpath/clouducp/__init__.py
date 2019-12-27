@@ -1,7 +1,6 @@
 #!
 # -*- coding: utf-8 -*-
 
-
 import traceback
 try:
 
@@ -43,7 +42,15 @@ try:
 
     from .dbqueries import getSqlQuery
 
+    from .logger import getLogger
+    from .logger import getLoggerSetting
+    from .logger import getLoggerUrl
+    from .logger import setLoggerSetting
+    from .logger import clearLogger
+    from .logger import logMessage
+
     from .configuration import g_scheme
+    from .configuration import g_extension
     from .configuration import g_plugin
     from .configuration import g_host
     from .configuration import g_url
