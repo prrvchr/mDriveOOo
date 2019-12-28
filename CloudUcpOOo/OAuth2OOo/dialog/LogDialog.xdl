@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="LogDialog" dlg:left="30" dlg:top="30" dlg:width="400" dlg:height="300" dlg:help-text="&amp;LogDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;LogDialog.Title">
+ <dlg:bulletinboard>
+  <dlg:textfield dlg:id="TextField1" dlg:tab-index="0" dlg:left="5" dlg:top="5" dlg:width="390" dlg:height="270" dlg:help-text="&amp;LogDialog.TextField1.HelpText" dlg:valign="top" dlg:hscroll="true" dlg:vscroll="true" dlg:multiline="true" dlg:readonly="true" dlg:value="&amp;LogDialog.TextField1.Text"/>
+  <dlg:button dlg:id="CommandButton1" dlg:tab-index="1" dlg:disabled="false" dlg:left="280" dlg:top="280" dlg:width="45" dlg:height="14" dlg:help-text="&amp;LogDialog.CommandButton1.HelpText" dlg:value="&amp;LogDialog.CommandButton1.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ClearLog" script:language="UNO"/>
+  </dlg:button>
+  <dlg:button dlg:id="CommandButton2" dlg:tab-index="2" dlg:left="350" dlg:top="280" dlg:width="45" dlg:height="14" dlg:help-text="&amp;LogDialog.CommandButton2.HelpText" dlg:default="true" dlg:value="&amp;LogDialog.CommandButton2.Label" dlg:button-type="ok"/>
+ </dlg:bulletinboard>
+</dlg:window>

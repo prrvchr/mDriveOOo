@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="OptionsDialog" dlg:left="0" dlg:top="0" dlg:width="260" dlg:height="225" dlg:help-text="&amp;OptionsDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;OptionsDialog.Title" dlg:withtitlebar="false">
+ <dlg:styles>
+  <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
+ </dlg:styles>
+ <dlg:bulletinboard>
+  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="0" dlg:left="5" dlg:top="0" dlg:width="250" dlg:height="35" dlg:help-text="&amp;OptionsDialog.FrameControl1.HelpText">
+   <dlg:title dlg:value="&amp;OptionsDialog.FrameControl1.Label"/>
+  </dlg:titledbox>
+  <dlg:checkbox dlg:id="CheckBox1" dlg:tab-index="1" dlg:left="10" dlg:top="12" dlg:width="50" dlg:height="15" dlg:tag="Console" dlg:help-text="&amp;OptionsDialog.CheckBox1.HelpText" dlg:value="&amp;OptionsDialog.CheckBox1.Label" dlg:valign="center" dlg:checked="false">
+   <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:ToggleLogger" script:language="UNO"/>
+  </dlg:checkbox>
+  <dlg:text dlg:id="Label1" dlg:tab-index="2" dlg:left="60" dlg:top="12" dlg:width="15" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label1.HelpText" dlg:value="&amp;OptionsDialog.Label1.Label" dlg:valign="center"/>
+  <dlg:combobox dlg:id="ComboBox1" dlg:tab-index="3" dlg:left="80" dlg:top="12" dlg:width="40" dlg:height="15" dlg:help-text="&amp;OptionsDialog.ComboBox1.HelpText" dlg:value="&amp;OptionsDialog.ComboBox1.Text" dlg:spin="true">
+   <dlg:menupopup>
+    <dlg:menuitem dlg:value="&amp;OptionsDialog.ComboBox1.StringItemList.0"/>
+    <dlg:menuitem dlg:value="&amp;OptionsDialog.ComboBox1.StringItemList.1"/>
+    <dlg:menuitem dlg:value="&amp;OptionsDialog.ComboBox1.StringItemList.2"/>
+    <dlg:menuitem dlg:value="&amp;OptionsDialog.ComboBox1.StringItemList.3"/>
+    <dlg:menuitem dlg:value="&amp;OptionsDialog.ComboBox1.StringItemList.4"/>
+    <dlg:menuitem dlg:value="&amp;OptionsDialog.ComboBox1.StringItemList.5"/>
+    <dlg:menuitem dlg:value="&amp;OptionsDialog.ComboBox1.StringItemList.6"/>
+    <dlg:menuitem dlg:value="&amp;OptionsDialog.ComboBox1.StringItemList.7"/>
+   </dlg:menupopup>
+  </dlg:combobox>
+  <dlg:radiogroup>
+   <dlg:radio dlg:id="OptionButton1" dlg:tab-index="4" dlg:left="125" dlg:top="12" dlg:width="35" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton1.HelpText" dlg:value="&amp;OptionsDialog.OptionButton1.Label" dlg:valign="center">
+    <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:DisableViewer" script:language="UNO"/>
+   </dlg:radio>
+   <dlg:radio dlg:id="OptionButton2" dlg:tab-index="5" dlg:left="165" dlg:top="12" dlg:width="35" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton2.HelpText" dlg:value="&amp;OptionsDialog.OptionButton2.Label" dlg:valign="center">
+    <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableViewer" script:language="UNO"/>
+   </dlg:radio>
+  </dlg:radiogroup>
+  <dlg:button dlg:id="CommandButton1" dlg:tab-index="6" dlg:disabled="true" dlg:left="205" dlg:top="12" dlg:width="45" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton1.HelpText" dlg:value="&amp;OptionsDialog.CommandButton1.Label">
+   <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ViewLog" script:language="UNO"/>
+  </dlg:button>
+ </dlg:bulletinboard>
+</dlg:window>
