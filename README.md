@@ -20,7 +20,11 @@ Restart LibreOffice / OpenOffice after installation.
 
 ### Requirement:
 
-Using a version of Hsqldb higher than 1.8 requires that LibreOffice users must have no Hsqldb driver installed with LibreOffice  
+oneDriveOOo uses a local Hsqldb database of version 2.5.x.  
+The use of Hsqldb requires the installation and configuration within LibreOffice / OpenOffice  
+of a **JRE version 1.8 minimum** (ie: Java version 8)
+
+Sometimes it may be necessary for LibreOffice users must have no Hsqldb driver installed with LibreOffice  
 (check your Installed Application under Windows or your Packet Manager under Linux)  
 OpenOffice doesn't seem to need this workaround.
 
