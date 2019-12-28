@@ -1,1 +1,1 @@
-../../../CloudUcpOOo/CloudUcpOOo/helper/clouducp/dbinit.py
+../../../CloudUcpOOo/python/clouducp/dbinit.py

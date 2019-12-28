@@ -1,1 +1,1 @@
-../../../CloudUcpOOo/CloudUcpOOo/helper/clouducp/contenttools.py
+../../../CloudUcpOOo/python/clouducp/contenttools.py

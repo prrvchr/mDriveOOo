@@ -1,1 +1,1 @@
-../../../CloudUcpOOo/CloudUcpOOo/helper/clouducp/dbqueries.py
+../../../CloudUcpOOo/python/clouducp/dbqueries.py

@@ -1,1 +1,1 @@
-../CloudUcpOOo/CloudUcpOOo/OptionsDialog.py
+../CloudUcpOOo/OptionsDialog.py

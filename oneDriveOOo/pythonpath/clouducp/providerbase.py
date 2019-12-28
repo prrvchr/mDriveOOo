@@ -1,1 +1,1 @@
-../../../CloudUcpOOo/CloudUcpOOo/helper/clouducp/providerbase.py
+../../../CloudUcpOOo/python/clouducp/providerbase.py

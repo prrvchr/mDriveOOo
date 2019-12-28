@@ -1,1 +1,1 @@
-../../../CloudUcpOOo/CloudUcpOOo/helper/clouducp/dbtools.py
+../../../CloudUcpOOo/OAuth2OOo/python/dbtools.py
