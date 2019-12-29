@@ -165,6 +165,21 @@ def getKeyMapFromResult(result, keymap=KeyMap(), provider=None):
         keymap.insertValue(name, value)
     return keymap
 
+def getDataFromResult(result, provider=None):
+    data = {}
+    for i in range(1, result.MetaData.ColumnCount +1):
+        name = result.MetaData.getColumnName(i)
+        dbtype = result.MetaData.getColumnTypeName(i)
+        value = _getValueFromResult(result, dbtype, i)
+        if value is None:
+            continue
+        if result.wasNull():
+            value = None
+        if provider:
+            value = provider.transform(name, value)
+        data[name] = value
+    return data
+
 def getSequenceFromResult(result, sequence=None, index=1, provider=None):
     # TODO: getSequenceFromResult(result, sequence=[], index=1, provider=None) is buggy
     # TODO: sequence has the content of last method call!!! sequence must be initialized...
