@@ -28,19 +28,33 @@ from .dbconfig import g_version
 import traceback
 
 
-def getDataBaseConnection(dbcontext, url, name='', password=''):
-    datasource = dbcontext.getByName(url)
-    connection, error = getDataSourceConnection(datasource, name, password)
-    print("dbtools.getDataSourceConnection()")
-    return connection, error
-
-def getDataSourceConnection(datasource, name='', password=''):
+def getDataSourceConnection(ctx, url, dbname, name='', password=''):
+    dbcontext = ctx.ServiceManager.createInstance('com.sun.star.sdb.DatabaseContext')
+    odb = '%s/%s.odb' % (url, dbname)
+    print("dbtools.getDataSourceConnection() 1")
+    datasource = dbcontext.getByName(odb)
     connection, error = None, None
     try:
         connection = datasource.getConnection(name, password)
     except SQLException as e:
         error = e
-    print("dbtools.getDataSourceConnection()")
+    print("dbtools.getDataSourceConnection() 2")
+    return connection, error
+
+def getDataBaseConnection(ctx, url, dbname, name='', password='', shutdown=False):
+    info = getDataSourceJavaInfo(url)
+    if name:
+        info += getPropertyValueSet({'user', name})
+        if password:
+            info += getPropertyValueSet({'password', password})
+    path = getDataSourceLocation(url, dbname, shutdown)
+    manager = ctx.ServiceManager.createInstance('com.sun.star.sdbc.DriverManager')
+    connection, error = None, None
+    try:
+        connection = manager.getConnectionWithInfo(path, info)
+    except SQLException as e:
+        error = e
+    print("dbtools.getDataBaseConnection()")
     return connection, error
 
 def getDataSourceCall(connection, name, format=None):
@@ -141,7 +155,7 @@ def getDriverInfo():
     info['ViewAlterationServiceName'] = ''
     return info
 
-def getDataSourceLocation(location, dbname, shutdown):
+def getDataSourceLocation(location, dbname, shutdown=False):
     url = uno.fileUrlToSystemPath('%s/%s' % (location, dbname))
     return '%sfile:%s%s%s' % (g_protocol, url, g_options, g_shutdown if shutdown else '')
 

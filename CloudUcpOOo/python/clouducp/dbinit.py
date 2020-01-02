@@ -22,37 +22,32 @@ from .logger import logMessage
 import traceback
 
 
-def getDataSourceUrl(ctx, dbcontext, dbname, plugin, register):
+def getDataSourceUrl(ctx, dbname, plugin, register):
     try:
         error = None
-        location = getResourceLocation(ctx, plugin, g_path)
-        url = '%s/%s.odb' % (location, dbname)
-        if not getSimpleFile(ctx).exists(url):
-            datasource = createDataSource(dbcontext, location, dbname)
-            error = _createDataBase(ctx, datasource)
+        url = getResourceLocation(ctx, plugin, g_path)
+        odb = '%s/%s.odb' % (url, dbname)
+        if not getSimpleFile(ctx).exists(odb):
+            dbcontext = ctx.ServiceManager.createInstance('com.sun.star.sdb.DatabaseContext')
+            datasource = createDataSource(dbcontext, url, dbname)
+            error = _createDataBase(ctx, datasource, url, dbname)
             logMessage(ctx, INFO, "Stage 5", 'dbinit', 'getDataSourceUrl()')
             if error is None:
-                datasource.DatabaseDocument.storeAsURL(url, ())
+                datasource.DatabaseDocument.storeAsURL(odb, ())
                 if register:
                     logMessage(ctx, INFO, "Stage 6", 'dbinit', 'getDataSourceUrl()')
-                    registerDataSource(dbcontext, dbname, url)
+                    registerDataSource(dbcontext, dbname, odb)
         logMessage(ctx, INFO, "Stage 7", 'dbinit', 'getDataSourceUrl()')
         return url, error
     except Exception as e:
         msg = "getDataSourceUrl: ERROR: %s - %s" % (e, traceback.print_exc())
         logMessage(ctx, SEVERE, msg, 'dbinit', 'getDataSourceUrl()')
 
-def _createDataBase(ctx, datasource):
+def _createDataBase(ctx, datasource, url, dbname):
     #connection, error = getDataSourceConnection(datasource)
     logMessage(ctx, INFO, "Stage 1", 'dbinit', '_createDataBase()')
-    error = None
-    try:
-        logMessage(ctx, INFO, "Stage 2", 'dbinit', '_createDataBase()')
-        connection = datasource.getConnection('', '')
-    except Exception as e:
-        error = e
-        msg = "_createDataBase: ERROR: %s - %s" % (e, traceback.print_exc())
-        logMessage(ctx, SEVERE, msg, 'dbinit', '_createDataBase()')
+    connection, error = getDataSourceConnection(ctx, url, dbname)
+    logMessage(ctx, INFO, "Stage 2", 'dbinit', '_createDataBase()')
     if error is not None:
         logMessage(ctx, INFO, "Stage 3", 'dbinit', '_createDataBase()')
         return error

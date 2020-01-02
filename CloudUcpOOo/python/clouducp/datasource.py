@@ -26,6 +26,7 @@ from .user import User
 from .dbinit import getDataSourceUrl
 from .dbqueries import getSqlQuery
 from .dbtools import getDataBaseConnection
+from .dbtools import getDataSourceConnection
 from .dbtools import getKeyMapFromResult
 from .dbtools import getSequenceFromResult
 from .logger import logMessage
@@ -47,13 +48,12 @@ class DataSource(unohelper.Base,
         self._Error = ''
         service = '%s.Provider' % plugin
         self.Provider = self.ctx.ServiceManager.createInstanceWithContext(service, self.ctx)
-        dbcontext = self.ctx.ServiceManager.createInstance('com.sun.star.sdb.DatabaseContext')
         logMessage(self.ctx, INFO, "stage 2", 'DataSource', '__init__()')
-        url, error = getDataSourceUrl(self.ctx, dbcontext, scheme, plugin, True)
+        url, error = getDataSourceUrl(self.ctx, scheme, plugin, True)
         logMessage(self.ctx, INFO, "stage 3", 'DataSource', '__init__()')
         if error is None:
             logMessage(self.ctx, INFO, "stage 4", 'DataSource', '__init__()')
-            connection, error = getDataBaseConnection(dbcontext, url)
+            connection, error = getDataSourceConnection(self.ctx, url, scheme)
             if error is not None:
                 msg += " ... Error: %s - %s" % (error, traceback.print_exc())
                 msg += "Could not connect to DataSource at URL: %s" % url
