@@ -1,6 +1,7 @@
 #!
 # -*- coding: utf_8 -*-
 
+from com.sun.star.sdbc import SQLException
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
@@ -46,7 +47,11 @@ def getDataSourceUrl(ctx, dbname, plugin, register):
 def _createDataBase(ctx, datasource, url, dbname):
     #connection, error = getDataSourceConnection(datasource)
     logMessage(ctx, INFO, "Stage 1", 'dbinit', '_createDataBase()')
-    connection, error = getDataSourceConnection(ctx, url, dbname)
+    error = None
+    try:
+        connection = datasource.getConnection('', '')
+    except SQLException as e:
+        error = e
     logMessage(ctx, INFO, "Stage 2", 'dbinit', '_createDataBase()')
     if error is not None:
         logMessage(ctx, INFO, "Stage 3", 'dbinit', '_createDataBase()')
