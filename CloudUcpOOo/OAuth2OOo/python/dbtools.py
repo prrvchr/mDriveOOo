@@ -6,6 +6,7 @@ import unohelper
 
 from com.sun.star.sdbc import SQLException
 from com.sun.star.sdbc import SQLWarning
+
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
@@ -309,3 +310,12 @@ def createStaticTable(statement, tables, readonly=False):
 def executeSqlQueries(statement, queries):
     for query in queries:
         statement.executeQuery(query)
+
+def getWarning(state, code, message, context=None, exception=None):
+    warning = SQLWarning()
+    warning.SQLState = state
+    warning.ErrorCode = code
+    warning.NextException = exception
+    warning.Message = message
+    warning.Context = context
+    return warning
