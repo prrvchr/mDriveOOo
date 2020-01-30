@@ -232,10 +232,9 @@ class UserSetting(unohelper.Base,
     @MetaData.setter
     def MetaData(self, data):
         self.AccessToken = data.getValue('AccessToken')
-        self.RefreshToken = data.getValue('RefreshToken')
         self.NeverExpires = data.getValue('NeverExpires')
-        self._TimeStamp = data.getValue('TimeStamp')
-        self.Scopes = data.getValue('Scopes')
+        if not self.NeverExpires:
+            self._TimeStamp = data.getValue('TimeStamp')
         self.commit()
     @property
     def IsValid(self):
