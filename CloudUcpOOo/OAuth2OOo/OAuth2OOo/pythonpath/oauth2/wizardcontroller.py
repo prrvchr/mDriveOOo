@@ -24,6 +24,7 @@ from unolib import getDialogUrl
 from .wizardhandler import WizardHandler
 from .wizardserver import WizardServer
 from .wizardpage import WizardPage
+from .wizardsetting import WizardSetting
 
 from .logger import logMessage
 
@@ -43,10 +44,10 @@ class WizardController(unohelper.Base,
                        PropertySet,
                        XWizardController,
                        XCallback):
-    def __init__(self, ctx, configuration, session, url, username, autoclose):
+    def __init__(self, ctx, session, url, username, autoclose):
         self.ctx = ctx
         self.Session = session
-        self.Configuration = configuration
+        self.Configuration = WizardSetting(self.ctx)
         self.ResourceUrl = url
         self.UserName = username
         self.AutoClose = autoclose

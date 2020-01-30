@@ -133,7 +133,7 @@ class OptionsDialog(unohelper.Base,
             dialog.getControl('NumericField1').setValue(self.service.Setting.ConnectTimeout)
             dialog.getControl('NumericField2').setValue(self.service.Setting.ReadTimeout)
             dialog.getControl('NumericField3').setValue(self.service.Setting.HandlerTimeout)
-            dialog.getControl('ComboBox2').Model.StringItemList = self.service.Setting.UrlList
+            dialog.getControl('ComboBox2').Model.StringItemList = self.service.Setting.Url.UrlList
             self._loadLoggerSetting(dialog)
         except Exception as e:
             msg = "Error: %s - %s" % (e, traceback.print_exc())

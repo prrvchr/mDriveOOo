@@ -77,51 +77,13 @@ class OAuth2Service(unohelper.Base,
 
     @property
     def ResourceUrl(self):
-        return self._Url
+        return self.Setting.Url.Id
     @property
     def ProviderName(self):
-        return self._Provider.getDefaultValue('Name', 'Test')
-    @property
-    def TokenUrl(self):
-        return self._Provider.getDefaultValue('TokenUrl', '')
-    @property
-    def TokenParameters(self):
-        return self._Provider.getDefaultValue('TokenParameters', '')
-    @property
-    def RequiredScopes(self):
-        return self._Provider.getDefaultValue('RequiredScopes', ())
-    @property
-    def IsAuthorized(self):
-        scopes = self.RequiredScopes
-        authorized = len(scopes) > 0
-        for scope in scopes:
-            if scope not in self.AcquiredScopes:
-                authorized = False
-                break
-        return authorized
-    @property
-    def HasExpired(self):
-        expired = False
-        if not self.NeverExpires:
-            now = int(time.time())
-            expiresin = max(0, self.TimeStamp - now)
-            expired = expiresin < g_refresh_overlap
-        return expired
+        return self.Setting.Url.Scope.Provider.Id
     @property
     def UserName(self):
-        return self._UserName
-    @property
-    def AcquiredScopes(self):
-        return self._User.getDefaultValue('Scopes', ())
-    @property
-    def AccessToken(self):
-        return self._User.getDefaultValue('AccessToken', '')
-    @property
-    def TimeStamp(self):
-        return self._User.getDefaultValue('TimeStamp', 0)
-    @property
-    def NeverExpires(self):
-        return self._User.getDefaultValue('NeverExpires', False)
+        return self.Setting.Url.Scope.Provider.User.Id
     @property
     def Timeout(self):
         return self.Setting.Timeout
@@ -175,75 +137,14 @@ class OAuth2Service(unohelper.Base,
         self._SessionMode = getSessionMode(self.ctx, host)
         return self._SessionMode != ONLINE
 
-    def initializeSession(self, url, name):
-        if self.initializeUrl(url):
-            return self._initializeUser(name)
-        return False
-
     def initializeUrl(self, url):
-        try:
-            self._Url = url
-            self._Provider = KeyMap()
-            self._Users = None
-            provider = None
-            providername = ''
-            requiredscopes = ()
-            tokenurl = ''
-            tokenparameters = ''
-            urls = self.configuration.getByName('Urls')
-            if not urls.hasByName(self._Url):
-                self.Error = "Can't retrieve ResourceUrl: %s from Configuration" % self._Url
-                return False
-            url = urls.getByName(self._Url)
-            if not url.hasByName('Scope'):
-                self.Error = "Can't retrieve Scope for ResourceUrl: %s from Configuration" % self._Url
-                return False
-            scopename = url.getByName('Scope')
-            scopes = self.configuration.getByName('Scopes')
-            if not scopes.hasByName(scopename):
-                self.Error = "Can't retrieve Scope: %s from Configuration" % scopename
-                return False
-            scope = scopes.getByName(scopename)
-            if not scope.hasByName('Provider'):
-                self.Error = "Can't retrieve Provider for Scope: %s from Configuration" % scopename
-                return False
-            providername = scope.getByName('Provider')
-            self._Provider.insertValue('Name', providername)
-            if not scope.hasByName('Values'):
-                self.Error = "Can't retrieve Values for Scope: %s from Configuration" % scopename
-                return False
-            requiredscopes = scope.getByName('Values')
-            self._Provider.insertValue('RequiredScopes', requiredscopes)
-            providers = self.configuration.getByName('Providers')
-            if not providers.hasByName(providername):
-                self.Error = "Can't retrieve Provider: %s from Configuration" % providername
-                return False
-            provider = providers.getByName(providername)
-            if provider.hasByName('ClientId'):
-                clientid = provider.getByName('ClientId')
-                self._Provider.insertValue('ClientId', clientid)
-            if provider.hasByName('ClientSecret'):
-                clientsecret = provider.getByName('ClientSecret')
-                self._Provider.insertValue('ClientSecret', clientsecret)
-            if provider.hasByName('TokenUrl'):
-                tokenurl = provider.getByName('TokenUrl')
-                self._Provider.insertValue('TokenUrl', tokenurl)
-            if provider.hasByName('TokenParameters'):
-                tokenparameters = provider.getByName('TokenParameters')
-                self._Provider.insertValue('TokenParameters', tokenparameters)
-            if provider.hasByName('Users'):
-                self._Users = provider.getByName('Users')
-            init = provider is not None
-            return provider is not None
-            #self.Setting.Url.Id = url
-        except Exception as e:
-            msg = "Error: %s - %s" % (e, traceback.print_exc())
-            logMessage(self.ctx, SEVERE, msg, 'OAuth2Service', 'initializeUrl()')
+        self.Setting.Url.Id = url
+        return self.Setting.Url.Initialized
 
-    def initializeUser(self, name):
-        if self._initializeUser(name):
-            return self._isAuthorized()
-        return False
+    def initializeSession(self, url, name):
+        self.Setting.Url.Id = url
+        self.Setting.Url.Scope.Provider.User.Id = name
+        return self.Setting.Initialized
 
     def getKeyMap(self):
         return KeyMap()
@@ -254,7 +155,7 @@ class OAuth2Service(unohelper.Base,
     def getAuthorization(self, url, username, close=True):
         authorized = False
         msg = "Wizard Loading ..."
-        controller = WizardController(self.ctx, self.Setting, self.Session, url, username, close)
+        controller = WizardController(self.ctx, self.Session, url, username, close)
         msg += " Done ..."
         if controller.Wizard.execute() == OK:
             msg +=  " Retrieving Authorization Code ..."
@@ -262,10 +163,7 @@ class OAuth2Service(unohelper.Base,
                 msg += " ERROR: cant retrieve Authorization Code: %s" % controller.Error
             else:
                 msg += " Done"
-                authorized = self.initializeUrl(controller.ResourceUrl)
-                authorized &= self.initializeUser(controller.UserName)
-                #self.ResourceUrl = controller.ResourceUrl
-                #self.UserName = controller.UserName
+                authorized = self.initializeSession(controller.ResourceUrl, controller.UserName)
         else:
             msg +=  " ERROR: Wizard as been aborted"
             controller.Server.cancel()
@@ -276,22 +174,28 @@ class OAuth2Service(unohelper.Base,
     def getToken(self, format=''):
         level = INFO
         msg = "Request Token ... "
+        print("OAuth2Service.getToken() 1")
         if not self._isAuthorized():
             level = SEVERE
             msg += "ERROR: Cannot InitializeSession()..."
             token = ''
-        elif self.HasExpired:
-            token, self._Error = getRefreshToken(self.Session, self._Provider, self._User, self.Timeout)
+        elif self.Setting.Url.Scope.Provider.User.HasExpired:
+            print("OAuth2Service.getToken() 2")
+            provider = self.Setting.Url.Scope.Provider.MetaData
+            user = self.Setting.Url.Scope.Provider.User
+            token, self._Error = getRefreshToken(self.Session, provider, user.MetaData, self.Timeout)
             if token.IsPresent:
-                self._User = token.Value
-                token = self.AccessToken
+                print("OAuth2Service.getToken() 3")
+                user.MetaData = token.Value
+                token = user.AccessToken
                 msg += "Refresh needed ... Done"
+                print("OAuth2Service.getToken() 4")
             else:
                 level = SEVERE
                 msg += "ERROR: Cannot RefreshToken()..."
                 token = ''
         else:
-            token = self.AccessToken
+            token = self.Setting.Url.Scope.Provider.User.AccessToken
             msg += "Get from configuration ... Done"
         logMessage(self.ctx, level, msg, 'OAuth2Service', 'getToken()')
         if format:
@@ -331,51 +235,16 @@ class OAuth2Service(unohelper.Base,
             self.Error = "Can't load module: 'ssl.py'. Your Python SSL configuration is broken..."
 
     def _isAuthorized(self):
-        msg = "OAuth2 initialization ..."
-        if not self.IsAuthorized:
-            msg += " Done ... AuthorizationCode needed ..."
-            if not self.getAuthorization(self.ResourceUrl, self.UserName, True):
-                msg += " ERROR: Wizard Aborted!!!"
-                logMessage(self.ctx, SEVERE, msg, 'OAuth2Service', '_isAuthorized()')
-                return False
-        msg += " Done"
-        logMessage(self.ctx, INFO, msg, 'OAuth2Service', '_isAuthorized()')
-        return True
-
-    def _isAuthorized1(self, user):
-        msg = "OAuth2 initialization ..."
-        if self._hasProviderUser(user):
+        if self.Setting.Initialized and self.Setting.Url.Scope.Authorized:
             return True
-        msg += " Done ... AuthorizationCode needed ..."
-        if self.getAuthorization(self._Url, user, True):
+        msg = "OAuth2 initialization ... AuthorizationCode needed ..."
+        if self.getAuthorization(self.ResourceUrl, self.UserName, True):
             msg += " Done"
             logMessage(self.ctx, INFO, msg, 'OAuth2Service', '_isAuthorized()')
             return True
         msg += " ERROR: Wizard Aborted!!!"
         logMessage(self.ctx, SEVERE, msg, 'OAuth2Service', '_isAuthorized()')
         return False
-
-    def _initializeUser(self, username):
-        self._UserName = username
-        self._User = KeyMap()
-        if self._Users.hasByName(username):
-            user = self._Users.getByName(username)
-            if user.hasByName('AccessToken'):
-                access = user.getByName('AccessToken')
-                self._User.insertValue('AccessToken', access)
-            if user.hasByName('RefreshToken'):
-                refresh = user.getByName('RefreshToken')
-                self._User.insertValue('RefreshToken', refresh)
-            if user.hasByName('TimeStamp'):
-                timestamp = user.getByName('TimeStamp')
-                self._User.insertValue('TimeStamp', timestamp)
-            if user.hasByName('NeverExpires'):
-                neverexpires = user.getByName('NeverExpires')
-                self._User.insertValue('NeverExpires', neverexpires)
-            if user.hasByName('Scopes'):
-                scopes = user.getByName('Scopes')
-                self._User.insertValue('Scopes', scopes)
-        return self._UserName != ''
 
     def _getException(self, message):
         error = UnoException()

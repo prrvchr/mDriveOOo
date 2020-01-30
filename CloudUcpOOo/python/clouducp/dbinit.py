@@ -57,14 +57,14 @@ def _createDataBase(ctx, datasource, url, dbname):
         logMessage(ctx, INFO, "Stage 3", 'dbinit', '_createDataBase()')
         return error
     logMessage(ctx, INFO, "Stage 4", 'dbinit', '_createDataBase()')
-    error = checkDataBase(connection)
+    version, error = checkDataBase(connection)
     logMessage(ctx, INFO, "Stage 5", 'dbinit', '_createDataBase()')
     if error is None:
         logMessage(ctx, INFO, "Stage 6", 'dbinit', '_createDataBase()')
         statement = connection.createStatement()
         logMessage(ctx, INFO, "Stage 7", 'dbinit', '_createDataBase()')
         createStaticTable(statement, _getStaticTables(), True)
-        tables, statements = getTablesAndStatements(statement)
+        tables, statements = getTablesAndStatements(statement, version)
         executeSqlQueries(statement, tables)
         logMessage(ctx, INFO, "Stage 8", 'dbinit', '_createDataBase()')
         executeQueries(statement, _getViews())

@@ -10,22 +10,21 @@ from com.sun.star.util import XUpdatable
 from unolib import PropertySet
 from unolib import getProperty
 from unolib import getConfiguration
+from unolib import KeyMap
 
-from .logger import getLogger
 from .configuration import g_identifier
 from .configuration import g_refresh_overlap
 
 import time
 
 
-class WizardConfiguration(unohelper.Base,
-                          XTransactedObject,
-                          PropertySet):
+class WizardSetting(unohelper.Base,
+                    XTransactedObject,
+                    PropertySet):
     def __init__(self, ctx):
         self.ctx = ctx
         self.configuration = getConfiguration(self.ctx, g_identifier, True)
-        self.Url = UrlWriter(self.configuration)
-        self.Logger = getLogger(self.ctx)
+        self.Url = UrlSetting(self.configuration)
         self.revert()
 
     @property
@@ -48,6 +47,9 @@ class WizardConfiguration(unohelper.Base,
 
     # XTransactedObject
     def commit(self):
+        self.configuration.replaceByName('ConnectTimeout', self.ConnectTimeout)
+        self.configuration.replaceByName('ReadTimeout', self.ReadTimeout)
+        self.configuration.replaceByName('HandlerTimeout', self.HandlerTimeout)
         self.Url.commit()
         self.Url.Scope.commit()
         self.Url.Scope.Provider.commit()
@@ -60,22 +62,23 @@ class WizardConfiguration(unohelper.Base,
     def _getPropertySetInfo(self):
         properties = {}
         readonly = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.READONLY')
+        transient = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.TRANSIENT')
         properties['Url'] = getProperty('Url', 'com.sun.star.uno.XInterface', readonly)
         properties['UrlList'] = getProperty('UrlList', '[]string', readonly)
-        properties['HandlerTimeout'] = getProperty('HandlerTimeout', 'short', readonly)
-        properties['ConnectTimeout'] = getProperty('ConnectTimeout', 'short', readonly)
-        properties['ReadTimeout'] = getProperty('ReadTimeout', 'short', readonly)
+        properties['HandlerTimeout'] = getProperty('HandlerTimeout', 'short', transient)
+        properties['ConnectTimeout'] = getProperty('ConnectTimeout', 'short', transient)
+        properties['ReadTimeout'] = getProperty('ReadTimeout', 'short', transient)
         properties['Timeout'] = getProperty('Timeout', 'any', readonly)
         properties['Logger'] = getProperty('Logger', 'com.sun.star.logging.XLogger', readonly)
         return properties
 
 
-class UrlWriter(unohelper.Base,
-                XTransactedObject,
-                PropertySet):
+class UrlSetting(unohelper.Base,
+                 XTransactedObject,
+                 PropertySet):
     def __init__(self, configuration):
         self.configuration = configuration
-        self.Scope = ScopeWriter(self.configuration)
+        self.Scope = ScopeSetting(self.configuration)
         self._Id = ''
         self.Urls = {}
         self.revert()
@@ -188,7 +191,8 @@ class UrlWriter(unohelper.Base,
         urls = self.configuration.getByName('Urls')
         for id in urls.ElementNames:
             url = urls.getByName(id)
-            self.Urls[id] = {'Scope': url.getByName('Scope'),
+            scope = url.getByName('Scope')
+            self.Urls[id] = {'Scope': scope,
                              'State': 1}
 
     def _getPropertySetInfo(self):
@@ -206,12 +210,12 @@ class UrlWriter(unohelper.Base,
         return properties
 
 
-class ScopeWriter(unohelper.Base,
-                  XTransactedObject,
-                  PropertySet):
+class ScopeSetting(unohelper.Base,
+                   XTransactedObject,
+                   PropertySet):
     def __init__(self, configuration):
         self.configuration = configuration
-        self.Provider = ProviderWriter(self.configuration)
+        self.Provider = ProviderSetting(self.configuration)
         self.Id = ''
         self.Scopes = {}
         self.revert()
@@ -294,12 +298,12 @@ class ScopeWriter(unohelper.Base,
         return properties
 
 
-class ProviderWriter(unohelper.Base,
-                     XTransactedObject,
-                     PropertySet):
+class ProviderSetting(unohelper.Base,
+                      XTransactedObject,
+                      PropertySet):
     def __init__(self, configuration):
         self.configuration = configuration
-        self.User = UserWriter(self.configuration)
+        self.User = UserSetting(self.configuration)
         self.redirect = 'urn:ietf:wg:oauth:2.0:oob'
         self.Providers = {}
         self.revert()
@@ -434,6 +438,14 @@ class ProviderWriter(unohelper.Base,
             uri = self.redirect
         return uri
     @property
+    def MetaData(self):
+        metadata = KeyMap()
+        metadata.insertValue('ClientSecret', self.ClientSecret)
+        metadata.insertValue('ClientId', self.ClientId)
+        metadata.insertValue('TokenUrl', self.TokenUrl)
+        metadata.insertValue('TokenParameters', self.TokenParameters)
+        return metadata
+    @property
     def State(self):
         state = 2
         if self.Id in self.Providers:
@@ -509,13 +521,14 @@ class ProviderWriter(unohelper.Base,
         properties['RedirectPort'] = getProperty('RedirectPort', 'short', transient)
         properties['RedirectUri'] = getProperty('RedirectUri', 'string', readonly)
         properties['State'] = getProperty('State', 'short', transient)
+        properties['MetaData'] = getProperty('MetaData', 'com.sun.star.auth.XRestKeyMap', readonly)
         return properties
 
 
-class UserWriter(unohelper.Base,
-                 XUpdatable,
-                 XTransactedObject,
-                 PropertySet):
+class UserSetting(unohelper.Base,
+                  XUpdatable,
+                  XTransactedObject,
+                  PropertySet):
     def __init__(self, configuration):
         self.configuration = configuration
         self._Id = ''
@@ -556,6 +569,15 @@ class UserWriter(unohelper.Base,
     @property
     def Scopes(self):
         return tuple(self._Scopes)
+    @property
+    def MetaData(self):
+        metadata = KeyMap()
+        metadata.insertValue('AccessToken', self.AccessToken)
+        metadata.insertValue('RefreshToken', self.RefreshToken)
+        metadata.insertValue('NeverExpires', self.NeverExpires)
+        metadata.insertValue('TimeStamp', self._TimeStamp)
+        metadata.insertValue('Scopes', tuple(self._Scopes))
+        return metadata
 
     # XUpdatable
     def update(self):
@@ -619,4 +641,5 @@ class UserWriter(unohelper.Base,
         properties['HasExpired'] = getProperty('HasExpired', 'boolean', readonly)
         properties['Scopes'] = getProperty('Scopes', '[]string', readonly)
         properties['Scope'] = getProperty('Scope', 'string', transient)
+        properties['MetaData'] = getProperty('MetaData', 'com.sun.star.auth.XRestKeyMap', readonly)
         return properties

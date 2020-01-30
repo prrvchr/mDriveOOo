@@ -23,34 +23,38 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
     boolean isOnLine();
     boolean isOffLine([in] string Host);
 
+    boolean initializeUrl([in] string ResourceUrl);
     boolean initializeSession([in] string ResourceUrl,
                               [in] string UserName);
 
-    boolean initializeUrl([in] string ResourceUrl);
-    boolean initializeUser([in] string UserName);
     boolean getAuthorization([in] string ResourceUrl,
                              [in] string UserName,
                              [in] boolean AutoClose);
-    ::com::sun::star::auth::XRestKeyMap getKeyMap();
-    short getSessionMode([in] string Host);
+
     string getToken([in] string Format);
+
+    short getSessionMode([in] string Host);
+
+    ::com::sun::star::auth::XRestKeyMap getKeyMap();
+
     ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> execute([in] RestRequestParameter Parameter);
+
     ::com::sun::star::auth::XRestEnumeration getEnumerator([in] RestRequestParameter Parameter);
+
     ::com::sun::star::auth::XRestEnumeration getEnumeration([in] RestRequestParameter Parameter,
                                                             [in] ::com::sun::star::uno::XInterface Parser);
+
     ::com::sun::star::io::XInputStream getInputStream([in] RestRequestParameter Parameter,
                                                       [in] long Chunk,
                                                       [in] long Buffer);
+
     ::com::sun::star::uno::XInterface getUploader([in] ::com::sun::star::uno::XInterface DataSource);
 
     [attribute, readonly] ::com::sun::star::uno::XInterface Setting;
     [attribute, readonly] ::com::sun::star::uno::XInterface Session;
     [attribute, readonly] string ResourceUrl;
     [attribute, readonly] string ProviderName;
-    [attribute, readonly] string RequiredScopes;
     [attribute, readonly] string UserName;
-    [attribute, readonly] boolean IsAuthorized;
-    [attribute, readonly] boolean HasExpired;
     [attribute, readonly] any Timeout;
     [attribute] string Error;
 

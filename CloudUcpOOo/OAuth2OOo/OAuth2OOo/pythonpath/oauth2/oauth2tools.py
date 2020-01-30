@@ -159,18 +159,13 @@ def saveTokenToConfiguration(configuration, token):
     return token.IsPresent
 
 def getRefreshToken(session, provider, user, timeout):
-    try:
-        token = uno.createUnoStruct('com.sun.star.beans.Optional<com.sun.star.auth.XRestKeyMap>')
-        url = provider.getValue('TokenUrl')
-        data = getRefreshParameters(provider, user)
-        response, error = getResponseFromRequest(session, url, data, timeout)
-        if error is None:
-            token = getTokenFromResponse(response, token)
-        #if token:
-        #    configuration.Url.Scope.Provider.User.commit()
-        return token, error
-    except Exception as e:
-        print("oauth2tools.getRefreshToken() Error: %s - %s" % (e, traceback.print_exc()))
+    token = uno.createUnoStruct('com.sun.star.beans.Optional<com.sun.star.auth.XRestKeyMap>')
+    url = provider.getValue('TokenUrl')
+    data = getRefreshParameters(provider, user)
+    response, error = getResponseFromRequest(session, url, data, timeout)
+    if error is None:
+        token = getTokenFromResponse(response, token)
+    return token, error
 
 def getTokenFromResponse(response, token):
     token.Value = KeyMap()
@@ -187,22 +182,6 @@ def getTokenFromResponse(response, token):
         token.Value.insertValue('AccessToken', access)
         token.Value.insertValue('NeverExpires', expires is None)
     token.IsPresent = any((refresh, expires, access))
-    return token
-
-def getTokenFromResponse1(configuration, response):
-    refresh = response.get('refresh_token', None)
-    if refresh:
-        configuration.Url.Scope.Provider.User.RefreshToken = refresh
-    expires = response.get('expires_in', None)
-    if expires:
-        configuration.Url.Scope.Provider.User.ExpiresIn = expires
-    token = response.get('access_token', '')
-    if token:
-        configuration.Url.Scope.Provider.User.AccessToken = token
-        scope = configuration.Url.Scope.Value
-        configuration.Url.Scope.Provider.User.Scope = scope
-        configuration.Url.Scope.Provider.User.NeverExpires = expires is None
-        #configuration.Url.Scope.Provider.User.commit()
     return token
 
 def _getTokenBaseParameters(setting, code, codeverifier):
@@ -242,9 +221,8 @@ def _getRefreshOptionalParameters(provider, user):
     parameters['client_secret'] = provider.getValue('ClientSecret')
     return parameters
 
-def _parseParameters(base, optional, option):
-    options = json.loads(option)
-    for key, value in options.items():
+def _parseParameters(base, optional, required):
+    for key, value in json.loads(required).items():
         if value is None:
             if key in base:
                 del base[key]
