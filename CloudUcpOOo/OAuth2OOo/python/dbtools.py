@@ -44,10 +44,10 @@ def getDataSourceConnection(ctx, url, dbname, name='', password=''):
 
 def getDataBaseConnection(ctx, url, dbname, name='', password='', shutdown=False):
     info = getDataSourceJavaInfo(url)
-    if name:
-        info += getPropertyValueSet({'user', name})
-        if password:
-            info += getPropertyValueSet({'password', password})
+    if name != '':
+        info += getPropertyValueSet({'user': name})
+        if password != '':
+            info += getPropertyValueSet({'password': password})
     path = getDataSourceLocation(url, dbname, shutdown)
     manager = ctx.ServiceManager.createInstance('com.sun.star.sdbc.DriverManager')
     connection, error = None, None
@@ -76,7 +76,7 @@ def checkDataBase(connection):
         error = SQLException()
         error.Message = "DataBase ERROR: hsqldb driver %s is not the correct version... " % g_jar
         error.Message += "Requiered version: %s - loaded version: %s" % (g_version, version)
-    return error
+    return version, error
 
 def executeQueries(statement, queries):
     for query in queries:
@@ -195,6 +195,25 @@ def getDataFromResult(result, provider=None):
         data[name] = value
     return data
 
+def getKeyMapSequenceFromResult(result, provider=None):
+    sequence = []
+    count = result.MetaData.ColumnCount +1
+    while result.next():
+        keymap = KeyMap()
+        for i in range(1, count):
+            name = result.MetaData.getColumnName(i)
+            dbtype = result.MetaData.getColumnTypeName(i)
+            value = _getValueFromResult(result, dbtype, i)
+            if value is None:
+                continue
+            if result.wasNull():
+                value = None
+            if provider:
+                value = provider.transform(name, value)
+            keymap.insertValue(name, value)
+        sequence.append(keymap)
+    return sequence
+
 def getSequenceFromResult(result, sequence=None, index=1, provider=None):
     # TODO: getSequenceFromResult(result, sequence=[], index=1, provider=None) is buggy
     # TODO: sequence has the content of last method call!!! sequence must be initialized...
@@ -231,7 +250,7 @@ def _getValueFromResult(result, dbtype, index):
         value = None
     return value
 
-def getTablesAndStatements(statement):
+def getTablesAndStatements(statement, version=g_version):
     tables = []
     statements = {}
     call = getDataSourceCall(statement.getConnection(), 'getTables')
@@ -273,11 +292,11 @@ def getTablesAndStatements(statement):
             columns.append(getSqlQuery('getUniqueConstraint', format))
         for format in constraint:
             columns.append(getSqlQuery('getForeignConstraint', format))
-        if versioned:
+        if version >= '2.5.0' and versioned:
             columns.append(getSqlQuery('getPeriodColumns'))
         format = (table, ','.join(columns))
         query = getSqlQuery('createTable', format)
-        if versioned:
+        if version >= '2.5.0' and versioned:
             query += getSqlQuery('getSystemVersioning')
         print("dbtool._createDynamicTable(): %s" % query)
         tables.append(query)
@@ -301,6 +320,7 @@ def getTablesAndStatements(statement):
 def createStaticTable(statement, tables, readonly=False):
     for table in tables:
         query = getSqlQuery('createTable' + table)
+        print("dbtools.createStaticTable(): %s" % query)
         statement.executeQuery(query)
     for table in tables:
         statement.executeQuery(getSqlQuery('setTableSource', table))
@@ -309,6 +329,7 @@ def createStaticTable(statement, tables, readonly=False):
 
 def executeSqlQueries(statement, queries):
     for query in queries:
+        print("dbtools.executeSqlQueries(): %s" % query)
         statement.executeQuery(query)
 
 def getWarning(state, code, message, context=None, exception=None):
