@@ -48,14 +48,14 @@ from clouducp import getUcp
 from clouducp import getUri
 from clouducp import getMimeType
 from clouducp import logMessage
-from clouducp import g_plugin
+from clouducp import g_identifier
 
 import traceback
 
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.Content' % g_plugin
+g_ImplementationName = '%s.Content' % g_identifier
 
 
 class Content(unohelper.Base,

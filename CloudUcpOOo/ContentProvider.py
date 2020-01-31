@@ -21,7 +21,7 @@ try:
     from clouducp import User
     from clouducp import Identifier
     from clouducp import logMessage
-    from clouducp import g_plugin
+    from clouducp import g_identifier
 
 except Exception as e:
     print("clouducp.__init__() ERROR: %s - %s" % (e, traceback.print_exc()))
@@ -29,7 +29,7 @@ except Exception as e:
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.ContentProvider' % g_plugin
+g_ImplementationName = '%s.ContentProvider' % g_identifier
 
 
 class ContentProvider(unohelper.Base,
@@ -45,11 +45,11 @@ class ContentProvider(unohelper.Base,
         self.Plugin = ''
         self.DataSource = None
         self._defaultUser = ''
-        msg = "ContentProvider: %s loading ... Done" % g_plugin
+        msg = "ContentProvider: %s loading ... Done" % g_identifier
         logMessage(self.ctx, INFO, msg, 'ContentProvider', '__init__()')
 
     def __del__(self):
-        msg = "ContentProvider; %s unloading ... Done" % g_plugin
+        msg = "ContentProvider; %s unloading ... Done" % g_identifier
         logMessage(self.ctx, INFO, msg, 'ContentProvider', '__del__()')
 
     # XParameterizedContentProvider

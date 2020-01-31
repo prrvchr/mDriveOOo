@@ -166,7 +166,6 @@ class Identifier(unohelper.Base,
             else:
                 data = self.User.getItem(self.DataSource, self.MetaData)
             data.insertValue('BaseURI', self.MetaData.getValue('BaseURI'))
-            #service = '%s.Content' % g_plugin
             content = Content(self.ctx, self, data)
             #content.initialize()
             return content

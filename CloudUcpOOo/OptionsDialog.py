@@ -23,13 +23,13 @@ from clouducp import logMessage
 
 from clouducp import g_scheme
 from clouducp import g_extension
-from clouducp import g_plugin
+from clouducp import g_identifier
 
 import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.OptionsDialog' % g_plugin
+g_ImplementationName = '%s.OptionsDialog' % g_identifier
 
 
 class OptionsDialog(unohelper.Base,
@@ -39,7 +39,7 @@ class OptionsDialog(unohelper.Base,
     def __init__(self, ctx):
         try:
             self.ctx = ctx
-            self.stringResource = getStringResource(self.ctx, g_plugin, g_extension, 'OptionsDialog')
+            self.stringResource = getStringResource(self.ctx, g_identifier, g_extension, 'OptionsDialog')
             print("PyOptionsDialog.__init__() 1")
         except Exception as e:
             print("PyOptionsDialog.__init__().Error: %s - %s" % (e, traceback.print_exc()))
@@ -84,7 +84,7 @@ class OptionsDialog(unohelper.Base,
 
     def _doViewDataBase(self, dialog):
         try:
-            path = getResourceLocation(ctx, g_plugin, 'hsqldb')
+            path = getResourceLocation(ctx, g_identifier, 'hsqldb')
             url = '%s/%s.odb' % (path, g_scheme)
             desktop = self.ctx.ServiceManager.createInstance('com.sun.star.frame.Desktop')
             desktop.loadComponentFromURL(url, '_default', 0, ())
