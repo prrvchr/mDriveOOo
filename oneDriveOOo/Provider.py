@@ -20,7 +20,7 @@ from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_REWRITED
 from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
 from clouducp import ProviderBase
-from clouducp import g_plugin
+from clouducp import g_identifier
 from clouducp import g_host
 from clouducp import g_url
 from clouducp import g_userfields
@@ -36,7 +36,7 @@ from clouducp import g_doc_map
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.Provider' % g_plugin
+g_ImplementationName = '%s.Provider' % g_identifier
 
 
 class Provider(ProviderBase):

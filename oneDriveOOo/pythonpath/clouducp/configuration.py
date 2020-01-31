@@ -4,8 +4,8 @@
 # Provider configuration
 g_scheme = 'vnd.microsoft-apps'
 g_extension = 'oneDriveOOo'
-g_plugin = 'com.gmail.prrvchr.extensions.%s' % g_extension
-g_logger = '%s.Logger' % g_plugin
+g_identifier = 'com.gmail.prrvchr.extensions.%s' % g_extension
+g_logger = '%s.Logger' % g_identifier
 
 g_host = 'graph.microsoft.com'
 g_version = 'v1.0' # v1.0 or beta

@@ -22,13 +22,13 @@ from clouducp import logMessage
 from clouducp import ContentProvider
 from clouducp import getUcp
 from clouducp import g_scheme
-from clouducp import g_plugin
+from clouducp import g_identifier
 
 g_proxy = 'com.sun.star.ucb.ContentProviderProxy'
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.ContentProviderProxy' % g_plugin
+g_ImplementationName = '%s.ContentProviderProxy' % g_identifier
 
 
 class ContentProviderProxy(unohelper.Base,
@@ -46,7 +46,7 @@ class ContentProviderProxy(unohelper.Base,
         return ContentProviderProxy._Provider is not None
 
     def __init__(self, ctx):
-        msg = "ContentProviderProxy for plugin: %s loading ..." % g_plugin
+        msg = "ContentProviderProxy for plugin: %s loading ..." % g_identifier
         self.ctx = ctx
         self.scheme = ''
         self.plugin = ''
@@ -66,7 +66,7 @@ class ContentProviderProxy(unohelper.Base,
             msg += " ERROR: requested service is not available..."
         else:
             msg += " Done"
-            provider = ucp.registerInstance(g_scheme, g_plugin, True)
+            provider = ucp.registerInstance(g_scheme, g_identifier, True)
         logMessage(self.ctx, level, msg, 'ContentProviderProxy', 'createContentProvider()')
         return provider
 
@@ -74,9 +74,9 @@ class ContentProviderProxy(unohelper.Base,
     def getContentProvider(self):
         print('ContentProviderProxy.getContentProvider()')
         level = INFO
-        msg = "Need to get UCP: %s ..." % g_plugin
+        msg = "Need to get UCP: %s ..." % g_identifier
         if not self.IsLoaded:
-            service = '%s.ContentProvider' % g_plugin
+            service = '%s.ContentProvider' % g_identifier
             provider = self.createContentProvider(service)
             if not provider:
                 level = SEVERE
