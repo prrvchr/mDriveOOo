@@ -12,14 +12,27 @@ from com.sun.star.logging.LogLevel import ALL
 from com.sun.star.logging.LogLevel import OFF
 
 from unolib import getConfiguration
+from unolib import getStringResource
 
-try:
-    from .configuration import g_logger
-except ImportError:
-    g_logger = 'org.openoffice.logging.DefaultLogger'
+from .configuration import g_logger
+from .configuration import g_identifier
 
 g_loggerPool = {}
+g_stringResource = {}
+g_pathResource = 'resource'
+g_fileResource = 'MessageStrings'
 
+def getMessage(ctx, resource, format=()):
+    msg = getResource(ctx).resolveString('%s' % resource)
+    if format:
+        msg = msg % format
+    return msg
+
+def getResource(ctx, identifier=g_identifier):
+    if identifier not in g_stringResource:
+        resource = getStringResource(ctx, identifier, g_pathResource, g_fileResource)
+        g_stringResource[identifier] = resource
+    return g_stringResource[identifier]
 
 def logMessage(ctx, level, msg, cls=None, mtd=None, logger=g_logger):
     log = getLogger(ctx, logger)
@@ -31,7 +44,8 @@ def logMessage(ctx, level, msg, cls=None, mtd=None, logger=g_logger):
 
 def getLogger(ctx, logger=g_logger):
     if logger not in g_loggerPool:
-        log = ctx.getValueByName('/singletons/com.sun.star.logging.LoggerPool').getNamedLogger(logger)
+        singleton = '/singletons/com.sun.star.logging.LoggerPool'
+        log = ctx.getValueByName(singleton).getNamedLogger(logger)
         g_loggerPool[logger] = log
     return g_loggerPool[logger]
 

@@ -333,6 +333,9 @@ def executeSqlQueries(statement, queries):
         statement.executeQuery(query)
 
 def getWarning(state, code, message, context=None, exception=None):
+    return getSQLWarning(state, code, message, context, exception)
+
+def getSqlWarning(state, code, message, context=None, exception=None):
     warning = SQLWarning()
     warning.SQLState = state
     warning.ErrorCode = code
@@ -340,3 +343,12 @@ def getWarning(state, code, message, context=None, exception=None):
     warning.Message = message
     warning.Context = context
     return warning
+
+def getSqlException(state, code, message, context=None, exception=None):
+    error = SQLException()
+    error.SQLState = state
+    error.ErrorCode = code
+    error.NextException = exception
+    error.Message = message
+    error.Context = context
+    return error

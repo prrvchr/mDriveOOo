@@ -26,6 +26,7 @@ class OAuth2OOo(NoOAuth2):
         request.headers['Authorization'] = self.oauth2.getToken('Bearer %s')
         return request
 
+
 class InteractionAbort(unohelper.Base,
                        XInteractionAbort):
 

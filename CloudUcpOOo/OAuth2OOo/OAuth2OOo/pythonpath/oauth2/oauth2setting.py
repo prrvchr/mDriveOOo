@@ -232,9 +232,7 @@ class UserSetting(unohelper.Base,
     @MetaData.setter
     def MetaData(self, data):
         self.AccessToken = data.getValue('AccessToken')
-        self.NeverExpires = data.getValue('NeverExpires')
-        if not self.NeverExpires:
-            self._TimeStamp = data.getValue('TimeStamp')
+        self._TimeStamp = data.getValue('TimeStamp')
         self.commit()
     @property
     def IsValid(self):
@@ -249,8 +247,6 @@ class UserSetting(unohelper.Base,
             if users.hasByName(self.Id):
                 user = users.getByName(self.Id)
                 user.replaceByName('AccessToken', self.AccessToken)
-                user.replaceByName('RefreshToken', self.RefreshToken)
-                user.replaceByName('NeverExpires', self.NeverExpires)
                 user.replaceByName('TimeStamp', self._TimeStamp)
                 arguments = ('Scopes', uno.Any('[]string', self.Scopes))
                 uno.invoke(user, 'replaceByName', arguments)
