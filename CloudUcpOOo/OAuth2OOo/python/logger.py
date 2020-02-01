@@ -22,32 +22,20 @@ g_stringResource = {}
 g_pathResource = 'resource'
 g_fileResource = 'MessageStrings'
 
+
 def getMessage(ctx, resource, format=()):
-    msg = getResource(ctx).resolveString('%s' % resource)
+    msg = _getResource(ctx).resolveString('%s' % resource)
     if format:
         msg = msg % format
     return msg
 
-def getResource(ctx, identifier=g_identifier):
-    if identifier not in g_stringResource:
-        resource = getStringResource(ctx, identifier, g_pathResource, g_fileResource)
-        g_stringResource[identifier] = resource
-    return g_stringResource[identifier]
-
 def logMessage(ctx, level, msg, cls=None, mtd=None, logger=g_logger):
-    log = getLogger(ctx, logger)
+    log = _getLogger(ctx, logger)
     if log.isLoggable(level):
         if cls is None or mtd is None:
             log.log(level, msg)
         else:
             log.logp(level, cls, mtd, msg)
-
-def getLogger(ctx, logger=g_logger):
-    if logger not in g_loggerPool:
-        singleton = '/singletons/com.sun.star.logging.LoggerPool'
-        log = ctx.getValueByName(singleton).getNamedLogger(logger)
-        g_loggerPool[logger] = log
-    return g_loggerPool[logger]
 
 def clearLogger(logger=g_logger):
     if logger in g_loggerPool:
@@ -69,7 +57,6 @@ def setLoggerSetting(ctx, enabled, index, handler, logger=g_logger):
     _setLogIndex(configuration, enabled, index)
     _setLogHandler(configuration, handler, index)
     if configuration.hasPendingChanges():
-        print("logger.setLoggerSetting() configuration.hasPendingChanges")
         configuration.commitChanges()
         clearLogger(logger)
 
@@ -80,6 +67,28 @@ def getLoggerUrl(ctx, logger=g_logger):
         url = settings.getByName('FileURL')
     service = ctx.ServiceManager.createInstance('com.sun.star.util.PathSubstitution')
     return service.substituteVariables(url.replace('$(loggername)', logger), True)
+
+def _getLogger(ctx, logger=g_logger):
+    if logger not in g_loggerPool:
+        singleton = '/singletons/com.sun.star.logging.LoggerPool'
+        log = ctx.getValueByName(singleton).getNamedLogger(logger)
+        g_loggerPool[logger] = log
+    return g_loggerPool[logger]
+
+def _getResource(ctx, identifier=g_identifier):
+    if identifier not in g_stringResource:
+        resource = getStringResource(ctx, identifier, g_pathResource, g_fileResource)
+        g_stringResource[identifier] = resource
+    return g_stringResource[identifier]
+
+def _getLoggerConfiguration(ctx, logger):
+    nodepath = '/org.openoffice.Office.Logging/Settings'
+    configuration = getConfiguration(ctx, nodepath, True)
+    if not configuration.hasByName(logger):
+        configuration.insertByName(logger, configuration.createInstance())
+        configuration.commitChanges()
+    nodepath += '/%s' % logger
+    return getConfiguration(ctx, nodepath, True)
 
 def _getLogIndex(configuration):
     index = 7
@@ -108,15 +117,6 @@ def _setLogHandler(configuration, console, index):
             settings.replaceByName('Threshold', index)
     else:
         settings.insertByName('Threshold', index)
-
-def _getLoggerConfiguration(ctx, logger):
-    nodepath = '/org.openoffice.Office.Logging/Settings'
-    configuration = getConfiguration(ctx, nodepath, True)
-    if not configuration.hasByName(logger):
-        configuration.insertByName(logger, configuration.createInstance())
-        configuration.commitChanges()
-    nodepath += '/%s' % logger
-    return getConfiguration(ctx, nodepath, True)
 
 def _getLogLevels():
     levels = (SEVERE,

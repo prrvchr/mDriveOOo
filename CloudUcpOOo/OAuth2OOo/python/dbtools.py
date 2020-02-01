@@ -2,7 +2,6 @@
 # -*- coding: utf_8 -*-
 
 import uno
-import unohelper
 
 from com.sun.star.sdbc import SQLException
 from com.sun.star.sdbc import SQLWarning
@@ -26,20 +25,20 @@ from .dbconfig import g_options
 from .dbconfig import g_shutdown
 from .dbconfig import g_version
 
+from .logger import getMessage
+
 import traceback
 
 
 def getDataSourceConnection(ctx, url, dbname, name='', password=''):
     dbcontext = ctx.ServiceManager.createInstance('com.sun.star.sdb.DatabaseContext')
     odb = '%s/%s.odb' % (url, dbname)
-    print("dbtools.getDataSourceConnection() 1")
     datasource = dbcontext.getByName(odb)
     connection, error = None, None
     try:
         connection = datasource.getConnection(name, password)
     except SQLException as e:
         error = e
-    print("dbtools.getDataSourceConnection() 2")
     return connection, error
 
 def getDataBaseConnection(ctx, url, dbname, name='', password='', shutdown=False):
@@ -55,7 +54,6 @@ def getDataBaseConnection(ctx, url, dbname, name='', password='', shutdown=False
         connection = manager.getConnectionWithInfo(path, info)
     except SQLException as e:
         error = e
-    print("dbtools.getDataBaseConnection()")
     return connection, error
 
 def getDataSourceCall(connection, name, format=None):
@@ -69,13 +67,14 @@ def createDataSource(dbcontext, location, dbname, shutdown=False):
     datasource.Info = getDataSourceInfo() + getDataSourceJavaInfo(location)
     return datasource
 
-def checkDataBase(connection):
+def checkDataBase(ctx, connection):
     error = None
     version = connection.getMetaData().getDriverVersion()
-    if version != g_version:
-        error = SQLException()
-        error.Message = "DataBase ERROR: hsqldb driver %s is not the correct version... " % g_jar
-        error.Message += "Requiered version: %s - loaded version: %s" % (g_version, version)
+    if version < g_version:
+        state = getMessage(ctx, 1005)
+        msg = getMessage(ctx, 1109, g_jar)
+        msg += getMessage(ctx, 1110, (g_version, version))
+        error = getSqlException(state, 1110, msg)
     return version, error
 
 def executeQueries(statement, queries):
@@ -215,8 +214,6 @@ def getKeyMapSequenceFromResult(result, provider=None):
     return sequence
 
 def getSequenceFromResult(result, sequence=None, index=1, provider=None):
-    # TODO: getSequenceFromResult(result, sequence=[], index=1, provider=None) is buggy
-    # TODO: sequence has the content of last method call!!! sequence must be initialized...
     if sequence is None:
         sequence = []
     i = result.MetaData.ColumnCount
@@ -298,7 +295,6 @@ def getTablesAndStatements(statement, version=g_version):
         query = getSqlQuery('createTable', format)
         if version >= '2.5.0' and versioned:
             query += getSqlQuery('getSystemVersioning')
-        print("dbtool._createDynamicTable(): %s" % query)
         tables.append(query)
         if statement:
             names = ['"Value"']
@@ -310,8 +306,6 @@ def getTablesAndStatements(statement, version=g_version):
                 where.append('"%s"=?' % format['Column'])
             insert = 'INSERT INTO "%s" (%s) VALUES (%s)' % (table, ','.join(names), ','.join(values))
             update = 'UPDATE "%s" SET "Value"=?,"TimeStamp"=? WHERE %s' % (table, ' AND '.join(where))
-            print("dbtools.getCreateTableQueries() Insert: %s" % insert)
-            print("dbtools.getCreateTableQueries() Update: %s" % update)
             statements['insert%s' % table] = insert
             statements['update%s' % table] = update
     call.close()
@@ -320,7 +314,6 @@ def getTablesAndStatements(statement, version=g_version):
 def createStaticTable(statement, tables, readonly=False):
     for table in tables:
         query = getSqlQuery('createTable' + table)
-        print("dbtools.createStaticTable(): %s" % query)
         statement.executeQuery(query)
     for table in tables:
         statement.executeQuery(getSqlQuery('setTableSource', table))
@@ -329,7 +322,6 @@ def createStaticTable(statement, tables, readonly=False):
 
 def executeSqlQueries(statement, queries):
     for query in queries:
-        print("dbtools.executeSqlQueries(): %s" % query)
         statement.executeQuery(query)
 
 def getWarning(state, code, message, context=None, exception=None):

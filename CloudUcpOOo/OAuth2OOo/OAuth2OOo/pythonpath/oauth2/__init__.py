@@ -31,5 +31,6 @@ from .logger import getLoggerUrl
 from .logger import setLoggerSetting
 from .logger import clearLogger
 from .logger import logMessage
+from .logger import getMessage
 
 from . import requests
