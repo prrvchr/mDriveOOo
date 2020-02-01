@@ -42,12 +42,12 @@ try:
 
     from .dbqueries import getSqlQuery
 
-    from .logger import getLogger
     from .logger import getLoggerSetting
     from .logger import getLoggerUrl
     from .logger import setLoggerSetting
     from .logger import clearLogger
     from .logger import logMessage
+    from .logger import getMessage
 
     from .configuration import g_scheme
     from .configuration import g_extension
