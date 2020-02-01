@@ -2,11 +2,6 @@
 # -*- coding: utf_8 -*-
 import traceback
 
-import sys
-print("contentprovider.py")
-print(sys.path)
-
-
 try:
     import uno
     import unohelper

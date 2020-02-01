@@ -1,10 +1,6 @@
 #!
 # -*- coding: utf_8 -*-
 
-import sys
-print("content.py")
-print(sys.path)
-
 import uno
 import unohelper
 
