@@ -47,6 +47,9 @@ class ProviderBase(ProviderObject,
 
     # Must be implemented properties
     @property
+    def Name(self):
+        raise NotImplementedError
+    @property
     def Host(self):
         raise NotImplementedError
     @property

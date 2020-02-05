@@ -279,8 +279,9 @@ class Identifier(unohelper.Base,
             name = uri.getAuthority()
             print("Identifier._getUserName(): uri.getAuthority() = %s" % name)
         elif name == '':
-            povider = self.User.DataSource.Provider.Request.ProviderName
-            name = getUserNameFromHandler(self.ctx, self, povider)
+            povider = self.DataSource.Provider.Name
+            message = "Authentication"
+            name = getUserNameFromHandler(self.ctx, self, povider, message)
             print("Identifier._getUserName(): getUserNameFromHandler() = %s" % name)
         print("Identifier._getUserName(): %s" % name)
         return name
