@@ -3,8 +3,8 @@
   xmlns="http://openoffice.org/extensions/update/2006"
   xmlns:xlink="http://www.w3.org/1999/xlink">
         <identifier value="com.gmail.prrvchr.extensions.OAuth2OOo" />
-        <version value="0.0.3" /> 
+        <version value="0.0.4" /> 
         <update-download>
-                <src xlink:href="https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt" />
+                <src xlink:href="https://github.com/prrvchr/OAuth2OOo/releases/download/v0.0.4/OAuth2OOo.oxt" />
         </update-download>
 </description>
