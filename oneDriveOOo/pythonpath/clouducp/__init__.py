@@ -49,6 +49,7 @@ try:
     from .logger import logMessage
     from .logger import getMessage
 
+    from .configuration import g_provider
     from .configuration import g_scheme
     from .configuration import g_extension
     from .configuration import g_identifier

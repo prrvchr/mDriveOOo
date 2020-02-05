@@ -7,6 +7,7 @@ g_extension = 'oneDriveOOo'
 g_identifier = 'com.gmail.prrvchr.extensions.%s' % g_extension
 g_logger = '%s.Logger' % g_identifier
 
+g_provider = 'Microsoft'
 g_host = 'graph.microsoft.com'
 g_version = 'v1.0' # v1.0 or beta
 g_url = 'https://%s/%s' % (g_host, g_version)

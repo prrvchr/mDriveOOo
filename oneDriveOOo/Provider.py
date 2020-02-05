@@ -21,6 +21,7 @@ from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
 from clouducp import ProviderBase
 from clouducp import g_identifier
+from clouducp import g_provider
 from clouducp import g_host
 from clouducp import g_url
 from clouducp import g_userfields
@@ -50,6 +51,9 @@ class Provider(ProviderBase):
         self.SessionMode = OFFLINE
         self._Error = ''
 
+    @property
+    def Name(self):
+        return g_provider
     @property
     def Host(self):
         return g_host
