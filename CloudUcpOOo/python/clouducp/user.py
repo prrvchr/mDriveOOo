@@ -69,13 +69,13 @@ class User(unohelper.Base,
             self.MetaData = user
             init = True
         elif provider.isOnLine():
-            if self.Request.initializeSession(provider.Scheme, name):
-                user = provider.getUser(self.Request, name)
-                if user.IsPresent:
-                    root = provider.getRoot(self.Request, user.Value)
-                    if root.IsPresent:
-                        self.MetaData = datasource.insertUser(user.Value, root.Value)
-                        init = True
+            self.Request.initializeSession(provider.Scheme, name)
+            user = provider.getUser(self.Request, name)
+            if user.IsPresent:
+                root = provider.getRoot(self.Request, user.Value)
+                if root.IsPresent:
+                    self.MetaData = datasource.insertUser(user.Value, root.Value)
+                    init = True
         else:
             self._Error = "ERROR: Can't retrieve User: %s from provider network is OffLine" % name
         print("User.initialize() 2 %s" % self.MetaData)
