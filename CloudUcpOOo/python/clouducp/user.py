@@ -63,13 +63,13 @@ class User(unohelper.Base,
         print("User.initialize() 1")
         init = False
         provider = datasource.Provider
+        self.Request.initializeSession(provider.Scheme, name)
         self._setSessionMode(provider)
         user = datasource.selectUser(name)
         if user is not None:
             self.MetaData = user
             init = True
         elif provider.isOnLine():
-            self.Request.initializeSession(provider.Scheme, name)
             user = provider.getUser(self.Request, name)
             if user.IsPresent:
                 root = provider.getRoot(self.Request, user.Value)
