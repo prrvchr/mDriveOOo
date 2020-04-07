@@ -25,6 +25,7 @@ from unolib import createService
 from unolib import getConfiguration
 from unolib import getDialog
 
+from oauth2 import Request
 from oauth2 import Enumeration
 from oauth2 import Enumerator
 from oauth2 import InputStream
@@ -207,6 +208,9 @@ class OAuth2Service(unohelper.Base,
         if error:
             self._Warnings.append(self._getException(error))
         return response
+
+    def getRequest(self, parameter, parser):
+        return Request(self.Session, parameter, self.Timeout, parser)
 
     def getEnumeration(self, parameter, parser):
         return Enumeration(self.Session, parameter, self.Timeout, parser)

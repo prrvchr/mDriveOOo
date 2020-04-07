@@ -4,12 +4,27 @@
 import uno
 
 from com.sun.star.lang import WrappedTargetRuntimeException
+from com.sun.star.connection import NoConnectException
+from com.sun.star.ucb.ConnectionMode import ONLINE
+from com.sun.star.ucb.ConnectionMode import OFFLINE
 
 from .unolib import InteractionHandler
 
 import datetime
 import binascii
 import traceback
+
+
+def getConnectionMode(ctx, host, port=80):
+    connector = ctx.ServiceManager.createInstance('com.sun.star.connection.Connector')
+    try:
+        connection = connector.connect('socket,host=%s,port=%s' % (host, port))
+    except NoConnectException:
+        mode = OFFLINE
+    else:
+        connection.close()
+        mode = ONLINE
+    return mode
 
 def getSimpleFile(ctx):
     return ctx.ServiceManager.createInstance('com.sun.star.ucb.SimpleFileAccess')
@@ -158,22 +173,47 @@ def getInteractionHandler(ctx):
     interaction = ctx.ServiceManager.createInstanceWithArguments(service, args)
     return interaction
 
-def parseDateTime(timestr='', format='%Y-%m-%dT%H:%M:%S.%fZ'):
-    if not timestr:
-        t = datetime.datetime.now()
+def getDateTime(utc=True):
+    if utc:
+        t = datetime.datetime.utcnow()
     else:
-        t = datetime.datetime.strptime(timestr, format)
-    return _getDateTime(t.microsecond, t.second, t.minute, t.hour, t.day, t.month, t.year)
+        t = datetime.datetime.now()
+    return _getDateTime(t.microsecond, t.second, t.minute, t.hour, t.day, t.month, t.year, utc)
 
-def unparseDateTime(t=None):
+def parseDateTime(timestr='', format='%Y-%m-%dT%H:%M:%S.%fZ', utc=True):
+    if timestr != '':
+        t = datetime.datetime.strptime(timestr, format)
+    elif utc:
+        t = datetime.datetime.utcnow()
+    else:
+        t = datetime.datetime.now()
+    return _getDateTime(t.microsecond, t.second, t.minute, t.hour, t.day, t.month, t.year, utc)
+
+def unparseDateTime(t=None, utc=True, decimal=6):
     if t is None:
-        return datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    millisecond = 0
+        if utc:
+            now = datetime.datetime.utcnow()
+        else:
+            now = datetime.datetime.now()
+        return now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    fraction = 0
     if hasattr(t, 'HundredthSeconds'):
-        millisecond = t.HundredthSeconds * 10
+        fraction = t.HundredthSeconds // (10 ** (3 -decimal))
     elif hasattr(t, 'NanoSeconds'):
-        millisecond = t.NanoSeconds // 1000000
-    return '%s-%s-%sT%s:%s:%s.%03dZ' % (t.Year, t.Month, t.Day, t.Hours, t.Minutes, t.Seconds, millisecond)
+        fraction = t.NanoSeconds // (10 ** (9 - decimal))
+    format = '%04d-%02d-%02dT%02d:%02d:%02d.%'
+    format += '0%sdZ' % decimal
+    return format % (t.Year, t.Month, t.Day, t.Hours, t.Minutes, t.Seconds, fraction)
+
+def unparseTimeStamp(t=None, utc=True):
+    if t is None:
+        if utc:
+            now = datetime.datetime.utcnow()
+        else:
+            now = datetime.datetime.now()
+        return now.strftime('%Y-%m-%d %H:%M:%S')
+    format = '%04d-%02d-%02d %02d:%02d:%02d'
+    return format % (t.Year, t.Month, t.Day, t.Hours, t.Minutes, t.Seconds)
 
 def _getDateTime(microsecond=0, second=0, minute=0, hour=0, day=1, month=1, year=1970, utc=True):
     t = uno.createUnoStruct('com.sun.star.util.DateTime')

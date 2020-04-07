@@ -12,6 +12,7 @@ rm ${Path}/${WorkBench}/types.rdb
 ./rdb/make_rdb.sh ${WorkBench} com/sun/star/auth/RestRequestParameter
 ./rdb/make_rdb.sh ${WorkBench} com/sun/star/auth/XRestKeyMap
 ./rdb/make_rdb.sh ${WorkBench} com/sun/star/auth/XRestDataParser
+./rdb/make_rdb.sh ${WorkBench} com/sun/star/auth/XRestRequest
 ./rdb/make_rdb.sh ${WorkBench} com/sun/star/auth/XRestEnumeration
 ./rdb/make_rdb.sh ${WorkBench} com/sun/star/auth/XInteractionUserName
 ./rdb/make_rdb.sh ${WorkBench} com/sun/star/auth/XOAuth2Request

@@ -20,6 +20,7 @@ from com.sun.star.connection import NoConnectException
 
 from com.sun.star.auth import XRestUploader
 from com.sun.star.auth import XRestEnumeration
+from com.sun.star.auth import XRestRequest
 from com.sun.star.auth.RestRequestTokenType import TOKEN_NONE
 from com.sun.star.auth.RestRequestTokenType import TOKEN_URL
 from com.sun.star.auth.RestRequestTokenType import TOKEN_REDIRECT
@@ -89,6 +90,23 @@ def execute(session, parameter, timeout, parser=None):
                 response.Value = _parseResponse(r)
     return response, error
 
+class Request(unohelper.Base,
+              XRestRequest):
+    def __init__(self, session, parameter, timeout, parser=None):
+        self.session = session
+        self.parameter = parameter
+        self.timeout = timeout
+        self.parser = parser
+        self.error = None
+
+    # XRestRequest
+    def getWarnings(self):
+        return self.error
+    def clearWarnings(self):
+        self.error = None
+    def execute(self):
+        response, self.error = execute(self.session, self.parameter, self.timeout, self.parser)
+        return response
 
 class Enumeration(unohelper.Base,
                   XRestEnumeration):
@@ -144,7 +162,6 @@ class Enumeration(unohelper.Base,
             if self.synchro:
                 self.sync = r.getDefaultValue(t.SyncField, '')
         return response, error
-
 
 class Enumerator(unohelper.Base,
                  XRestEnumeration):

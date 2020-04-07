@@ -18,6 +18,33 @@ class KeyMap(unohelper.Base,
     def __init__(self, **kwargs):
         self._value = OrderedDict(kwargs)
 
+    def __len__(self):
+        return len(self._value)
+
+    def __iter__(self):
+        for value in self._value.values():
+            yield self._getValue(value)
+
+    def __getitem__(self, index):
+        return self.getValueByIndex(index)
+
+    def __add__(self, other):
+        if isinstance(other, type(self)):
+            self._value.update(other._value)
+        return self
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __iadd__(self, other):
+        return self.__add__(other)
+
+    def __repr__(self):
+        return self._value.__repr__()
+
+    def __str__(self):
+        return self._value.__str__()
+
     def _getValue(self, value):
         if isinstance(value, dict):
             value = KeyMap(**value)
@@ -28,7 +55,7 @@ class KeyMap(unohelper.Base,
     # XStringKeyMap
     @property
     def Count(self):
-        return len(self._value)
+        return self.__len__()
 
     def getValue(self, key):
         if key in self._value:
@@ -46,13 +73,13 @@ class KeyMap(unohelper.Base,
     def setValue(self, key, value):
         self._value[key] = value
 
-    def getKeyByIndex(self, i):
-        if 0 <= i < self.Count:
-            return list(self._value.keys())[i]
+    def getKeyByIndex(self, index):
+        if 0 <= index < self.Count:
+            return self._value.keys()[index]
         raise IndexOutOfBoundsException()
 
-    def getValueByIndex(self, i):
-        key = self.getKeyByIndex(i)
+    def getValueByIndex(self, index):
+        key = self.getKeyByIndex(index)
         value = self._value[key]
         return self._getValue(value)
 

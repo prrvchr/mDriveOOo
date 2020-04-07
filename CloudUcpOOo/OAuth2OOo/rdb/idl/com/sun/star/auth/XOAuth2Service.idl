@@ -4,6 +4,7 @@
 #include <com/sun/star/uno/XInterface.idl>
 #include <com/sun/star/auth/RestRequestParameter.idl>
 #include <com/sun/star/auth/XRestKeyMap.idl>
+#include <com/sun/star/auth/XRestRequest.idl>
 #include <com/sun/star/auth/XRestEnumeration.idl>
 #include <com/sun/star/beans/Optional.idl>
 #include <com/sun/star/io/XInputStream.idl>
@@ -40,6 +41,9 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
     ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> execute([in] RestRequestParameter Parameter);
 
     ::com::sun::star::auth::XRestEnumeration getEnumerator([in] RestRequestParameter Parameter);
+
+    ::com::sun::star::auth::XRestRequest getRequest([in] RestRequestParameter Parameter,
+                                                    [in] ::com::sun::star::uno::XInterface Parser);
 
     ::com::sun::star::auth::XRestEnumeration getEnumeration([in] RestRequestParameter Parameter,
                                                             [in] ::com::sun::star::uno::XInterface Parser);

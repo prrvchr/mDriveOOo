@@ -168,8 +168,7 @@ def registerDataSource(dbcontext, dbname, url):
 def getKeyMapFromResult(result, keymap=KeyMap(), provider=None):
     for i in range(1, result.MetaData.ColumnCount +1):
         name = result.MetaData.getColumnName(i)
-        dbtype = result.MetaData.getColumnTypeName(i)
-        value = _getValueFromResult(result, dbtype, i)
+        value = getValueFromResult(result, i)
         if value is None:
             continue
         if result.wasNull():
@@ -183,8 +182,7 @@ def getDataFromResult(result, provider=None):
     data = {}
     for i in range(1, result.MetaData.ColumnCount +1):
         name = result.MetaData.getColumnName(i)
-        dbtype = result.MetaData.getColumnTypeName(i)
-        value = _getValueFromResult(result, dbtype, i)
+        value = getValueFromResult(result, i)
         if value is None:
             continue
         if result.wasNull():
@@ -201,8 +199,7 @@ def getKeyMapSequenceFromResult(result, provider=None):
         keymap = KeyMap()
         for i in range(1, count):
             name = result.MetaData.getColumnName(i)
-            dbtype = result.MetaData.getColumnTypeName(i)
-            value = _getValueFromResult(result, dbtype, i)
+            value = getValueFromResult(result, i)
             if value is None:
                 continue
             if result.wasNull():
@@ -211,6 +208,19 @@ def getKeyMapSequenceFromResult(result, provider=None):
                 value = provider.transform(name, value)
             keymap.insertValue(name, value)
         sequence.append(keymap)
+    return sequence
+
+def getKeyMapKeyMapFromResult(result):
+    sequence = KeyMap()
+    count = result.MetaData.ColumnCount +1
+    while result.next():
+        keymap = KeyMap()
+        name = getValueFromResult(result, 1)
+        for i in range(2, count):
+            v = getValueFromResult(result, i)
+            n = result.MetaData.getColumnName(i)
+            keymap.insertValue(n, v)
+        sequence.insertValue(name, keymap)
     return sequence
 
 def getSequenceFromResult(result, sequence=None, index=1, provider=None):
@@ -222,9 +232,8 @@ def getSequenceFromResult(result, sequence=None, index=1, provider=None):
     if not i:
         return sequence
     name = result.MetaData.getColumnName(i)
-    dbtype = result.MetaData.getColumnTypeName(i)
     while result.next():
-        value = _getValueFromResult(result, dbtype, i)
+        value = getValueFromResult(result, i)
         if value is None:
             continue
         if result.wasNull():
@@ -234,7 +243,20 @@ def getSequenceFromResult(result, sequence=None, index=1, provider=None):
         sequence.append(value)
     return sequence
 
-def _getValueFromResult(result, dbtype, index):
+def getRowResult(result, index=(0,), separator=' '):
+    sequence = []
+    if len(index) > 0:
+        result.beforeFirst()
+        while result.next():
+            values = []
+            for i in index:
+                column = i + 1
+                values.append('%s' % getValueFromResult(result, column, ''))
+            sequence.append(separator.join(values))
+    return tuple(sequence)
+
+def getValueFromResult(result, index, default=None):
+    dbtype = result.MetaData.getColumnTypeName(index)
     if dbtype == 'VARCHAR':
         value = result.getString(index)
     elif dbtype == 'TIMESTAMP':
@@ -244,72 +266,8 @@ def _getValueFromResult(result, dbtype, index):
     elif dbtype == 'BIGINT' or dbtype == 'SMALLINT' or dbtype == 'INTEGER':
         value = result.getLong(index)
     else:
-        value = None
+        value = default
     return value
-
-def getTablesAndStatements(statement, version=g_version):
-    tables = []
-    statements = {}
-    call = getDataSourceCall(statement.getConnection(), 'getTables')
-    for table in getSequenceFromResult(statement.executeQuery(getSqlQuery('getTableName'))):
-        statement = False
-        versioned = False
-        columns = []
-        primary = []
-        unique = []
-        constraint = []
-        call.setString(1, table)
-        result = call.executeQuery()
-        while result.next():
-            data = getKeyMapFromResult(result, KeyMap())
-            statement = data.getValue('View')
-            versioned = data.getValue('Versioned')
-            column = data.getValue('Column')
-            definition = '"%s"' % column
-            definition += ' %s' % data.getValue('Type')
-            lenght = data.getValue('Lenght')
-            definition += '(%s)' % lenght if lenght else ''
-            default = data.getValue('Default')
-            definition += ' DEFAULT %s' % default if default else ''
-            options = data.getValue('Options')
-            definition += ' %s' % options if options else ''
-            columns.append(definition)
-            if data.getValue('Primary'):
-                primary.append('"%s"' % column)
-            if data.getValue('Unique'):
-                unique.append({'Table': table, 'Column': column})
-            if data.getValue('ForeignTable') and data.getValue('ForeignColumn'):
-                constraint.append({'Table': table,
-                                   'Column': column,
-                                   'ForeignTable': data.getValue('ForeignTable'),
-                                   'ForeignColumn': data.getValue('ForeignColumn')})
-        if primary:
-            columns.append(getSqlQuery('getPrimayKey', primary))
-        for format in unique:
-            columns.append(getSqlQuery('getUniqueConstraint', format))
-        for format in constraint:
-            columns.append(getSqlQuery('getForeignConstraint', format))
-        if version >= '2.5.0' and versioned:
-            columns.append(getSqlQuery('getPeriodColumns'))
-        format = (table, ','.join(columns))
-        query = getSqlQuery('createTable', format)
-        if version >= '2.5.0' and versioned:
-            query += getSqlQuery('getSystemVersioning')
-        tables.append(query)
-        if statement:
-            names = ['"Value"']
-            values = ['?']
-            where = []
-            for format in constraint:
-                names.append('"%s"' % format['Column'])
-                values.append('?')
-                where.append('"%s"=?' % format['Column'])
-            insert = 'INSERT INTO "%s" (%s) VALUES (%s)' % (table, ','.join(names), ','.join(values))
-            update = 'UPDATE "%s" SET "Value"=?,"TimeStamp"=? WHERE %s' % (table, ' AND '.join(where))
-            statements['insert%s' % table] = insert
-            statements['update%s' % table] = update
-    call.close()
-    return tables, statements
 
 def createStaticTable(statement, tables, readonly=False):
     for table in tables:
