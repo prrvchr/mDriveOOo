@@ -16,6 +16,7 @@ from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
 from com.sun.star.ui.dialogs.ExecutableDialogResults import CANCEL
 
 from com.sun.star.uno import Exception as UnoException
+from com.sun.star.auth import OAuth2Request
 
 from unolib import OAuth2OOo
 from unolib import NoOAuth2
@@ -99,30 +100,34 @@ class OAuth2Service(unohelper.Base,
     def handle(self, interaction):
         self.handleInteractionRequest(interaction)
     def handleInteractionRequest(self, interaction):
-        try:
-            handler = DialogHandler()
-            dialog = getDialog(self.ctx, self.Parent, handler, 'OAuth2OOo', 'UserDialog')
-            # TODO: interaction.getRequest() does not seem to be functional under LibreOffice !!!
-            # dialog.setTitle(interaction.getRequest().Message)
-            self._initUserDialog(dialog, interaction.getProviderName())
-            status = dialog.execute()
-            approved = status == OK
-            continuation = interaction.getContinuations()[status]
-            if approved:
-                username = dialog.getControl('TextField1').Model.Text
-                continuation.setUserName(username)
-            continuation.select()
-            dialog.dispose()
-            return approved
-        except Exception as e:
-            msg = "Error: %s - %s" % (e, traceback.print_exc())
-            logMessage(self.ctx, SEVERE, msg, 'OAuth2Service', 'handleInteractionRequest()')
+        # TODO: interaction.getRequest() does not seem to be functional under LibreOffice !!!
+        # TODO: throw error AttributeError: "args"
+        # TODO: on File "/usr/lib/python3/dist-packages/uno.py"
+        # TODO: at line 525 in "_uno_struct__setattr__"
+        # TODO: as a workaround we must set an "args" attribute of type "sequence<any>" to
+        # TODO: IDL file of com.sun.star.auth.OAuth2Request Exception who is normally returned...
+        url = interaction.getRequest().ResourceUrl
+        provider = self._getProviderNameFromUrl(url)
+        dialog = getDialog(self.ctx, 'OAuth2OOo', 'UserDialog', DialogHandler(), self.Parent)
+        self._initUserDialog(dialog, provider)
+        status = dialog.execute()
+        approved = status == OK
+        continuation = interaction.getContinuations()[status]
+        if approved:
+            continuation.setUserName(self._getUserName(dialog))
+        continuation.select()
+        dialog.dispose()
+        return approved
 
-    def _initUserDialog(self, dialog, name):
+    def _initUserDialog(self, dialog, name=''):
         title = self.stringResource.resolveString('UserDialog.Title')
         label = self.stringResource.resolveString('UserDialog.Label1.Label')
         dialog.setTitle(title % name)
         dialog.getControl('Label1').Text = label % name
+
+    def _getUserName(self, dialog):
+        return dialog.getControl('TextField1').Model.Text
+
 
     # XOAuth2Service
     def getWarnings(self):
@@ -141,6 +146,12 @@ class OAuth2Service(unohelper.Base,
     def initializeUrl(self, url):
         self.Setting.Url.Id = url
         return self.Setting.Url.Initialized
+
+    def _getProviderNameFromUrl(self, url):
+        self.Setting.Url.Id = url
+        if self.Setting.Url.Initialized:
+            return self.ProviderName
+        return ''
 
     def initializeSession(self, url, name):
         self.Setting.Url.Id = url

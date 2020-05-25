@@ -112,7 +112,7 @@ class OptionsDialog(unohelper.Base,
         dialog.getControl('CommandButton1').Model.Enabled = enabled
 
     def _viewLog(self, window):
-        dialog = getDialog(self.ctx, window.Peer, self, g_extension, 'LogDialog')
+        dialog = getDialog(self.ctx, g_extension, 'LogDialog', self, window.Peer)
         url = getLoggerUrl(self.ctx)
         dialog.Title = url
         self._setDialogText(dialog, url)

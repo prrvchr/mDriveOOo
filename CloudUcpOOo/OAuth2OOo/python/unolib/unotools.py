@@ -93,12 +93,17 @@ def getStringResource(ctx, identifier, path=None, filename='DialogStrings', loca
 def generateUuid():
     return binascii.hexlify(uno.generateUuid().value).decode('utf-8')
 
-def getDialog(ctx, window, handler, library, xdl):
+def getDialog(ctx, library, xdl, handler=None, window=None):
     dialog = None
     provider = ctx.ServiceManager.createInstance('com.sun.star.awt.DialogProvider')
     url = getDialogUrl(library, xdl)
-    arguments = getNamedValueSet({'ParentWindow': window, 'EventHandler': handler})
-    dialog = provider.createDialogWithArguments(url, arguments)
+    if handler is None and window is None:
+        dialog = provider.createDialog(url)
+    elif handler is not None and window is None:
+        dialog = provider.createDialogWithHandler(url, handler)
+    else:
+        args = getNamedValueSet({'ParentWindow': window, 'EventHandler': handler})
+        dialog = provider.createDialogWithArguments(url, args)
     return dialog
 
 def getContainerWindow(ctx, parent, handler, library, xdl):

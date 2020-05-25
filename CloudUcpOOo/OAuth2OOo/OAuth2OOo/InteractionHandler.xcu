@@ -14,11 +14,6 @@
                         <value>named-and-derived</value>
                     </prop>
                 </node>
-                <node oor:name="com.sun.star.task.ClassifiedInteractionRequest" oor:op="fuse">
-                    <prop oor:name="Propagation">
-                        <value>named-and-derived</value>
-                    </prop>
-                </node>
             </node>
             <prop oor:name="ServiceName">
                 <value>com.gmail.prrvchr.extensions.OAuth2OOo.OAuth2Service</value>

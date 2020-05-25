@@ -115,11 +115,10 @@ class OptionsDialog(unohelper.Base,
             print("OptionDialog._doConnect() 1")
             url = dialog.getControl('ComboBox2').SelectedText
             if url != '':
-                message = "Authentication"
+                message = "Authentication needed!!!"
                 if self.service.initializeUrl(url):
-                    print("OptionDialog._doConnect() 2")
-                    provider = self.service.ProviderName
-                    user = getUserNameFromHandler(self.ctx, self, provider, message)
+                    print("OptionDialog._doConnect() 2 %s" % url)
+                    user = getUserNameFromHandler(self.ctx, url, self, message)
             autoclose = bool(dialog.getControl('CheckBox2').State)
             print("OptionDialog._doConnect() 3 %s - %s - %s" % (user, url, autoclose))
             enabled = self.service.getAuthorization(url, user, autoclose)
@@ -152,7 +151,7 @@ class OptionsDialog(unohelper.Base,
 
     def _toggleLogger(self, dialog, enabled):
         dialog.getControl('Label1').Model.Enabled = enabled
-        dialog.getControl('ComboBox1').Model.Enabled = enabled
+        dialog.getControl('ListBox1').Model.Enabled = enabled
         dialog.getControl('OptionButton1').Model.Enabled = enabled
         control = dialog.getControl('OptionButton2')
         control.Model.Enabled = enabled
@@ -162,7 +161,7 @@ class OptionsDialog(unohelper.Base,
         dialog.getControl('CommandButton1').Model.Enabled = enabled
 
     def _viewLog(self, window):
-        dialog = getDialog(self.ctx, window.Peer, self, 'OAuth2OOo', 'LogDialog')
+        dialog = getDialog(self.ctx, 'OAuth2OOo', 'LogDialog', self, window.Peer)
         url = getLoggerUrl(self.ctx)
         dialog.Title = url
         self._setDialogText(dialog, url)
@@ -186,19 +185,13 @@ class OptionsDialog(unohelper.Base,
     def _loadLoggerSetting(self, dialog):
         enabled, index, handler = getLoggerSetting(self.ctx)
         dialog.getControl('CheckBox1').State = int(enabled)
-        self._setLoggerLevel(dialog.getControl('ComboBox1'), index)
+        self._setLoggerLevel(dialog.getControl('ListBox1'), index)
         dialog.getControl('OptionButton%s' % handler).State = 1
         self._toggleLogger(dialog, enabled)
 
     def _setLoggerLevel(self, control, index):
-        control.Text = self._getLoggerLevelText(control.Model.Name, index)
-
-    def _getLoggerLevel(self, control):
-        name = control.Model.Name
-        for index in range(control.ItemCount):
-            if self._getLoggerLevelText(name, index) == control.Text:
-                break
-        return index
+        level = self._getLoggerLevelText(control.Model.Name, index)
+        control.selectItem(level, True)
 
     def _getLoggerLevelText(self, name, index):
         text = 'OptionsDialog.%s.StringItemList.%s' % (name, index)
@@ -206,7 +199,7 @@ class OptionsDialog(unohelper.Base,
 
     def _saveLoggerSetting(self, dialog):
         enabled = bool(dialog.getControl('CheckBox1').State)
-        index = self._getLoggerLevel(dialog.getControl('ComboBox1'))
+        index = dialog.getControl('ListBox1').getSelectedItemPos()
         handler = dialog.getControl('OptionButton1').State
         setLoggerSetting(self.ctx, enabled, index, handler)
 

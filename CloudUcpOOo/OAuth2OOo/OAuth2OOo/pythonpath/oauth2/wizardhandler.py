@@ -120,7 +120,7 @@ class WizardHandler(unohelper.Base,
             print("WizardHandler._getDialog() %s - %s" % (method, item))
             xdl = '%sDialog' % item
             handler = DialogHandler()
-            dialog = getDialog(self.ctx, window.Peer, handler, 'OAuth2OOo', xdl)
+            dialog = getDialog(self.ctx, 'OAuth2OOo', xdl, handler, window.Peer)
         else:
             title = self.stringResource.resolveString('MessageBox.Title')
             message = self.stringResource.resolveString('MessageBox.Message')

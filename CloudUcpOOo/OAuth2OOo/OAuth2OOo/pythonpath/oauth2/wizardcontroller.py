@@ -51,6 +51,7 @@ class WizardController(unohelper.Base,
         self.ResourceUrl = url
         self.UserName = username
         self.AutoClose = autoclose
+        self._pages = [1]
         self.AuthorizationCode = uno.createUnoStruct('com.sun.star.beans.Optional<string>')
         self.Server = WizardServer(self.ctx)
         self.Uuid = generateUuid()
@@ -145,11 +146,8 @@ class WizardController(unohelper.Base,
             if id == 1:
                 path = getActivePath(self.Configuration)
                 self.Wizard.activatePath(path, True)
-                page = self.Wizard.CurrentPage
-                if page.FirstLoad:
-                    page.FirstLoad = False
-                    if page.canAdvance():
-                        self.Wizard.travelNext()
+                if self._isFirstLoad(id) and self.canAdvance():
+                    self.Wizard.travelNext()
             elif id == 2:
                 pass
                 #if self.Shortened:
@@ -202,6 +200,12 @@ class WizardController(unohelper.Base,
         if result:
             self.Configuration.commit()
         return result
+
+    def _isFirstLoad(self, id):
+        if id in self._pages:
+            self._pages.remove(id)
+            return True
+        return False
 
     def _getPropertySetInfo(self):
         properties = {}
