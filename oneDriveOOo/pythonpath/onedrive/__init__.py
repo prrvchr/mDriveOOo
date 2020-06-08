@@ -30,7 +30,6 @@ try:
     from .contenttools import getContentInfo
     from .contenttools import propertyChange
 
-    from .dbtools import getTablesAndStatements
     from .dbtools import registerDataSource
     from .dbtools import executeQueries
     from .dbtools import getDataSourceLocation

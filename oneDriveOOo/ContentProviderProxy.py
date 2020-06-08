@@ -18,11 +18,11 @@ from com.sun.star.logging.LogLevel import SEVERE
 from unolib import PropertySet
 from unolib import getProperty
 
-from clouducp import logMessage
-from clouducp import ContentProvider
-from clouducp import getUcp
-from clouducp import g_scheme
-from clouducp import g_identifier
+from onedrive import logMessage
+from onedrive import ContentProvider
+from onedrive import getUcp
+from onedrive import g_scheme
+from onedrive import g_identifier
 
 g_proxy = 'com.sun.star.ucb.ContentProviderProxy'
 
