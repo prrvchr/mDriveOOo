@@ -21,6 +21,7 @@ from unolib import getStringResource
 from unolib import getContainerWindow
 from unolib import getDialogUrl
 
+from .wizard import Wizard
 from .wizardhandler import WizardHandler
 from .wizardserver import WizardServer
 from .wizardpage import WizardPage
@@ -55,9 +56,9 @@ class WizardController(unohelper.Base,
         self.AuthorizationCode = uno.createUnoStruct('com.sun.star.beans.Optional<string>')
         self.Server = WizardServer(self.ctx)
         self.Uuid = generateUuid()
-        self.Wizard = createService(self.ctx, 'com.sun.star.ui.dialogs.Wizard')
-        arguments = ((uno.Any('[][]short', g_wizard_paths), self), )
-        uno.invoke(self.Wizard, 'initialize', arguments)
+        self.Wizard = Wizard(self.ctx)
+        arguments = (g_wizard_paths, self)
+        self.Wizard.initialize(arguments)
         self.Error = ''
         self.stringResource = getStringResource(self.ctx, g_identifier, 'OAuth2OOo')
         #service = 'com.sun.star.awt.ContainerWindowProvider'
@@ -88,7 +89,7 @@ class WizardController(unohelper.Base,
     def notify(self, percent):
         msg = "WizardController.notify() %s" % percent
         logMessage(self.ctx, INFO, msg, 'WizardController', 'notify()')
-        page = self.Wizard.CurrentPage
+        page = self.Wizard.getCurrentPage()
         if page.PageId == 3:
             if page.Window:
                 page.Window.getControl('ProgressBar1').Value = percent
@@ -133,7 +134,7 @@ class WizardController(unohelper.Base,
         title = self.stringResource.resolveString('PageWizard%s.Step' % (id, ))
         return title
     def canAdvance(self):
-        return self.Wizard.CurrentPage.canAdvance()
+        return self.Wizard.getCurrentPage().canAdvance()
     def onActivatePage(self, id):
         try:
             msg = "PageId: %s..." % id
