@@ -5,6 +5,7 @@ from com.sun.star.sdbc import SQLException
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from unolib import KeyMap
 from unolib import getResourceLocation
 from unolib import getSimpleFile
 
