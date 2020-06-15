@@ -121,7 +121,12 @@ class Server(Thread):
             with self.lock:
                 result = self._getResult(connection)
                 location = self._getResultLocation(result)
-                header = 'HTTP/1.1 302 Found\r\nLocation: %s\r\nConnection: Closed\r\n\r\n' % location
+                header = '''\
+HTTP/1.1 302 Found
+Location: %s
+Connection: Closed
+
+''' % location
                 try:
                     connection.write(uno.ByteSequence(header.encode('utf8')))
                 except IOException as e:

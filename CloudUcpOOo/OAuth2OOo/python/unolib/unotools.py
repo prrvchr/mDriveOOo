@@ -16,7 +16,7 @@ import traceback
 
 
 def getConnectionMode(ctx, host, port=80):
-    connector = ctx.ServiceManager.createInstance('com.sun.star.connection.Connector')
+    connector = createService(ctx, 'com.sun.star.connection.Connector')
     try:
         connection = connector.connect('socket,host=%s,port=%s' % (host, port))
     except NoConnectException:
@@ -27,7 +27,7 @@ def getConnectionMode(ctx, host, port=80):
     return mode
 
 def getSimpleFile(ctx):
-    return ctx.ServiceManager.createInstance('com.sun.star.ucb.SimpleFileAccess')
+    return createService(ctx, 'com.sun.star.ucb.SimpleFileAccess')
 
 def getFileSequence(ctx, url, default=None):
     length, sequence = 0, uno.ByteSequence(b'')
@@ -42,6 +42,13 @@ def _getSequence(inputstream, length):
     length, sequence = inputstream.readBytes(None, length)
     inputstream.closeInput()
     return length, sequence
+
+def getInterfaceTypes(interface):
+    try:
+        types = interface.getTypes()
+    except:
+        types = ()
+    return types
 
 def getProperty(name, type=None, attributes=None, handle=-1):
     property = uno.createUnoStruct('com.sun.star.beans.Property')
@@ -65,7 +72,7 @@ def getResourceLocation(ctx, identifier, path=None):
 
 def getConfiguration(ctx, nodepath, update=False):
     service = 'com.sun.star.configuration.ConfigurationProvider'
-    provider = ctx.ServiceManager.createInstance(service)
+    provider = createService(ctx, service)
     service = 'com.sun.star.configuration.ConfigurationUpdateAccess' if update else \
               'com.sun.star.configuration.ConfigurationAccess'
     arguments = (uno.createUnoStruct('com.sun.star.beans.NamedValue', 'nodepath', nodepath), )
@@ -78,7 +85,7 @@ def getCurrentLocale(ctx):
     if len(parts) > 1:
         locale.Country = parts[1]
     else:
-        service = ctx.ServiceManager.createInstance('com.sun.star.i18n.LocaleData')
+        service = createService(ctx, 'com.sun.star.i18n.LocaleData')
         locale.Country = service.getLanguageCountryInfo(locale).Country
     return locale
 
@@ -87,15 +94,15 @@ def getStringResource(ctx, identifier, path=None, filename='DialogStrings', loca
     location = getResourceLocation(ctx, identifier, path)
     if locale is None:
         locale = getCurrentLocale(ctx)
-    arguments = (location, True, locale, filename, '', InteractionHandler())
-    return ctx.ServiceManager.createInstanceWithArgumentsAndContext(service, arguments, ctx)
+    args = (location, True, locale, filename, '', InteractionHandler())
+    return ctx.ServiceManager.createInstanceWithArgumentsAndContext(service, args, ctx)
 
 def generateUuid():
     return binascii.hexlify(uno.generateUuid().value).decode('utf-8')
 
 def getDialog(ctx, library, xdl, handler=None, window=None):
     dialog = None
-    provider = ctx.ServiceManager.createInstance('com.sun.star.awt.DialogProvider')
+    provider = createService(ctx, 'com.sun.star.awt.DialogProvider')
     url = getDialogUrl(library, xdl)
     if handler is None and window is None:
         dialog = provider.createDialog(url)
@@ -109,7 +116,7 @@ def getDialog(ctx, library, xdl, handler=None, window=None):
 def getContainerWindow(ctx, parent, handler, library, xdl):
     window = None
     service = 'com.sun.star.awt.ContainerWindowProvider'
-    provider = ctx.ServiceManager.createInstanceWithContext(service, ctx)
+    provider = createService(ctx, service)
     url = getDialogUrl(library, xdl)
     try:
         window = provider.createContainerWindow(url, '', parent, handler)
@@ -173,9 +180,9 @@ def getPropertySetInfoChangeEvent(source, name, reason, handle=-1):
 
 def getInteractionHandler(ctx):
     service = 'com.sun.star.task.InteractionHandler'
-    desktop = ctx.ServiceManager.createInstance('com.sun.star.frame.Desktop')
+    desktop = createService(ctx, 'com.sun.star.frame.Desktop')
     args = getPropertyValueSet({'Parent': desktop.ActiveFrame.ComponentWindow})
-    interaction = ctx.ServiceManager.createInstanceWithArguments(service, args)
+    interaction = ctx.ServiceManager.createInstanceWithArgumentsAndContext(service, args, ctx)
     return interaction
 
 def getDateTime(utc=True):

@@ -37,7 +37,7 @@ class WizardHandler(unohelper.Base,
         self.session = session
         self.Configuration = configuration
         self.Wizard = wizard
-        self.stringResource = getStringResource(self.ctx, g_identifier, 'OAuth2OOo')
+        self._stringResource = getStringResource(self.ctx, g_identifier, 'OAuth2OOo')
         #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
         #mri.inspect(self.Wizard)
 
@@ -86,7 +86,7 @@ class WizardHandler(unohelper.Base,
 
     def _loadUrl(self, window, control):
         name = control.Model.Name
-        url = self.stringResource.resolveString('PageWizard2.%s.Url' % name)
+        url = self._stringResource.resolveString('PageWizard2.%s.Url' % name)
         openUrl(self.ctx, url)
 
     def _addItem(self, window, item):
@@ -122,8 +122,8 @@ class WizardHandler(unohelper.Base,
             handler = DialogHandler()
             dialog = getDialog(self.ctx, 'OAuth2OOo', xdl, handler, window.Peer)
         else:
-            title = self.stringResource.resolveString('MessageBox.Title')
-            message = self.stringResource.resolveString('MessageBox.Message')
+            title = self._stringResource.resolveString('MessageBox.Title')
+            message = self._stringResource.resolveString('MessageBox.Message')
             dialog = createMessageBox(window.Peer, message, title)
         return dialog
 
@@ -131,9 +131,9 @@ class WizardHandler(unohelper.Base,
         if item == 'Provider':
             if not id:
                 id = self.Configuration.Url.ProviderName
-            title = self.stringResource.resolveString('ProviderDialog.Title')
+            title = self._stringResource.resolveString('ProviderDialog.Title')
             dialog.setTitle(title % id)
-            title = self.stringResource.resolveString('ProviderDialog.FrameControl1.Label')
+            title = self._stringResource.resolveString('ProviderDialog.FrameControl1.Label')
             print("WizardHandler._initDialog() Provider")
             dialog.getControl('FrameControl1').Model.Label = title % id
             if method == 'Edit':
@@ -170,9 +170,9 @@ class WizardHandler(unohelper.Base,
             if not id:
                 id = self.Configuration.Url.ScopeName
             print("WizardHandler._initDialog() Scope: %s" % (id, ))
-            title = self.stringResource.resolveString('ScopeDialog.Title')
+            title = self._stringResource.resolveString('ScopeDialog.Title')
             dialog.setTitle(title % id)
-            title = self.stringResource.resolveString('ScopeDialog.FrameControl1.Label')
+            title = self._stringResource.resolveString('ScopeDialog.FrameControl1.Label')
             dialog.getControl('FrameControl1').Model.Label = title % id
             if method == 'Edit':
                 values = self.Configuration.Url.Scope.Values
@@ -297,7 +297,7 @@ class WizardHandler(unohelper.Base,
                     canadd &= self._isSelected(window.getControl('ComboBox3'))
                     window.getControl('CommandButton1').Model.Enabled = canadd
                     window.getControl('CommandButton2').Model.Enabled = False
-                title = self.stringResource.resolveString('PageWizard1.FrameControl2.Label')
+                title = self._stringResource.resolveString('PageWizard1.FrameControl2.Label')
                 window.getControl('FrameControl2').Model.Label = title % url
                 self.Wizard.activatePath(getActivePath(self.Configuration), enabled)
                 self.Wizard.updateTravelUI()
@@ -361,17 +361,17 @@ class WizardHandler(unohelper.Base,
                     token, error = getRefreshToken(self.session, provider, user, timeout)
                     if error is None:
                         saveTokenToConfiguration(self.Configuration, token)
-                updatePageTokenUI(window, self.Configuration, self.stringResource)
+                updatePageTokenUI(window, self.Configuration, self._stringResource)
             elif item == 'RemoveToken':
                 user = self.Configuration.Url.Scope.Provider.User
                 user.Scope = ''
                 user.commit()
-                updatePageTokenUI(window, self.Configuration, self.stringResource)
+                updatePageTokenUI(window, self.Configuration, self._stringResource)
             elif item == 'ResetToken':
                 user = self.Configuration.Url.Scope.Provider.User
                 user.ExpiresIn = 0
                 user.commit()
-                updatePageTokenUI(window, self.Configuration, self.stringResource)
+                updatePageTokenUI(window, self.Configuration, self._stringResource)
             return True
         except Exception as e:
             print("WizardHandler._updateUI() ERROR: %s - %s" % (e, traceback.print_exc()))

@@ -5,9 +5,11 @@ from .configuration import g_identifier
 from .configuration import g_oauth2
 from .configuration import g_logger
 from .configuration import g_wizard_paths
+from .configuration import g_wizard_page
 from .configuration import g_refresh_overlap
 
 from .oauth2setting import OAuth2Setting
+from .wizard import Wizard
 from .wizardcontroller import WizardController
 
 from .request import Request

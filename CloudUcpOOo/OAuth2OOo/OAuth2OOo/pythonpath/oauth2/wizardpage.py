@@ -24,6 +24,7 @@ from .oauth2tools import openUrl
 from .oauth2tools import updatePageTokenUI
 
 from .configuration import g_identifier
+from .configuration import g_extension
 from .configuration import g_wizard_paths
 
 import traceback
@@ -42,25 +43,43 @@ class WizardPage(unohelper.Base,
             self.Uuid = uuid
             self.AuthorizationCode = result
             self.FirstLoad = True
-            self.stringResource = getStringResource(self.ctx, g_identifier, 'OAuth2OOo')
+            self._server = None
+            self._stringResource = getStringResource(self.ctx, g_identifier, g_extension)
+            if id == 1:
+                self._initPage1()
+            elif id == 3:
+                self._initPage3()
             msg += " Done"
             logMessage(self.ctx, INFO, msg, 'WizardPage', '__init__()')
         except Exception as e:
             msg = "Error: %s - %s" % (e, traceback.print_exc())
             logMessage(self.ctx, SEVERE, msg, 'WizardPage', '__init__()')
 
+    def _initPage1(self):
+        username = self.Configuration.Url.Scope.Provider.User.Id
+        self.Window.getControl('TextField1').Text = username
+        control = self.Window.getControl('ComboBox1')
+        control.Model.StringItemList = self.Configuration.UrlList
+        providers = self.Configuration.Url.ProviderList
+        self.Window.getControl('ComboBox2').Model.StringItemList = providers
+        control.Text = self.Configuration.Url.Id
+
+    def _initPage3(self):
+        pass
+
     # XWizardPage Methods
     def activatePage(self):
-        self.Window.setVisible(False)
+        #self.Window.setVisible(False)
         msg = "PageId: %s ..." % self.PageId
         if self.PageId == 1:
-            username = self.Configuration.Url.Scope.Provider.User.Id
-            self.Window.getControl('TextField1').Text = username
-            control = self.Window.getControl('ComboBox1')
-            control.Model.StringItemList = self.Configuration.UrlList
-            providers = self.Configuration.Url.ProviderList
-            self.Window.getControl('ComboBox2').Model.StringItemList = providers
-            control.Text = self.Configuration.Url.Id
+            pass
+            #username = self.Configuration.Url.Scope.Provider.User.Id
+            #self.Window.getControl('TextField1').Text = username
+            #control = self.Window.getControl('ComboBox1')
+            #control.Model.StringItemList = self.Configuration.UrlList
+            #providers = self.Configuration.Url.ProviderList
+            #self.Window.getControl('ComboBox2').Model.StringItemList = providers
+            #control.Text = self.Configuration.Url.Id
         elif self.PageId == 2:
             url = getAuthorizationStr(self.ctx, self.Configuration, self.Uuid)
             self.Window.getControl('TextField1').Text = url
@@ -73,10 +92,10 @@ class WizardPage(unohelper.Base,
         elif self.PageId == 5:
             username = self.Configuration.Url.Scope.Provider.User.Id
             provider = self.Configuration.Url.ProviderName
-            title = self.stringResource.resolveString('PageWizard5.FrameControl1.Label')
+            title = self._stringResource.resolveString('PageWizard5.FrameControl1.Label')
             self.Window.getControl('FrameControl1').Model.Label = title % (username, provider)
-            updatePageTokenUI(self.Window, self.Configuration, self.stringResource)
-        self.Window.setVisible(True)
+            updatePageTokenUI(self.Window, self.Configuration, self._stringResource)
+        #self.Window.setVisible(True)
         msg += " Done"
         logMessage(self.ctx, INFO, msg, 'WizardPage', 'activatePage()')
 
@@ -85,7 +104,7 @@ class WizardPage(unohelper.Base,
         forward = uno.getConstantByName('com.sun.star.ui.dialogs.WizardTravelType.FORWARD')
         backward = uno.getConstantByName('com.sun.star.ui.dialogs.WizardTravelType.BACKWARD')
         finish = uno.getConstantByName('com.sun.star.ui.dialogs.WizardTravelType.FINISH')
-        self.Window.setVisible(False)
+        #self.Window.setVisible(False)
         if self.PageId == 1 and reason == forward:
             pass
         elif self.PageId == 2:

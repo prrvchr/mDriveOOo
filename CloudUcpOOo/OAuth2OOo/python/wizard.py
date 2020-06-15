@@ -23,9 +23,12 @@ from com.sun.star.ui.dialogs.WizardButton import FINISH
 from com.sun.star.ui.dialogs.WizardButton import CANCEL
 from com.sun.star.ui.dialogs.WizardButton import HELP
 
+from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
+
 from unolib import getDialog
 from unolib import createService
 from unolib import getStringResource
+from unolib import getInterfaceTypes
 
 from .configuration import g_identifier
 from .configuration import g_extension
@@ -40,15 +43,16 @@ class Wizard(unohelper.Base,
              XInitialization,
              XItemListener,
              XDialogEventHandler):
-    def __init__(self, ctx):
+    def __init__(self, ctx, auto=-1):
         self.ctx = ctx
+        self._auto = auto
         self._pages = {}
         self._paths = ()
         self._currentPage = -1
         self._currentPath = -1
         self._firstPage = -1
         self._lastPage = -1
-        self._multiPath = False
+        self._multiPaths = False
         self._controller = None
         self._helpUrl = ''
         self._stringResource = getStringResource(self.ctx, g_identifier, g_extension)
@@ -71,27 +75,28 @@ class Wizard(unohelper.Base,
 
     # XInitialization
     def initialize(self, args):
-        code = self._getInvalidArgumentCode(args)
-        if code != -1:
-            raise self._getIllegalArgumentException(0, code)
+        if not isinstance(args, tuple) or len(args) != 2:
+            raise self._getIllegalArgumentException(0, 101)
         paths = args[0]
-        code = self._getInvalidPathsCode(paths)
-        if code != -1:
-            raise self._getIllegalArgumentException(0, code)
-        self._multiPath = isinstance(paths[0], tuple)
-        self._paths = paths
         controller = args[1]
-        code = self._getInvalidControllerCode(controller)
-        if code != -1:
-            raise self._getIllegalArgumentException(0, code)
+        if not isinstance(paths, tuple) or len(paths) < 2:
+            raise self._getIllegalArgumentException(0, 102)
+        unotype = uno.getTypeByName('com.sun.star.ui.dialogs.XWizardController')
+        if unotype not in getInterfaceTypes(controller):
+            raise self._getIllegalArgumentException(0, 103)
+        self._paths = paths
+        self._multiPaths = isinstance(paths[0], tuple)
         self._controller = controller
 
     # XItemListener
     def itemStateChanged(self, event):
-        if self._setPage(self._currentPage, event.ItemId):
-            self.updateTravelUI()
-        else:
-            self._getRoadmap().CurrentItemID = self._currentPage
+        page = event.ItemId
+        print("Wizard.itemStateChanged() 1")
+        if self._currentPage != page:
+            if not self._setPage(self._currentPage, page):
+                self._getRoadmap().CurrentItemID = self._currentPage
+                print("Wizard.itemStateChanged() 2")
+            print("Wizard.itemStateChanged() 3")
 
     def disposing(self, event):
         pass
@@ -101,11 +106,11 @@ class Wizard(unohelper.Base,
         handled = False
         if method == 'Help':
             handled = True
-        elif method == 'Next':
-            self.travelNext()
-            handled = True
         elif method == 'Previous':
             self.travelPrevious()
+            handled = True
+        elif method == 'Next':
+            self.travelNext()
             handled = True
         elif method == 'Finish':
             handled = self._doFinish()
@@ -158,10 +163,10 @@ class Wizard(unohelper.Base,
 
     def enablePage(self, page, enabled):
         if page == self._currentPage:
-            raise self._getInvalidStateException(102)
+            raise self._getInvalidStateException(201)
         path = self._getPath(False)
         if page not in path:
-            raise self._getNoSuchElementException(103)
+            raise self._getNoSuchElementException(202)
         index = path.index(page)
         self._getRoadmap().getByIndex(index).Enabled = enabled
 
@@ -180,26 +185,29 @@ class Wizard(unohelper.Base,
         return False
 
     def activatePath(self, index, final):
-        if not self._multiPath:
+        if not self._multiPaths:
             return
         if index not in range(len(self._paths)):
-            raise self._getNoSuchElementException(104)
-        if self._currentPath != -1:
-            old = self._paths[self._currentPath]
-            new = self._paths[index]
-            commun = self._getCommunPaths((old, new))
-            if self._currentPage not in commun:
-                raise self._getInvalidStateException(105)
-        self._initPaths(index, final)
+            raise self._getNoSuchElementException(301)
+        print("Wizard.activatePath() 1: %s - %s" % (index, self._currentPath))
+        path = self._paths[index]
+        if self._currentPage != -1 and self._currentPage not in path:
+            raise self._getInvalidStateException(302)
+        if self._currentPath != index or self._isFinal != final:
+            self._initPaths(index, final)
+            print("Wizard.activatePath() 2: %s - %s" % (index, self._currentPath))
 
     # XExecutableDialog -> XWizard
     def setTitle(self, title):
         self._dialog.setTitle(title)
 
     def execute(self):
+        print("Wizard.execute() 1")
         if self._currentPath == -1:
             self._initPaths(0, False)
-        self._initPage(self._firstPage)
+        self._initPage()
+        print("Wizard.execute() 2")
+        #self._setButtonFocus()
         return self._dialog.execute()
 
     # Private methods
@@ -214,6 +222,9 @@ class Wizard(unohelper.Base,
 
     def _isLastPage(self):
         return self._isFinal() and self._currentPage == self._lastPage
+
+    def _getCurrentPath(self):
+        return self._paths[self._currentPath] if self._multiPaths else self._paths
 
     def _getPreviousPage(self):
         path = self._getPath()
@@ -235,25 +246,26 @@ class Wizard(unohelper.Base,
         if self._isLastPage():
             if self._pages[self._currentPage].commitPage(self._getCommitReason()):
                 if self._controller.confirmFinish():
-                    self._dialog.endExecute()
+                    #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
+                    #mri.inspect(self._dialog)
+                    self._dialog.endDialog(OK)
+                    #self._dialog.endExecute()
         return True
 
     def _setCurrentPage(self, old, new):
         if self._setPage(old, new):
-            self.updateTravelUI()
             return True
         return False
 
     def _initPaths(self, index, final):
-        if self._multiPath:
+        if self._multiPaths:
             final, path = self._initMultiplePathsWizard(index, final)
         else:
             final, path = self._initSinglePathWizard()
         self._firstPage = min(path)
         self._lastPage = max(path)
         self._initRoadmap(path, final)
-        self._updateButton()
-        #self.updateTravelUI()
+        #self._updateButton()
 
     def _initSinglePathWizard(self):
         return True, self._paths
@@ -307,7 +319,7 @@ class Wizard(unohelper.Base,
     def _initRoadmap(self, path, final):
         roadmap = self._getRoadmap()
         initialized = roadmap.CurrentItemID != -1
-        for i in range(roadmap.getCount()-1, -1, -1):
+        for i in range(roadmap.getCount() -1, -1, -1):
             roadmap.removeByIndex(i)
         i = 0
         for page in path:
@@ -315,7 +327,7 @@ class Wizard(unohelper.Base,
             item.ID = page
             item.Label = self._controller.getPageTitle(page)
             if i != 0:
-                item.Enabled = initialized and self._canPageAdvance(id)
+                item.Enabled = initialized and self._canAdvancePage(id)
             roadmap.insertByIndex(i, item)
             id = page
             i += 1
@@ -330,12 +342,13 @@ class Wizard(unohelper.Base,
             if i == 0:
                 item.Enabled = True
             elif id in self._pages:
-                item.Enabled = self._canPageAdvance(id)
+                item.Enabled = self._canAdvancePage(id)
             else:
                 item.Enabled = False
             id = item.ID
         
     def _updateButton(self):
+        print("Wizard._updateButton() 1")
         self._dialog.getControl('CommandButton2').Model.Enabled = not self._isFirstPage()
         enabled = self._getNextPage() is not None and self._canAdvance()
         self._dialog.getControl('CommandButton3').Model.Enabled = enabled
@@ -343,22 +356,46 @@ class Wizard(unohelper.Base,
         self._dialog.getControl('CommandButton4').Model.Enabled = enabled
         button = 'CommandButton4' if enabled else 'CommandButton3'
         self._dialog.getControl(button).Model.DefaultButton = True
+        print("Wizard._updateButton() 2")
+
+    def _setButtonFocus(self):
+        button = 'CommandButton4' if self._isLastPage() else 'CommandButton3'
+        self._dialog.getControl(button).setFocus()
 
     def _canAdvance(self):
-        return self._controller.canAdvance() and self._canPageAdvance(self._currentPage)
+        return self._controller.canAdvance() and self._canAdvancePage(self._currentPage)
 
-    def _canPageAdvance(self, page):
+    def _canAdvancePage(self, page):
         if page in self._pages:
             return self._pages[page].canAdvance()
         return False
 
+    def _initPage(self):
+        print("Wizard._initPage() 1")
+        self._setPageStep(self._firstPage)
+        nextpage = self._isAutoLoad()
+        while nextpage and self._canAdvance():
+            nextpage = self._initNextPage()
+            print("Wizard._initPage() 2 %s" % nextpage)
+        #self._updateButton()
+
+    def _initNextPage(self):
+        page = self._getNextPage()
+        if page is not None:
+            return self._setPage(self._currentPage, page) and self._isAutoLoad(page)
+        return False
+
+    def _isAutoLoad(self, page=None):
+        nextindex = 1 if page is None else self._getCurrentPath().index(page) +1
+        return nextindex < self._auto
+
     def _setPage(self, old, new):
         if self._deactivatePage(old, new):
-            self._initPage(new)
+            self._setPageStep(new)
             return True
         return False
 
-    def _initPage(self, id):
+    def _setPageStep(self, id):
         self._setDialogStep(0)
         # TODO: PageId can be equal to zero but Model.Step must be > 0
         step = self._getDialogStep(id)
@@ -368,10 +405,11 @@ class Wizard(unohelper.Base,
             model = page.Window.getModel()
             self._setModelStep(model, step)
             self._dialog.addControl(model.Name, page.Window)
-            #self._dialog.getModel().insertByName(model.Name, model)
             self._pages[id] = page
         self._currentPage = self._getRoadmap().CurrentItemID = id
         self._setDialogStep(step)
+        self._updateRoadmap()
+        self._updateButton()
         self._activatePage(id)
 
     def _setModelStep(self, model, step):
@@ -423,21 +461,7 @@ class Wizard(unohelper.Base,
         model.Height = size.Height
         model.Width = size.Width
         model.Text = self._stringResource.resolveString('Wizard.Roadmap.Text')
-        #model.Border = 0
         return model
-
-    def _getInvalidArgumentCode(self, args):
-        if not isinstance(args, tuple) or len(args) != 2:
-            return 100
-        return -1
-
-    def _getInvalidPathsCode(self, paths):
-        if not isinstance(paths, tuple) or len(paths) < 1:
-             return 101
-        return -1
-
-    def _getInvalidControllerCode(self, controller):
-        return -1
 
     def _getIllegalArgumentException(self, position, code):
         e = IllegalArgumentException()

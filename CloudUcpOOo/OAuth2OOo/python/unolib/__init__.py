@@ -30,6 +30,7 @@ from .unotools import getInteractionHandler
 from .unotools import getDialog
 from .unotools import getDialogUrl
 from .unotools import getDateTime
+from .unotools import getInterfaceTypes
 from .unotools import parseDateTime
 from .unotools import unparseDateTime
 from .unotools import unparseTimeStamp

@@ -21,7 +21,6 @@ from unolib import getStringResource
 from unolib import getContainerWindow
 from unolib import getDialogUrl
 
-from .wizard import Wizard
 from .wizardhandler import WizardHandler
 from .wizardserver import WizardServer
 from .wizardpage import WizardPage
@@ -35,8 +34,7 @@ from .oauth2tools import getResponseFromRequest
 from .oauth2tools import registerTokenFromResponse
 
 from .configuration import g_identifier
-from .configuration import g_wizard_paths
-from .configuration import g_advance_to
+from .configuration import g_extension
 
 import traceback
 
@@ -45,8 +43,9 @@ class WizardController(unohelper.Base,
                        PropertySet,
                        XWizardController,
                        XCallback):
-    def __init__(self, ctx, session, url, username, autoclose):
+    def __init__(self, ctx, wizard, session, url, username, autoclose):
         self.ctx = ctx
+        self._provider = createService(self.ctx, 'com.sun.star.awt.ContainerWindowProvider')
         self.Session = session
         self.Configuration = WizardSetting(self.ctx)
         self.ResourceUrl = url
@@ -56,15 +55,17 @@ class WizardController(unohelper.Base,
         self.AuthorizationCode = uno.createUnoStruct('com.sun.star.beans.Optional<string>')
         self.Server = WizardServer(self.ctx)
         self.Uuid = generateUuid()
-        self.Wizard = Wizard(self.ctx)
-        arguments = (g_wizard_paths, self)
-        self.Wizard.initialize(arguments)
+        self._wizard = wizard
         self.Error = ''
-        self.stringResource = getStringResource(self.ctx, g_identifier, 'OAuth2OOo')
+        self._stringResource = getStringResource(self.ctx, g_identifier, 'OAuth2OOo')
+        self._handler = WizardHandler(ctx, session, self.Configuration, wizard)
+        path = getActivePath(self.Configuration)
+        print("WizardController.__init__() %s" % path)
+        self._wizard.activatePath(path, True)
         #service = 'com.sun.star.awt.ContainerWindowProvider'
         #self.provider = self.ctx.ServiceManager.createInstanceWithContext(service, self.ctx)
         #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
-        #mri.inspect(self.Wizard)
+        #mri.inspect(self._wizard)
 
     @property
     def ResourceUrl(self):
@@ -89,34 +90,29 @@ class WizardController(unohelper.Base,
     def notify(self, percent):
         msg = "WizardController.notify() %s" % percent
         logMessage(self.ctx, INFO, msg, 'WizardController', 'notify()')
-        page = self.Wizard.getCurrentPage()
+        page = self._wizard.getCurrentPage()
         if page.PageId == 3:
             if page.Window:
                 page.Window.getControl('ProgressBar1').Value = percent
             if percent == 100:
-                self.Wizard.updateTravelUI()
+                self._wizard.updateTravelUI()
                 if self.AuthorizationCode.IsPresent:
                     self._registerTokens()
                     if self.AutoClose:
                         logMessage(self.ctx, INFO, "WizardController.notify() 2", 'WizardController', 'notify()')
-                        self.Wizard.DialogWindow.endDialog(OK)
+                        self._wizard.DialogWindow.endDialog(OK)
                         logMessage(self.ctx, INFO, "WizardController.notify() 3", 'WizardController', 'notify()')
                     else:
                         logMessage(self.ctx, INFO, "WizardController.notify() 4", 'WizardController', 'notify()')
-                        self.Wizard.travelNext()
+                        self._wizard.travelNext()
                         logMessage(self.ctx, INFO, "WizardController.notify() 5", 'WizardController', 'notify()')
 
     # XWizardController
     def createPage(self, parent, id):
         try:
             msg = "PageId: %s ..." % id
-            handler = WizardHandler(self.ctx,
-                                    self.Session,
-                                    self.Configuration,
-                                    self.Wizard)
-            url = getDialogUrl('OAuth2OOo', 'PageWizard%s' % id)
-            provider = createService(self.ctx, 'com.sun.star.awt.ContainerWindowProvider')
-            window = provider.createContainerWindow(url, '', parent, handler)
+            url = getDialogUrl(g_extension, 'PageWizard%s' % id)
+            window = self._provider.createContainerWindow(url, 'NotUsed', parent, self._handler)
             page = WizardPage(self.ctx,
                               self.Configuration,
                               id,
@@ -131,41 +127,37 @@ class WizardController(unohelper.Base,
             logMessage(self.ctx, SEVERE, msg, 'WizardController', 'createPage()')
 
     def getPageTitle(self, id):
-        title = self.stringResource.resolveString('PageWizard%s.Step' % (id, ))
+        title = self._stringResource.resolveString('PageWizard%s.Step' % id)
         return title
     def canAdvance(self):
-        return self.Wizard.getCurrentPage().canAdvance()
+        return self._wizard.getCurrentPage().canAdvance()
     def onActivatePage(self, id):
         try:
             msg = "PageId: %s..." % id
-            title = self.stringResource.resolveString('PageWizard%s.Title' % (id, ))
-            self.Wizard.setTitle(title)
+            title = self._stringResource.resolveString('PageWizard%s.Title' % id)
+            self._wizard.setTitle(title)
             backward = uno.getConstantByName('com.sun.star.ui.dialogs.WizardButton.PREVIOUS')
             forward = uno.getConstantByName('com.sun.star.ui.dialogs.WizardButton.NEXT')
-            finish = uno.getConstantByName('com.sun.star.ui.dialogs.WizardButton.FINISH')
-            self.Wizard.enableButton(finish, False)
             if id == 1:
-                path = getActivePath(self.Configuration)
-                self.Wizard.activatePath(path, True)
-                if self._isFirstLoad(id) and self.canAdvance():
-                    self.Wizard.travelNext()
+                pass
             elif id == 2:
                 pass
                 #if self.Shortened:
-                #    self.Wizard.activatePath(getActivePath(self.Configuration), False)
+                #    self._wizard.activatePath(getActivePath(self.Configuration), False)
             elif id == 3:
                 self.Server.addCallback(self, self.Configuration)
-                self.Wizard.enableButton(backward, False)
-                self.Wizard.enableButton(forward, False)
-                #self.Wizard.enableButton(finish, False)
+                self._wizard.enableButton(backward, False)
+                self._wizard.enableButton(forward, False)
+                for page in (1,2,5):
+                    self._wizard.enablePage(page, False)
             elif id == 4:
-                self.Wizard.enableButton(backward, False)
-                self.Wizard.enableButton(forward, False)
-                #self.Wizard.enableButton(finish, False)
+                self._wizard.enableButton(backward, False)
+                self._wizard.enableButton(forward, False)
+                for page in (1,2,5):
+                    self._wizard.enablePage(page, False)
             elif id == 5:
-                self.Wizard.enableButton(backward, False)
-                self.Wizard.enableButton(finish, True)
-            self.Wizard.updateTravelUI()
+                path = getActivePath(self.Configuration)
+                self._wizard.activatePath(path, True)
             msg += " Done"
             logMessage(self.ctx, INFO, msg, 'WizardController', 'onActivatePage()')
         except Exception as e:
@@ -177,8 +169,8 @@ class WizardController(unohelper.Base,
             if id == 1:
                 pass
                 #path = getActivePath(self.Configuration)
-                #self.Wizard.activatePath(path, True)
-                #self.Wizard.updateTravelUI()
+                #self._wizard.activatePath(path, True)
+                #self._wizard.updateTravelUI()
             elif id == 4 and self.AuthorizationCode.IsPresent:
                 pass
                 #self._registerTokens()
@@ -201,12 +193,6 @@ class WizardController(unohelper.Base,
         if result:
             self.Configuration.commit()
         return result
-
-    def _isFirstLoad(self, id):
-        if id in self._pages:
-            self._pages.remove(id)
-            return True
-        return False
 
     def _getPropertySetInfo(self):
         properties = {}
