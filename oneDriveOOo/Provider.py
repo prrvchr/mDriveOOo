@@ -9,13 +9,6 @@ from com.sun.star.auth.RestRequestTokenType import TOKEN_URL
 from com.sun.star.auth.RestRequestTokenType import TOKEN_REDIRECT
 from com.sun.star.auth.RestRequestTokenType import TOKEN_QUERY
 from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_RETRIEVED
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_CREATED
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_FOLDER
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_FILE
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_RENAMED
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_REWRITED
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
 from onedrive import ProviderBase
 from onedrive import g_identifier
@@ -91,6 +84,32 @@ class Provider(ProviderBase):
             parameter.Method = 'GET'
             parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
             parameter.Query = '{"select": "%s"}' % g_itemfields
+        elif method == 'getChanges':
+            parameter.Method = 'GET'
+            if data.getValue('Token'):
+                parameter.Url = data.getValue('Token')
+            else:
+                parameter.Url = '%s/me/drive/root/delta' % self.BaseUrl
+            parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)
+            token = uno.createUnoStruct('com.sun.star.auth.RestRequestToken')
+            token.Type = TOKEN_REDIRECT | TOKEN_SYNC
+            token.Field = '@odata.nextLink'
+            token.SyncField = '@odata.deltaLink'
+            enumerator = uno.createUnoStruct('com.sun.star.auth.RestRequestEnumerator')
+            enumerator.Field = 'value'
+            enumerator.Token = token
+            parameter.Enumerator = enumerator
+        elif method == 'getDriveContent':
+            parameter.Method = 'GET'
+            parameter.Url = '%s/me/drive' % self.BaseUrl
+            #parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)
+            token = uno.createUnoStruct('com.sun.star.auth.RestRequestToken')
+            token.Type = TOKEN_REDIRECT
+            token.Field = '@odata.nextLink'
+            enumerator = uno.createUnoStruct('com.sun.star.auth.RestRequestEnumerator')
+            enumerator.Field = 'value'
+            enumerator.Token = token
+            parameter.Enumerator = enumerator
         elif method == 'getFolderContent':
             parameter.Method = 'GET'
             parameter.Url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.getValue('Id'))
