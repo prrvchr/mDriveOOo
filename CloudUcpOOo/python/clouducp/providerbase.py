@@ -5,8 +5,10 @@ import uno
 import unohelper
 
 from com.sun.star.lang import XServiceInfo
+
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
+
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 from com.sun.star.ucb.ConnectionMode import ONLINE
 
@@ -132,9 +134,9 @@ class ProviderBase(ProviderObject,
     def parseDateTime(self, timestamp, format='%Y-%m-%dT%H:%M:%S.%fZ'):
         return parseDateTime(timestamp, format)
     def isOnLine(self):
-        return self.SessionMode != OFFLINE
+        return getConnectionMode(self.ctx, self.Host) != OFFLINE
     def isOffLine(self):
-        return self.SessionMode != ONLINE
+        return getConnectionMode(self.ctx, self.Host) != ONLINE
 
     def initialize(self, scheme, plugin, folder, link):
         #if not user.Request.initializeSession(scheme):

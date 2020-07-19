@@ -260,9 +260,9 @@ class DataBase(unohelper.Base,
                 # It can be modified and have the same Size...
                 # For this we temporarily update the Size to 0
                 update.setTimestamp(1, timestamp)
-                #update.setLong(2, 0)
-                #update.setString(3, itemid)
-                #update.execute()
+                update.setLong(2, 0)
+                update.setString(3, itemid)
+                update.execute()
                 update.setLong(2, value)
                 update.setString(3, itemid)
                 updated = update.execute() == 0
