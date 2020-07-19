@@ -34,3 +34,6 @@ g_doc_map = {'application/vnd.microsoft-apps.document':     'application/vnd.oas
              'application/vnd.microsoft-apps.spreadsheet':  'application/x-vnd.oasis.opendocument.spreadsheet',
              'application/vnd.microsoft-apps.presentation': 'application/vnd.oasis.opendocument.presentation',
              'application/vnd.microsoft-apps.drawing':      'application/pdf'}
+
+g_sync = 600
+g_admin = False
