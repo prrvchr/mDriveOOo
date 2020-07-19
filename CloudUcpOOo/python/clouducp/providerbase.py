@@ -22,6 +22,7 @@ from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 from unolib import KeyMap
 from unolib import parseDateTime
 from unolib import getResourceLocation
+from unolib import getConnectionMode
 
 import datetime
 import traceback
@@ -84,6 +85,9 @@ class ProviderBase(ProviderObject,
     @property
     def FolderSyncModes(self):
         return (SYNC_FOLDER, )
+    @property
+    def SessionMode(self):
+        return getConnectionMode(self.ctx, self.Host)
 
     # Must be implemented method
     def getRequestParameter(self, method, data):
@@ -94,6 +98,8 @@ class ProviderBase(ProviderObject,
     def getUserName(self, item):
         raise NotImplementedError
     def getUserDisplayName(self, item):
+        raise NotImplementedError
+    def getUserToken(self, item):
         raise NotImplementedError
 
     def getItemId(self, item):
@@ -142,7 +148,6 @@ class ProviderBase(ProviderObject,
         #return True
 
     def initializeUser(self, user, name):
-        self.SessionMode = user.Request.getSessionMode(self.Host)
         if self.isOnLine():
             return user.Request.initializeUser(name)
         return True
@@ -195,7 +200,7 @@ class ProviderBase(ProviderObject,
 
     def getIdentifier(self, request, user):
         parameter = self.getRequestParameter('getNewIdentifier', user)
-        return request.getEnumerator(parameter)
+        return request.getIterator(parameter, None)
     def getUser(self, request, name):
         data = KeyMap()
         data.insertValue('Id', name)
@@ -203,6 +208,9 @@ class ProviderBase(ProviderObject,
         return request.execute(parameter)
     def getRoot(self, request, user):
         parameter = self.getRequestParameter('getRoot', user)
+        return request.execute(parameter)
+    def getToken(self, request, user):
+        parameter = self.getRequestParameter('getToken', user)
         return request.execute(parameter)
     def getItem(self, request, identifier):
         parameter = self.getRequestParameter('getItem', identifier)
@@ -213,8 +221,7 @@ class ProviderBase(ProviderObject,
         return request.getInputStream(parameter, self.Chunk, self.Buffer)
     def getFolderContent(self, request, content):
         parameter = self.getRequestParameter('getFolderContent', content)
-        return request.getEnumerator(parameter)
-
+        return request.getIterator(parameter, None)
 
     def createFolder(self, request, item):
         parameter = self.getRequestParameter('createNewFolder', item)
@@ -229,13 +236,19 @@ class ProviderBase(ProviderObject,
         response = request.execute(parameter)
         if response.IsPresent:
             parameter = self.getRequestParameter('getUploadStream', response.Value)
-            return None if uploader.start(item, parameter) else False
+            return True if uploader.start(item, parameter) else False
         return False
 
     def updateTitle(self, request, item):
         parameter = self.getRequestParameter('updateTitle', item)
-        return request.execute(parameter)
+        response = request.execute(parameter)
+        if response.IsPresent:
+            return True
+        return False
 
     def updateTrashed(self, request, item):
         parameter = self.getRequestParameter('updateTrashed', item)
-        return request.execute(parameter)
+        response = request.execute(parameter)
+        if response.IsPresent:
+            return True
+        return False

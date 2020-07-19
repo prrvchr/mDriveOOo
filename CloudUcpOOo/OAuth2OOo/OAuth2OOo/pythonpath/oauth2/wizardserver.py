@@ -19,6 +19,7 @@ from unolib import createService
 from unolib import getStringResource
 
 from .requests.compat import unquote_plus
+from .requests.compat import urlencode
 
 from .logger import logMessage
 
@@ -48,9 +49,10 @@ class WizardServer(unohelper.Base,
         lock = Condition()
         code = controller.AuthorizationCode
         uuid = controller.Uuid
+        user = configuration.Url.Scope.Provider.User.Id
         address = configuration.Url.Scope.Provider.RedirectAddress
         port = configuration.Url.Scope.Provider.RedirectPort
-        server = Server(self.ctx, code, uuid, address, port, lock)
+        server = Server(self.ctx, code, uuid, user, address, port, lock)
         timeout = configuration.HandlerTimeout
         self.watchdog = WatchDog(server, controller, timeout, lock)
         server.start()
@@ -95,11 +97,12 @@ class WatchDog(Thread):
 
 
 class Server(Thread):
-    def __init__(self, ctx, code, uuid, address, port, lock):
+    def __init__(self, ctx, code, uuid, user, address, port, lock):
         Thread.__init__(self)
         self.ctx = ctx
         self.code = code
         self.uuid = uuid
+        self.user = user
         self.argument = 'socket,host=%s,port=%s,tcpNoDelay=1' % (address, port)
         self.acceptor = createService(self.ctx, 'com.sun.star.connection.Acceptor')
         self.lock = lock
@@ -121,6 +124,7 @@ class Server(Thread):
             with self.lock:
                 result = self._getResult(connection)
                 location = self._getResultLocation(result)
+                location += '?%s' % urlencode({'user': self.user})
                 header = '''\
 HTTP/1.1 302 Found
 Location: %s

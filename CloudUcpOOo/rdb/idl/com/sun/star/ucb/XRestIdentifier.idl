@@ -4,56 +4,34 @@
 #include <com/sun/star/uno/XInterface.idl>
 #include <com/sun/star/ucb/XRestUser.idl>
 #include <com/sun/star/auth/XRestKeyMap.idl>
-#include <com/sun/star/uri/XUriReference.idl>
 #include <com/sun/star/ucb/XSimpleFileAccess.idl>
-#include <com/sun/star/util/DateTime.idl>
 #include <com/sun/star/sdbc/XPreparedStatement.idl>
-#include <com/sun/star/io/XInputStream.idl>
-#include <com/sun/star/ucb/ContentInfo.idl>
 
 module com { module sun { module star { module ucb {
 
 interface XRestIdentifier: com::sun::star::uno::XInterface
 {
 
-    boolean initialize([in] string Name);
-    ::com::sun::star::uno::XInterface getContent();
+    boolean isNew();
+    boolean isRoot();
+    boolean isValid();
     ::com::sun::star::ucb::XRestIdentifier createNewIdentifier([in] string ContentType);
+    ::com::sun::star::uno::XInterface getContent();
     ::com::sun::star::sdbc::XPreparedStatement getFolderContent([in] ::com::sun::star::auth::XRestKeyMap Content);
-    string getDocumentContent([in] XSimpleFileAccess Sf,
+    string getDocumentContent([in] ::com::sun::star::ucb::XSimpleFileAccess Sf,
                               [in] ::com::sun::star::auth::XRestKeyMap Content,
                               [out] long Size);
-    boolean insertNewDocument([in] ::com::sun::star::uno::XInterface Request,
-                              [in] ::com::sun::star::auth::XRestKeyMap Content);
-    boolean insertNewFolder([in] ::com::sun::star::uno::XInterface Request,
-                           [in] ::com::sun::star::auth::XRestKeyMap Content);
-    boolean isChildId([in] string ItemId);
-    string selectChildId([in] string Title);
-    long countChildTitle([in] string Title);
-    long updateSize([in] string ItemId,
-                    [in] string ParentId,
-                    [in] long Size);
-    boolean updateTrashed([in] boolean Value,
-                          [in] boolean Default);
-    string updateTitle([in] string Value,
-                       [in] string Default);
-    string setTitle([in] string Value,
-                    [in] boolean IsFolder);
+    void insertNewContent([in] ::com::sun::star::uno::XInterface Request,
+                          [in] ::com::sun::star::auth::XRestKeyMap Content);
+    string setTitle([in] string Value);
 
-    [attribute, readonly] ::com::sun::star::ucb::XRestDataSource DataSource;
     [attribute, readonly] ::com::sun::star::ucb::XRestUser User;
     [attribute, readonly] ::com::sun::star::auth::XRestKeyMap MetaData;
-    [attribute, readonly] boolean IsInitialized;
     [attribute, readonly] string Id;
-    [attribute, readonly] boolean IsRoot;
-    [attribute, readonly] boolean IsValid;
-    [attribute, readonly] boolean IsNew;
+    [attribute, readonly] string ParentId;
     [attribute, readonly] string BaseURI;
-    [attribute, readonly] string BaseURL;
-    [attribute, readonly] string Error;
 
 };
-
 
 }; }; }; };
 

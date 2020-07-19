@@ -9,6 +9,7 @@ from com.sun.star.ucb import InteractiveAugmentedIOException
 from com.sun.star.ucb.ConnectionMode import ONLINE
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 
+from unolib import createService
 from unolib import getProperty
 from unolib import getPropertyValue
 from unolib import getNamedValueSet
@@ -91,9 +92,18 @@ def getContentInfo(ctype, attributes=0, properties=()):
     info.Properties = properties
     return info
 
-def getUri(ctx, identifier):
-    factory = ctx.ServiceManager.createInstance('com.sun.star.uri.UriReferenceFactory')
-    uri = factory.parse(identifier)
+def getUrl(ctx, identifier):
+    url = uno.createUnoStruct('com.sun.star.util.URL')
+    url.Complete = identifier
+    transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
+    success, url = transformer.parseStrict(url)
+    if success:
+        identifier = transformer.getPresentation(url, True)
+    return identifier
+
+def getUri(ctx, url):
+    factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
+    uri = factory.parse(url)
     return uri
 
 def getUcb(ctx, arguments=('Local', 'Office')):

@@ -9,6 +9,8 @@ module com { module sun { module star { module auth {
 interface XRestEnumeration: com::sun::star::container::XEnumeration
 {
 
+    [attribute, readonly] short PageCount;
+    [attribute, readonly] long RowCount;
     [attribute, readonly] string SyncToken;
 
 };

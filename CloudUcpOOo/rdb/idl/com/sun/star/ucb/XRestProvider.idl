@@ -37,6 +37,8 @@ interface XRestProvider: com::sun::star::uno::XInterface
                                                                                    [in] string Name);
     ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> getRoot([in] ::com::sun::star::uno::XInterface Request,
                                                                                    [in] ::com::sun::star::auth::XRestKeyMap User);
+    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> getToken([in] ::com::sun::star::uno::XInterface Request,
+                                                                                    [in] ::com::sun::star::auth::XRestKeyMap User);
     ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> getItem([in] ::com::sun::star::uno::XInterface Request,
                                                                                    [in] ::com::sun::star::auth::XRestKeyMap Identifier);
     ::com::sun::star::container::XEnumeration getFolderContent([in] ::com::sun::star::uno::XInterface Request,
@@ -61,6 +63,7 @@ interface XRestProvider: com::sun::star::uno::XInterface
     string getUserId([in] ::com::sun::star::auth::XRestKeyMap User);
     string getUserName([in] ::com::sun::star::auth::XRestKeyMap User);
     string getUserDisplayName([in] ::com::sun::star::auth::XRestKeyMap User);
+    string getUserToken([in] ::com::sun::star::auth::XRestKeyMap User);
     string getRootId([in] ::com::sun::star::auth::XRestKeyMap Root);
     string getRootTitle([in] ::com::sun::star::auth::XRestKeyMap Root);
     ::com::sun::star::util::DateTime getRootCreated([in] ::com::sun::star::auth::XRestKeyMap Root,

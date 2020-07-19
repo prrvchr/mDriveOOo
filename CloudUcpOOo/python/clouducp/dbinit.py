@@ -6,11 +6,13 @@ from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
 from unolib import KeyMap
+from unolib import createService
 from unolib import getResourceLocation
 from unolib import getSimpleFile
 
 from .dbconfig import g_path
 from .dbconfig import g_version
+from .dbconfig import g_role
 
 from .dbtools import registerDataSource
 from .dbtools import executeQueries
@@ -30,37 +32,61 @@ import traceback
 
 def getDataSourceUrl(ctx, dbname, plugin, register):
     error = None
+    print("dbinit.getDataSourceUrl() 1")
     url = getResourceLocation(ctx, plugin, g_path)
     odb = '%s/%s.odb' % (url, dbname)
+    print("dbinit.getDataSourceUrl() 2")
+    dbcontext = createService(ctx, 'com.sun.star.sdb.DatabaseContext')
+    print("dbinit.getDataSourceUrl() 3")
     if not getSimpleFile(ctx).exists(odb):
-        dbcontext = ctx.ServiceManager.createInstance('com.sun.star.sdb.DatabaseContext')
+        print("dbinit.getDataSourceUrl() 4")
         datasource = createDataSource(dbcontext, url, dbname)
-        error = _createDataBase(ctx, datasource, url, dbname)
+        error = createDataBase(ctx, datasource, url, dbname)
+        print("dbinit.getDataSourceUrl() 5 %s" % error)
         if error is None:
             datasource.DatabaseDocument.storeAsURL(odb, ())
-            if register:
-                registerDataSource(dbcontext, dbname, odb)
+    if error is None and register:
+        registerDataSource(dbcontext, dbname, odb)
     return url, error
 
-def _createDataBase(ctx, datasource, url, dbname):
+def createDataBase(ctx, connection):
+    print("dbinit.createDataBase() 1")
+    version, error = checkDataBase(ctx, connection)
+    print("dbinit.createDataBase() 2")
+    if error is None:
+        print("dbinit.createDataBase() 3")
+        statement = connection.createStatement()
+        createStaticTable(statement, getStaticTables(), True)
+        tables, statements = getTablesAndStatements(statement, version)
+        executeSqlQueries(statement, tables)
+        executeQueries(statement, getViews())
+    print("dbinit.createDataBase() 4")
+    return error
+
+def createDataBase1(ctx, datasource, url, dbname):
     error = None
     try:
+        print("dbinit.createDataBase() 1")
         connection = datasource.getConnection('', '')
     except SQLException as e:
         error = e
     else:
+        print("dbinit.createDataBase() 2")
         version, error = checkDataBase(ctx, connection)
+        print("dbinit.createDataBase() 3")
         if error is None:
+            print("dbinit.createDataBase() 4")
             statement = connection.createStatement()
-            createStaticTable(statement, _getStaticTables(), True)
-            tables, statements = _getTablesAndStatements(statement, version)
+            createStaticTable(statement, getStaticTables(), True)
+            tables, statements = getTablesAndStatements(statement, version)
             executeSqlQueries(statement, tables)
-            executeQueries(statement, _getViews())
+            executeQueries(statement, getViews())
         connection.close()
         connection.dispose()
+        print("dbinit.createDataBase() 5")
     return error
 
-def _getTablesAndStatements(statement, version=g_version):
+def getTablesAndStatements(statement, version=g_version):
     tables = []
     statements = []
     call = getDataSourceCall(statement.getConnection(), 'getTables')
@@ -124,14 +150,35 @@ def _getTablesAndStatements(statement, version=g_version):
     call.close()
     return tables, statements
 
-def _getStaticTables():
+def getStaticTables():
     tables = ('Tables',
               'Columns',
               'TableColumn',
               'Settings')
     return tables
 
-def _getViews():
-    return ('createItemView',
-            'createChildView',
-            'createSyncView')
+def getQueries():
+    return (('createRole',{'Role': g_role}),
+            ('grantPrivilege',{'Privilege':'SELECT,UPDATE','Table': 'Users', 'Role': g_role}),
+            ('grantPrivilege',{'Privilege':'SELECT,INSERT,DELETE','Table': 'Identifiers', 'Role': g_role}),
+            ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Items', 'Role': g_role}),
+            ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Parents', 'Role': g_role}),
+            ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Capabilities', 'Role': g_role}),
+
+            ('createItemView',{'Role': g_role}),
+            ('createChildView',{'Role': g_role}),
+            ('createTwinView',{'Role': g_role}),
+            ('createUriView',{'Role': g_role}),
+            ('createTileView',{'Role': g_role}),
+            ('createChildrenView',{'Role': g_role}),
+
+            ('createGetIdentifier',{'Role': g_role}),
+            ('createMergeItem',{'Role': g_role}),
+            ('createInsertItem',{'Role': g_role}),
+            ('createInsertAndSelectItem',{'Role': g_role}))
+
+#            ('createGetItem1',{'Role': g_role}),
+#            ('createGetChildren1',{'Role': g_role}),
+#            ('createUpdateTitle',{'Role': g_role}),
+#            ('createUpdateSize',{'Role': g_role}),
+#            ('createUpdateTrashed',{'Role': g_role}),

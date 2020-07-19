@@ -10,6 +10,7 @@ rm ${Path}/types.rdb
 ./rdb/make_rdb.sh com/sun/star/auth/RestRequestTokenType
 ./rdb/make_rdb.sh com/sun/star/ucb/RestDataSourceSyncMode
 ./rdb/make_rdb.sh com/sun/star/ucb/XRestProvider
+./rdb/make_rdb.sh com/sun/star/ucb/XRestDataBase
 ./rdb/make_rdb.sh com/sun/star/ucb/RestProvider
 ./rdb/make_rdb.sh com/sun/star/ucb/XRestDataSource
 ./rdb/make_rdb.sh com/sun/star/ucb/XRestUser

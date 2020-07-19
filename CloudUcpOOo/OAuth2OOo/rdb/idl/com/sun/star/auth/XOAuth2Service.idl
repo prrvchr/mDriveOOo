@@ -48,6 +48,9 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
     ::com::sun::star::auth::XRestEnumeration getEnumeration([in] RestRequestParameter Parameter,
                                                             [in] ::com::sun::star::uno::XInterface Parser);
 
+    ::com::sun::star::auth::XRestEnumeration getIterator([in] RestRequestParameter Parameter,
+                                                         [in] ::com::sun::star::uno::XInterface Parser);
+
     ::com::sun::star::io::XInputStream getInputStream([in] RestRequestParameter Parameter,
                                                       [in] long Chunk,
                                                       [in] long Buffer);

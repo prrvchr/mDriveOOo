@@ -1,6 +1,6 @@
 **The use of this software subjects you to our** [Terms Of Use](https://prrvchr.github.io/OAuth2OOo/OAuth2OOo/registration/TermsOfUse_en) **and** [Data Protection Policy](https://prrvchr.github.io/OAuth2OOo/OAuth2OOo/registration/PrivacyPolicy_en)
 
-## OAuth2OOo v.0.0.4
+## OAuth2OOo v.0.0.5
 
 
 ### Uno OAuth2.0 API for LibreOffice / OpenOffice.
@@ -22,7 +22,7 @@ No more password is stored in LibreOffice.
 
 ### Install:
 
-- Download the [extension](https://github.com/prrvchr/OAuth2OOo/releases/download/v0.0.4/OAuth2OOo.oxt)
+- Download the [extension](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt)
 
 - Install the extension in LibreOffice / OpenOffice.
 

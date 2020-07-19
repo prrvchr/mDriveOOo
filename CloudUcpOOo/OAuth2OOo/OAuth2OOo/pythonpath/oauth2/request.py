@@ -56,6 +56,91 @@ def getSessionMode(ctx, host, port=80):
         mode = ONLINE
     return mode
 
+
+class Iterator(unohelper.Base,
+               XRestEnumeration):
+    def __init__(self, session, timeout, parameter, parser=None):
+        self.session = session
+        self.timeout = timeout
+        self.parameter = parameter
+        self.parser = parser
+        self.pagetoken = None
+        self.synctoken = ''
+        self.error = None
+        self.row = 0
+        self.page = 0
+        self.next = None
+        self.end = object()
+        self.iterator = self._getIterator()
+
+    @property
+    def SyncToken(self):
+        return self.synctoken
+    @property
+    def PageCount(self):
+        return self.page
+    @property
+    def RowCount(self):
+        return self.row
+
+    # XRestEnumeration
+    def hasMoreElements(self):
+        self.next = next(self.iterator, self.end)
+        return self.next is not self.end
+
+    def nextElement(self):
+        if self.next is not self.end:
+            return self.next
+        raise NoSuchElementException('no more elements exist', self)
+
+    def _setParameter(self):
+        token = self.parameter.Enumerator.Token.Type
+        if token & TOKEN_URL:
+            self.parameter.Url = self.parameter.Enumerator.Token.Value
+        if token & TOKEN_QUERY:
+            query = json.loads(self.parameter.Query)
+            query.update({self.parameter.Enumerator.Token.Value: self.pagetoken})
+            self.parameter.Query = json.dumps(query)
+        if token & TOKEN_REDIRECT:
+            self.parameter.Url = self.pagetoken
+        if token & TOKEN_JSON:
+            data = '{"%s": "%s"}' % (self.parameter.Enumerator.Token.Field, self.pagetoken)
+            self.parameter.Json = data
+        self.pagetoken = None
+
+    def _setToken(self, response):
+        token = self.parameter.Enumerator.Token
+        if token.Type != TOKEN_NONE:
+            if not token.IsConditional:
+                if response.hasValue(token.Field):
+                    self.pagetoken = response.getValue(token.Field)
+            elif response.hasValue(token.ConditionField):
+                if response.getValue(token.ConditionField) == token.ConditionValue:
+                    self.pagetoken = response.getDefaultValue(token.Field, False)
+        if token.Type & TOKEN_SYNC and response.hasValue(token.SyncField):
+            self.synctoken = response.getValue(token.SyncField)
+        return self.pagetoken is None
+
+    def _getIterator(self):
+        lastpage = False
+        with self.session as s:
+            while not lastpage:
+                if self.page:
+                    self._setParameter()
+                self.page += 1
+                lastpage = True
+                response, self.error = execute(s, self.parameter, self.timeout, self.parser)
+                if response.IsPresent:
+                    result = response.Value
+                    lastpage = self._setToken(result)
+                    field = self.parameter.Enumerator.Field
+                    if result.hasValue(field):
+                        chunks = result.getValue(field)
+                        self.row += len(chunks)
+                        for item in chunks:
+                            yield item
+
+
 def execute(session, parameter, timeout, parser=None):
     response = uno.createUnoStruct('com.sun.star.beans.Optional<com.sun.star.auth.XRestKeyMap>')
     error = ''
@@ -120,6 +205,7 @@ class Enumeration(unohelper.Base,
         self.synchro = t.Type & TOKEN_SYNC
         self.token = None
         self.sync = ''
+        self.PageCount = 0
 
     @property
     def SyncToken(self):
@@ -174,6 +260,7 @@ class Enumerator(unohelper.Base,
         self.chunked = t.Type != TOKEN_NONE
         self.synchro = t.Type & TOKEN_SYNC
         self.rows, self.token, self.sync, error = self._getRows()
+        self.PageCount = 0
         if error:
             logMessage(self.ctx, SEVERE, error, "OAuth2Service","Enumerator()")
 
@@ -227,6 +314,7 @@ class Enumerator(unohelper.Base,
         except Exception as e:
             msg = "Error: %s - %s" % (e, traceback.print_exc())
             logMessage(self.ctx, SEVERE, msg, 'OAuth2Service', 'Enumerator()')
+
 
 class InputStream(unohelper.Base,
                   XInputStream):
@@ -429,12 +517,12 @@ class StreamListener(unohelper.Base,
 
 class Uploader(unohelper.Base,
                XRestUploader):
-    def __init__(self, ctx, session, datasource, timeout):
+    def __init__(self, ctx, session, chunk, url, callBack, timeout):
         self.ctx = ctx
         self.session = session
-        self.chunk = datasource.Provider.Chunk
-        self.url = datasource.Provider.SourceURL
-        self.callback = datasource.callBack
+        self.chunk = chunk
+        self.url = url
+        self.callback = callBack
         self.timeout = timeout
 
     def start(self, item, parameter):
@@ -488,7 +576,6 @@ def _parseResponse(response):
     try:
         content = response.headers.get('Content-Type', '')
         if content.startswith('application/json'):
-            #result = KeyMap(**response.json())
             result = response.json(object_pairs_hook=_jsonParser)
         else:
             result = KeyMap(**response.headers)

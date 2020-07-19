@@ -10,9 +10,6 @@ module com { module sun { module star { module ucb {
 interface XRestContent: com::sun::star::uno::XInterface
 {
 
-    void initialize([in] ::com::sun::star::ucb::XRestIdentifier Identifier,
-                    [in] ::com::sun::star::auth::XRestKeyMap MetaData);
-
     [attribute, readonly] ::com::sun::star::ucb::XRestIdentifier Identifier;
     [attribute, readonly] ::com::sun::star::auth::XRestKeyMap MetaData;
     [attribute, readonly] boolean IsDocument;
@@ -20,7 +17,6 @@ interface XRestContent: com::sun::star::uno::XInterface
     [attribute, readonly] boolean CanAddChild;
 
 };
-
 
 }; }; }; };
 

@@ -10,3 +10,5 @@ g_options = ';default_schema=true;hsqldb.default_table_type=cached;get_column_na
 g_shutdown = ';shutdown=true'
 g_csv = '%s.csv;fs=|;ignore_first=true;encoding=UTF-8;quoted=true'
 g_version = '2.5.0'
+g_role = 'FrontOffice'
+g_dba = 'AD'

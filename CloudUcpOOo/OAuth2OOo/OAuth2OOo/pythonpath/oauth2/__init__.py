@@ -15,6 +15,7 @@ from .wizardcontroller import WizardController
 from .request import Request
 from .request import Enumeration
 from .request import Enumerator
+from .request import Iterator
 from .request import InputStream
 from .request import Uploader
 from .request import getSessionMode

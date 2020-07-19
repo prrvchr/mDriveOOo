@@ -29,6 +29,7 @@ from unolib import getDialog
 from oauth2 import Request
 from oauth2 import Enumeration
 from oauth2 import Enumerator
+from oauth2 import Iterator
 from oauth2 import InputStream
 from oauth2 import Uploader
 from oauth2 import DialogHandler
@@ -169,7 +170,7 @@ class OAuth2Service(unohelper.Base,
     def getAuthorization(self, url, username, close=True):
         authorized = False
         msg = "Wizard Loading ..."
-        wizard = Wizard(self.ctx, g_wizard_page)
+        wizard = Wizard(self.ctx, g_wizard_page, True)
         controller = WizardController(self.ctx, wizard, self.Session, url, username, close)
         arguments = (g_wizard_paths, controller)
         wizard.initialize(arguments)
@@ -228,6 +229,9 @@ class OAuth2Service(unohelper.Base,
     def getRequest(self, parameter, parser):
         return Request(self.Session, parameter, self.Timeout, parser)
 
+    def getIterator(self, parameter, parser):
+        return Iterator(self.Session, self.Timeout, parameter, parser)
+
     def getEnumeration(self, parameter, parser):
         return Enumeration(self.Session, parameter, self.Timeout, parser)
 
@@ -237,8 +241,8 @@ class OAuth2Service(unohelper.Base,
     def getInputStream(self, parameter, chunk, buffer):
         return InputStream(self.ctx, self.Session, parameter, chunk, buffer, self.Timeout)
 
-    def getUploader(self, datasource):
-        return Uploader(self.ctx, self.Session, datasource, self.Timeout)
+    def getUploader(self, chunk, url, callBack):
+        return Uploader(self.ctx, self.Session, chunk, url, callBack, self.Timeout)
 
     def _getSession(self):
         if sys.version_info[0] < 3:
