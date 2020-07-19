@@ -91,7 +91,7 @@ class Replicator(unohelper.Base,
                 if not user.Token:
                     start = self._initUser(user)
                     #start = self.DataBase.getUserTimeStamp(user.Id)
-                    self._setSyncToken(user)
+                    user.Provider.initUser(user.Request, self.DataBase, user.MetaData)
                 else:
                     start = self.DataBase.getUserTimeStamp(user.Id)
                 if user.Token:
@@ -106,7 +106,10 @@ class Replicator(unohelper.Base,
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
 
     def _initUser(self, user):
-        # This procedure corresponds to the initial pull
+        # In order to make the creation of files or directories possible quickly,
+        # it is necessary to run the verification of the identifiers.
+        self._checkNewIdentifier(user)
+        # This procedure corresponds to the initial pull for a new User (ie: without Token)
         rejected, rows, page, row, start = self._updateDrive(user)
         print("Replicator._initUser() 1 %s - %s - %s - %s" % (len(rows), all(rows), page, row))
         msg = getMessage(self.ctx, 120, (page, row, len(rows)))
@@ -159,14 +162,12 @@ class Replicator(unohelper.Base,
         except Exception as e:
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
 
-    def _setSyncToken(self, user):
-        data = user.Provider.getToken(user.Request, user.MetaData)
-        if data.IsPresent:
-            token = user.Provider.getUserToken(data.Value)
-            self.DataBase.updateToken(user.MetaData, token)
-
     def _checkNewIdentifier(self, user):
-        if user.Provider.isOffLine() or not user.Provider.GenerateIds:
+        if not user.Provider.GenerateIds:
+            user.CanAddChild = True
+            return
+        if user.Provider.isOffLine():
+            user.CanAddChild = self.DataBase.countIdentifier(user.Id) > 0
             return
         if self.DataBase.countIdentifier(user.Id) < min(user.Provider.IdentifierRange):
             enumerator = user.Provider.getIdentifier(user.Request, user.MetaData)

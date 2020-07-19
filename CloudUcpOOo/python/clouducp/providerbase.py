@@ -155,6 +155,8 @@ class ProviderBase(ProviderObject,
         return True
 
     # Can be rewrited method
+    def initUser(self, request, database, user):
+        pass
     def isFolder(self, contenttype):
         return contenttype == self.Folder
     def isLink(self, contenttype):
