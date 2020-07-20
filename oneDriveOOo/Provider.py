@@ -40,6 +40,7 @@ class Provider(ProviderBase):
         self.Folder = ''
         self.SourceURL = ''
         self._Error = ''
+        self._folders = []
 
     @property
     def Name(self):
@@ -101,8 +102,8 @@ class Provider(ProviderBase):
             parameter.Enumerator = enumerator
         elif method == 'getDriveContent':
             parameter.Method = 'GET'
-            parameter.Url = '%s/me/drive' % self.BaseUrl
-            #parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)
+            parameter.Url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data)
+            parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)
             token = uno.createUnoStruct('com.sun.star.auth.RestRequestToken')
             token.Type = TOKEN_REDIRECT
             token.Field = '@odata.nextLink'
@@ -196,6 +197,9 @@ class Provider(ProviderBase):
     def getItemIsVersionable(self, item):
         return False
 
+    def setDriveContent(self, item):
+        if self._isFolder(item):
+            self._folders.append(self.getItemId(item))
     def getDocumentContent(self, content):
         parameter = self.getRequestParameter('getDocumentLocation', content)
         response = self.Request.execute(parameter)
@@ -203,6 +207,10 @@ class Provider(ProviderBase):
             parameter = self.getRequestParameter('getDocumentContent', response.Value)
             return self.Request.getInputStream(parameter, self.Chunk, self.Buffer)
         return None
+
+    def _isFolder(self, item):
+        print("Provider._isFolder() %s" % (item, ))
+        return False
 
     # XServiceInfo
     def supportsService(self, service):
