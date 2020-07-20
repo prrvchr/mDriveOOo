@@ -50,7 +50,7 @@ interface XRestProvider: com::sun::star::uno::XInterface
     ::com::sun::star::io::XInputStream getDocumentContent([in] ::com::sun::star::uno::XInterface Request,
                                                           [in] ::com::sun::star::auth::XRestKeyMap content);
     ::com::sun::star::auth::RestRequestParameter getRequestParameter([in] string Method,
-                                                                     [in] ::com::sun::star::auth::XRestKeyMap Data);
+                                                                     [in] any Data);
     ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> createFile([in] ::com::sun::star::uno::XInterface Request,
                                                                                       [in] ::com::sun::star::uno::XInterface Uploader,
                                                                                       [in] ::com::sun::star::auth::XRestKeyMap Item);
