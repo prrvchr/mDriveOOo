@@ -157,9 +157,15 @@ class ProviderBase(ProviderObject,
     # Can be rewrited method
     def initUser(self, request, database, user):
         pass
-    def getIterator(self, request, method):
-        parameter = self.getRequestParameter(method)
-        return request.getIterator(parameter, None)
+    def initDriveContent(self, rootid):
+        self._folders = [rooid]
+    def hasDriveContent(self):
+        return len(self._folders) > 0
+    def getDriveContent(self):
+        if self.hasDriveContent():
+            return self._folders.pop(0)
+    def setDriveContent(self, item):
+        pass
     def isFolder(self, contenttype):
         return contenttype == self.Folder
     def isLink(self, contenttype):
