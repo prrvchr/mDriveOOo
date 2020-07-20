@@ -195,7 +195,7 @@ class Replicator(unohelper.Base,
         items = {}
         childs = []
         provider = user.Provider
-        parameter = provider.getRequestParameter('getDriveContent', user.MetaData)
+        parameter = provider.getRequestParameter('getDriveContent')
         enumerator = user.Request.getIterator(parameter, None)
         while enumerator.hasMoreElements():
             item = enumerator.nextElement()
