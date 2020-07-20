@@ -211,7 +211,7 @@ class Replicator(unohelper.Base,
             rows += enumerator.RowCount
         return orphans, pages, rows, count
 
-    def _setDriveCall(self, call, provider, roots, orphans, rootid, item, separator, timestamp)
+    def _setDriveCall(self, call, provider, roots, orphans, rootid, item, separator, timestamp):
         itemid = provider.getItemId(item)
         parents = provider.getItemParent(item, rootid)
         if not all(parent in roots for parent in parents):
