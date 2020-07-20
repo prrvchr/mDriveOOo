@@ -200,6 +200,7 @@ class Provider(ProviderBase):
     def setDriveContent(self, item):
         if self._isFolder(item):
             self._folders.append(self.getItemId(item))
+
     def getDocumentContent(self, content):
         parameter = self.getRequestParameter('getDocumentLocation', content)
         response = self.Request.execute(parameter)
@@ -209,10 +210,8 @@ class Provider(ProviderBase):
         return None
 
     def _isFolder(self, item):
-        print("Provider._isFolder() %s" % (item, ))
-        for key in item.getKeys():
-            print("    Provider._isFolder() %s: %s" % (key, item.getValue(key)))
-        return False
+        folder = item.getDefaultValue('file', None)
+        return folder is None
 
     # XServiceInfo
     def supportsService(self, service):
