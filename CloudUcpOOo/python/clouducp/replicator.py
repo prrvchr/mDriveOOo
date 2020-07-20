@@ -198,9 +198,9 @@ class Replicator(unohelper.Base,
         pages = 0
         rows = 0
         count = 0
-        providers.initDriveContent(rootid)
-        while providers.hasDriveContent():
-            parameter = provider.getRequestParameter('getDriveContent', providers.getDriveContent())
+        provider.initDriveContent(rootid)
+        while provider.hasDriveContent():
+            parameter = provider.getRequestParameter('getDriveContent', provider.getDriveContent())
             enumerator = request.getIterator(parameter, None)
             while enumerator.hasMoreElements():
                 item = enumerator.nextElement()
