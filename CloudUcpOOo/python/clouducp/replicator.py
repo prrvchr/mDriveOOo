@@ -153,7 +153,7 @@ class Replicator(unohelper.Base,
                                                                                                  item.getValue('Size')))
                     chunk = user.Provider.Chunk
                     url = user.Provider.SourceURL
-                    uploader = user.Request.getUploader(chunk, url, self.DataBase.callBack)
+                    uploader = user.Request.getUploader(chunk, url, self)
                     results.append(self._synchronizeItems(user, uploader, item))
             print("Replicator._pushData() Created / Updated Items: %s" % (results, ))
             if all(results):
@@ -301,3 +301,7 @@ class Replicator(unohelper.Base,
         except Exception as e:
             msg = "ERROR: %s - %s" % (e, traceback.print_exc())
             logMessage(self.ctx, SEVERE, msg, "Replicator", "_synchronizeItems()")
+
+    def callBack(self, item, response):
+        if response.IsPresent:
+            self.DataBase.updateItemId(self.Provider, item, response.Value)

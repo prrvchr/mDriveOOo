@@ -39,8 +39,8 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     ::com::sun::star::auth::XRestKeyMap getIdentifier([in] ::com::sun::star::uno::XInterface User,
                                                       [in] ::com::sun::star::uri::XUriReference Uri,
                                                       [in] boolean New);
-    void updateToken([in] ::com::sun::star::auth::XRestKeyMap User,
-                     [in] string Token);
+    boolean updateToken([in] string UserId,
+                        [in] string Token);
     void updateContent([in] string ItemId,
                        [in] string Property,
                        [in] any Value);
@@ -56,9 +56,9 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     string getChildId([in] string UserId,
                       [in] string ParentId,
                       [in] string Title);
-    void callBack([in] ::com::sun::star::uno::XInterface Provider,
-                  [in] ::com::sun::star::auth::XRestKeyMap Item,
-                  [in] ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> Response);
+    void updateItemId([in] ::com::sun::star::uno::XInterface Provider,
+                      [in] ::com::sun::star::auth::XRestKeyMap Item,
+                      [in] ::com::sun::star::auth::XRestKeyMap Response);
 
     [attribute, readonly] ::com::sun::star::sdbc::XConnection Connection;
 

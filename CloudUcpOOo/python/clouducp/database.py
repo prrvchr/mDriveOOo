@@ -352,41 +352,15 @@ class DataBase(unohelper.Base,
         call.close()
         return id
 
-    def callBack(self, provider, item, response):
-        if response.IsPresent:
-            self._updateSync(provider, item, response.Value)
-
-    def _updateSync(self, provider, item, response):
-        oldid = item.getValue('ItemId')
-        newid = provider.getResponseId(response, oldid)
-        oldname = item.getValue('Title')
-        newname = provider.getResponseTitle(response, oldname)
-        delete = self._getCall('deleteSyncMode')
-        delete.setLong(1, item.getValue('SyncId'))
-        row = delete.executeUpdate()
-        msg = "execute deleteSyncMode OldId: %s - NewId: %s - Row: %s" % (oldid, newid, row)
-        logMessage(self.ctx, INFO, msg, "DataSource", "updateSync")
-        delete.close()
-        if row and newid != oldid:
-            update = self._getCall('updateItemId')
-            update.setString(1, newid)
-            update.setString(2, oldid)
-            row = update.executeUpdate()
-            msg = "execute updateItemId OldId: %s - NewId: %s - Row: %s" % (oldid, newid, row)
-            logMessage(self.ctx, INFO, msg, "DataSource", "updateSync")
-            update.close()
-        return '' if row != 1 else newid
-
 # Procedures called by the Replicator
     # Synchronization pull token update procedure
-    def updateToken(self, user, token):
+    def updateToken(self, userid, token):
         update = self._getCall('updateToken')
         update.setString(1, token)
-        update.setString(2, user.getValue('UserId'))
+        update.setString(2, userid)
         updated = update.executeUpdate() == 1
         update.close()
-        if updated:
-            user.setValue('Token', token)
+        return updated
 
     # Identifier counting procedure
     def countIdentifier(self, userid):
@@ -469,6 +443,18 @@ class DataBase(unohelper.Base,
             items.append(getKeyMapFromResult(result))
         select.close()
         return items
+
+    def updateItemId(self, provider, item, response):
+        oldid = item.getValue('Id')
+        newid = provider.getResponseId(response, oldid)
+        if newid != oldid:
+            update = self._getCall('updateItemId')
+            update.setString(1, newid)
+            update.setString(2, oldid)
+            row = update.executeUpdate()
+            msg = "execute UPDATE Items - Old ItemId: %s - New ItemId: %s - RowCount: %s" % (oldid, newid, row)
+            logMessage(self.ctx, INFO, msg, "DataBase", "updateItemId")
+            update.close()
 
 # Procedures called internally
     def _mergeItem(self, call, provider, item, id, parents, separator, timestamp):
