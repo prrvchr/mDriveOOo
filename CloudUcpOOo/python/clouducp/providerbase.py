@@ -158,7 +158,7 @@ class ProviderBase(ProviderObject,
     def initUser(self, request, database, user):
         pass
     def initDriveContent(self, rootid):
-        self._folders = [rooid]
+        self._folders = [rootid]
     def hasDriveContent(self):
         return len(self._folders) > 0
     def getDriveContent(self):
