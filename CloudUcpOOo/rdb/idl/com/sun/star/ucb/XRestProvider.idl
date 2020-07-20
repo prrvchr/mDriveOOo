@@ -23,6 +23,9 @@ interface XRestProvider: com::sun::star::uno::XInterface
                     [in] string Link,
                     [in] string Folder);
     boolean initializeUser([in] string Name);
+    void initUser([in] ::com::sun::star::uno::XInterface Request,
+                  [in] ::com::sun::star::uno::XInterface DataBase,
+                  [in] ::com::sun::star::auth::XRestKeyMap User);
     void initDriveContent([in] string ItemId);
     boolean hasDriveContent();
     string getDriveContent();
