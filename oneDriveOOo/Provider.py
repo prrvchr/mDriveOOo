@@ -210,6 +210,8 @@ class Provider(ProviderBase):
 
     def _isFolder(self, item):
         print("Provider._isFolder() %s" % (item, ))
+        for key in item.getKeys():
+            print("    Provider._isFolder() %s: %s" % (key, item.getValue(key)))
         return False
 
     # XServiceInfo
