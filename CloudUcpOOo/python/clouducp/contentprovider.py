@@ -98,7 +98,7 @@ class ContentProvider(unohelper.Base,
         url = identifier.getContentIdentifier()
         print("ContentProvider.queryContent() 1 %s" % url)
         if not identifier.isValid():
-            print("ContentProvider.queryContent() 2 ERROR %s - %s" % (url, self._error))
+            msg = "Identitifer: %s ... cannot be found: %s" % (url, self._error)
             logMessage(self.ctx, SEVERE, msg, 'ContentProvider', 'queryContent()')
             raise IllegalIdentifierException(self._error, identifier)
         print("ContentProvider.queryContent() 3")
@@ -112,7 +112,7 @@ class ContentProvider(unohelper.Base,
     def compareContentIds(self, id1, id2):
         ids = (id1.getContentIdentifier(), id2.getContentIdentifier())
         print("ContentProvider.compareContentIds() 1 %s - %s" % ids)
-        msg = "Identifiers: %s - %s ..." % (id1, id2)
+        msg = "Identifiers: %s - %s ..." % ids
         if id1.Id == id2.Id and id1.User.Id == id2.User.Id:
             msg += " seem to be the same..."
             compare = 0
@@ -121,7 +121,7 @@ class ContentProvider(unohelper.Base,
             compare = -1
         msg += " ... Done"
         logMessage(self.ctx, INFO, msg, 'ContentProvider', 'compareContentIds()')
-        print("ContentProvider.compareContentIds() 2 %s - %s" % compare)
+        print(msg)
         return compare
 
     def _getUser(self, uri, url):
@@ -148,11 +148,8 @@ class ContentProvider(unohelper.Base,
     def _getUserName(self, uri, url):
         if uri.hasAuthority() and uri.getAuthority() != '':
             name = uri.getAuthority()
-            print("ContentProvider._getUserName(): uri.getAuthority() = %s" % name)
         elif self._currentUserName is not None:
             name = self._currentUserName
         else:
             name = getUserNameFromHandler(self.ctx, uri.getScheme(), self)
-            print("ContentProvider._getUserName(): getUserNameFromHandler() = %s" % name)
-        print("ContentProvider._getUserName(): %s" % name)
         return name

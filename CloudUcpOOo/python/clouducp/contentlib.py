@@ -270,21 +270,13 @@ class ContentResultSet(unohelper.Base,
                        XResultSetMetaDataSupplier,
                        XContentAccess):
     def __init__(self, ctx, select):
-        try:
-            self.ctx = ctx
-            print("contentlib.ContentResultSet() 1")
-            result = select.executeQuery()
-            #select.close()
-            print("contentlib.ContentResultSet() 2")
-            result.last()
-            self.RowCount = result.getRow()
-            print("contentlib.ContentResultSet() 3 - %s" % self.RowCount)
-            self.IsRowCountFinal = True
-            result.beforeFirst()
-            print("contentlib.ContentResultSet() 4")
-            self.result = result
-        except Exception as e:
-            print("contentlib.ContentResultSet() ERROR: %s - %s" % (e, traceback.print_exc()))
+        self.ctx = ctx
+        result = select.executeQuery()
+        result.last()
+        self.RowCount = result.getRow()
+        self.IsRowCountFinal = True
+        result.beforeFirst()
+        self.result = result
     def __del__(self):
         pass
     def _getPropertySetInfo(self):
@@ -378,8 +370,6 @@ class ContentResultSet(unohelper.Base,
     def queryContentIdentifierString(self):
         return self.result.getString(self.result.findColumn('TargetURL'))
     def queryContentIdentifier(self):
-        identifier = self.queryContentIdentifierString()
-        return getUcb(self.ctx).createContentIdentifier(identifier)
+        return getUcb(self.ctx).createContentIdentifier(self.queryContentIdentifierString())
     def queryContent(self):
-        identifier = self.queryContentIdentifier()
-        return getUcb(self.ctx).queryContent(identifier)
+        return getUcb(self.ctx).queryContent(self.queryContentIdentifier())

@@ -433,8 +433,8 @@ def getSqlQuery(name, format=None):
         c110 = '"Before".%s %s' % (c10, c10)
         c111 = 'FALSE %s' % c11
         c112 = '"Items".%s <> "Before".%s %s' % (c3, c3, c12)
-        c113 = '"Items".%s <>  "Before".%s %s' % (c7,c7, c13)
-        c114 = '"Items".%s <>  "Before".%s %s' % (c8, c8, c14)
+        c113 = '"Items".%s <>  "Before".%s AND "Before".%s = 0 %s' % (c7, c7, c7, c13)
+        c114 = '"Items".%s <>  "Before".%s %s' % (c8,c8, c14)
         c210 = '"Previous".%s %s' % (c10, c10)
         c211 = 'TRUE %s' % c11
         c212 = 'TRUE %s' % c12

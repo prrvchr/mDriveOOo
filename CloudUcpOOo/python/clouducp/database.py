@@ -129,7 +129,21 @@ class DataBase(unohelper.Base,
         call.close()
         return folder, link
 
-# Procedures called by the User
+# Procedures called by the Identifier
+    def getItem(self, userid, itemid):
+        #TODO: Can't have a simple SELECT ResultSet with a Procedure,
+        #TODO: the malfunction is rather bizard: it always returns the same result
+        #TODO: as a workaround we use a simple quey...
+        item = None
+        select = self._getCall('getItem')
+        select.setString(1, userid)
+        select.setString(2, itemid)
+        result = select.executeQuery()
+        if result.next():
+            item = getKeyMapFromResult(result)
+        select.close()
+        return item
+
     def selectItem(self, user, identifier):
         item = None
         select = self._getCall('getItem1')
@@ -171,9 +185,9 @@ class DataBase(unohelper.Base,
         enumerator = user.Provider.getFolderContent(user.Request, content)
         while enumerator.hasMoreElements():
             item = enumerator.nextElement()
-            id = user.Provider.getItemId(item)
+            itemid = user.Provider.getItemId(item)
             parents = user.Provider.getItemParent(item, user.RootId)
-            rows.append(self._mergeItem(call, user.Provider, item, id, parents, separator, timestamp))
+            rows.append(self._mergeItem(call, user.Provider, item, itemid, parents, separator, timestamp))
             call.addBatch()
         if enumerator.RowCount > 0:
             call.executeBatch()
@@ -211,17 +225,14 @@ class DataBase(unohelper.Base,
         call.setString(1, userid)
         call.setString(2, rootid)
         call.setString(3, uripath)
-        print("DataBase.getIdentifier() 1 %s - %s - %s" % (userid, rootid, uripath))
         call.setString(4, '/')
         call.execute()
         itemid = call.getString(5)
         if call.wasNull():
             itemid = None
-            print("DataBase.getIdentifier() 2 %s" % itemid)
         parentid = call.getString(6)
         if call.wasNull():
             parentid = None
-            print("DataBase.getIdentifier() 3 %s" % parentid)
         path = call.getString(7)
         call.close()
         return itemid, parentid, path
@@ -288,20 +299,6 @@ class DataBase(unohelper.Base,
                 print("DataBase.updateContent() OK")
         except Exception as e:
             print("DataBase.updateContent().Error: %s - %s" % (e, traceback.print_exc()))
-
-    def getItem(self, userid, itemid):
-        #TODO: Can't have a simple SELECT ResultSet with a Procedure,
-        #TODO: the malfunction is rather bizard: it always returns the same result
-        #TODO: as a workaround we use a simple quey...
-        item = None
-        select = self._getCall('getItem')
-        select.setString(1, userid)
-        select.setString(2, itemid)
-        result = select.executeQuery()
-        if result.next():
-            item = getKeyMapFromResult(result)
-        select.close()
-        return item
 
     def insertNewContent(self, userid, itemid, parentid, content, timestamp):
         call = self._getCall('insertItem')

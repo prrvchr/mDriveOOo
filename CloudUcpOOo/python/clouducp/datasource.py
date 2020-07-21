@@ -41,9 +41,7 @@ class DataSource(unohelper.Base,
             self.Error = None
             self.sync = event
             self.Provider = createService(self.ctx, '%s.Provider' % plugin)
-            print("DataSource __init__() 2")
             self.datasource, url, created = getDataSource(self.ctx, scheme, plugin, True)
-            print("DataSource __init__() 3 %s" % created)
             self.DataBase = DataBase(self.ctx, self.datasource)
             if created:
                 self.Error = self.DataBase.createDataBase()
@@ -53,9 +51,7 @@ class DataSource(unohelper.Base,
             folder, link = self.DataBase.getContentType()
             self.Provider.initialize(scheme, plugin, folder, link)
             self.replicator = Replicator(ctx, self.datasource, self.Provider, self._CahedUser, self.sync)
-            print("DataSource __init__() 4")
-            logMessage(self.ctx, INFO, "stage 2", 'DataSource', '__init__()')
-            print("DataSource __init__() 5")
+            print("DataSource __init__() 2")
             msg += "Done"
             logMessage(self.ctx, INFO, msg, 'DataSource', '__init__()')
         except Exception as e:
@@ -83,22 +79,15 @@ class DataSource(unohelper.Base,
         return self.Error is None
 
     def getUser(self, name, password=''):
-        print("DataSource.getUser() 1")
         # User never change... we can cache it...
         if name in self._CahedUser:
-            print("DataSource.getUser() 3")
             user = self._CahedUser[name]
         else:
-            print("DataSource.getUser() 4")
             user = User(self.ctx, self, name)
-            print("DataSource.getUser() 5")
             if not self._initializeUser(user, name, password):
-                print("DataSource.getUser() 6 ERROR")
                 return None
             self._CahedUser[name] = user
-            print("DataSource.getUser() 7")
             self.sync.set()
-        print("DataSource.getUser() 8")
         return user
 
     def getRequest(self, name):

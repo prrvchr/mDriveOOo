@@ -41,7 +41,6 @@ class Identifier(unohelper.Base,
         self._contenttype = contenttype
         self.MetaData = self._getIdentifier()
         msg += " ... Done"
-        print("Identifier.__init__() OK")
         logMessage(self.ctx, INFO, msg, "Identifier", "__init__()")
 
     @property
@@ -89,7 +88,6 @@ class Identifier(unohelper.Base,
             data = self._getNewContent()
         else:
             data = self.User.DataBase.getItem(self.User.Id, self.Id)
-            print("Identifier.getContent()  2 %s" % data)
             #if data is None and self.User.Provider.isOnLine():
             #    data = self.User.Provider.getItem(self.User.Request, self.MetaData)
             #    if data.IsPresent:
@@ -98,7 +96,7 @@ class Identifier(unohelper.Base,
             msg = "Error: can't retreive Identifier"
             raise IllegalIdentifierException(msg, self)
         content = Content(self.ctx, self, data)
-        print("Identifier.getContent() 3 OK")
+        print("Identifier.getContent() 2 OK")
         return content
 
     def getFolderContent(self, content):
@@ -115,7 +113,7 @@ class Identifier(unohelper.Base,
                 updated = self.User.DataBase.updateFolderContent(self.User, content)
             else:
                 print("DataBase.getFolderContent() no request")
-            url = self.getContentIdentifier().lstrip('/')
+            url = self.getContentIdentifier().rstrip('/')
             mode = self.User.Provider.SessionMode
             select = self.User.DataBase.getChildren(self.User.Id, self.Id, url, mode)
             return select, updated
@@ -181,9 +179,10 @@ class Identifier(unohelper.Base,
             identifier.setValue('ParentId', parentid)
             baseuri = '%s://%s/%s' % (self._uri.getScheme(), self._uri.getAuthority(), path)
         identifier.setValue('BaseURI', baseuri)
-        print("Identifier._getIdentifier() %s - %s - %s" % (identifier.getValue('Id'),
-                                                            identifier.getValue('ParentId'),
-                                                            identifier.getValue('BaseURI')))
+        print("Identifier._getIdentifier() %s - %s - %s - %s" % (self._uri.getUriReference(),
+                                                                 identifier.getValue('Id'),
+                                                                 identifier.getValue('ParentId'),
+                                                                 identifier.getValue('BaseURI')))
         return identifier
 
     def _getNewIdentifier(self):
