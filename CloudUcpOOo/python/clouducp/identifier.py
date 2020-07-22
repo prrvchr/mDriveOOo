@@ -113,7 +113,9 @@ class Identifier(unohelper.Base,
                 updated = self.User.DataBase.updateFolderContent(self.User, content)
             else:
                 print("DataBase.getFolderContent() no request")
-            url = self.getContentIdentifier().rstrip('/')
+            url = self.getContentIdentifier()
+            if not url.endswith('/'):
+                url += '/'
             mode = self.User.Provider.SessionMode
             select = self.User.DataBase.getChildren(self.User.Id, self.Id, url, mode)
             return select, updated

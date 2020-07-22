@@ -146,12 +146,12 @@ class Replicator(unohelper.Base,
     def _pushData(self, start):
         try:
             results = []
+            operations = {'TitleUpdated': [], 'SizeUpdated': [], 'TrashedUpdated': []}
             end = parseDateTime()
             for item in self.DataBase.getSynchronizeItems(start, end):
                 user = self.Users.get(item.getValue('UserName'), None)
                 if user is not None:
-                    print("Replicator._pushData() Inserted: %s Items: %s - %s - %s - %s - %s" % (item.getValue('Inserted'),
-                                                                                                 item.getValue('Title'),
+                    print("Replicator._pushData() Insert/Update: %s Items: %s - %s - %s - %s" % (item.getValue('Title'),
                                                                                                  item.getValue('TitleUpdated'),
                                                                                                  item.getValue('SizeUpdated'),
                                                                                                  item.getValue('TrashedUpdated'),
@@ -159,7 +159,7 @@ class Replicator(unohelper.Base,
                     chunk = user.Provider.Chunk
                     url = user.Provider.SourceURL
                     uploader = user.Request.getUploader(chunk, url, self)
-                    results.append(self._synchronizeItems(user, uploader, item))
+                    results.append(self._synchronizeItems(user, uploader, item, operations))
             print("Replicator._pushData() Created / Updated Items: %s" % (results, ))
             if all(results):
                 self.DataBase.updateUserTimeStamp(end)
@@ -226,26 +226,6 @@ class Replicator(unohelper.Base,
         self.DataBase.setDriveCall(call, provider, item, itemid, parents, separator, timestamp)
         return True
 
-    def _getDriveContent1(self, call, user, roots, separator, start):
-        rows = []
-        items = {}
-        childs = []
-        provider = user.Provider
-        parameter = provider.getRequestParameter('getDriveContent', None)
-        enumerator = user.Request.getIterator(parameter, None)
-        while enumerator.hasMoreElements():
-            item = enumerator.nextElement()
-            itemid = provider.getItemId(item)
-            parents = provider.getItemParent(item, user.RootId)
-            if all(parent in roots for parent in parents):
-                roots.append(itemid)
-                row = self.DataBase.setDriveCall(call, provider, item, itemid, parents, separator, start)
-                rows.append(row)
-            else:
-                items[itemid] = item
-                childs.append((itemid, parents))
-        return rows, items, childs, enumerator.PageCount, enumerator.RowCount
-
     def _filterParents(self, call, provider, items, childs, roots, separator, start):
         i = -1
         rows = []
@@ -271,12 +251,13 @@ class Replicator(unohelper.Base,
             rejected.append((title, itemid, ','.join(parents)))
         return rejected
 
-    def _synchronizeItems(self, user, uploader, item):
+    def _synchronizeItems(self, user, uploader, item, operations):
         try:
             response = False
-            mediatype = item.getValue('MediaType')
-            if item.getValue('Inserted'):
-                # INSERT procedures, new files and folders are synced here.
+            itemid = item.getValue('Id')
+            # INSERT procedures, new files and folders are synced here.
+            if all((item.getValue(p) for p in operations)):
+                mediatype = item.getValue('MediaType')
                 if user.Provider.isFolder(mediatype):
                     response = user.Provider.createFolder(user.Request, item)
                     print("Replicator._synchronizeItems() createFolder: %s - %s" % (item.getValue('Title'), response))
@@ -284,23 +265,38 @@ class Replicator(unohelper.Base,
                     pass
                 elif user.Provider.isDocument(mediatype):
                     if user.Provider.createFile(user.Request, uploader, item):
-                        response = user.Provider.uploadFile(user.Request, uploader, item, True)
+                        if itemid not in operations.get('SizeUpdated'):
+                            response = user.Provider.uploadFile(user.Request, uploader, item, True)
+                            operations.get('SizeUpdated').append(itemid)
+                        else:
+                            response = True
                         print("Replicator._synchronizeItems() create/uploadFile: %s - %s" % (item.getValue('Title'), response))
-            else:
-                # UPDATE procedures, only a few properties are synchronized: (Size, Title, Trashed)
-                if item.getValue('SizeUpdated'):
-                    response = user.Provider.uploadFile(user.Request, uploader, item, False)
-                    print("Replicator._synchronizeItems() uploadFile: %s - %s" % (item.getValue('Title'), response))
-                elif item.getValue('TitleUpdated'):
+            # UPDATE procedures, only a few properties are synchronized: (Size, Title, Trashed)
+            elif item.getValue('TitleUpdated'):
+                if itemid not in operations.get('TitleUpdated'):
                     response = user.Provider.updateTitle(user.Request, item)
-                    print("Replicator._synchronizeItems() updateTitle: %s - %s" % (item.getValue('Title'), response))
-                elif item.getValue('TrashedUpdated'):
-                    response = user.Provider.updateTrashed(user.Request, item)
-                    print("Replicator._synchronizeItems() updateTrashed: %s - %s" % (item.getValue('Title'), response))
+                    operations.get('TitleUpdated').append(itemid)
                 else:
-                    # UPDATE of other properties (TimeStamp...)
-                    print("Replicator._synchronizeItems() Update None")
                     response = True
+                print("Replicator._synchronizeItems() updateTitle: %s - %s" % (item.getValue('Title'), response))
+            elif item.getValue('SizeUpdated'):
+                if itemid not in operations.get('SizeUpdated'):
+                    response = user.Provider.uploadFile(user.Request, uploader, item, False)
+                    operations.get('SizeUpdated').append(itemid)
+                else:
+                    response = True
+                print("Replicator._synchronizeItems() uploadFile: %s - %s" % (item.getValue('Title'), response))
+            elif item.getValue('TrashedUpdated'):
+                if itemid not in operations.get('TrashedUpdated'):
+                    response = user.Provider.updateTrashed(user.Request, item)
+                    operations.get('TrashedUpdated').append(itemid)
+                else:
+                    response = True
+                print("Replicator._synchronizeItems() updateTrashed: %s - %s" % (item.getValue('Title'), response))
+            else:
+                # UPDATE of other properties (TimeStamp...)
+                print("Replicator._synchronizeItems() Update None")
+                response = True
             #logMessage(self.ctx, INFO, msg, "Replicator", "_synchronizeItems()")
             return response
         except Exception as e:

@@ -392,17 +392,19 @@ class Wizard(unohelper.Base,
         roadmap.Height = model.Height
         roadmap.Width = model.PositionX
         button = self._dialog.getControl('CommandButton5').getModel()
-        button.PositionY = model.Height + self._spacer
-        for i in (1,2,3,4):
-            self._setButtonPosition(model, i)
+        button.PositionY  = model.Height + self._spacer
         dialog = self._dialog.getModel()
-        dialog.Height = model.Height + button.Height + 2 * self._spacer
+        dialog.Height = button.PositionY + button.Height + self._spacer
         dialog.Width = model.PositionX + model.Width
+        # We assume all buttons are named appropriately
+        for i in (1,2,3,4):
+            self._setButtonPosition(model, i, button.PositionY, dialog.Width)
 
-    def _setButtonPosition(self, model, step):
+    def _setButtonPosition(self, model, step, y, width):
+        # We assume that all buttons are the same Width
         button = self._dialog.getControl('CommandButton%s' % step).getModel()
-        button.PositionX = model.PositionX + model.Width - step * (button.Width + self._spacer)
-        button.PositionY = model.Height + self._spacer
+        button.PositionX = width - step * (button.Width + self._spacer)
+        button.PositionY = y
 
     def _setModelStep(self, model, step):
         model.PositionX = self._getRoadmap().Width
