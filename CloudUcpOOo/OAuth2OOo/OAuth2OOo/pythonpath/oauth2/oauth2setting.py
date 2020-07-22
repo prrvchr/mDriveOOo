@@ -236,6 +236,8 @@ class UserSetting(unohelper.Base,
         self.commit()
     @property
     def IsValid(self):
+        if self.NeverExpires:
+            return all((self._ProviderId, self.Id, self.AccessToken, self.Scopes))
         return all((self._ProviderId, self.Id, self.AccessToken, self.RefreshToken, self.Scopes))
 
     # XTransactedObject
