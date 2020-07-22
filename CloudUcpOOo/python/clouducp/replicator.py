@@ -186,7 +186,7 @@ class Replicator(unohelper.Base,
         start = parseDateTime()
         rootid = user.RootId
         call = self.DataBase.getDriveCall(user.Id, separator, 1, start)
-        orphans, pages, rows, count = self._getDriveContent(call, user.Provider, user.Request, rootid, separator, start)
+        orphans, pages, rows, count, token = self._getDriveContent(call, user.Provider, user.Request, rootid, separator, start)
         #rows += self._filterParents(call, user.Provider, items, parents, roots, separator, start)
         rejected = self._getRejectedItems(user.Provider, orphans, rootid)
         if count > 0:
@@ -194,8 +194,8 @@ class Replicator(unohelper.Base,
         call.close()
         end = parseDateTime()
         self.DataBase.updateUserTimeStamp(end)
+        user.Provider.updateDrive(self.DataBase, user.MetaData, token)
         return rejected, pages, rows, count, end
-
 
     def _getDriveContent(self, call, provider, request, rootid, separator, start):
         orphans = OrderedDict()
@@ -203,6 +203,7 @@ class Replicator(unohelper.Base,
         pages = 0
         rows = 0
         count = 0
+        token = ''
         provider.initDriveContent(rootid)
         while provider.hasDriveContent():
             parameter = provider.getRequestParameter('getDriveContent', provider.getDriveContent())
@@ -214,7 +215,9 @@ class Replicator(unohelper.Base,
                     count += 1
             pages += enumerator.PageCount
             rows += enumerator.RowCount
-        return orphans, pages, rows, count
+            token = enumerator.SyncToken
+        print("Replicator._getDriveContent() %s" % token)
+        return orphans, pages, rows, count, token
 
     def _setDriveCall(self, call, provider, roots, orphans, rootid, item, separator, timestamp):
         itemid = provider.getItemId(item)

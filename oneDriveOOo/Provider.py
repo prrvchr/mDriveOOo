@@ -9,6 +9,7 @@ from com.sun.star.auth.RestRequestTokenType import TOKEN_URL
 from com.sun.star.auth.RestRequestTokenType import TOKEN_REDIRECT
 from com.sun.star.auth.RestRequestTokenType import TOKEN_QUERY
 from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
+from com.sun.star.auth.RestRequestTokenType import TOKEN_SYNC
 
 from onedrive import ProviderBase
 from onedrive import g_identifier
@@ -85,13 +86,10 @@ class Provider(ProviderBase):
             parameter.Method = 'GET'
             parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
             parameter.Query = '{"select": "%s"}' % g_itemfields
-        elif method == 'getChanges':
+        elif method == 'getDriveContent':
             parameter.Method = 'GET'
-            if data.getValue('Token'):
-                parameter.Url = data.getValue('Token')
-            else:
-                parameter.Url = '%s/me/drive/root/delta' % self.BaseUrl
-            parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)
+            parameter.Url = '%s/me/drive/root/delta' % self.BaseUrl
+            parameter.Query = '{"select": "%s"}' % g_itemfields
             token = uno.createUnoStruct('com.sun.star.auth.RestRequestToken')
             token.Type = TOKEN_REDIRECT | TOKEN_SYNC
             token.Field = '@odata.nextLink'
@@ -100,13 +98,14 @@ class Provider(ProviderBase):
             enumerator.Field = 'value'
             enumerator.Token = token
             parameter.Enumerator = enumerator
-        elif method == 'getDriveContent':
+        elif method == 'getChanges':
             parameter.Method = 'GET'
-            parameter.Url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data)
-            parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)
+            parameter.Url = data.getValue('Token')
+            parameter.Query = '{"select": "%s"}' % g_itemfields
             token = uno.createUnoStruct('com.sun.star.auth.RestRequestToken')
-            token.Type = TOKEN_REDIRECT
+            token.Type = TOKEN_REDIRECT | TOKEN_SYNC
             token.Field = '@odata.nextLink'
+            token.SyncField = '@odata.deltaLink'
             enumerator = uno.createUnoStruct('com.sun.star.auth.RestRequestEnumerator')
             enumerator.Field = 'value'
             enumerator.Token = token
@@ -197,7 +196,10 @@ class Provider(ProviderBase):
     def getItemIsVersionable(self, item):
         return False
 
-    def setDriveContent(self, item):
+    def updateDrive(self, database, user, token):
+        if database.updateToken(user.getValue('UserId'), token):
+            user.setValue('Token', token)
+    def setDriveContent1(self, item):
         if self._isFolder(item):
             self._folders.append(self.getItemId(item))
 

@@ -166,6 +166,8 @@ class ProviderBase(ProviderObject,
             return self._folders.pop(0)
     def setDriveContent(self, item):
         pass
+    def updateDrive(self, database, user, token):
+        pass
     def isFolder(self, contenttype):
         return contenttype == self.Folder
     def isLink(self, contenttype):

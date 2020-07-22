@@ -3,7 +3,7 @@ Table|Column|TypeName|TypeLenght|Default|Options|Primary|Unique|ForeignTable|For
 0|1|VARCHAR|100||NOT NULL|false|true||
 0|2|VARCHAR|100|||false|false||
 0|3|VARCHAR|100||NOT NULL|false|false||
-0|4|VARCHAR|100|''|NOT NULL|false|false||
+0|4|VARCHAR|1000|''|NOT NULL|false|false||
 0|18|TIMESTAMP|6|CURRENT_TIMESTAMP|NOT NULL|false|false||
 1|5|VARCHAR|100||NOT NULL|true|false||
 1|6|VARCHAR|100|||false|false||

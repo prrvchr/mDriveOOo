@@ -5,6 +5,7 @@ import uno
 import unohelper
 
 from com.sun.star.lang import XServiceInfo
+from com.sun.star.uno import XInterface
 from com.sun.star.ucb import XContentIdentifierFactory
 from com.sun.star.ucb import XContentProvider
 from com.sun.star.ucb import XContentProviderFactory
@@ -18,8 +19,9 @@ from com.sun.star.logging.LogLevel import SEVERE
 from unolib import PropertySet
 from unolib import getProperty
 
-from onedrive import logMessage
 from onedrive import ContentProvider
+
+from onedrive import logMessage
 from onedrive import getUcp
 from onedrive import g_scheme
 from onedrive import g_identifier
@@ -35,7 +37,7 @@ class ContentProviderProxy(unohelper.Base,
                            XServiceInfo,
                            XContentIdentifierFactory,
                            XContentProvider,
-                           XContentProviderFactory,
+                           XParameterizedContentProvider,
                            XContentProviderSupplier,
                            PropertySet):
 
@@ -44,6 +46,11 @@ class ContentProviderProxy(unohelper.Base,
     @property
     def IsLoaded(self):
         return ContentProviderProxy._Provider is not None
+    @property
+    def Provider(self):
+        if not self.IsLoaded:
+            ContentProviderProxy._Provider = self._getContentProvider()
+        return ContentProviderProxy._Provider
 
     def __init__(self, ctx):
         msg = "ContentProviderProxy for plugin: %s loading ..." % g_identifier
@@ -53,6 +60,7 @@ class ContentProviderProxy(unohelper.Base,
         self.replace = True
         msg += " Done"
         logMessage(self.ctx, INFO, msg, 'ContentProviderProxy', '__init__()')
+        print('ContentProviderProxy.__init__()')
 
     # XContentProviderFactory
     def createContentProvider(self, service):
@@ -70,8 +78,22 @@ class ContentProviderProxy(unohelper.Base,
         logMessage(self.ctx, level, msg, 'ContentProviderProxy', 'createContentProvider()')
         return provider
 
+    # XInterface
+    def queryInterface(self, itype):
+        print("ContentProviderProxy.queryInterface()")
+        return self
+    def acquire(self):
+        pass
+    def release(self):
+        pass
+
     # XContentProviderSupplier
     def getContentProvider(self):
+        print('ContentProviderProxy.getContentProvider()')
+        return self
+
+    # XContentProviderSupplier
+    def getContentProvider1(self):
         print('ContentProviderProxy.getContentProvider()')
         level = INFO
         msg = "Need to get UCP: %s ..." % g_identifier
@@ -89,29 +111,39 @@ class ContentProviderProxy(unohelper.Base,
         logMessage(self.ctx, level, msg, 'ContentProviderProxy', 'getContentProvider()')
         return ContentProviderProxy._Provider
 
+    def _getContentProvider(self):
+        print('ContentProviderProxy._getContentProvider()')
+        service = '%s.ContentProvider' % g_identifier
+        provider = self.createContentProvider(service)
+        return provider
+
     # XParameterizedContentProvider
-    def registerInstance1(self, scheme, plugin, replace):
+    def registerInstance(self, scheme, plugin, replace):
         msg = "Register Scheme/Plugin/Replace: %s/%s/%s ..." % (scheme, plugin, replace)
+        print('ContentProviderProxy.registerInstance() %s' % msg)
         self.scheme = scheme
         self.plugin = plugin
         self.replace = replace
         msg += " Done"
         logMessage(self.ctx, INFO, msg, 'ContentProviderProxy', 'registerInstance()')
         return self
-    def deregisterInstance1(self, scheme, plugin):
-        self.getContentProvider().deregisterInstance(scheme, plugin)
+    def deregisterInstance(self, scheme, plugin):
+        print('ContentProviderProxy.deregisterInstance()')
+        #self.Provider.deregisterInstance(scheme, plugin)
         msg = "ContentProviderProxy.deregisterInstance(): %s - %s ... Done" % (scheme, plugin)
         logMessage(self.ctx, INFO, msg, 'ContentProviderProxy', 'deregisterInstance()')
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, identifier):
-        return self.getContentProvider().createContentIdentifier(identifier)
+        print('ContentProviderProxy.createContentIdentifier()')
+        return self.Provider.createContentIdentifier(identifier)
 
     # XContentProvider
     def queryContent(self, identifier):
-        return self.getContentProvider().queryContent(identifier)
+        print('ContentProviderProxy.queryContent()')
+        return self.Provider.queryContent(identifier)
     def compareContentIds(self, identifier1, identifier2):
-        return self.getContentProvider().compareContentIds(identifier1, identifier2)
+        return self.Provider.compareContentIds(identifier1, identifier2)
 
     # XServiceInfo
     def supportsService(self, service):

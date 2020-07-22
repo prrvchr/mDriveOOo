@@ -45,7 +45,7 @@ class ContentProvider(unohelper.Base,
         self.DataSource = None
         self.event = Event()
         self._currentUserName = None
-        self._error = None
+        self._error = ''
         msg = "ContentProvider: %s loading ... Done" % self.Plugin
         logMessage(self.ctx, INFO, msg, 'ContentProvider', '__init__()')
 
@@ -100,7 +100,7 @@ class ContentProvider(unohelper.Base,
         if not identifier.isValid():
             msg = "Identitifer: %s ... cannot be found: %s" % (url, self._error)
             logMessage(self.ctx, SEVERE, msg, 'ContentProvider', 'queryContent()')
-            raise IllegalIdentifierException(self._error, identifier)
+            raise IllegalIdentifierException(msg, identifier)
         print("ContentProvider.queryContent() 3")
         content = identifier.getContent()
         self._currentUserName = identifier.User.Name

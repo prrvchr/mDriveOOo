@@ -357,6 +357,7 @@ class DataBase(unohelper.Base,
         update.setString(2, userid)
         updated = update.executeUpdate() == 1
         update.close()
+        print("DataBase.updateToken() %s" % token)
         return updated
 
     # Identifier counting procedure
