@@ -56,9 +56,9 @@ class Replicator(unohelper.Base,
         self.canceled = True
         self.sync.set()
         self.join()
-    def callBack(self, item, response):
+    def callBack(self, itemid, response):
         if response.IsPresent:
-            self.DataBase.updateItemId(self.Provider, item, response.Value)
+            self.DataBase.updateItemId(self.Provider, itemid, response.Value)
 
     def run(self):
         try:
@@ -102,7 +102,7 @@ class Replicator(unohelper.Base,
                     start = self.DataBase.getUserTimeStamp(user.Id)
                 if user.Token:
                     results += self._pullData(user)
-            if all(results):
+            if len(results) and all(results):
                 results += self._pushData(start)
                 msg = getMessage(self.ctx, 116, user.Name)
                 logMessage(self.ctx, INFO, msg, 'Replicator', '_syncData()')
@@ -148,7 +148,7 @@ class Replicator(unohelper.Base,
             results = []
             operations = {'TitleUpdated': [], 'SizeUpdated': [], 'TrashedUpdated': []}
             end = parseDateTime()
-            for item in self.DataBase.getSynchronizeItems(start, end):
+            for item in self.DataBase.getPushItems(start, end):
                 user = self.Users.get(item.getValue('UserName'), None)
                 if user is not None:
                     print("Replicator._pushData() Insert/Update: %s Items: %s - %s - %s - %s" % (item.getValue('Title'),
@@ -159,7 +159,7 @@ class Replicator(unohelper.Base,
                     chunk = user.Provider.Chunk
                     url = user.Provider.SourceURL
                     uploader = user.Request.getUploader(chunk, url, self)
-                    results.append(self._synchronizeItems(user, uploader, item, operations))
+                    results.append(self._pushItem(user, uploader, item, operations))
             print("Replicator._pushData() Created / Updated Items: %s" % (results, ))
             if all(results):
                 self.DataBase.updateUserTimeStamp(end)
@@ -251,7 +251,7 @@ class Replicator(unohelper.Base,
             rejected.append((title, itemid, ','.join(parents)))
         return rejected
 
-    def _synchronizeItems(self, user, uploader, item, operations):
+    def _pushItem(self, user, uploader, item, operations):
         try:
             response = False
             itemid = item.getValue('Id')

@@ -251,7 +251,7 @@ class ProviderBase(ProviderObject,
         response = request.execute(parameter)
         if response.IsPresent:
             parameter = self.getRequestParameter('getUploadStream', response.Value)
-            return True if uploader.start(item, parameter) else False
+            return True if uploader.start(item.getValue('Id'), parameter) else False
         return False
 
     def updateTitle(self, request, item):

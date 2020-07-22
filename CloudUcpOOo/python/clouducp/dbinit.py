@@ -32,17 +32,12 @@ import traceback
 
 def getDataSourceUrl(ctx, dbname, plugin, register):
     error = None
-    print("dbinit.getDataSourceUrl() 1")
     url = getResourceLocation(ctx, plugin, g_path)
     odb = '%s/%s.odb' % (url, dbname)
-    print("dbinit.getDataSourceUrl() 2")
     dbcontext = createService(ctx, 'com.sun.star.sdb.DatabaseContext')
-    print("dbinit.getDataSourceUrl() 3")
     if not getSimpleFile(ctx).exists(odb):
-        print("dbinit.getDataSourceUrl() 4")
         datasource = createDataSource(dbcontext, url, dbname)
         error = createDataBase(ctx, datasource, url, dbname)
-        print("dbinit.getDataSourceUrl() 5 %s" % error)
         if error is None:
             datasource.DatabaseDocument.storeAsURL(odb, ())
     if error is None and register:
@@ -50,40 +45,13 @@ def getDataSourceUrl(ctx, dbname, plugin, register):
     return url, error
 
 def createDataBase(ctx, connection):
-    print("dbinit.createDataBase() 1")
     version, error = checkDataBase(ctx, connection)
-    print("dbinit.createDataBase() 2")
     if error is None:
-        print("dbinit.createDataBase() 3")
         statement = connection.createStatement()
         createStaticTable(statement, getStaticTables(), True)
         tables, statements = getTablesAndStatements(statement, version)
         executeSqlQueries(statement, tables)
         executeQueries(statement, getViews())
-    print("dbinit.createDataBase() 4")
-    return error
-
-def createDataBase1(ctx, datasource, url, dbname):
-    error = None
-    try:
-        print("dbinit.createDataBase() 1")
-        connection = datasource.getConnection('', '')
-    except SQLException as e:
-        error = e
-    else:
-        print("dbinit.createDataBase() 2")
-        version, error = checkDataBase(ctx, connection)
-        print("dbinit.createDataBase() 3")
-        if error is None:
-            print("dbinit.createDataBase() 4")
-            statement = connection.createStatement()
-            createStaticTable(statement, getStaticTables(), True)
-            tables, statements = getTablesAndStatements(statement, version)
-            executeSqlQueries(statement, tables)
-            executeQueries(statement, getViews())
-        connection.close()
-        connection.dispose()
-        print("dbinit.createDataBase() 5")
     return error
 
 def getTablesAndStatements(statement, version=g_version):

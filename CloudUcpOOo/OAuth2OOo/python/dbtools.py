@@ -32,43 +32,29 @@ import traceback
 
 
 def getDataSource(ctx, dbname, plugin, register):
-    print("dbinit.getDataSource() 1")
     location = getResourceLocation(ctx, plugin, g_path)
     url = '%s/%s.odb' % (location, dbname)
-    print("dbinit.getDataSource() 2")
     dbcontext = createService(ctx, 'com.sun.star.sdb.DatabaseContext')
-    print("dbinit.getDataSource() 3")
     if getSimpleFile(ctx).exists(url):
-        print("dbinit.getDataSource() 4")
         odb = dbname if dbcontext.hasByName(dbname) else url
         datasource = dbcontext.getByName(odb)
         created = False
     else:
-        print("dbinit.getDataSource() 5")
         datasource = createDataSource(dbcontext, location, dbname)
         created = True
     if register:
-        print("dbinit.getDataSource() 6")
         registerDataSource(dbcontext, dbname, url)
-    print("dbinit.getDataSource() 7")
     return datasource, url, created
 
 def getDataSourceConnection(ctx, url, dbname, name='', password=''):
-    print("getDataSourceConnection() 1")
     dbcontext = createService(ctx, 'com.sun.star.sdb.DatabaseContext')
-    print("getDataSourceConnection() 2")
     odb = dbname if dbcontext.hasByName(dbname) else '%s/%s.odb' % (url, dbname)
-    print("getDataSourceConnection() 3 %s - %s" % (odb, dbcontext.hasByName(odb)))
     datasource = dbcontext.getByName(odb)
-    print("getDataSourceConnection() 4")
     connection, error = None, None
     try:
-        print("getDataSourceConnection() 5")
         connection = datasource.getConnection(name, password)
-        print("getDataSourceConnection() 6")
     except SQLException as e:
         error = e
-    print("getDataSourceConnection() 7")
     return connection, error
 
 def getDataBaseConnection(ctx, url, dbname, name='', password='', shutdown=False):
@@ -92,13 +78,9 @@ def getDataSourceCall(connection, name, format=None):
     return call
 
 def createDataSource(dbcontext, location, dbname, shutdown=False):
-    print("dbtools.createDataSource() 1")
     datasource = dbcontext.createInstance()
-    print("dbtools.createDataSource() 2")
     datasource.URL = getDataSourceLocation(location, dbname, shutdown)
-    print("dbtools.createDataSource() 3")
     datasource.Info = getDataSourceInfo() + getDataSourceJavaInfo(location)
-    print("dbtools.createDataSource() 4")
     return datasource
 
 def checkDataBase(ctx, connection):

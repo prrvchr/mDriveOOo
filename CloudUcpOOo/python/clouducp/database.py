@@ -50,7 +50,6 @@ class DataBase(unohelper.Base,
 # Procedures called by the DataSource
     def createDataBase(self):
         version, error = checkDataBase(self.ctx, self.Connection)
-        print("DataBase.createDataBase() Hsqldb Version: %s" % version)
         if error is None:
             createStaticTable(self._statement, getStaticTables(), True)
             tables, statements = getTablesAndStatements(self._statement, version)
@@ -61,7 +60,6 @@ class DataBase(unohelper.Base,
     def _executeQueries(self, queries):
         for name, format in queries:
             query = getSqlQuery(name, format)
-            print("DataBase._executeQueries() %s" % query)
             self._statement.executeQuery(query)
 
     def storeDataBase(self, url):
@@ -424,7 +422,7 @@ class DataBase(unohelper.Base,
         self._statement.execute(query)
 
     # Procedure to retrieve all the UPDATE AND INSERT in the 'Capabilities' table
-    def getSynchronizeItems(self, start, end):
+    def getPushItems(self, start, end):
         items = []
         select = self._getCall('getSyncItems')
         select.setTimestamp(1, end)
@@ -442,15 +440,14 @@ class DataBase(unohelper.Base,
         select.close()
         return items
 
-    def updateItemId(self, provider, item, response):
-        oldid = item.getValue('Id')
-        newid = provider.getResponseId(response, oldid)
-        if newid != oldid:
+    def updateItemId(self, provider, itemid, response):
+        newid = provider.getResponseId(response, itemid)
+        if newid != itemid:
             update = self._getCall('updateItemId')
             update.setString(1, newid)
-            update.setString(2, oldid)
+            update.setString(2, itemid)
             row = update.executeUpdate()
-            msg = "execute UPDATE Items - Old ItemId: %s - New ItemId: %s - RowCount: %s" % (oldid, newid, row)
+            msg = "execute UPDATE Items - Old ItemId: %s - New ItemId: %s - RowCount: %s" % (itemid, newid, row)
             logMessage(self.ctx, INFO, msg, "DataBase", "updateItemId")
             update.close()
 

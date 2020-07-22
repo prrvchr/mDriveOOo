@@ -84,13 +84,10 @@ class Content(unohelper.Base,
 
     # XChild
     def getParent(self):
-        print("Content.getParent() 1")
         content = None
         if not self.Identifier.isRoot():
-            print("Content.getParent() 2")
             identifier = self.Identifier.getParent()
             content = identifier.getContent()
-        print("Content.getParent() 3")
         return content
     def setParent(self, parent):
         raise NoSupportException('Parent can not be set', self)
@@ -122,13 +119,9 @@ class Content(unohelper.Base,
 
     # XContent
     def getIdentifier(self):
-        print("Content.getIdentifier()")
         return self.Identifier
     def getContentType(self):
-        print("Content.getContentType()")
-        content = self.MetaData.getValue('ContentType')
-        print("Content.getContentType() %s" % content)
-        return content
+        return self.MetaData.getValue('ContentType')
     def addContentEventListener(self, listener):
         if listener not in self._contentListeners:
             self._contentListeners.append(listener)

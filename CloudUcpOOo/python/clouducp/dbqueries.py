@@ -420,6 +420,8 @@ def getSqlQuery(name, format=None):
         c11 = '"TitleUpdated"'
         c12 = '"SizeUpdated"'
         c13 = '"TrashedUpdated"'
+        c14 = 'EVERY("AtRoot") "AtRoot"'
+        c15 = '"Users"."RootId" = "Parents"."ItemId" "AtRoot"'
         c101 = '"Users".%s %s' % (c1, c1)
         c102 = '"Items"."ItemId" %s' % c2
         c103 = '"Items".%s' % c3
@@ -437,9 +439,9 @@ def getSqlQuery(name, format=None):
         c211 = 'TRUE %s' % c11
         c212 = 'TRUE %s' % c12
         c213 = 'TRUE %s' % c13
-        columns0 = ','.join((c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13))
-        columns1 = ','.join((c101,c102,c103,c104,c105,c106,c107,c108,c109,c110,c111,c112,c113))
-        columns2 = ','.join((c101,c102,c103,c104,c105,c106,c107,c108,c109,c210,c211,c212,c213))
+        columns0 = ','.join((c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14))
+        columns1 = ','.join((c101,c102,c103,c104,c105,c106,c107,c108,c109,c110,c111,c112,c113,c15))
+        columns2 = ','.join((c101,c102,c103,c104,c105,c106,c107,c108,c109,c210,c211,c212,c213,c15))
         groups = ','.join((c1,c2,c3,c4,c5,c6,c7,c8,c10,c11,c12,c13))
         query = '''\
 SELECT %s FROM

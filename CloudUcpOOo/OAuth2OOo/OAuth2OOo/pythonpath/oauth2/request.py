@@ -491,10 +491,10 @@ class OutputStream(unohelper.Base,
 
 class StreamListener(unohelper.Base,
                      XStreamListener):
-    def __init__(self, ctx, callback, item, response):
+    def __init__(self, ctx, callback, itemid, response):
         self.ctx = ctx
         self.callback = callback
-        self.item = item
+        self.itemid = itemid
         self.response = response
 
     # XStreamListener
@@ -502,7 +502,7 @@ class StreamListener(unohelper.Base,
         pass
     def closed(self):
         if self.response.IsPresent:
-            self.callback(self.item, self.response)
+            self.callback(self.itemid, self.response)
         else:
             msg = "ERROR ..."
             logMessage(self.ctx, SEVERE, msg, "OAuth2Service","StreamListener()")
@@ -525,13 +525,13 @@ class Uploader(unohelper.Base,
         self.callback = callBack
         self.timeout = timeout
 
-    def start(self, item, parameter):
-        input, size = self._getInputStream(item)
+    def start(self, itemid, parameter):
+        input, size = self._getInputStream(itemid)
         if size:
             optional = 'com.sun.star.beans.Optional<com.sun.star.auth.XRestKeyMap>'
             response = uno.createUnoStruct(optional)
             output = self._getOutputStream(parameter, size, response)
-            listener = self._getStreamListener(item, response)
+            listener = self._getStreamListener(itemid, response)
             pump = self.ctx.ServiceManager.createInstance('com.sun.star.io.Pump')
             pump.setInputStream(input)
             pump.setOutputStream(output)
@@ -540,8 +540,8 @@ class Uploader(unohelper.Base,
             return True
         return False
 
-    def _getInputStream(self, item):
-        url = '%s/%s' % (self.url, item.getValue('Id'))
+    def _getInputStream(self, itemid):
+        url = '%s/%s' % (self.url, itemid)
         sf = self.ctx.ServiceManager.createInstance('com.sun.star.ucb.SimpleFileAccess')
         if sf.exists(url):
             return sf.openFileRead(url), sf.getSize(url)
@@ -550,8 +550,8 @@ class Uploader(unohelper.Base,
     def _getOutputStream(self, param, size, resp):
         return OutputStream(self.ctx, self.session, param, size, self.chunk, resp, self.timeout)
 
-    def _getStreamListener(self, item, response):
-        return StreamListener(self.ctx, self.callback, item, response)
+    def _getStreamListener(self, itemid, response):
+        return StreamListener(self.ctx, self.callback, itemid, response)
 
 
 # Private method
