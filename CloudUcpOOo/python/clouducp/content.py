@@ -67,7 +67,7 @@ class Content(unohelper.Base,
         self.MetaData.insertValue('CreatableContentsInfo', creatablecontent)
         self._commandInfo = self._getCommandInfo()
         self._propertySetInfo = self._getPropertySetInfo()
-        self.contentListeners = []
+        self._contentListeners = []
         self._propertiesListener = {}
         msg += "Done."
         logMessage(self.ctx, INFO, msg, "Content", "__init__()")
@@ -130,11 +130,11 @@ class Content(unohelper.Base,
         print("Content.getContentType() %s" % content)
         return content
     def addContentEventListener(self, listener):
-        if listener not in self.contentListeners:
-            self.contentListeners.append(listener)
+        if listener not in self._contentListeners:
+            self._contentListeners.append(listener)
     def removeContentEventListener(self, listener):
-        if listener in self.contentListeners:
-            self.contentListeners.remove(listener)
+        if listener in self._contentListeners:
+            self._contentListeners.remove(listener)
 
     # XCommandProcessor2
     def createCommandIdentifier(self):
@@ -166,21 +166,25 @@ class Content(unohelper.Base,
                     logMessage(self.ctx, INFO, msg, "Content", "execute()")
                     return DynamicResultSet(self.ctx, select)
                 elif self.IsDocument:
-                    sf = getSimpleFile(self.ctx)
-                    url, size = self.Identifier.getDocumentContent(sf, self.MetaData, 0)
-                    if not size:
-                        title = self.MetaData.getValue('Title')
-                        msg = "Error while downloading file: %s" % title
-                        raise CommandAbortedException(msg, self)
-                    sink = command.Argument.Sink
-                    interfaces = getInterfaceTypes(sink)
-                    datasink = uno.getTypeByName('com.sun.star.io.XActiveDataSink')
-                    datastream = uno.getTypeByName('com.sun.star.io.XActiveDataStreamer')
-                    isreadonly = self.MetaData.getValue('IsReadOnly')
-                    if datasink in interfaces:
-                        sink.setInputStream(sf.openFileRead(url))
-                    elif not isreadonly and datastream in interfaces:
-                        sink.setStream(sf.openFileReadWrite(url))
+                    try:
+                        sf = getSimpleFile(self.ctx)
+                        url, size = self.Identifier.getDocumentContent(sf, self.MetaData, 0)
+                        if not size:
+                            title = self.MetaData.getValue('Title')
+                            msg = "Error while downloading file: %s" % title
+                            print("Content.execute() %s" % msg)
+                            raise CommandAbortedException(msg, self)
+                        sink = command.Argument.Sink
+                        interfaces = getInterfaceTypes(sink)
+                        datasink = uno.getTypeByName('com.sun.star.io.XActiveDataSink')
+                        datastream = uno.getTypeByName('com.sun.star.io.XActiveDataStreamer')
+                        isreadonly = self.MetaData.getValue('IsReadOnly')
+                        if datasink in interfaces:
+                            sink.setInputStream(sf.openFileRead(url))
+                        elif not isreadonly and datastream in interfaces:
+                            sink.setStream(sf.openFileReadWrite(url))
+                    except Exception as e:
+                        print("Content.execute() Error: %s - %s" % (e, traceback.print_exc()))
             elif command.Name == 'insert':
                 # The Insert command is only used to create a new folder or a new document
                 # (ie: File Save As).

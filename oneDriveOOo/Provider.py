@@ -201,12 +201,12 @@ class Provider(ProviderBase):
         if self._isFolder(item):
             self._folders.append(self.getItemId(item))
 
-    def getDocumentContent(self, content):
+    def getDocumentContent(self, request, content):
         parameter = self.getRequestParameter('getDocumentLocation', content)
-        response = self.Request.execute(parameter)
+        response = request.execute(parameter)
         if response.IsPresent:
             parameter = self.getRequestParameter('getDocumentContent', response.Value)
-            return self.Request.getInputStream(parameter, self.Chunk, self.Buffer)
+            return request.getInputStream(parameter, self.Chunk, self.Buffer)
         return None
 
     def _isFolder(self, item):
