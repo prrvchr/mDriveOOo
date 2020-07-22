@@ -102,7 +102,7 @@ class Replicator(unohelper.Base,
                     start = self.DataBase.getUserTimeStamp(user.Id)
                 if user.Token:
                     results += self._pullData(user)
-            if len(results) and all(results):
+            if all(results):
                 results += self._pushData(start)
                 msg = getMessage(self.ctx, 116, user.Name)
                 logMessage(self.ctx, INFO, msg, 'Replicator', '_syncData()')
@@ -145,6 +145,7 @@ class Replicator(unohelper.Base,
 
     def _pushData(self, start):
         try:
+            print("Replicator._pushData() 1")
             results = []
             operations = {'TitleUpdated': [], 'SizeUpdated': [], 'TrashedUpdated': []}
             end = parseDateTime()
@@ -260,7 +261,7 @@ class Replicator(unohelper.Base,
                 mediatype = item.getValue('MediaType')
                 if user.Provider.isFolder(mediatype):
                     response = user.Provider.createFolder(user.Request, item)
-                    print("Replicator._synchronizeItems() createFolder: %s - %s" % (item.getValue('Title'), response))
+                    print("Replicator._pushItem() createFolder: %s - %s" % (item.getValue('Title'), response))
                 elif user.Provider.isLink(mediatype):
                     pass
                 elif user.Provider.isDocument(mediatype):
@@ -270,7 +271,7 @@ class Replicator(unohelper.Base,
                             operations.get('SizeUpdated').append(itemid)
                         else:
                             response = True
-                        print("Replicator._synchronizeItems() create/uploadFile: %s - %s" % (item.getValue('Title'), response))
+                        print("Replicator._pushItem() create/uploadFile: %s - %s" % (item.getValue('Title'), response))
             # UPDATE procedures, only a few properties are synchronized: (Size, Title, Trashed)
             elif item.getValue('TitleUpdated'):
                 if itemid not in operations.get('TitleUpdated'):
@@ -278,27 +279,27 @@ class Replicator(unohelper.Base,
                     operations.get('TitleUpdated').append(itemid)
                 else:
                     response = True
-                print("Replicator._synchronizeItems() updateTitle: %s - %s" % (item.getValue('Title'), response))
+                print("Replicator._pushItem() updateTitle: %s - %s" % (item.getValue('Title'), response))
             elif item.getValue('SizeUpdated'):
                 if itemid not in operations.get('SizeUpdated'):
                     response = user.Provider.uploadFile(user.Request, uploader, item, False)
                     operations.get('SizeUpdated').append(itemid)
                 else:
                     response = True
-                print("Replicator._synchronizeItems() uploadFile: %s - %s" % (item.getValue('Title'), response))
+                print("Replicator._pushItem() uploadFile: %s - %s" % (item.getValue('Title'), response))
             elif item.getValue('TrashedUpdated'):
                 if itemid not in operations.get('TrashedUpdated'):
                     response = user.Provider.updateTrashed(user.Request, item)
                     operations.get('TrashedUpdated').append(itemid)
                 else:
                     response = True
-                print("Replicator._synchronizeItems() updateTrashed: %s - %s" % (item.getValue('Title'), response))
+                print("Replicator._pushItem() updateTrashed: %s - %s" % (item.getValue('Title'), response))
             else:
                 # UPDATE of other properties (TimeStamp...)
-                print("Replicator._synchronizeItems() Update None")
+                print("Replicator._pushItem() Update None")
                 response = True
-            #logMessage(self.ctx, INFO, msg, "Replicator", "_synchronizeItems()")
+            #logMessage(self.ctx, INFO, msg, "Replicator", "_pushItem()")
             return response
         except Exception as e:
             msg = "ERROR: %s - %s" % (e, traceback.print_exc())
-            logMessage(self.ctx, SEVERE, msg, "Replicator", "_synchronizeItems()")
+            logMessage(self.ctx, SEVERE, msg, "Replicator", "_pushItem()")
