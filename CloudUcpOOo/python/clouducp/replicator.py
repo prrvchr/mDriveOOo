@@ -27,6 +27,8 @@ from .dbtools import getDataSourceConnection
 from .dbtools import createDataSource
 from .dbtools import registerDataSource
 
+from .user import User
+
 from .logger import logMessage
 from .logger import getMessage
 
@@ -157,22 +159,22 @@ class Replicator(unohelper.Base,
             end = parseDateTime()
             for item in self.DataBase.getPushItems(start, end):
                 user = self.Users.get(item.getValue('UserName'), None)
-                if user is not None:
-                    print("Replicator._pushData() 2")
-                    datasource = self.DataBase.getDataSource()
-                    #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
-                    #if mri is not None:
-                    #    mri.inspect(datasource)
-                    print("Replicator._pushData() Insert/Update: %s Items: %s - %s - %s - %s - %s" % (item.getValue('Title'),
-                                                                                                      item.getValue('TitleUpdated'),
-                                                                                                      item.getValue('SizeUpdated'),
-                                                                                                      item.getValue('TrashedUpdated'),
-                                                                                                      item.getValue('Size'),
-                                                                                                      item.getValue('AtRoot')))
-                    chunk = user.Provider.Chunk
-                    url = user.Provider.SourceURL
-                    uploader = user.Request.getUploader(chunk, url, self)
-                    results.append(self._pushItem(user, uploader, item, operations))
+                if user is None:
+                    user = User(self.ctx, self, item.getValue('UserName'), self.DataBase)
+                print("Replicator._pushData() 2")
+                #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
+                #if mri is not None:
+                #    mri.inspect(datasource)
+                print("Replicator._pushData() Insert/Update: %s Items: %s - %s - %s - %s - %s" % (item.getValue('Title'),
+                                                                                                  item.getValue('TitleUpdated'),
+                                                                                                  item.getValue('SizeUpdated'),
+                                                                                                  item.getValue('TrashedUpdated'),
+                                                                                                  item.getValue('Size'),
+                                                                                                  item.getValue('AtRoot')))
+                chunk = user.Provider.Chunk
+                url = user.Provider.SourceURL
+                uploader = user.Request.getUploader(chunk, url, self)
+                results.append(self._pushItem(user, uploader, item, operations))
             print("Replicator._pushData() 3 Created / Updated Items: %s" % (results, ))
             if all(results):
                 self.DataBase.updateUserTimeStamp(end)

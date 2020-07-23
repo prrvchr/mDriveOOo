@@ -90,12 +90,6 @@ class DataSource(unohelper.Base,
             self.sync.set()
         return user
 
-    def getRequest(self, name):
-        request = createService(self.ctx, g_oauth2)
-        if request is not None:
-            request.initializeSession(self.Provider.Scheme, name)
-        return request
-
     def _initializeUser(self, user, name, password):
         if user.Request is not None:
             if user.MetaData is not None:

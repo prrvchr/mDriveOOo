@@ -10,6 +10,7 @@ from com.sun.star.logging.LogLevel import SEVERE
 from com.sun.star.ucb import XRestUser
 
 from unolib import KeyMap
+from unolib import getRequest
 
 from .database import DataBase
 
@@ -21,22 +22,22 @@ import traceback
 
 class User(unohelper.Base,
            XRestUser):
-    def __init__(self, ctx, datasource=None, name=None):
+    def __init__(self, ctx, source=None, name=None, database=None):
         msg = "User loading"
         self.ctx = ctx
-        self.DataBase = None
+        self.DataBase = database
         # Uri with Scheme but without a Path generate invalid user but we need
         # to return an Identifier, and raise an 'IllegalIdentifierException'
         # when ContentProvider try to get the Content...
         # (ie: ContentProvider.queryContent() -> Identifier.getContent())
-        if datasource is None:
+        if source is None:
             self.Provider = None
             self.Request = None
             self.MetaData = KeyMap()
         else:
-            self.Provider = datasource.Provider
-            self.Request = datasource.getRequest(name)
-            self.MetaData = datasource.DataBase.selectUser(name)
+            self.Provider = source.Provider
+            self.Request = getRequest(self.ctx, self.Provider.Scheme, name)
+            self.MetaData = source.DataBase.selectUser(name)
             self.CanAddChild = not self.Provider.GenerateIds
         msg += " ... Done"
         logMessage(self.ctx, INFO, msg, "User", "__init__()")
