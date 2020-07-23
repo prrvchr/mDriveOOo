@@ -29,10 +29,10 @@ interface XRestProvider: com::sun::star::uno::XInterface
     void updateDrive([in] ::com::sun::star::uno::XInterface DataBase,
                      [in] ::com::sun::star::auth::XRestKeyMap User,
                      [in] string Token);
-    void initDriveContent([in] string ItemId);
-    boolean hasDriveContent();
-    string getDriveContent();
-    void setDriveContent([in] ::com::sun::star::auth::XRestKeyMap Item);
+    void initFirstPull([in] string ItemId);
+    boolean hasFirstPull();
+    string getFirstPull();
+    void setFirstPull([in] ::com::sun::star::auth::XRestKeyMap Item);
     boolean isOnLine();
     boolean isOffLine();
     string getTimeStamp();

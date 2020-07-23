@@ -10,6 +10,8 @@ from com.sun.star.ucb.ConnectionMode import OFFLINE
 
 from .unolib import InteractionHandler
 
+from .oauth2config import g_oauth2
+
 import datetime
 import binascii
 import traceback
@@ -28,6 +30,12 @@ def getConnectionMode(ctx, host, port=80):
 
 def getSimpleFile(ctx):
     return createService(ctx, 'com.sun.star.ucb.SimpleFileAccess')
+
+def getRequest(ctx, scheme, name):
+    request = createService(ctx, g_oauth2)
+    if request is not None:
+        request.initializeSession(scheme, name)
+    return request
 
 def getFileSequence(ctx, url, default=None):
     length, sequence = 0, uno.ByteSequence(b'')

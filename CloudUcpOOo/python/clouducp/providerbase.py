@@ -157,14 +157,14 @@ class ProviderBase(ProviderObject,
     # Can be rewrited method
     def initUser(self, request, database, user):
         pass
-    def initDriveContent(self, rootid):
+    def initFirstPull(self, rootid):
         self._folders = [rootid]
-    def hasDriveContent(self):
+    def hasFirstPull(self):
         return len(self._folders) > 0
-    def getDriveContent(self):
-        if self.hasDriveContent():
+    def getFirstPull(self):
+        if self.hasFirstPull():
             return self._folders.pop(0)
-    def setDriveContent(self, item):
+    def setFirstPull(self, item):
         pass
     def updateDrive(self, database, user, token):
         pass

@@ -7,6 +7,8 @@
 #include <com/sun/star/auth/XRestKeyMap.idl>
 #include <com/sun/star/sdbc/XConnection.idl>
 #include <com/sun/star/sdbc/XPreparedStatement.idl>
+#include <com/sun/star/ucb/XRestProvider.idl>
+#include <com/sun/star/util/DateTime.idl>
 #include <com/sun/star/beans/Optional.idl>
 
 module com { module sun { module star { module ucb {
@@ -18,6 +20,7 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     void storeDataBase([in] string Url);
     void addCloseListener([in] ::com::sun::star::util::XCloseListener Listener);
     void shutdownDataBase([in] boolean Compact);
+    ::com::sun::star::uno::XInterface getDataSource();
     boolean createUser([in] string Name,
                        [in] string Password);
     ::com::sun::star::auth::XRestKeyMap selectUser([in] string Name);
@@ -39,6 +42,9 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     ::com::sun::star::auth::XRestKeyMap getIdentifier([in] ::com::sun::star::uno::XInterface User,
                                                       [in] ::com::sun::star::uri::XUriReference Uri,
                                                       [in] boolean New);
+    sequence<::com::sun::star::auth::XRestKeyMap> getPushItems([in] ::com::sun::star::util::DateTime Start,
+                                                               [in] ::com::sun::star::util::DateTime End);
+
     boolean updateToken([in] string UserId,
                         [in] string Token);
     void updateContent([in] string ItemId,
@@ -59,6 +65,17 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     void updateItemId([in] ::com::sun::star::uno::XInterface Provider,
                       [in] ::com::sun::star::auth::XRestKeyMap Item,
                       [in] ::com::sun::star::auth::XRestKeyMap Response);
+    ::com::sun::star::sdbc::XPreparedStatement getFirstPullCall([in] string UserId,
+                                                                [in] string Separator,
+                                                                [in] boolean Loaded,
+                                                                [in] ::com::sun::star::util::DateTime TimeStamp);
+    short setFirstPullCall([in] ::com::sun::star::sdbc::XPreparedStatement Call,
+                           [in] ::com::sun::star::ucb::XRestProvider Provider,
+                           [in] ::com::sun::star::auth::XRestKeyMap Item,
+                           [in] string ItemId,
+                           [in] sequence<string> Parents,
+                           [in] string Separator,
+                           [in] ::com::sun::star::util::DateTime TimeStamp);
 
     [attribute, readonly] ::com::sun::star::sdbc::XConnection Connection;
 

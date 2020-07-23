@@ -112,11 +112,12 @@ class Replicator(unohelper.Base,
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
 
     def _initUser(self, user):
+        # This procedure is launched only once for each new user
         # In order to make the creation of files or directories possible quickly,
-        # it is necessary to run the verification of the identifiers.
+        # it is necessary to run the verification of the identifiers first.
         self._checkNewIdentifier(user)
         # This procedure corresponds to the initial pull for a new User (ie: without Token)
-        rejected, pages, rows, count, start = self._updateDrive(user)
+        rejected, pages, rows, count, start = self._firstPull(user)
         print("Replicator._initUser() 1 count: %s - %s pages - %s rows" % (count, pages, rows))
         msg = getMessage(self.ctx, 120, (pages, rows, count))
         logMessage(self.ctx, INFO, msg, 'Replicator', '_syncData()')
@@ -131,10 +132,12 @@ class Replicator(unohelper.Base,
         return start
 
     def _pullData(self, user):
+        # This procedure is launched each time the synchronization is started
+        # This procedure corresponds to the pull for a User (ie: a Token is required)
         results = []
         self._checkNewIdentifier(user)
         print("Replicator._pullData() 1")
-        parameter = user.Provider.getRequestParameter('getChanges', user.MetaData)
+        parameter = user.Provider.getRequestParameter('getPull', user.MetaData)
         enumerator = user.Request.getIterator(parameter, None)
         print("Replicator._pullData() 2 %s - %s" % (enumerator.PageCount, enumerator.SyncToken))
         while enumerator.hasMoreElements():
@@ -144,6 +147,9 @@ class Replicator(unohelper.Base,
         return results
 
     def _pushData(self, start):
+        # This procedure is launched each time the synchronization is started
+        # This procedure corresponds to the push of changes for the entire database 
+        # for all users, in chronological order, from 'start' to 'end'...
         try:
             print("Replicator._pushData() 1")
             results = []
@@ -152,19 +158,26 @@ class Replicator(unohelper.Base,
             for item in self.DataBase.getPushItems(start, end):
                 user = self.Users.get(item.getValue('UserName'), None)
                 if user is not None:
-                    print("Replicator._pushData() Insert/Update: %s Items: %s - %s - %s - %s" % (item.getValue('Title'),
-                                                                                                 item.getValue('TitleUpdated'),
-                                                                                                 item.getValue('SizeUpdated'),
-                                                                                                 item.getValue('TrashedUpdated'),
-                                                                                                 item.getValue('Size')))
+                    print("Replicator._pushData() 2")
+                    datasource = self.DataBase.getDataSource()
+                    #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
+                    #if mri is not None:
+                    #    mri.inspect(datasource)
+                    print("Replicator._pushData() Insert/Update: %s Items: %s - %s - %s - %s - %s" % (item.getValue('Title'),
+                                                                                                      item.getValue('TitleUpdated'),
+                                                                                                      item.getValue('SizeUpdated'),
+                                                                                                      item.getValue('TrashedUpdated'),
+                                                                                                      item.getValue('Size'),
+                                                                                                      item.getValue('AtRoot')))
                     chunk = user.Provider.Chunk
                     url = user.Provider.SourceURL
                     uploader = user.Request.getUploader(chunk, url, self)
                     results.append(self._pushItem(user, uploader, item, operations))
-            print("Replicator._pushData() Created / Updated Items: %s" % (results, ))
+            print("Replicator._pushData() 3 Created / Updated Items: %s" % (results, ))
             if all(results):
                 self.DataBase.updateUserTimeStamp(end)
-                print("Replicator._pushData() Created / Updated Items OK")
+                print("Replicator._pushData() 4 Created / Updated Items OK")
+            print("Replicator._pushData() 5")
             return results
         except Exception as e:
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
@@ -182,12 +195,12 @@ class Replicator(unohelper.Base,
         # Need to postpone the creation authorization after this verification...
         user.CanAddChild = True
 
-    def _updateDrive(self, user):
+    def _firstPull(self, user):
         separator = ','
         start = parseDateTime()
         rootid = user.RootId
-        call = self.DataBase.getDriveCall(user.Id, separator, 1, start)
-        orphans, pages, rows, count, token = self._getDriveContent(call, user.Provider, user.Request, rootid, separator, start)
+        call = self.DataBase.getFirstPullCall(user.Id, separator, 1, start)
+        orphans, pages, rows, count, token = self._getFirstPull(call, user.Provider, user.Request, rootid, separator, start)
         #rows += self._filterParents(call, user.Provider, items, parents, roots, separator, start)
         rejected = self._getRejectedItems(user.Provider, orphans, rootid)
         if count > 0:
@@ -198,33 +211,33 @@ class Replicator(unohelper.Base,
         self.DataBase.updateUserTimeStamp(end)
         return rejected, pages, rows, count, end
 
-    def _getDriveContent(self, call, provider, request, rootid, separator, start):
+    def _getFirstPull(self, call, provider, request, rootid, separator, start):
         orphans = OrderedDict()
         roots = [rootid]
         pages = rows = count = 0
         token = ''
-        provider.initDriveContent(rootid)
-        while provider.hasDriveContent():
-            parameter = provider.getRequestParameter('getDriveContent', provider.getDriveContent())
+        provider.initFirstPull(rootid)
+        while provider.hasFirstPull():
+            parameter = provider.getRequestParameter('getFirstPull', provider.getFirstPull())
             enumerator = request.getIterator(parameter, None)
             while enumerator.hasMoreElements():
                 item = enumerator.nextElement()
-                if self._setDriveCall(call, provider, roots, orphans, rootid, item, separator, start):
-                    provider.setDriveContent(item)
+                if self._setFirstPullCall(call, provider, roots, orphans, rootid, item, separator, start):
+                    provider.setFirstPull(item)
                     count += 1
             pages += enumerator.PageCount
             rows += enumerator.RowCount
             token = enumerator.SyncToken
         return orphans, pages, rows, count, token
 
-    def _setDriveCall(self, call, provider, roots, orphans, rootid, item, separator, timestamp):
+    def _setFirstPullCall(self, call, provider, roots, orphans, rootid, item, separator, timestamp):
         itemid = provider.getItemId(item)
         parents = provider.getItemParent(item, rootid)
         if not all(parent in roots for parent in parents):
             orphans[itemid] = item
             return False
         roots.append(itemid)
-        self.DataBase.setDriveCall(call, provider, item, itemid, parents, separator, timestamp)
+        self.DataBase.setFirstPullCall(call, provider, item, itemid, parents, separator, timestamp)
         return True
 
     def _filterParents(self, call, provider, items, childs, roots, separator, start):

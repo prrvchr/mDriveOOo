@@ -62,8 +62,11 @@ class DataBase(unohelper.Base,
             query = getSqlQuery(name, format)
             self._statement.executeQuery(query)
 
+    def getDataSource(self):
+        return self.Connection.getParent().DatabaseDocument.DataSource
+
     def storeDataBase(self, url):
-        self._statement.getConnection().getParent().DatabaseDocument.storeAsURL(url, ())
+        self.Connection.getParent().DatabaseDocument.storeAsURL(url, ())
 
     def addCloseListener(self, listener):
         self.Connection.Parent.DatabaseDocument.addCloseListener(listener)
@@ -387,7 +390,7 @@ class DataBase(unohelper.Base,
         insert.addBatch()
 
     # First pull procedure: header of merge request
-    def getDriveCall(self, userid, separator, loaded, timestamp):
+    def getFirstPullCall(self, userid, separator, loaded, timestamp):
         call = self._getCall('mergeItem')
         call.setString(1, userid)
         call.setString(2, separator)
@@ -396,8 +399,8 @@ class DataBase(unohelper.Base,
         return call
 
     # First pull procedure: body of merge request
-    def setDriveCall(self, call, provider, item, id, parents, separator, timestamp):
-        row = self._mergeItem(call, provider, item, id, parents, separator, timestamp)
+    def setFirstPullCall(self, call, provider, item, itemid, parents, separator, timestamp):
+        row = self._mergeItem(call, provider, item, itemid, parents, separator, timestamp)
         call.addBatch()
         return row
 
