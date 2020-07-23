@@ -78,15 +78,15 @@ class Provider(ProviderBase):
             parameter.Method = 'GET'
             parameter.Url = '%s/me' % self.BaseUrl
             parameter.Query = '{"select": "%s"}' % g_userfields
-        elif method == 'getRoot':
-            parameter.Method = 'GET'
-            parameter.Url = '%s/me/drive/root' % self.BaseUrl
-            parameter.Query = '{"select": "%s"}' % g_drivefields
         elif method == 'getItem':
             parameter.Method = 'GET'
             parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
             parameter.Query = '{"select": "%s"}' % g_itemfields
-        elif method == 'getDriveContent':
+        elif method == 'getRoot':
+            parameter.Method = 'GET'
+            parameter.Url = '%s/me/drive/root' % self.BaseUrl
+            parameter.Query = '{"select": "%s"}' % g_drivefields
+        elif method == 'getFirstPull':
             parameter.Method = 'GET'
             parameter.Url = '%s/me/drive/root/delta' % self.BaseUrl
             parameter.Query = '{"select": "%s"}' % g_itemfields
@@ -98,7 +98,7 @@ class Provider(ProviderBase):
             enumerator.Field = 'value'
             enumerator.Token = token
             parameter.Enumerator = enumerator
-        elif method == 'getChanges':
+        elif method == 'getPull':
             parameter.Method = 'GET'
             parameter.Url = data.getValue('Token')
             parameter.Query = '{"select": "%s"}' % g_itemfields
