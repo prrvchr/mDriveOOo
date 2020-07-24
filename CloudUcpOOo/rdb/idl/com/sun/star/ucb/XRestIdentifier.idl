@@ -12,7 +12,6 @@ module com { module sun { module star { module ucb {
 interface XRestIdentifier: com::sun::star::uno::XInterface
 {
 
-    boolean isNew();
     boolean isRoot();
     boolean isValid();
     ::com::sun::star::ucb::XRestIdentifier createNewIdentifier([in] string ContentType);
@@ -30,6 +29,7 @@ interface XRestIdentifier: com::sun::star::uno::XInterface
     [attribute, readonly] string Id;
     [attribute, readonly] string ParentId;
     [attribute, readonly] string ParentURI;
+    [attribute, readonly] boolean IsNew;
 
 };
 

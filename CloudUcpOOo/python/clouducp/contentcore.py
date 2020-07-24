@@ -31,7 +31,7 @@ def getPropertiesValues(ctx, source, properties):
     for property in properties:
         value = None
         if all((hasattr(property, 'Name'),
-                property.Name in source._propertySetInfo,
+                property.Name in source.Identifier._propertySetInfo,
                 source.MetaData.hasValue(property.Name))):
             value = source.MetaData.getValue(property.Name)
             msg = "Name: %s - Value: %s" % (property.Name, value)
@@ -49,7 +49,7 @@ def setPropertiesValues(ctx, source, context, properties):
     for property in properties:
         if all((hasattr(property, 'Name'),
                 hasattr(property, 'Value'),
-                property.Name in source._propertySetInfo)):
+                property.Name in source.Identifier._propertySetInfo)):
             result, level, msg = _setPropertyValue(source, context, property)
         else:
             msg = "ERROR: Requested property: %s is not available" % property.Name
@@ -63,7 +63,7 @@ def setPropertiesValues(ctx, source, context, properties):
 def _setPropertyValue(source, context, property):
     name, value = property.Name, property.Value
     print("Content._setPropertyValue() 1 %s - %s" % (name, value))
-    if source._propertySetInfo.get(name).Attributes & READONLY:
+    if source.Identifier._propertySetInfo.get(name).Attributes & READONLY:
         msg = "ERROR: Requested property: %s is READONLY" % name
         level = SEVERE
         error = IllegalAccessException(msg, source)
@@ -108,7 +108,7 @@ def _setTitle(source, context, title):
             print("ContentCore._setTitle() 2")
             source.MetaData.setValue('Title', identifier.setTitle(title))
             print("ContentCore._setTitle() 3 *********************** %s" % identifier.Id)
-            if not identifier.isNew():
+            if not identifier.IsNew:
                 user.DataBase.updateContent(user.Id, identifier.Id, 'Title', title)
                 print("ContentCore._setTitle() 4")
             msg = "Set property: %s value: %s" % ('Title', title)

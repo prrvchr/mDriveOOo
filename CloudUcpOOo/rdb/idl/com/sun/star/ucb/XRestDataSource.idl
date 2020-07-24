@@ -18,6 +18,9 @@ interface XRestDataSource: com::sun::star::uno::XInterface
                                              [in] string Password);
     ::com::sun::star::ucb::XRestIdentifier getIdentifier([in] ::com::sun::star::ucb::XRestUser User,
                                                          [in] ::com::sun::star::uri::XUriReference Uri);
+    void callBack([in] ::com::sun::star::ucb::XRestUser User,
+                  [in] ::com::sun::star::uri::XUriReference Uri,
+                  [in] boolean IsFolder);
 
     [attribute, readonly] ::com::sun::star::ucb::XRestProvider Provider;
     [attribute, readonly] ::com::sun::star::ucb::XRestDataBase DataBase;

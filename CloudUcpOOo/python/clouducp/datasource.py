@@ -95,16 +95,30 @@ class DataSource(unohelper.Base,
 
     def getIdentifier(self, user, uri):
         # Identifier never change... we can cache it... if it's valid.
-        key = '%s/%s' % (user.Name, uri.getPath().strip('/.'))
+        key = self._getIdentifierKey(user, uri)
         if key in self._Identifiers:
             identifier = self._Identifiers[key]
         else:
-            identifier = Identifier(self.ctx, user, uri)
+            identifier = Identifier(self.ctx, user, uri, self.callBack)
             if identifier.isValid():
                 self._Identifiers[key] = identifier
         if len(self._Identifiers) > g_cache:
-            self._Identifiers.popitem(False)
+            k, i = self._Identifiers.popitem(False)
+            print("DataSource.getIdentifier() DELETE Cache %s - %s - %s" % (len(self._Identifiers), k, i.getContentIdentifier()))
         return identifier
+
+    def callBack(self, user, uri, isfolder):
+        # If the title of the identifier changes, we must remove
+        # from the cache this identifier and its children if it's a folder.
+        key = self._getIdentifierKey(user, uri)
+        child = key + '/'
+        for identifier in list(self._Identifiers):
+            if identifier == key or (isfolder and identifier.startswith(child)):
+                print("DataSource.callBack() %s - %s" % (identifier, key))
+                del self._Identifiers[identifier]
+
+    def _getIdentifierKey(self, user, uri):
+        return '%s/%s' % (user.Name, uri.getPath().strip('/.'))
 
     def _initializeUser(self, user, name, password):
         if user.Request is not None:

@@ -63,10 +63,7 @@ class Content(unohelper.Base,
         msg = "Content loading ... "
         self.Identifier = identifier
         self.MetaData = identifier.MetaData
-        creatablecontent = self._getCreatableContentsInfo()
-        self.MetaData.insertValue('CreatableContentsInfo', creatablecontent)
         self._commandInfo = self._getCommandInfo()
-        self._propertySetInfo = self._getPropertySetInfo()
         self._contentListeners = []
         self._propertiesListener = {}
         msg += "Done."
@@ -141,7 +138,7 @@ class Content(unohelper.Base,
             if command.Name == 'getCommandInfo':
                 return CommandInfo(self._commandInfo)
             elif command.Name == 'getPropertySetInfo':
-                return PropertySetInfo(self._propertySetInfo)
+                return PropertySetInfo(self.Identifier._propertySetInfo)
             elif command.Name == 'getPropertyValues':
                 namedvalues = getPropertiesValues(self.ctx, self, command.Argument)
                 return Row(namedvalues)
@@ -264,17 +261,6 @@ class Content(unohelper.Base,
     def releaseCommandIdentifier(self, id):
         pass
 
-    def _getCreatableContentsInfo(self):
-        content = []
-        if all((self.IsFolder, self.CanAddChild, self.Identifier.User.CanAddChild)):
-            provider = self.Identifier.User.Provider
-            properties = (getProperty('Title', 'string', BOUND), )
-            content.append(getContentInfo(provider.Folder, KIND_FOLDER, properties))
-            content.append(getContentInfo(provider.Office, KIND_DOCUMENT, properties))
-            #if provider.hasProprietaryFormat:
-            #    content.append(getContentInfo(provider.ProprietaryFormat, KIND_DOCUMENT, properties))
-        return tuple(content)
-
     def _getCommandInfo(self):
         commands = {}
         commands['getCommandInfo'] = getCommandInfo('getCommandInfo')
@@ -305,30 +291,3 @@ class Content(unohelper.Base,
             commands['transfer'] = getCommandInfo('transfer', t6)
             commands['flush'] = getCommandInfo('flush')
         return commands
-
-    def _getPropertySetInfo(self):
-        RO = 0 if self.Identifier.isNew() else READONLY
-        properties = {}
-        properties['ContentType'] = getProperty('ContentType', 'string', BOUND | RO)
-        properties['MediaType'] = getProperty('MediaType', 'string', BOUND | READONLY)
-        properties['IsDocument'] = getProperty('IsDocument', 'boolean', BOUND | RO)
-        properties['IsFolder'] = getProperty('IsFolder', 'boolean', BOUND | RO)
-        properties['Title'] = getProperty('Title', 'string', BOUND | CONSTRAINED)
-        properties['Size'] = getProperty('Size', 'long', BOUND | RO)
-        created = getProperty('DateCreated', 'com.sun.star.util.DateTime', BOUND | READONLY)
-        properties['DateCreated'] = created
-        modified = getProperty('DateModified', 'com.sun.star.util.DateTime', BOUND | RO)
-        properties['DateModified'] = modified
-        properties['IsReadOnly'] = getProperty('IsReadOnly', 'boolean', BOUND | RO)
-        info = getProperty('CreatableContentsInfo','[]com.sun.star.ucb.ContentInfo', BOUND | RO)
-        properties['CreatableContentsInfo'] = info
-        properties['CasePreservingURL'] = getProperty('CasePreservingURL', 'string', BOUND | RO)
-        properties['BaseURI'] = getProperty('BaseURI', 'string', BOUND | READONLY)
-        properties['TitleOnServer'] = getProperty('TitleOnServer', 'string', BOUND)
-        properties['IsHidden'] = getProperty('IsHidden', 'boolean', BOUND | RO)
-        properties['IsVolume'] = getProperty('IsVolume', 'boolean', BOUND | RO)
-        properties['IsRemote'] = getProperty('IsRemote', 'boolean', BOUND | RO)
-        properties['IsRemoveable'] = getProperty('IsRemoveable', 'boolean', BOUND | RO)
-        properties['IsFloppy'] = getProperty('IsFloppy', 'boolean', BOUND | RO)
-        properties['IsCompactDisc'] = getProperty('IsCompactDisc', 'boolean', BOUND | RO)
-        return properties
