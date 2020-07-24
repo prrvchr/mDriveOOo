@@ -29,7 +29,7 @@ interface XRestIdentifier: com::sun::star::uno::XInterface
     [attribute, readonly] ::com::sun::star::auth::XRestKeyMap MetaData;
     [attribute, readonly] string Id;
     [attribute, readonly] string ParentId;
-    [attribute, readonly] string BaseURI;
+    [attribute, readonly] string ParentURI;
 
 };
 

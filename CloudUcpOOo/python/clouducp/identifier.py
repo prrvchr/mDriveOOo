@@ -21,6 +21,7 @@ from unolib import KeyMap
 from unolib import parseDateTime
 
 from .content import Content
+from .contenttools import getUcb
 from .contenttools import getUri
 from .contenttools import getUrl
 from .logger import logMessage
@@ -50,8 +51,8 @@ class Identifier(unohelper.Base,
     def ParentId(self):
         return self.MetaData.getDefaultValue('ParentId', None)
     @property
-    def BaseURI(self):
-        return self.MetaData.getDefaultValue('BaseURI', None)
+    def ParentURI(self):
+        return self.MetaData.getDefaultValue('ParentURI', None)
 
     def isNew(self):
         return self._contenttype != ''
@@ -68,10 +69,13 @@ class Identifier(unohelper.Base,
 
     # XChild
     def getParent(self):
+        print("Identifier.getParent() 1")
         parent = None
         if not self.isRoot():
-            uri = getUri(self.ctx, self.BaseURI)
-            parent = Identifier(self.ctx, self.User, uri)
+            parent = getUcb(self.ctx).createContentIdentifier(self.ParentURI)
+            #uri = getUri(self.ctx, self.ParentURI)
+            #parent = Identifier(self.ctx, self.User, uri)
+        print("Identifier.getParent() 2")
         return parent
     def setParent(self, parent):
         raise NoSupportException('Parent can not be set', self)
@@ -84,18 +88,20 @@ class Identifier(unohelper.Base,
 
     def getContent(self):
         print("Identifier.getContent() 1")
-        if self.isNew():
-            data = self._getNewContent()
-        else:
-            data = self.User.DataBase.getItem(self.User.Id, self.Id)
-            #if data is None and self.User.Provider.isOnLine():
-            #    data = self.User.Provider.getItem(self.User.Request, self.MetaData)
-            #    if data.IsPresent:
-            #        data = self.User.DataBase.insertAndSelectItem(self.User, data.Value)
-        if data is None:
-            msg = "Error: can't retreive Identifier"
-            raise IllegalIdentifierException(msg, self)
-        content = Content(self.ctx, self, data)
+        if not self.MetaData.hasValue('ObjectId'):
+            if self.isNew():
+                data = self._getNewContent()
+            else:
+                data = self.User.DataBase.getItem(self.User.Id, self.Id)
+                #if data is None and self.User.Provider.isOnLine():
+                #    data = self.User.Provider.getItem(self.User.Request, self.MetaData)
+                #    if data.IsPresent:
+                #        data = self.User.DataBase.insertAndSelectItem(self.User, data.Value)
+            if data is None:
+                msg = "Error: can't retreive Identifier"
+                raise IllegalIdentifierException(msg, self)
+            self.MetaData += data
+        content = Content(self.ctx, self)
         print("Identifier.getContent() 2 OK")
         return content
 
@@ -150,7 +156,7 @@ class Identifier(unohelper.Base,
 
     def setTitle(self, title):
         # If Title change we need to change Identifier.getContentIdentifier()
-        url = self.BaseURI
+        url = self.ParentURI
         if not url.endswith('/'):
             url += '/'
         url += title
@@ -175,16 +181,16 @@ class Identifier(unohelper.Base,
             # New Identifier are created by the parent folder...
             identifier.setValue('Id', self._getNewIdentifier())
             identifier.setValue('ParentId', itemid)
-            baseuri = self._uri.getUriReference()
+            parenturi = self._uri.getUriReference()
         else:
             identifier.setValue('Id', itemid)
             identifier.setValue('ParentId', parentid)
-            baseuri = '%s://%s/%s' % (self._uri.getScheme(), self._uri.getAuthority(), path)
-        identifier.setValue('BaseURI', baseuri)
+            parenturi = '%s://%s/%s' % (self._uri.getScheme(), self._uri.getAuthority(), path)
+        identifier.setValue('ParentURI', parenturi)
         print("Identifier._getIdentifier() %s - %s - %s - %s" % (self._uri.getUriReference(),
                                                                  identifier.getValue('Id'),
                                                                  identifier.getValue('ParentId'),
-                                                                 identifier.getValue('BaseURI')))
+                                                                 identifier.getValue('ParentURI')))
         return identifier
 
     def _getNewIdentifier(self):

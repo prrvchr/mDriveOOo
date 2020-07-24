@@ -2,8 +2,11 @@
 #define __com_sun_star_ucb_XRestDataSource_idl__
 
 #include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/uri/XUriReference.idl>
 #include <com/sun/star/ucb/XRestDataBase.idl>
 #include <com/sun/star/ucb/XRestProvider.idl>
+#include <com/sun/star/ucb/XRestUser.idl>
+#include <com/sun/star/ucb/XRestIdentifier.idl>
 
 module com { module sun { module star { module ucb {
 
@@ -11,8 +14,10 @@ interface XRestDataSource: com::sun::star::uno::XInterface
 {
 
     boolean isValid();
-    ::com::sun::star::uno::XInterface getUser([in] string Name,
-                                              [in] string Password);
+    ::com::sun::star::ucb::XRestUser getUser([in] string Name,
+                                             [in] string Password);
+    ::com::sun::star::ucb::XRestIdentifier getIdentifier([in] ::com::sun::star::ucb::XRestUser User,
+                                                         [in] ::com::sun::star::uri::XUriReference Uri);
 
     [attribute, readonly] ::com::sun::star::ucb::XRestProvider Provider;
     [attribute, readonly] ::com::sun::star::ucb::XRestDataBase DataBase;

@@ -4,7 +4,7 @@
 #include <com/sun/star/uno/XInterface.idl>
 #include <com/sun/star/ucb/XRestDataBase.idl>
 #include <com/sun/star/ucb/XRestProvider.idl>
-#include <com/sun/star/ucb/XRestDataSource.idl>
+#include <com/sun/star/sdbc/XDataSource.idl>
 #include <com/sun/star/auth/XRestKeyMap.idl>
 
 module com { module sun { module star { module ucb {
@@ -13,7 +13,7 @@ interface XRestUser: com::sun::star::uno::XInterface
 {
 
     boolean isValid();
-    void setDataBase([in] ::com::sun::star::ucb::XRestDataSource DataSource,
+    void setDataBase([in] ::com::sun::star::sdbc::XDataSource DataSource,
                      [in] string Password,
                      [in] ::com::sun::star::uno::XInterface Sync);
     string getCredential([inout] string Password);
@@ -25,6 +25,7 @@ interface XRestUser: com::sun::star::uno::XInterface
     [attribute, readonly] string Id;
     [attribute, readonly] string Name;
     [attribute, readonly] string RootId;
+    [attribute, readonly] string RootName;
     [attribute, readonly] string Token;
 
 };

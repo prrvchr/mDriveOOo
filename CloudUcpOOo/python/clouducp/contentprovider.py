@@ -84,7 +84,8 @@ class ContentProvider(unohelper.Base,
             msg = "Identifier: %s ... " % url
             uri = getUri(self.ctx, getUrl(self.ctx, url))
             user = self._getUser(uri, url)
-            identifier = Identifier(self.ctx, user, uri)
+            identifier = self.DataSource.getIdentifier(user, uri)
+            #identifier = Identifier(self.ctx, user, uri)
             msg += "Done"
             logMessage(self.ctx, INFO, msg, 'ContentProvider', 'createContentIdentifier()')
             print("ContentProvider.createContentIdentifier() 2")

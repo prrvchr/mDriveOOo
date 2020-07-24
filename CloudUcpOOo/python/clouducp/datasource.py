@@ -14,15 +14,18 @@ from com.sun.star.ucb import XRestDataSource
 from unolib import g_oauth2
 from unolib import createService
 
+from .configuration import g_cache
 from .dbtools import getDataSource
 
 from .user import User
+from .identifier import Identifier
 from .replicator import Replicator
 from .database import DataBase
 
 from .logger import logMessage
 from .logger import getMessage
 
+from collections import OrderedDict
 import traceback
 
 
@@ -36,8 +39,8 @@ class DataSource(unohelper.Base,
             self.ctx = ctx
             self.scheme = scheme
             self.plugin = plugin
-            self._CahedUser = {}
-            self._Calls = {}
+            self._Users = {}
+            self._Identifiers = OrderedDict()
             self.Error = None
             self.sync = event
             self.Provider = createService(self.ctx, '%s.Provider' % plugin)
@@ -50,7 +53,7 @@ class DataSource(unohelper.Base,
             self.DataBase.addCloseListener(self)
             folder, link = self.DataBase.getContentType()
             self.Provider.initialize(scheme, plugin, folder, link)
-            self.replicator = Replicator(ctx, self.datasource, self.Provider, self._CahedUser, self.sync)
+            self.replicator = Replicator(ctx, self.datasource, self.Provider, self._Users, self.sync)
             print("DataSource __init__() 2")
             msg += "Done"
             logMessage(self.ctx, INFO, msg, 'DataSource', '__init__()')
@@ -80,15 +83,28 @@ class DataSource(unohelper.Base,
 
     def getUser(self, name, password=''):
         # User never change... we can cache it...
-        if name in self._CahedUser:
-            user = self._CahedUser[name]
+        if name in self._Users:
+            user = self._Users[name]
         else:
             user = User(self.ctx, self, name)
             if not self._initializeUser(user, name, password):
                 return None
-            self._CahedUser[name] = user
+            self._Users[name] = user
             self.sync.set()
         return user
+
+    def getIdentifier(self, user, uri):
+        # Identifier never change... we can cache it... if it's valid.
+        key = '%s/%s' % (user.Name, uri.getPath().strip('/.'))
+        if key in self._Identifiers:
+            identifier = self._Identifiers[key]
+        else:
+            identifier = Identifier(self.ctx, user, uri)
+            if identifier.isValid():
+                self._Identifiers[key] = identifier
+        if len(self._Identifiers) > g_cache:
+            self._Identifiers.popitem(False)
+        return identifier
 
     def _initializeUser(self, user, name, password):
         if user.Request is not None:

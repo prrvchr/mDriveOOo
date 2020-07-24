@@ -13,9 +13,9 @@ rm ${Path}/types.rdb
 ./rdb/make_rdb.sh com/sun/star/ucb/XRestDataBase
 ./rdb/make_rdb.sh com/sun/star/ucb/XRestReplicator
 ./rdb/make_rdb.sh com/sun/star/ucb/RestProvider
-./rdb/make_rdb.sh com/sun/star/ucb/XRestDataSource
 ./rdb/make_rdb.sh com/sun/star/ucb/XRestUser
 ./rdb/make_rdb.sh com/sun/star/ucb/XRestIdentifier
+./rdb/make_rdb.sh com/sun/star/ucb/XRestDataSource
 ./rdb/make_rdb.sh com/sun/star/ucb/XRestContent
 ./rdb/make_rdb.sh com/sun/star/ucb/XRestContentProvider
 ./rdb/make_rdb.sh com/sun/star/ucb/RestContentProvider

@@ -58,11 +58,11 @@ class Content(unohelper.Base,
               XChild,
               XPropertiesChangeNotifier,
               XRestContent):
-    def __init__(self, ctx, identifier, data):
+    def __init__(self, ctx, identifier):
         self.ctx = ctx
         msg = "Content loading ... "
         self.Identifier = identifier
-        self.MetaData = data
+        self.MetaData = identifier.MetaData
         creatablecontent = self._getCreatableContentsInfo()
         self.MetaData.insertValue('CreatableContentsInfo', creatablecontent)
         self._commandInfo = self._getCommandInfo()
