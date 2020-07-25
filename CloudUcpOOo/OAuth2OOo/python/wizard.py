@@ -71,7 +71,7 @@ class Wizard(unohelper.Base,
     @HelpURL.setter
     def HelpURL(self, url):
         self._helpUrl = url
-        self._dialog.getControl('CommandButton1').Model.Enabled = url != ''
+        self._dialog.getControl('CommandButton5').Model.Enabled = url != ''
     @property
     def DialogWindow(self):
         return self._dialog
