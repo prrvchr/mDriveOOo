@@ -87,5 +87,5 @@ After authorizing the OAuthOOo application to access your OneDrive, your OneDriv
 * OpenOffice 4.2.0.Build:9820 x86_64 - Ubuntu 20.04 - LxQt 0.14.1
 
 I encourage you in case of problem :-(  
-to create an [issue](https://github.com/prrvchr/oneDriveOOo/issues/new)
-I will try to solve it :-)
+to create an [issue](https://github.com/prrvchr/oneDriveOOo/issues/new)  
+I will try to solve it ;-)
