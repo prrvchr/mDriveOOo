@@ -91,18 +91,15 @@ class Identifier(unohelper.Base,
 
     # XRestIdentifier
     def createNewIdentifier(self, contenttype):
-        print("Identifier.createNewIdentifier() %s" % (contenttype, ))
         identifier = Identifier(self.ctx, self.User, self._uri, self.callBack, contenttype)
         return identifier
 
     def getContent(self):
-        print("Identifier.getContent() 1")
         if not self.isValid():
             msg = "Error: can't retreive Identifier"
             print("Identifier.getContent() 1")
             raise IllegalIdentifierException(msg, self)
         content = Content(self.ctx, self)
-        print("Identifier.getContent() 3 OK")
         return content
 
     def getFolderContent(self, content):
@@ -113,20 +110,15 @@ class Identifier(unohelper.Base,
         return select
 
     def _getFolderContent(self, content, updated):
-        try:
-            if ONLINE == content.getValue('Loaded') == self.User.Provider.SessionMode:
-                print("DataBase.getFolderContent() whith request")
-                updated = self.User.DataBase.updateFolderContent(self.User, content)
-            else:
-                print("DataBase.getFolderContent() no request")
-            url = self.getContentIdentifier()
-            if not url.endswith('/'):
-                url += '/'
-            mode = self.User.Provider.SessionMode
-            select = self.User.DataBase.getChildren(self.User.Id, self.Id, url, mode)
-            return select, updated
-        except Exception as e:
-            print("Identifier._getFolderContent().Error: %s - %s" % (e, traceback.print_exc()))
+        if ONLINE == content.getValue('Loaded') == self.User.Provider.SessionMode:
+            print("DataBase.getFolderContent() whith request *********************************")
+            updated = self.User.DataBase.updateFolderContent(self.User, content)
+        url = self.getContentIdentifier()
+        if not url.endswith('/'):
+            url += '/'
+        mode = self.User.Provider.SessionMode
+        select = self.User.DataBase.getChildren(self.User.Id, self.Id, url, mode)
+        return select, updated
 
     def getDocumentContent(self, sf, content, size):
         size = 0
@@ -200,10 +192,6 @@ class Identifier(unohelper.Base,
                 self._setCreatableContentsInfo(data)
                 identifier += data
                 self._propertySetInfo = self._getPropertySetInfo()
-        print("Identifier._getIdentifier() %s - %s - %s - %s" % (self._uri.getUriReference(),
-                                                                 identifier.getValue('Id'),
-                                                                 identifier.getValue('ParentId'),
-                                                                 identifier.getValue('ParentURI')))
         return identifier
 
     def _getNewIdentifier(self):
@@ -218,37 +206,32 @@ class Identifier(unohelper.Base,
             self.User.DataBase.deleteNewIdentifier(self.User.Id, self.Id)
 
     def _getNewContent(self, itemid, contenttype):
-        try:
-            print("Identifier._getNewContent() 1")
-            timestamp = parseDateTime()
-            isfolder = self.User.Provider.isFolder(contenttype)
-            isdocument = self.User.Provider.isDocument(contenttype)
-            isroot = itemid == self.User.RootId
-            data = KeyMap()
-            data.insertValue('Id', itemid)
-            data.insertValue('ObjectId', itemid)
-            data.insertValue('Title', '')
-            data.insertValue('TitleOnServer', '')
-            data.insertValue('DateCreated', timestamp)
-            data.insertValue('DateModified', timestamp)
-            data.insertValue('ContentType', contenttype)
-            mediatype = contenttype if isfolder else ''
-            data.insertValue('MediaType', mediatype)
-            data.insertValue('Size', 0)
-            data.insertValue('Trashed', False)
-            data.insertValue('IsRoot', isroot)
-            data.insertValue('IsFolder', isfolder)
-            data.insertValue('IsDocument', isdocument)
-            data.insertValue('CanAddChild', isfolder)
-            data.insertValue('CanRename', True)
-            data.insertValue('IsReadOnly', False)
-            data.insertValue('IsVersionable', isdocument)
-            data.insertValue('Loaded', True)
-            data.insertValue('BaseURI', self.getContentIdentifier())
-            print("Identifier._getNewContent() 2 %s - %s" % (itemid, self.getContentIdentifier()))
-            return data
-        except Exception as e:
-            print("Identifier._getNewContent() ERROR: %s - %s" % (e, traceback.print_exc()))
+        timestamp = parseDateTime()
+        isfolder = self.User.Provider.isFolder(contenttype)
+        isdocument = self.User.Provider.isDocument(contenttype)
+        isroot = itemid == self.User.RootId
+        data = KeyMap()
+        data.insertValue('Id', itemid)
+        data.insertValue('ObjectId', itemid)
+        data.insertValue('Title', '')
+        data.insertValue('TitleOnServer', '')
+        data.insertValue('DateCreated', timestamp)
+        data.insertValue('DateModified', timestamp)
+        data.insertValue('ContentType', contenttype)
+        mediatype = contenttype if isfolder else ''
+        data.insertValue('MediaType', mediatype)
+        data.insertValue('Size', 0)
+        data.insertValue('Trashed', False)
+        data.insertValue('IsRoot', isroot)
+        data.insertValue('IsFolder', isfolder)
+        data.insertValue('IsDocument', isdocument)
+        data.insertValue('CanAddChild', isfolder)
+        data.insertValue('CanRename', True)
+        data.insertValue('IsReadOnly', False)
+        data.insertValue('IsVersionable', isdocument)
+        data.insertValue('Loaded', True)
+        data.insertValue('BaseURI', self.getContentIdentifier())
+        return data
 
     def _setCreatableContentsInfo(self, data):
         content = []

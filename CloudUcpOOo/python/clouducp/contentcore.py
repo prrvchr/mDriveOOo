@@ -83,42 +83,35 @@ def _setProperty(source, context, name, value):
     return result, level, msg
 
 def _setTitle(source, context, title):
-    try:
-        print("ContentCore._setTitle() 1")
-        identifier = source.Identifier
-        user = identifier.User
-        if u'~' in title:
-            msg = "Can't set property: Title value: %s contains invalid character: '~'." % title
-            level = SEVERE
-            data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
-            error = getInteractiveAugmentedIOException(msg, context, 'ERROR', 'INVALID_CHARACTER', data)
-            result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
-        elif user.DataBase.countChildTitle(user.Id, identifier.ParentId, title) > 0:
-            msg = "Can't set property: %s value: %s - Name Clash Error" % ('Title', title)
-            level = SEVERE
-            data = getPropertyValueSet({'TargetFolderURL': identifier.getContentIdentifier(),
-                                        'ClashingName': title,
-                                        'ProposedNewName': '%s(1)' % title})
-            #data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
-            error = getInteractiveAugmentedIOException(msg, context, 'ERROR', 'ALREADY_EXISTING', data)
-            result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
-        else:
-            # When you change Title you must change also the Identifier.getContentIdentifier()
-            # It's done by Identifier.setTitle()
-            print("ContentCore._setTitle() 2")
-            source.MetaData.setValue('Title', identifier.setTitle(title))
-            print("ContentCore._setTitle() 3 *********************** %s" % identifier.Id)
-            if not identifier.IsNew:
-                user.DataBase.updateContent(user.Id, identifier.Id, 'Title', title)
-                print("ContentCore._setTitle() 4")
-            msg = "Set property: %s value: %s" % ('Title', title)
-            level = INFO
-            result = None
-        print("ContentCore._setTitle() OK")
-        return result, level, msg
-    except Exception as e:
-        msg += " ERROR: %s" % e
-        print(msg)
+    identifier = source.Identifier
+    user = identifier.User
+    if u'~' in title:
+        msg = "Can't set property: Title value: %s contains invalid character: '~'." % title
+        level = SEVERE
+        data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
+        error = getInteractiveAugmentedIOException(msg, context, 'ERROR', 'INVALID_CHARACTER', data)
+        result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
+    elif user.DataBase.countChildTitle(user.Id, identifier.ParentId, title) > 0:
+        msg = "Can't set property: %s value: %s - Name Clash Error" % ('Title', title)
+        level = SEVERE
+        data = getPropertyValueSet({'TargetFolderURL': identifier.getContentIdentifier(),
+                                    'ClashingName': title,
+                                    'ProposedNewName': '%s(1)' % title})
+        #data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
+        error = getInteractiveAugmentedIOException(msg, context, 'ERROR', 'ALREADY_EXISTING', data)
+        result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
+    else:
+        # When you change Title you must change also the Identifier.getContentIdentifier()
+        # It's done by Identifier.setTitle()
+        source.MetaData.setValue('Title', identifier.setTitle(title))
+        # If the identifier is new then the content is not yet in the database.
+        # It will be inserted by the insert command of the XCommandProcessor2.execute()
+        if not identifier.IsNew:
+            user.DataBase.updateContent(user.Id, identifier.Id, 'Title', title)
+        msg = "Set property: %s value: %s" % ('Title', title)
+        level = INFO
+        result = None
+    return result, level, msg
 
 def notifyContentListener(ctx, source, action, identifier=None):
     if action == INSERTED:

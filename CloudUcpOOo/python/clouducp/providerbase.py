@@ -139,15 +139,11 @@ class ProviderBase(ProviderObject,
         return getConnectionMode(self.ctx, self.Host) != ONLINE
 
     def initialize(self, scheme, plugin, folder, link):
-        #if not user.Request.initializeSession(scheme):
-        #    return False
         self.Scheme = scheme
         self.Plugin = plugin
         self.Folder = folder
         self.Link = link
         self.SourceURL = getResourceLocation(self.ctx, plugin, scheme)
-        #self.SessionMode = user.Request.getSessionMode(self.Host)
-        #return True
 
     def initializeUser(self, user, name):
         if self.isOnLine():
@@ -234,6 +230,7 @@ class ProviderBase(ProviderObject,
     def getDocumentContent(self, request, content):
         parameter = self.getRequestParameter('getDocumentContent', content)
         return request.getInputStream(parameter, self.Chunk, self.Buffer)
+
     def getFolderContent(self, request, content):
         parameter = self.getRequestParameter('getFolderContent', content)
         return request.getIterator(parameter, None)
@@ -243,7 +240,7 @@ class ProviderBase(ProviderObject,
         return request.execute(parameter)
 
     def createFile(self, request, uploader, item):
-        return None
+        return True
 
     def uploadFile(self, request, uploader, item, new=False):
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
@@ -251,19 +248,15 @@ class ProviderBase(ProviderObject,
         response = request.execute(parameter)
         if response.IsPresent:
             parameter = self.getRequestParameter('getUploadStream', response.Value)
-            return True if uploader.start(item.getValue('Id'), parameter) else False
+            return uploader.start(item.getValue('Id'), parameter)
         return False
 
     def updateTitle(self, request, item):
         parameter = self.getRequestParameter('updateTitle', item)
         response = request.execute(parameter)
-        if response.IsPresent:
-            return True
-        return False
+        return response.IsPresent
 
     def updateTrashed(self, request, item):
         parameter = self.getRequestParameter('updateTrashed', item)
         response = request.execute(parameter)
-        if response.IsPresent:
-            return True
-        return False
+        return response.IsPresent

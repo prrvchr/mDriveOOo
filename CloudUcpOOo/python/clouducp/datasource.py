@@ -33,47 +33,39 @@ class DataSource(unohelper.Base,
                  XRestDataSource,
                  XCloseListener):
     def __init__(self, ctx, event, scheme, plugin):
-        try:
-            msg = "DataSource for Scheme: %s loading ... " % scheme
-            print("DataSource __init__() 1")
-            self.ctx = ctx
-            self.scheme = scheme
-            self.plugin = plugin
-            self._Users = {}
-            self._Identifiers = OrderedDict()
-            self.Error = None
-            self.sync = event
-            self.Provider = createService(self.ctx, '%s.Provider' % plugin)
-            self.datasource, url, created = getDataSource(self.ctx, scheme, plugin, True)
-            self.DataBase = DataBase(self.ctx, self.datasource)
-            if created:
-                self.Error = self.DataBase.createDataBase()
-                if self.Error is None:
-                    self.DataBase.storeDataBase(url)
-            self.DataBase.addCloseListener(self)
-            folder, link = self.DataBase.getContentType()
-            self.Provider.initialize(scheme, plugin, folder, link)
-            self.replicator = Replicator(ctx, self.datasource, self.Provider, self._Users, self.sync)
-            print("DataSource __init__() 2")
-            msg += "Done"
-            logMessage(self.ctx, INFO, msg, 'DataSource', '__init__()')
-        except Exception as e:
-            msg = "DataSource __init__(): Error: %s - %s" % (e, traceback.print_exc())
-            print(msg)
+        msg = "DataSource for Scheme: %s loading ... " % scheme
+        self.ctx = ctx
+        self.scheme = scheme
+        self.plugin = plugin
+        self._Users = {}
+        self._Identifiers = OrderedDict()
+        self.Error = None
+        self.sync = event
+        self.Provider = createService(self.ctx, '%s.Provider' % plugin)
+        self.datasource, url, created = getDataSource(self.ctx, scheme, plugin, True)
+        self.DataBase = DataBase(self.ctx, self.datasource)
+        if created:
+            self.Error = self.DataBase.createDataBase()
+            if self.Error is None:
+                self.DataBase.storeDataBase(url)
+        self.DataBase.addCloseListener(self)
+        folder, link = self.DataBase.getContentType()
+        self.Provider.initialize(scheme, plugin, folder, link)
+        self.replicator = Replicator(ctx, self.datasource, self.Provider, self._Users, self.sync)
+        msg += "Done"
+        logMessage(self.ctx, INFO, msg, 'DataSource', '__init__()')
 
     # XCloseListener
     def queryClosing(self, source, ownership):
-        print("DataSource.queryClosing() 1")
         compact= self.replicator.fullPull
         if self.replicator.is_alive():
             self.replicator.cancel()
-            print("DataSource.queryClosing() 2")
             self.replicator.join()
         #self.deregisterInstance(self.Scheme, self.Plugin)
         self.DataBase.shutdownDataBase(compact)
         msg = "DataSource queryClosing: Scheme: %s ... Done" % self.scheme
         logMessage(self.ctx, INFO, msg, 'DataSource', 'queryClosing()')
-        print("DataSource.queryClosing() 3 OK")
+        print("DataSource.queryClosing() OK")
     def notifyClosing(self, source):
         pass
 
@@ -98,6 +90,8 @@ class DataSource(unohelper.Base,
         key = self._getIdentifierKey(user, uri)
         if key in self._Identifiers:
             identifier = self._Identifiers[key]
+            if identifier.IsNew:
+                print("DataSource.getIdentifier() ISNEW ***************************************")
         else:
             identifier = Identifier(self.ctx, user, uri, self.callBack)
             if identifier.isValid():

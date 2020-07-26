@@ -193,7 +193,6 @@ class DataBase(unohelper.Base,
         if enumerator.RowCount > 0:
             call.executeBatch()
         call.close()
-        print("DataBase._updateFolderContent() %s - %s" % (all(rows), len(rows)))
         return all(rows)
 
     def getChildren(self, userid, itemid, url, mode):
@@ -256,50 +255,46 @@ class DataBase(unohelper.Base,
         call.close()
 
     def updateContent(self, userid, itemid, property, value):
-        try:
-            updated = False
-            timestamp = parseDateTime()
-            if property == 'Title':
-                update = self._getCall('updateTitle')
-                update.setTimestamp(1, timestamp)
-                update.setString(2, value)
-                update.setString(3, itemid)
-                updated = update.execute() == 0
-                update.close()
-            elif property == 'Size':
-                update = self._getCall('updateSize')
-                # The Size of the file is not sufficient to detect a 'Save' of the file,
-                # It can be modified and have the same Size...
-                # For this we temporarily update the Size to 0
-                update.setTimestamp(1, timestamp)
-                update.setLong(2, 0)
-                update.setString(3, itemid)
-                update.execute()
-                update.setLong(2, value)
-                update.setString(3, itemid)
-                updated = update.execute() == 0
-                update.close()
-            elif property == 'Trashed':
-                update = self._getCall('updateTrashed')
-                update.setTimestamp(1, timestamp)
-                update.setBoolean(2, value)
-                update.setString(3, itemid)
-                updated = update.execute() == 0
-                update.close()
-            if updated:
-                # TODO: I cannot use a procedure performing the two UPDATE 
-                # TODO: without the system versioning malfunctioning...
-                # TODO: As a workaround I use two successive UPDATE queries
-                update = self._getCall('updateCapabilities')
-                update.setTimestamp(1, timestamp)
-                update.setString(2, userid)
-                update.setString(3, itemid)
-                update.execute()
-                update.close()
-                self.sync.set()
-                print("DataBase.updateContent() OK")
-        except Exception as e:
-            print("DataBase.updateContent().Error: %s - %s" % (e, traceback.print_exc()))
+        updated = False
+        timestamp = parseDateTime()
+        if property == 'Title':
+            update = self._getCall('updateTitle')
+            update.setTimestamp(1, timestamp)
+            update.setString(2, value)
+            update.setString(3, itemid)
+            updated = update.execute() == 0
+            update.close()
+        elif property == 'Size':
+            update = self._getCall('updateSize')
+            # The Size of the file is not sufficient to detect a 'Save' of the file,
+            # It can be modified and have the same Size...
+            # For this we temporarily update the Size to 0
+            update.setTimestamp(1, timestamp)
+            update.setLong(2, 0)
+            update.setString(3, itemid)
+            update.execute()
+            update.setLong(2, value)
+            update.setString(3, itemid)
+            updated = update.execute() == 0
+            update.close()
+        elif property == 'Trashed':
+            update = self._getCall('updateTrashed')
+            update.setTimestamp(1, timestamp)
+            update.setBoolean(2, value)
+            update.setString(3, itemid)
+            updated = update.execute() == 0
+            update.close()
+        if updated:
+            # TODO: I cannot use a procedure performing the two UPDATE 
+            # TODO: without the system versioning malfunctioning...
+            # TODO: As a workaround I use two successive UPDATE queries
+            update = self._getCall('updateCapabilities')
+            update.setTimestamp(1, timestamp)
+            update.setString(2, userid)
+            update.setString(3, itemid)
+            update.execute()
+            update.close()
+            self.sync.set()
 
     def insertNewContent(self, userid, itemid, parentid, content, timestamp):
         call = self._getCall('insertItem')
@@ -358,7 +353,6 @@ class DataBase(unohelper.Base,
         update.setString(2, userid)
         updated = update.executeUpdate() == 1
         update.close()
-        print("DataBase.updateToken() %s" % token)
         return updated
 
     # Identifier counting procedure
@@ -386,7 +380,6 @@ class DataBase(unohelper.Base,
 
     def _doInsert(self, insert, identifier):
         insert.setString(2, identifier)
-        print("DataBase._doInsert() %s" % identifier)
         insert.addBatch()
 
     # First pull procedure: header of merge request
@@ -421,7 +414,6 @@ class DataBase(unohelper.Base,
 
     def setSession(self, user=g_dba):
         query = getSqlQuery('setSession', user)
-        print("DataBase.setSession() %s" % query)
         self._statement.execute(query)
 
     # Procedure to retrieve all the UPDATE AND INSERT in the 'Capabilities' table

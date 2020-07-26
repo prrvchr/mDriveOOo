@@ -96,7 +96,6 @@ def checkDataBase(ctx, connection):
 def executeQueries(statement, queries, format=None):
     for query in queries:
         q = getSqlQuery(query, format)
-        print("dbtools.executeQueries() %s - %s" % (query, q))
         statement.executeQuery(getSqlQuery(query, format))
 
 def getDataSourceJavaInfo(location):
@@ -297,14 +296,10 @@ def getValueFromResult(result, index, default=None):
     return value
 
 def createStaticTable(statement, tables, readonly=False):
-    print("dbtools.createStaticTable() 1")
     for table in tables:
-        print("dbtools.createStaticTable() 2 %s" % table)
         query = getSqlQuery('createTable' + table)
-        print("dbtools.createStaticTable() 3 %s" % query)
         statement.executeUpdate(query)
     for table in tables:
-        print("dbtools.createStaticTable() 4 %s" % table)
         statement.executeUpdate(getSqlQuery('setTableSource', table))
         if readonly:
             statement.executeUpdate(getSqlQuery('setTableReadOnly', table))

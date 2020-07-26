@@ -57,19 +57,19 @@ interface XRestProvider: com::sun::star::uno::XInterface
                                                           [in] ::com::sun::star::auth::XRestKeyMap content);
     ::com::sun::star::auth::RestRequestParameter getRequestParameter([in] string Method,
                                                                      [in] any Data);
-    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> createFile([in] ::com::sun::star::uno::XInterface Request,
-                                                                                      [in] ::com::sun::star::uno::XInterface Uploader,
-                                                                                      [in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean createFile([in] ::com::sun::star::uno::XInterface Request,
+                       [in] ::com::sun::star::uno::XInterface Uploader,
+                       [in] ::com::sun::star::auth::XRestKeyMap Item);
     ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> createFolder([in] ::com::sun::star::uno::XInterface Request,
                                                                                         [in] ::com::sun::star::auth::XRestKeyMap Item);
     boolean uploadFile([in] ::com::sun::star::uno::XInterface Request,
                        [in] ::com::sun::star::uno::XInterface Uploader,
                        [in] ::com::sun::star::auth::XRestKeyMap Item,
                        [in] boolean New);
-    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> updateTitle([in] ::com::sun::star::uno::XInterface Request,
-                                                                                       [in] ::com::sun::star::auth::XRestKeyMap Item);
-    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> updateTrashed([in] ::com::sun::star::uno::XInterface Request,
-                                                                                         [in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean updateTitle([in] ::com::sun::star::uno::XInterface Request,
+                        [in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean updateTrashed([in] ::com::sun::star::uno::XInterface Request,
+                          [in] ::com::sun::star::auth::XRestKeyMap Item);
     string getUserId([in] ::com::sun::star::auth::XRestKeyMap User);
     string getUserName([in] ::com::sun::star::auth::XRestKeyMap User);
     string getUserDisplayName([in] ::com::sun::star::auth::XRestKeyMap User);
@@ -116,16 +116,13 @@ interface XRestProvider: com::sun::star::uno::XInterface
     [attribute, readonly] string Host;
     [attribute, readonly] string BaseUrl;
     [attribute, readonly] string UploadUrl;
+    [attribute, readonly] string SourceURL;
     [attribute, readonly] string Folder;
     [attribute, readonly] string Link;
     [attribute, readonly] string Office;
     [attribute, readonly] string Document;
     [attribute, readonly] long Chunk;
     [attribute, readonly] long Buffer;
-    [attribute, readonly] string SourceURL;
-    [attribute, readonly] boolean TwoStepCreation;
-    [attribute, readonly] sequence<short> FileSyncModes;
-    [attribute, readonly] sequence<short> FolderSyncModes;
     [attribute, readonly] string Error;
 
 };
