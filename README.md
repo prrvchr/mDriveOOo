@@ -12,11 +12,14 @@
 
     - Carry out pulls regularly (every ten minutes) in order to synchronize any external changes (Pull all changes).
 
-    - Replicating all the changes made to the hsqldb 2.5.1 database using system versioning (Push all changes).
+    - Replicate on demand all changes to the hsqldb 2.5.1 database using system versioning (Push all changes).
 
 - Writing of a new [DataBase interface](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/database.py), responsible for making all calls to the database.
 
-- Setting up a cache on the Identifiers allowing access to a Content (file or folder) without access to the database for subsequent calls.
+- Setting up a cache on the Identifiers, see method: [getIdentifier()](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/datasource.py), allowing access to a Content (file or folder) without access to the database for subsequent calls.
+
+- Management of duplicate file/folder names by [SQL Views](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/dbqueries.py): Child, Twin, Uri, and Title generating unique names if duplicates names exist.  
+Although this functionality is only needed for gDriveOOo, it is implemented globally...
 
 - Many other fix...
 
