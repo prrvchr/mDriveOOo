@@ -60,7 +60,6 @@ class DataBase(unohelper.Base,
     def _executeQueries(self, queries):
         for name, format in queries:
             query = getSqlQuery(name, format)
-            print("DataBase._executeQueries() %s" % query)
             self._statement.executeQuery(query)
 
     def getDataSource(self):

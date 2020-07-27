@@ -42,8 +42,8 @@ class DataSource(unohelper.Base,
         self.Error = None
         self.sync = event
         self.Provider = createService(self.ctx, '%s.Provider' % plugin)
-        self.datasource, url, created = getDataSource(self.ctx, scheme, plugin, True)
-        self.DataBase = DataBase(self.ctx, self.datasource)
+        datasource, url, created = getDataSource(self.ctx, scheme, plugin, True)
+        self.DataBase = DataBase(self.ctx, datasource)
         if created:
             self.Error = self.DataBase.createDataBase()
             if self.Error is None:
@@ -51,7 +51,7 @@ class DataSource(unohelper.Base,
         self.DataBase.addCloseListener(self)
         folder, link = self.DataBase.getContentType()
         self.Provider.initialize(scheme, plugin, folder, link)
-        self.replicator = Replicator(ctx, self.datasource, self.Provider, self._Users, self.sync)
+        self.replicator = Replicator(ctx, datasource, self.Provider, self._Users, self.sync)
         msg += "Done"
         logMessage(self.ctx, INFO, msg, 'DataSource', '__init__()')
 
@@ -117,7 +117,7 @@ class DataSource(unohelper.Base,
     def _initializeUser(self, user, name, password):
         if user.Request is not None:
             if user.MetaData is not None:
-                user.setDataBase(self.datasource, password, self.sync)
+                user.setDataBase(self.DataBase.getDataSource(), password, self.sync)
                 return True
             if self.Provider.isOnLine():
                 data = self.Provider.getUser(user.Request, name)
@@ -126,7 +126,7 @@ class DataSource(unohelper.Base,
                     if root.IsPresent:
                         user.MetaData = self.DataBase.insertUser(user.Provider, data.Value, root.Value)
                         if self.DataBase.createUser(user, password):
-                            user.setDataBase(self.datasource, password, self.sync)
+                            user.setDataBase(self.DataBase.getDataSource(), password, self.sync)
                             return True
                         else:
                             self.Error = getMessage(self.ctx, 1106, name)

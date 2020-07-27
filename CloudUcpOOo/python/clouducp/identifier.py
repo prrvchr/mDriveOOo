@@ -148,8 +148,11 @@ class Identifier(unohelper.Base,
 
     def setTitle(self, title):
         # If Title change we need to change Identifier.getContentIdentifier()
+        # And as the uri changes we also have to clear the cache.
         print("Identifier.setTitle() 1")
         if not self.IsNew:
+            # New Identifier bypass the cache: new Identifier are created by the
+            # folder's Identifier (ie: createNewIdentifier()) and have same uri as this folder.
             print("Identifier.setTitle() 2")
             self.callBack(self.User, self._uri, self.isFolder())
         url = self.ParentURI

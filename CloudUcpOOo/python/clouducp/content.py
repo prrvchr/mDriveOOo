@@ -156,25 +156,22 @@ class Content(unohelper.Base,
                     logMessage(self.ctx, INFO, msg, "Content", "execute()")
                     return DynamicResultSet(self.ctx, select)
                 elif self.IsDocument:
-                    try:
-                        sf = getSimpleFile(self.ctx)
-                        url, size = self.Identifier.getDocumentContent(sf, self.MetaData, 0)
-                        if not size:
-                            title = self.MetaData.getValue('Title')
-                            msg = "Error while downloading file: %s" % title
-                            print("Content.execute() %s" % msg)
-                            raise CommandAbortedException(msg, self)
-                        sink = command.Argument.Sink
-                        interfaces = getInterfaceTypes(sink)
-                        datasink = uno.getTypeByName('com.sun.star.io.XActiveDataSink')
-                        datastream = uno.getTypeByName('com.sun.star.io.XActiveDataStreamer')
-                        isreadonly = self.MetaData.getValue('IsReadOnly')
-                        if datasink in interfaces:
-                            sink.setInputStream(sf.openFileRead(url))
-                        elif not isreadonly and datastream in interfaces:
-                            sink.setStream(sf.openFileReadWrite(url))
-                    except Exception as e:
-                        print("Content.execute() Error: %s - %s" % (e, traceback.print_exc()))
+                    sf = getSimpleFile(self.ctx)
+                    url, size = self.Identifier.getDocumentContent(sf, self.MetaData, 0)
+                    if not size:
+                        title = self.MetaData.getValue('Title')
+                        msg = "Error while downloading file: %s" % title
+                        print("Content.execute() %s" % msg)
+                        raise CommandAbortedException(msg, self)
+                    sink = command.Argument.Sink
+                    interfaces = getInterfaceTypes(sink)
+                    datasink = uno.getTypeByName('com.sun.star.io.XActiveDataSink')
+                    datastream = uno.getTypeByName('com.sun.star.io.XActiveDataStreamer')
+                    isreadonly = self.MetaData.getValue('IsReadOnly')
+                    if datasink in interfaces:
+                        sink.setInputStream(sf.openFileRead(url))
+                    elif not isreadonly and datastream in interfaces:
+                        sink.setStream(sf.openFileReadWrite(url))
             elif command.Name == 'insert':
                 # The Insert command is only used to create a new folder or a new document
                 # (ie: File Save As).
