@@ -90,15 +90,12 @@ class DataSource(unohelper.Base,
         key = self._getIdentifierKey(user, uri)
         if key in self._Identifiers:
             identifier = self._Identifiers[key]
-            if identifier.IsNew:
-                print("DataSource.getIdentifier() ISNEW ***************************************")
         else:
             identifier = Identifier(self.ctx, user, uri, self.callBack)
             if identifier.isValid() and user.CanAddChild:
                 self._Identifiers[key] = identifier
         if len(self._Identifiers) > g_cache:
             k, i = self._Identifiers.popitem(False)
-            print("DataSource.getIdentifier() DELETE Cache %s - %s - %s" % (len(self._Identifiers), k, i.getContentIdentifier()))
         return identifier
 
     def callBack(self, user, uri, isfolder):

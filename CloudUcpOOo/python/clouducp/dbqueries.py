@@ -468,6 +468,8 @@ ORDER BY "TimeStamp";''' % (columns0, columns1, columns2, groups)
     elif name == 'updateToken':
         query = 'UPDATE "Users" SET "Token"=? WHERE "UserId"=?;'
     elif name == 'updateUserTimeStamp':
+        query = 'UPDATE "Users" SET "TimeStamp"=? WHERE "UserId"=?;'
+    elif name == 'updateUsersTimeStamp':
         query = 'UPDATE "Users" SET "TimeStamp"=?;'
     elif name == 'updateTitle':
         query = 'UPDATE "Items" SET "TimeStamp"=?, "Title"=? WHERE "ItemId"=?;'
@@ -539,45 +541,6 @@ CREATE PROCEDURE "GetIdentifier"(IN "UserId" VARCHAR(100),
     SET "BaseUri" = "Uri";
   END;
   GRANT EXECUTE ON SPECIFIC ROUTINE "GetIdentifier_1" TO "%(Role)s";''' % format
-
-    elif name == 'createGetChildren1':
-        query = '''\
-CREATE PROCEDURE "GetChildren1"(IN "BaseUrl" VARCHAR(300),
-                               IN "UserId" VARCHAR(100),
-                               IN "ParentId" VARCHAR(100),
-                               IN "SessionMode" SMALLINT)
-  SPECIFIC "GetChildren1_1"
-  READS SQL DATA
-  DYNAMIC RESULT SETS 1
-  BEGIN ATOMIC
-    DECLARE "Result" INSENSITIVE SCROLL CURSOR WITH RETURN FOR
-      SELECT "ItemId","Title","Size","DateModified","DateCreated","IsFolder",
-      "BaseUrl" || '/' || "Uri" "TargetURL","IsHidden","IsVolume","IsRemote",
-      "IsRemoveable","IsFloppy","IsCompactDisc"
-      FROM "Children" WHERE "UserId"="UserId" AND "ParentId"="ParentId" AND
-      ("IsFolder"=TRUE OR "Loaded">="SessionMode") FOR READ ONLY;
-    OPEN "Result";
-  END;
-  GRANT EXECUTE ON SPECIFIC ROUTINE "GetChildren1_1" TO "%(Role)s";''' % format
-
-    elif name == 'createGetItem1':
-        query = '''\
-CREATE PROCEDURE "GetItem1"(IN "UserId" VARCHAR(100),
-                           IN "ItemId" VARCHAR(100))
-  SPECIFIC "GetItem1_1"
-  READS SQL DATA
-  DYNAMIC RESULT SETS 1
-  BEGIN ATOMIC
-    DECLARE "Result" SCROLL CURSOR WITHOUT HOLD WITH RETURN FOR
-      SELECT "ItemId" "Id", "ItemId" "ObjectId","Title","Title" "TitleOnServer",
-      "DateCreated","DateModified","ContentType","MediaType","Size","Trashed","IsRoot",
-      "IsFolder","IsDocument","CanAddChild","CanRename","IsReadOnly","IsVersionable",
-      "Loaded",'' "CasePreservingURL",FALSE "IsHidden",FALSE "IsVolume",FALSE "IsRemote",
-      FALSE "IsRemoveable",FALSE "IsFloppy",FALSE "IsCompactDisc"
-      FROM "Item" WHERE "UserId" = "UserId" AND "ItemId" = "ItemId" FOR READ ONLY;
-    OPEN "Result";
-  END;
-  GRANT EXECUTE ON SPECIFIC ROUTINE "GetItem1_1" TO "%(Role)s";''' % format
 
     elif name == 'createMergeItem':
         query = '''\
@@ -671,101 +634,13 @@ CREATE PROCEDURE "InsertItem"(IN "UserId" VARCHAR(100),
   END;
   GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
 
-
-    elif name == 'createInsertAndSelectItem':
-        query = '''\
-CREATE PROCEDURE "InsertAndSelectItem"(IN "UserId" VARCHAR(100),
-                                       IN "Separator" VARCHAR(1),
-                                       IN "Loaded" SMALLINT,
-                                       IN "TimeStamp" TIMESTAMP(6),
-                                       IN "ItemId" VARCHAR(100),
-                                       IN "Title" VARCHAR(100),
-                                       IN "DateCreated" TIMESTAMP(6),
-                                       IN "DateModified" TIMESTAMP(6),
-                                       IN "MediaType" VARCHAR(100),
-                                       IN "Size" BIGINT,
-                                       IN "Trashed" BOOLEAN,
-                                       IN "CanAddChild" BOOLEAN,
-                                       IN "CanRename" BOOLEAN,
-                                       IN "IsReadOnly" BOOLEAN,
-                                       IN "IsVersionable" BOOLEAN,
-                                       IN "ParentIds" VARCHAR(1000))
-  SPECIFIC "InsertAndSelectItem_1"
-  MODIFIES SQL DATA
-  DYNAMIC RESULT SETS 1
-  BEGIN ATOMIC
-    DECLARE "Result" CURSOR WITH RETURN FOR
-      SELECT "ItemId" "Id", "ItemId" "ObjectId","Title","Title" "TitleOnServer",
-      "DateCreated","DateModified","ContentType","MediaType","Size","Trashed","IsRoot",
-      "IsFolder","IsDocument","CanAddChild","CanRename","IsReadOnly","IsVersionable",
-      "Loaded",'' "CasePreservingURL",FALSE "IsHidden",FALSE "IsVolume",FALSE "IsRemote",
-      FALSE "IsRemoveable",FALSE "IsFloppy",FALSE "IsCompactDisc"
-      FROM "Item" WHERE "UserId" = "UserId" AND "ItemId" = "ItemId" FOR READ ONLY;
-    CALL "InsertItem"("UserId","Separator","Loaded","TimeStamp","ItemId","Title","DateCreated",
-      "DateModified","MediaType","Size","Trashed","CanAddChild","CanRename","IsReadOnly",
-      "IsVersionable","ParentIds");
-    OPEN "Result";
-  END;
-  GRANT EXECUTE ON SPECIFIC ROUTINE "InsertAndSelectItem_1" TO "%(Role)s";''' % format
-
-    elif name == 'createUpdateTitle':
-        query = '''\
-CREATE PROCEDURE "UpdateTitle1"(IN "UserId" VARCHAR(100),
-                               IN "ItemId" VARCHAR(100),
-                               IN "Title" VARCHAR(100))
-  SPECIFIC "UpdateTitle1_1"
-  MODIFIES SQL DATA
-  BEGIN ATOMIC
-    UPDATE "Items" SET "Title"="Title" WHERE "ItemId"="ItemId";
-    UPDATE "Capabilities" SET "TimeStamp"=CURRENT_TIMESTAMP WHERE "UserId"="UserId" AND "ItemId"="ItemId";
-  END;
-  GRANT EXECUTE ON SPECIFIC ROUTINE "UpdateTitle1_1" TO "%(Role)s";''' % format
-
-    elif name == 'createUpdateSize':
-        query = '''\
-CREATE PROCEDURE "UpdateSize1"(IN "UserId" VARCHAR(100),
-                              IN "ItemId" VARCHAR(100),
-                              IN "Size" BIGINT)
-  SPECIFIC "UpdateSize1_1"
-  MODIFIES SQL DATA
-  BEGIN ATOMIC
-    UPDATE "Items" SET "Size"="Size" WHERE "ItemId"="ItemId";
-    UPDATE "Capabilities" SET "TimeStamp"=CURRENT_TIMESTAMP WHERE "UserId"="UserId" AND "ItemId"="ItemId";
-  END;
-  GRANT EXECUTE ON SPECIFIC ROUTINE "UpdateSize1_1" TO "%(Role)s";''' % format
-
-    elif name == 'createUpdateTrashed':
-        query = '''\
-CREATE PROCEDURE "UpdateTrashed1"(IN "UserId" VARCHAR(100),
-                                 IN "ItemId" VARCHAR(100),
-                                 IN "Trashed" BOOLEAN)
-  SPECIFIC "UpdateTrashed1_1"
-  MODIFIES SQL DATA
-  BEGIN ATOMIC
-    UPDATE "Items" SET "Trashed"="Trashed" WHERE "ItemId"="ItemId";
-    UPDATE "Capabilities" SET "TimeStamp"=CURRENT_TIMESTAMP WHERE "UserId"="UserId" AND "ItemId"="ItemId";
-  END;
-  GRANT EXECUTE ON SPECIFIC ROUTINE "UpdateTrashed1_1" TO "%(Role)s";''' % format
-
 # Get Procedure Query
     elif name == 'getIdentifier':
         query = 'CALL "GetIdentifier"(?,?,?,?,?,?,?)'
-    elif name == 'getItem1':
-        query = 'CALL "GetItem1"(?,?)'
-    elif name == 'getChildren1':
-        query = 'CALL "GetChildren1"(?,?,?,?)'
     elif name == 'mergeItem':
         query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'insertItem':
         query = 'CALL "InsertItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
-    elif name == 'insertAndSelectItem':
-        query = 'CALL "InsertAndSelectItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
-    elif name == 'updateTitle1':
-        query = 'CALL "UpdateTitle1"(?,?,?)'
-    elif name == 'updateSize1':
-        query = 'CALL "UpdateSize1"(?,?,?)'
-    elif name == 'updateTrashed1':
-        query = 'CALL "UpdateTrashed1"(?,?,?)'
 
 # Get DataBase Version Query
     elif name == 'getVersion':

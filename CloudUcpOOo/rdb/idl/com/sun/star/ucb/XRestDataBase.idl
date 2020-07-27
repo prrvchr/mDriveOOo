@@ -50,6 +50,10 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     void updateContent([in] string ItemId,
                        [in] string Property,
                        [in] any Value);
+    void updateUserTimeStamp([in] ::com::sun::star::util::DateTime TimeStamp,
+                             [in] any UserId);
+
+
     ::com::sun::star::auth::XRestKeyMap getItem([in] string UserId,
                                                 [in] string ItemId,
                                                 [in] any ParentId);

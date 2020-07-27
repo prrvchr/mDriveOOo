@@ -162,7 +162,7 @@ class Replicator(unohelper.Base,
                 results.append(self._pushItem(user, uploader, item, operations))
             print("Replicator._pushData() 3 Created / Updated Items: %s" % (results, ))
             if all(results):
-                self.DataBase.updateUserTimeStamp(end)
+                self.DataBase.updateUserTimeStamp(end, None)
                 print("Replicator._pushData() 4 Created / Updated Items OK")
             print("Replicator._pushData() 5")
             return results
@@ -195,7 +195,7 @@ class Replicator(unohelper.Base,
         call.close()
         user.Provider.updateDrive(self.DataBase, user.MetaData, token)
         end = parseDateTime()
-        self.DataBase.updateUserTimeStamp(end)
+        self.DataBase.updateUserTimeStamp(end, user.Id)
         return rejected, pages, rows, count, end
 
     def _getFirstPull(self, call, provider, request, rootid, separator, start):

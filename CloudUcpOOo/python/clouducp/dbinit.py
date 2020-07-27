@@ -143,10 +143,3 @@ def getQueries():
             ('createGetIdentifier',{'Role': g_role}),
             ('createMergeItem',{'Role': g_role}),
             ('createInsertItem',{'Role': g_role}))
-
-#            ('createInsertAndSelectItem',{'Role': g_role}),
-#            ('createGetItem1',{'Role': g_role}),
-#            ('createGetChildren1',{'Role': g_role}),
-#            ('createUpdateTitle',{'Role': g_role}),
-#            ('createUpdateSize',{'Role': g_role}),
-#            ('createUpdateTrashed',{'Role': g_role}),
