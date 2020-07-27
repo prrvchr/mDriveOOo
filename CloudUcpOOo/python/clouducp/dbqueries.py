@@ -102,92 +102,19 @@ def getSqlQuery(name, format=None):
         query = ' WITH SYSTEM VERSIONING'
 
 # Create Cached View Queries
-    elif name == 'createItemView':
-        c1 = '"UserId"'
-        c2 = '"ItemId"'
-        c3 = '"Title"'
-        c4 = '"DateCreated"'
-        c5 = '"DateModified"'
-        c6 = '"MediaType"'
-        c7 = '"ContentType"'
-        c8 = '"IsFolder"'
-        c9 = '"IsLink"'
-        c10 = '"IsDocument"'
-        c11 = '"Size"'
-        c12 = '"Trashed"'
-        c13 = '"Loaded"'
-        c14 = '"CanAddChild"'
-        c15 = '"CanRename"'
-        c16 = '"IsReadOnly"'
-        c17 = '"IsVersionable"'
-        c18 = '"IsRoot"'
-        c19 = '"RootId"'
-        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19)
-        s1 = '"U"."UserId"'
-        s2 = '"I"."ItemId"'
-        s3 = '"I"."Title"'
-        s4 = '"I"."DateCreated"'
-        s5 = '"I"."DateModified"'
-        s6 = '"I"."MediaType"'
-        s7 = 'CASE WHEN %s IN ("S"."Value2","S"."Value3") THEN %s ELSE "S"."Value1" END' % (s6, s6)
-        s8 = '"I"."MediaType"="S"."Value2"'
-        s9 = '"I"."MediaType"="S"."Value3"'
-        s10 = '"I"."MediaType"!="S"."Value2" AND "I"."MediaType"!="S"."Value3"'
-        s11 = '"I"."Size"'
-        s12 = '"I"."Trashed"'
-        s13 = '"I"."Loaded"'
-        s14 = '"C"."CanAddChild"'
-        s15 = '"C"."CanRename"'
-        s16 = '"C"."IsReadOnly"'
-        s17 = '"C"."IsVersionable"'
-        s18 = '"I"."ItemId"="U"."RootId"'
-        s19 = '"U"."RootId"'
-        s = (s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,s17,s18,s19)
-        f1 = '"Settings" AS "S","Items" AS "I"'
-        f2 = 'JOIN "Capabilities" AS "C" ON "I"."ItemId"="C"."ItemId" AND "I"."Trashed"=FALSE'
-        f3 = 'JOIN "Users" AS "U" ON "C"."UserId"="U"."UserId"'
-        f = (f1,f2,f3)
-        w1 = '"S"."Name"=%s' % "'ContentType'"
-        w2 = '"U"."UserName"=CURRENT_USER'
-        w = (w1,w2)
-        p = (','.join(c), ','.join(s), ' '.join(f), ' AND '.join(w))
-        query = 'CREATE VIEW "Item" (%s) AS SELECT %s FROM %s WHERE %s;' % p
-        query += 'GRANT SELECT ON "Item" TO "%(Role)s";' % format
     elif name == 'createChildView':
         c1 = '"UserId"'
         c2 = '"ItemId"'
         c3 = '"ParentId"'
         c4 = '"Title"'
-        c5 = '"DateCreated"'
-        c6 = '"DateModified"'
-        c7= '"IsFolder"'
-        c8 = '"Size"'
-        c9 = '"IsHidden"'
-        c10 = '"IsVolume"'
-        c11 = '"IsRemote"'
-        c12 = '"IsRemoveable"'
-        c13 = '"IsFloppy"'
-        c14 = '"IsCompactDisc"'
-        c15 = '"Loaded"'
-        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15)
-        s1 = '"I"."UserId"'
+        c = (c1,c2,c3,c4)
+        s1 = '"P"."UserId"'
         s2 = '"I"."ItemId"'
         s3 = '"P"."ItemId"'
         s4 = '"I"."Title"'
-        s5 = '"I"."DateCreated"'
-        s6 = '"I"."DateModified"'
-        s7 = '"I"."IsFolder"'
-        s8 = '"I"."Size"'
-        s9 = 'FALSE'
-        s10 = 'FALSE'
-        s11 = 'FALSE'
-        s12 = 'FALSE'
-        s13 = 'FALSE'
-        s14 = 'FALSE'
-        s15 = '"I"."Loaded"'
-        s = (s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15)
-        f1 = '"Item" AS "I"'
-        f2 = 'JOIN "Parents" AS "P" ON "I"."UserId"="P"."UserId" AND "I"."ItemId"="P"."ChildId"'
+        s = (s1,s2,s3,s4)
+        f1 = '"Items" AS "I"'
+        f2 = 'JOIN "Parents" AS "P" ON "I"."ItemId"="P"."ChildId"'
         f = (f1,f2)
         p = (','.join(c), ','.join(s), ' '.join(f))
         query = 'CREATE VIEW "Child" (%s) AS SELECT %s FROM %s;' % p
@@ -197,7 +124,7 @@ def getSqlQuery(name, format=None):
         c2 = '"ParentId"'
         c3 = '"Title"'
         c = (c1,c2,c3)
-        s1 = 'ARRAY_AGG("ItemId" ORDER BY "DateCreated","ItemId")'
+        s1 = 'ARRAY_AGG("ItemId" ORDER BY "ItemId")'
         s2 = '"ParentId"'
         s3 = '"Title"'
         s = (s1,s2,s3)
@@ -241,6 +168,25 @@ def getSqlQuery(name, format=None):
         p = (','.join(c), ','.join(s), f)
         query = 'CREATE VIEW "Title" (%s) AS SELECT %s FROM %s;' % p
         query += 'GRANT SELECT ON "Title" TO "%(Role)s";' % format
+    elif name == 'createItemView':
+        c1 = '"ItemId"'
+        c2 = '"ContentType"'
+        c3 = '"IsFolder"'
+        c4 = '"IsLink"'
+        c5 = '"IsDocument"'
+        c = (c1,c2,c3,c4,c5)
+        s0 = '"I"."MediaType"'
+        s1 = '"I"."ItemId"'
+        s2 = 'CASE WHEN %s IN ("S"."Value2","S"."Value3") THEN %s ELSE "S"."Value1" END' % (s0, s0)
+        s3 = '%s="S"."Value2"' % s0
+        s4 = '%s="S"."Value3"' % s0
+        s5 = '%s!="S"."Value2" AND %s!="S"."Value3"' % (s0, s0)
+        s = (s1,s2,s3,s4,s5)
+        f = '"Settings" AS "S","Items" AS "I"'
+        w = '"S"."Name"=%s' % "'ContentType'"
+        p = (','.join(c), ','.join(s), f, w)
+        query = 'CREATE VIEW "Item" (%s) AS SELECT %s FROM %s WHERE %s;' % p
+        query += 'GRANT SELECT ON "Item" TO "%(Role)s";' % format
     elif name == 'createChildrenView':
         c1 = '"UserId"'
         c2 = '"ItemId"'
@@ -251,34 +197,24 @@ def getSqlQuery(name, format=None):
         c7 = '"DateModified"'
         c8= '"IsFolder"'
         c9 = '"Size"'
-        c10 = '"IsHidden"'
-        c11 = '"IsVolume"'
-        c12 = '"IsRemote"'
-        c13 = '"IsRemoveable"'
-        c14 = '"IsFloppy"'
-        c15 = '"IsCompactDisc"'
-        c16 = '"Loaded"'
-        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16)
+        c10 = '"Loaded"'
+        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10)
         s1 = '"C"."UserId"'
         s2 = '"C"."ItemId"'
         s3 = '"C"."ParentId"'
-        s4 = '"C"."Title"'
-        s5 = 'COALESCE("T"."Title","C"."Title")'
-        s6 = '"C"."DateCreated"'
-        s7 = '"C"."DateModified"'
-        s8 = '"C"."IsFolder"'
-        s9 = '"C"."Size"'
-        s10 = 'FALSE'
-        s11 = 'FALSE'
-        s12 = 'FALSE'
-        s13 = 'FALSE'
-        s14 = 'FALSE'
-        s15 = 'FALSE'
-        s16 = '"C"."Loaded"'
-        s = (s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16)
-        f1 = '"Child" AS "C"'
-        f2 = 'LEFT JOIN "Title" AS "T" ON "C"."ItemId"="T"."ItemId" AND "C"."ParentId"="T"."ParentId"'
-        f = (f1,f2)
+        s4 = '"I"."Title"'
+        s5 = 'COALESCE("T"."Title","I"."Title")'
+        s6 = '"I"."DateCreated"'
+        s7 = '"I"."DateModified"'
+        s8 = '"I1"."IsFolder"'
+        s9 = '"I"."Size"'
+        s10 = '"I"."Loaded"'
+        s = (s1,s2,s3,s4,s5,s6,s7,s8,s9,s10)
+        f1 = '"Items" AS "I" '
+        f2 = 'INNER JOIN "Item" AS "I1" ON "I"."ItemId"="I1"."ItemId"'
+        f3 = 'INNER JOIN "Child" AS "C" ON "I1"."ItemId"="C"."ItemId"'
+        f4 = 'LEFT JOIN "Title" AS "T" ON "C"."ItemId"="T"."ItemId" AND "C"."ParentId"="T"."ParentId"'
+        f = (f1,f2,f3,f4)
         p = (','.join(c), ','.join(s), ' '.join(f))
         query = 'CREATE VIEW "Children" (%s) AS SELECT %s FROM %s;' % p
         query += 'GRANT SELECT ON "Children" TO "%(Role)s";' % format
@@ -346,34 +282,72 @@ def getSqlQuery(name, format=None):
         f = '"Users" "U" JOIN "Items" "I" ON "U"."RootId" = "I"."ItemId"'
         p = (','.join(c), f)
         query = 'SELECT %s FROM %s WHERE "U"."UserName" = ?;' % p
+    elif name == 'getRoot':
+        c1 = '"I"."ItemId" "Id"'
+        c2 = '"I"."ItemId" "ObjectId"'
+        c3 = '"I"."Title"'
+        c4 = '"I"."Title" "TitleOnServer"'
+        c5 = '"I"."DateCreated"'
+        c6 = '"I"."DateModified"'
+        c7 = '"I1"."ContentType"'
+        c8 = '"I"."MediaType"'
+        c9 = '"I"."Size"'
+        c10 = '"I"."Trashed"'
+        c11 = '"I1"."IsFolder"'
+        c12 = '"I1"."IsDocument"'
+        c13 = '"C"."CanAddChild"'
+        c14 = '"C"."CanRename"'
+        c15 = '"C"."IsReadOnly"'
+        c16 = '"C"."IsVersionable"'
+        c17 = '"I"."Loaded"'
+        c18 = '%s "CasePreservingURL"' % "''"
+        c19 = 'FALSE "IsHidden"'
+        c20 = 'FALSE "IsVolume"'
+        c21 = 'FALSE "IsRemote"'
+        c22 = 'FALSE "IsRemoveable"'
+        c23 = 'FALSE "IsFloppy"'
+        c24 = 'FALSE "IsCompactDisc"'
+        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24)
+        f1 = '"Items" AS "I"'
+        f2 = 'INNER JOIN "Item" AS "I1" ON "I"."ItemId"="I1"."ItemId"'
+        f3 = 'INNER JOIN "Capabilities" AS "C" ON "I1"."ItemId"="C"."ItemId"'
+        f = (f1,f2,f3)
+        p = (','.join(c), ' '.join(f))
+        query = 'SELECT %s FROM %s WHERE "C"."UserId" = ? AND "C"."ItemId" = ?;' % p
     elif name == 'getItem':
-        c1 = '"ItemId" "Id"'
-        c2 = '"ItemId" "ObjectId"'
-        c3 = '"Title"'
-        c4 = '"Title" "TitleOnServer"'
-        c5 = '"DateCreated"'
-        c6 = '"DateModified"'
-        c7 = '"ContentType"'
-        c8 = '"MediaType"'
-        c9 = '"Size"'
-        c10 = '"Trashed"'
-        c11 = '"IsRoot"'
-        c12 = '"IsFolder"'
-        c13 = '"IsDocument"'
-        c14 = '"CanAddChild"'
-        c15 = '"CanRename"'
-        c16 = '"IsReadOnly"'
-        c17 = '"IsVersionable"'
-        c18 = '"Loaded"'
-        c19 = '%s "CasePreservingURL"' % "''"
-        c20 = 'FALSE "IsHidden"'
-        c21 = 'FALSE "IsVolume"'
-        c22 = 'FALSE "IsRemote"'
-        c23 = 'FALSE "IsRemoveable"'
-        c24 = 'FALSE "IsFloppy"'
-        c25 = 'FALSE "IsCompactDisc"'
-        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25)
-        query = 'SELECT %s FROM "Item" WHERE "UserId" = ? AND "ItemId" = ?;' % ','.join(c)
+        c1 = '"I"."ItemId" "Id"'
+        c2 = '"I"."ItemId" "ObjectId"'
+        c3 = 'COALESCE("T"."Title","I"."Title") "Title"'
+        c4 = '"I"."Title" "TitleOnServer"'
+        c5 = '"I"."DateCreated"'
+        c6 = '"I"."DateModified"'
+        c7 = '"I1"."ContentType"'
+        c8 = '"I"."MediaType"'
+        c9 = '"I"."Size"'
+        c10 = '"I"."Trashed"'
+        c11 = '"I1"."IsFolder"'
+        c12 = '"I1"."IsDocument"'
+        c13 = '"C"."CanAddChild"'
+        c14 = '"C"."CanRename"'
+        c15 = '"C"."IsReadOnly"'
+        c16 = '"C"."IsVersionable"'
+        c17 = '"I"."Loaded"'
+        c18 = '%s "CasePreservingURL"' % "''"
+        c19 = 'FALSE "IsHidden"'
+        c20 = 'FALSE "IsVolume"'
+        c21 = 'FALSE "IsRemote"'
+        c22 = 'FALSE "IsRemoveable"'
+        c23 = 'FALSE "IsFloppy"'
+        c24 = 'FALSE "IsCompactDisc"'
+        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24)
+        f1 = '"Items" AS "I"'
+        f2 = 'INNER JOIN "Item" AS "I1" ON "I"."ItemId"="I1"."ItemId"'
+        f3 = 'INNER JOIN "Capabilities" AS "C" ON "I1"."ItemId"="C"."ItemId"'
+        f4 = 'INNER JOIN "Child" AS "C1" ON "C"."UserId"="C1"."UserId" AND "C"."ItemId"="C1"."ItemId"'
+        f5 = 'LEFT JOIN "Title" AS "T" ON "C1"."ItemId"="T"."ItemId" AND "C1"."ParentId"="T"."ParentId"'
+        f = (f1,f2,f3,f4,f5)
+        p = (','.join(c), ' '.join(f))
+        query = 'SELECT %s FROM %s WHERE "C1"."UserId" = ? AND "C1"."ItemId" = ? AND "C1"."ParentId" = ?;' % p
     elif name == 'getChildren':
         c1 = '"Title"'
         c2 = '"Size"'
@@ -381,12 +355,12 @@ def getSqlQuery(name, format=None):
         c4 = '"DateCreated"'
         c5 = '"IsFolder"'
         c6 = '? || "Uri" "TargetURL"'
-        c7 = '"IsHidden"'
-        c8 = '"IsVolume"'
-        c9 = '"IsRemote"'
-        c10 = '"IsRemoveable"'
-        c11 = '"IsFloppy"'
-        c12 = '"IsCompactDisc"'
+        c7 = 'FALSE "IsHidden"'
+        c8 = 'FALSE "IsVolume"'
+        c9 = 'FALSE "IsRemote"'
+        c10 = 'FALSE "IsRemoveable"'
+        c11 = 'FALSE "IsFloppy"'
+        c12 = 'FALSE "IsCompactDisc"'
         c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12)
         w = '"UserId" = ? AND "ParentId" = ? AND ("IsFolder" = TRUE OR "Loaded" >= ?)'
         p = (','.join(c), w)

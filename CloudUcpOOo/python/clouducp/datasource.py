@@ -94,7 +94,7 @@ class DataSource(unohelper.Base,
                 print("DataSource.getIdentifier() ISNEW ***************************************")
         else:
             identifier = Identifier(self.ctx, user, uri, self.callBack)
-            if identifier.isValid():
+            if identifier.isValid() and user.CanAddChild:
                 self._Identifiers[key] = identifier
         if len(self._Identifiers) > g_cache:
             k, i = self._Identifiers.popitem(False)

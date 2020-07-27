@@ -51,7 +51,8 @@ interface XRestDataBase: com::sun::star::uno::XInterface
                        [in] string Property,
                        [in] any Value);
     ::com::sun::star::auth::XRestKeyMap getItem([in] string UserId,
-                                                [in] string ItemId);
+                                                [in] string ItemId,
+                                                [in] any ParentId);
     void insertNewContent([in] string UserId,
                           [in] string ItemId,
                           [in] string ParentId,

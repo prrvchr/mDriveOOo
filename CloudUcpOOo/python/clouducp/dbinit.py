@@ -133,18 +133,18 @@ def getQueries():
             ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Parents', 'Role': g_role}),
             ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Capabilities', 'Role': g_role}),
 
-            ('createItemView',{'Role': g_role}),
             ('createChildView',{'Role': g_role}),
             ('createTwinView',{'Role': g_role}),
             ('createUriView',{'Role': g_role}),
             ('createTileView',{'Role': g_role}),
+            ('createItemView',{'Role': g_role}),
             ('createChildrenView',{'Role': g_role}),
 
             ('createGetIdentifier',{'Role': g_role}),
             ('createMergeItem',{'Role': g_role}),
-            ('createInsertItem',{'Role': g_role}),
-            ('createInsertAndSelectItem',{'Role': g_role}))
+            ('createInsertItem',{'Role': g_role}))
 
+#            ('createInsertAndSelectItem',{'Role': g_role}),
 #            ('createGetItem1',{'Role': g_role}),
 #            ('createGetChildren1',{'Role': g_role}),
 #            ('createUpdateTitle',{'Role': g_role}),

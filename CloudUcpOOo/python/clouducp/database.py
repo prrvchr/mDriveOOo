@@ -60,6 +60,7 @@ class DataBase(unohelper.Base,
     def _executeQueries(self, queries):
         for name, format in queries:
             query = getSqlQuery(name, format)
+            print("DataBase._executeQueries() %s" % query)
             self._statement.executeQuery(query)
 
     def getDataSource(self):
@@ -131,19 +132,25 @@ class DataBase(unohelper.Base,
         return folder, link
 
 # Procedures called by the Identifier
-    def getItem(self, userid, itemid):
-        #TODO: Can't have a simple SELECT ResultSet with a Procedure,
-        #TODO: the malfunction is rather bizard: it always returns the same result
-        #TODO: as a workaround we use a simple quey...
-        item = None
-        select = self._getCall('getItem')
-        select.setString(1, userid)
-        select.setString(2, itemid)
-        result = select.executeQuery()
-        if result.next():
-            item = getKeyMapFromResult(result)
-        select.close()
-        return item
+    def getItem(self, userid, itemid, parentid):
+        try:
+            #TODO: Can't have a simple SELECT ResultSet with a Procedure,
+            #TODO: the malfunction is rather bizard: it always returns the same result
+            #TODO: as a workaround we use a simple quey...
+            item = None
+            call = 'getRoot' if parentid is None else 'getItem'
+            select = self._getCall(call)
+            select.setString(1, userid)
+            select.setString(2, itemid)
+            if parentid is not None:
+                select.setString(3, parentid)
+            result = select.executeQuery()
+            if result.next():
+                item = getKeyMapFromResult(result)
+            select.close()
+            return item
+        except Exception as e:
+            print("DataBase.getItem().Error: %s - %s" % (e, traceback.print_exc()))
 
     def selectItem(self, user, identifier):
         item = None
@@ -255,46 +262,50 @@ class DataBase(unohelper.Base,
         call.close()
 
     def updateContent(self, userid, itemid, property, value):
-        updated = False
-        timestamp = parseDateTime()
-        if property == 'Title':
-            update = self._getCall('updateTitle')
-            update.setTimestamp(1, timestamp)
-            update.setString(2, value)
-            update.setString(3, itemid)
-            updated = update.execute() == 0
-            update.close()
-        elif property == 'Size':
-            update = self._getCall('updateSize')
-            # The Size of the file is not sufficient to detect a 'Save' of the file,
-            # It can be modified and have the same Size...
-            # For this we temporarily update the Size to 0
-            update.setTimestamp(1, timestamp)
-            update.setLong(2, 0)
-            update.setString(3, itemid)
-            update.execute()
-            update.setLong(2, value)
-            update.setString(3, itemid)
-            updated = update.execute() == 0
-            update.close()
-        elif property == 'Trashed':
-            update = self._getCall('updateTrashed')
-            update.setTimestamp(1, timestamp)
-            update.setBoolean(2, value)
-            update.setString(3, itemid)
-            updated = update.execute() == 0
-            update.close()
-        if updated:
-            # TODO: I cannot use a procedure performing the two UPDATE 
-            # TODO: without the system versioning malfunctioning...
-            # TODO: As a workaround I use two successive UPDATE queries
-            update = self._getCall('updateCapabilities')
-            update.setTimestamp(1, timestamp)
-            update.setString(2, userid)
-            update.setString(3, itemid)
-            update.execute()
-            update.close()
-            self.sync.set()
+        try:
+            updated = False
+            timestamp = parseDateTime()
+            if property == 'Title':
+                update = self._getCall('updateTitle')
+                update.setTimestamp(1, timestamp)
+                update.setString(2, value)
+                update.setString(3, itemid)
+                updated = update.execute() == 0
+                update.close()
+            elif property == 'Size':
+                update = self._getCall('updateSize')
+                # The Size of the file is not sufficient to detect a 'Save' of the file,
+                # It can be modified and have the same Size...
+                # For this we temporarily update the Size to 0
+                update.setTimestamp(1, timestamp)
+                update.setLong(2, 0)
+                update.setString(3, itemid)
+                update.execute()
+                update.setLong(2, value)
+                update.setString(3, itemid)
+                updated = update.execute() == 0
+                update.close()
+            elif property == 'Trashed':
+                update = self._getCall('updateTrashed')
+                update.setTimestamp(1, timestamp)
+                update.setBoolean(2, value)
+                update.setString(3, itemid)
+                updated = update.execute() == 0
+                update.close()
+            if updated:
+                # TODO: I cannot use a procedure performing the two UPDATE 
+                # TODO: without the system versioning malfunctioning...
+                # TODO: As a workaround I use two successive UPDATE queries
+                update = self._getCall('updateCapabilities')
+                update.setTimestamp(1, timestamp)
+                update.setString(2, userid)
+                update.setString(3, itemid)
+                update.execute()
+                update.close()
+                self.sync.set()
+                print("DataBase.updateContent() OK")
+        except Exception as e:
+            print("DataBase.updateContent().Error: %s - %s" % (e, traceback.print_exc()))
 
     def insertNewContent(self, userid, itemid, parentid, content, timestamp):
         call = self._getCall('insertItem')
@@ -353,6 +364,7 @@ class DataBase(unohelper.Base,
         update.setString(2, userid)
         updated = update.executeUpdate() == 1
         update.close()
+        print("DataBase.updateToken() %s" % token)
         return updated
 
     # Identifier counting procedure
@@ -380,6 +392,7 @@ class DataBase(unohelper.Base,
 
     def _doInsert(self, insert, identifier):
         insert.setString(2, identifier)
+        print("DataBase._doInsert() %s" % identifier)
         insert.addBatch()
 
     # First pull procedure: header of merge request
@@ -414,6 +427,7 @@ class DataBase(unohelper.Base,
 
     def setSession(self, user=g_dba):
         query = getSqlQuery('setSession', user)
+        print("DataBase.setSession() %s" % query)
         self._statement.execute(query)
 
     # Procedure to retrieve all the UPDATE AND INSERT in the 'Capabilities' table

@@ -187,7 +187,7 @@ class Identifier(unohelper.Base,
             if self.IsNew:
                 data = self._getNewContent(itemid, contenttype)
             else:
-                data = self.User.DataBase.getItem(self.User.Id, itemid)
+                data = self.User.DataBase.getItem(self.User.Id, itemid, parentid)
             if data is not None:
                 self._setCreatableContentsInfo(data)
                 identifier += data
