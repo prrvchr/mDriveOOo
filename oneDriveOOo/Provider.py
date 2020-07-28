@@ -4,12 +4,16 @@
 import uno
 import unohelper
 
+from com.sun.star.ucb.ConnectionMode import OFFLINE
+
 from com.sun.star.auth.RestRequestTokenType import TOKEN_NONE
 from com.sun.star.auth.RestRequestTokenType import TOKEN_URL
 from com.sun.star.auth.RestRequestTokenType import TOKEN_REDIRECT
 from com.sun.star.auth.RestRequestTokenType import TOKEN_QUERY
 from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
 from com.sun.star.auth.RestRequestTokenType import TOKEN_SYNC
+
+from unolib import KeyMap
 
 from onedrive import ProviderBase
 from onedrive import g_identifier
@@ -40,6 +44,7 @@ class Provider(ProviderBase):
         self.Link = ''
         self.Folder = ''
         self.SourceURL = ''
+        self.SessionMode = OFFLINE
         self._Error = ''
         self._folders = []
 
@@ -163,7 +168,7 @@ class Provider(ProviderBase):
         return user.getValue('displayName')
 
     def getItemParent(self, item, rootid):
-        ref = item.getDefaultValue('parentReference', self._getKeyMap())
+        ref = item.getDefaultValue('parentReference', KeyMap())
         parent = ref.getDefaultValue('id', rootid)
         return (parent, )
 
@@ -182,7 +187,7 @@ class Provider(ProviderBase):
             return self.parseDateTime(modified)
         return timestamp
     def getItemMediaType(self, item):
-        return item.getDefaultValue('file', self._getKeyMap()).getDefaultValue('mimeType', self.Folder)
+        return item.getDefaultValue('file', KeyMap()).getDefaultValue('mimeType', self.Folder)
     def getItemSize(self, item):
         return int(item.getDefaultValue('size', 0))
     def getItemTrashed(self, item):
