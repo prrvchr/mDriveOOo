@@ -99,6 +99,7 @@ class DataSource(unohelper.Base,
             k, i = self._Identifiers.popitem(False)
         return identifier
 
+    # Private methods
     def _removeFromCache(self, key, isfolder):
         # If the title of the identifier changes, we must remove
         # from the cache this identifier and its children if it's a folder.

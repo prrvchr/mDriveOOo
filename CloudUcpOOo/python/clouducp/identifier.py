@@ -90,8 +90,7 @@ class Identifier(unohelper.Base,
 
     # XRestIdentifier
     def createNewIdentifier(self, contenttype):
-        identifier = Identifier(self.ctx, self.User, self._uri, contenttype)
-        return identifier
+        return Identifier(self.ctx, self.User, self._uri, contenttype)
 
     def getContent(self):
         if not self.isValid():
@@ -107,17 +106,6 @@ class Identifier(unohelper.Base,
             loaded = self.User.DataBase.updateLoaded(self.User.Id, self.Id, OFFLINE, ONLINE)
             content.insertValue('Loaded', loaded)
         return select
-
-    def _getFolderContent(self, content, updated):
-        if ONLINE == content.getValue('Loaded') == self.User.Provider.SessionMode:
-            print("DataBase.getFolderContent() whith request *********************************")
-            updated = self.User.DataBase.updateFolderContent(self.User, content)
-        url = self.getContentIdentifier()
-        if not url.endswith('/'):
-            url += '/'
-        mode = self.User.Provider.SessionMode
-        select = self.User.DataBase.getChildren(self.User.Id, self.Id, url, mode)
-        return select, updated
 
     def getDocumentContent(self, sf, content, size):
         size = 0
@@ -150,8 +138,8 @@ class Identifier(unohelper.Base,
         print("Identifier.setTitle() 1")
         if not self.IsNew:
             # And as the uri changes we also have to clear this Identifier from the cache.
-            # New Identifier bypass the cache: new Identifier are created by the
-            # folder's Identifier (ie: createNewIdentifier()) and have same uri as this folder.
+            # New Identifier bypass the cache: they are created by the folder's Identifier
+            # (ie: createNewIdentifier()) and have same uri as this folder.
             print("Identifier.setTitle() 2")
             getUcb(self.ctx).createContentIdentifier('%s#' % self.getContentIdentifier())
             print("Identifier.setTitle() 3")
@@ -162,8 +150,17 @@ class Identifier(unohelper.Base,
         print("Identifier.setTitle() 4 %s" % url)
         self._uri = getUri(self.ctx, getUrl(self.ctx, url))
         print("Identifier.setTitle() 5 %s" % self.getContentIdentifier())
-        return title
+        self.MetaData.setValue('Title', title)
+        # If the identifier is new then the content is not yet in the database.
+        # It will be inserted by the insert command of the XCommandProcessor2.execute()
+        if not self.IsNew:
+            self.User.DataBase.updateContent(self.User.Id, self.Id, 'Title', title)
 
+    def deleteNewIdentifier(self):
+        if self.User.Provider.GenerateIds:
+            self.User.DataBase.deleteNewIdentifier(self.User.Id, self.Id)
+
+    # Private methods
     def _getIdentifier(self, contenttype):
         identifier = KeyMap()
         if not self.User.isValid():
@@ -204,10 +201,6 @@ class Identifier(unohelper.Base,
             identifier = binascii.hexlify(uno.generateUuid().value).decode('utf-8')
         return identifier
 
-    def deleteNewIdentifier(self):
-        if self.User.Provider.GenerateIds:
-            self.User.DataBase.deleteNewIdentifier(self.User.Id, self.Id)
-
     def _getNewContent(self, itemid, contenttype):
         timestamp = parseDateTime()
         isfolder = self.User.Provider.isFolder(contenttype)
@@ -221,7 +214,7 @@ class Identifier(unohelper.Base,
         data.insertValue('DateCreated', timestamp)
         data.insertValue('DateModified', timestamp)
         data.insertValue('ContentType', contenttype)
-        mediatype = contenttype if isfolder else ''
+        mediatype = '' if isdocument else contenttype
         data.insertValue('MediaType', mediatype)
         data.insertValue('Size', 0)
         data.insertValue('Trashed', False)
@@ -273,3 +266,14 @@ class Identifier(unohelper.Base,
         properties['IsFloppy'] = getProperty('IsFloppy', 'boolean', BOUND | RO)
         properties['IsCompactDisc'] = getProperty('IsCompactDisc', 'boolean', BOUND | RO)
         return properties
+
+    def _getFolderContent(self, content, updated):
+        if ONLINE == content.getValue('Loaded') == self.User.Provider.SessionMode:
+            print("DataBase.getFolderContent() whith request *********************************")
+            updated = self.User.DataBase.updateFolderContent(self.User, content)
+        url = self.getContentIdentifier()
+        if not url.endswith('/'):
+            url += '/'
+        mode = self.User.Provider.SessionMode
+        select = self.User.DataBase.getChildren(self.User.Id, self.Id, url, mode)
+        return select, updated

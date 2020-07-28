@@ -83,8 +83,7 @@ class Content(unohelper.Base,
     def getParent(self):
         content = None
         if not self.Identifier.isRoot():
-            identifier = self.Identifier.getParent()
-            content = identifier.getContent()
+            content = self.Identifier.getParent().getContent()
         return content
     def setParent(self, parent):
         raise NoSupportException('Parent can not be set', self)
@@ -104,15 +103,12 @@ class Content(unohelper.Base,
 
     # XContentCreator
     def queryCreatableContentsInfo(self):
-        print("Content.queryCreatableContentsInfo()")
         return self.MetaData.getValue('CreatableContentsInfo')
     def createNewContent(self, info):
         # To avoid circular imports, the creation of new identifiers is delegated to
         # Identifier.createNewIdentifier() since the identifier also creates Content
         # with Identifier.getContent()
-        identifier = self.Identifier.createNewIdentifier(info.Type)
-        print("Content.createNewContent() Folder: %s create New Id: %s" % (self.MetaData.getValue('Title'), identifier.Id))
-        return identifier.getContent()
+        return self.Identifier.createNewIdentifier(info.Type).getContent()
 
     # XContent
     def getIdentifier(self):

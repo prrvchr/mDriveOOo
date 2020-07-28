@@ -103,11 +103,7 @@ def _setTitle(source, context, title):
     else:
         # When you change Title you must change also the Identifier.getContentIdentifier()
         # It's done by Identifier.setTitle()
-        source.MetaData.setValue('Title', identifier.setTitle(title))
-        # If the identifier is new then the content is not yet in the database.
-        # It will be inserted by the insert command of the XCommandProcessor2.execute()
-        if not identifier.IsNew:
-            user.DataBase.updateContent(user.Id, identifier.Id, 'Title', title)
+        identifier.setTitle(title)
         msg = "Set property: %s value: %s" % ('Title', title)
         level = INFO
         result = None
