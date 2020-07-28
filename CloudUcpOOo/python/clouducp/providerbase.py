@@ -44,10 +44,6 @@ class ProviderBase(ProviderObject,
     def Error(self):
         return self._Error
 
-    # Private method
-    def _getKeyMap(self):
-        return KeyMap()
-
     # Must be implemented properties
     @property
     def Name(self):
@@ -87,9 +83,6 @@ class ProviderBase(ProviderObject,
     @property
     def FolderSyncModes(self):
         return (SYNC_FOLDER, )
-    @property
-    def SessionMode(self):
-        return getConnectionMode(self.ctx, self.Host)
 
     # Must be implemented method
     def getRequestParameter(self, method, data):
@@ -134,9 +127,11 @@ class ProviderBase(ProviderObject,
     def parseDateTime(self, timestamp, format='%Y-%m-%dT%H:%M:%S.%fZ'):
         return parseDateTime(timestamp, format)
     def isOnLine(self):
-        return getConnectionMode(self.ctx, self.Host) != OFFLINE
+        self.SessionMode = getConnectionMode(self.ctx, self.Host)
+        return  self.SessionMode != OFFLINE
     def isOffLine(self):
-        return getConnectionMode(self.ctx, self.Host) != ONLINE
+        self.SessionMode = getConnectionMode(self.ctx, self.Host)
+        return  self.SessionMode != ONLINE
 
     def initialize(self, scheme, plugin, folder, link):
         self.Scheme = scheme
@@ -144,6 +139,7 @@ class ProviderBase(ProviderObject,
         self.Folder = folder
         self.Link = link
         self.SourceURL = getResourceLocation(self.ctx, plugin, scheme)
+        self.SessionMode = getConnectionMode(self.ctx, self.Host)
 
     def initializeUser(self, user, name):
         if self.isOnLine():
@@ -204,8 +200,6 @@ class ProviderBase(ProviderObject,
         if not title:
             title = default
         return title
-    def getTimeStamp(self):
-        return datetime.datetime.now().strftime(self.TimeStampPattern)
     def transform(self, name, value):
         return value
 

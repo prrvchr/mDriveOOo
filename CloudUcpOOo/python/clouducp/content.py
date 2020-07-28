@@ -130,128 +130,120 @@ class Content(unohelper.Base,
     def createCommandIdentifier(self):
         return 1
     def execute(self, command, id, environment):
-        try:
-            url = self.getIdentifier().getContentIdentifier()
-            print("Content.execute() %s - %s - %s" % (command.Name, url, self.getIdentifier().Id))
-            msg = "command.Name: %s" % command.Name
-            logMessage(self.ctx, INFO, msg, "Content", "execute()")
-            if command.Name == 'getCommandInfo':
-                return CommandInfo(self._commandInfo)
-            elif command.Name == 'getPropertySetInfo':
-                return PropertySetInfo(self.Identifier._propertySetInfo)
-            elif command.Name == 'getPropertyValues':
-                namedvalues = getPropertiesValues(self.ctx, self, command.Argument)
-                return Row(namedvalues)
-            elif command.Name == 'setPropertyValues':
-                return setPropertiesValues(self.ctx, self, environment, command.Argument)
-            elif command.Name == 'delete':
-                self.MetaData.insertValue('Trashed', True)
-                user = self.Identifier.User
-                user.DataBase.updateContent(user.Id, self.Identifier.Id, 'Trashed', True)
-            elif command.Name == 'open':
-                if self.IsFolder:
-                    # Not Used: command.Argument.Properties - Implement me ;-)
-                    select = self.Identifier.getFolderContent(self.MetaData)
-                    msg += " IsFolder: %s" % self.IsFolder
-                    logMessage(self.ctx, INFO, msg, "Content", "execute()")
-                    return DynamicResultSet(self.ctx, select)
-                elif self.IsDocument:
-                    sf = getSimpleFile(self.ctx)
-                    url, size = self.Identifier.getDocumentContent(sf, self.MetaData, 0)
-                    if not size:
-                        title = self.MetaData.getValue('Title')
-                        msg = "Error while downloading file: %s" % title
-                        print("Content.execute() %s" % msg)
-                        raise CommandAbortedException(msg, self)
-                    sink = command.Argument.Sink
-                    interfaces = getInterfaceTypes(sink)
-                    datasink = uno.getTypeByName('com.sun.star.io.XActiveDataSink')
-                    datastream = uno.getTypeByName('com.sun.star.io.XActiveDataStreamer')
-                    isreadonly = self.MetaData.getValue('IsReadOnly')
-                    if datasink in interfaces:
-                        sink.setInputStream(sf.openFileRead(url))
-                    elif not isreadonly and datastream in interfaces:
-                        sink.setStream(sf.openFileReadWrite(url))
-            elif command.Name == 'insert':
-                # The Insert command is only used to create a new folder or a new document
-                # (ie: File Save As).
-                # It saves the content created by 'createNewContent' from the parent folder
-                print("Content.execute() insert 1 - %s - %s - %s" % (self.IsFolder,
-                                                                     self.Identifier.Id,
-                                                                     self.MetaData.getValue('Title')))
-                if self.IsFolder:
-                    mediatype = self.Identifier.User.Provider.Folder
+        url = self.getIdentifier().getContentIdentifier()
+        print("Content.execute() %s - %s - %s" % (command.Name, url, self.getIdentifier().Id))
+        msg = "command.Name: %s" % command.Name
+        logMessage(self.ctx, INFO, msg, "Content", "execute()")
+        if command.Name == 'getCommandInfo':
+            return CommandInfo(self._commandInfo)
+        elif command.Name == 'getPropertySetInfo':
+            return PropertySetInfo(self.Identifier._propertySetInfo)
+        elif command.Name == 'getPropertyValues':
+            namedvalues = getPropertiesValues(self.ctx, self, command.Argument)
+            return Row(namedvalues)
+        elif command.Name == 'setPropertyValues':
+            return setPropertiesValues(self.ctx, self, environment, command.Argument)
+        elif command.Name == 'delete':
+            self.MetaData.insertValue('Trashed', True)
+            user = self.Identifier.User
+            user.DataBase.updateContent(user.Id, self.Identifier.Id, 'Trashed', True)
+        elif command.Name == 'open':
+            if self.IsFolder:
+                # Not Used: command.Argument.Properties - Implement me ;-)
+                select = self.Identifier.getFolderContent(self.MetaData)
+                msg += " IsFolder: %s" % self.IsFolder
+                logMessage(self.ctx, INFO, msg, "Content", "execute()")
+                return DynamicResultSet(self.ctx, select)
+            elif self.IsDocument:
+                sf = getSimpleFile(self.ctx)
+                url, size = self.Identifier.getDocumentContent(sf, self.MetaData, 0)
+                if not size:
+                    title = self.MetaData.getValue('Title')
+                    msg = "Error while downloading file: %s" % title
+                    print("Content.execute() %s" % msg)
+                    raise CommandAbortedException(msg, self)
+                sink = command.Argument.Sink
+                interfaces = getInterfaceTypes(sink)
+                datasink = uno.getTypeByName('com.sun.star.io.XActiveDataSink')
+                datastream = uno.getTypeByName('com.sun.star.io.XActiveDataStreamer')
+                isreadonly = self.MetaData.getValue('IsReadOnly')
+                if datasink in interfaces:
+                    sink.setInputStream(sf.openFileRead(url))
+                elif not isreadonly and datastream in interfaces:
+                    sink.setStream(sf.openFileReadWrite(url))
+        elif command.Name == 'insert':
+            # The Insert command is only used to create a new folder or a new document
+            # (ie: File Save As).
+            # It saves the content created by 'createNewContent' from the parent folder
+            print("Content.execute() insert 1 - %s - %s - %s" % (self.IsFolder,
+                                                                    self.Identifier.Id,
+                                                                    self.MetaData.getValue('Title')))
+            if self.IsFolder:
+                mediatype = self.Identifier.User.Provider.Folder
+                self.MetaData.insertValue('MediaType', mediatype)
+                print("Content.execute() insert 2 ************** %s" % mediatype)
+                if self.Identifier.insertNewContent(self.MetaData):
+                    # Need to consum the new Identifier if needed...
+                    self.Identifier.deleteNewIdentifier()
+                print("Content.execute() insert 3")
+            elif self.IsDocument:
+                stream = command.Argument.Data
+                replace = command.Argument.ReplaceExisting
+                sf = getSimpleFile(self.ctx)
+                url = self.Identifier.User.Provider.SourceURL
+                target = '%s/%s' % (url, self.Identifier.Id)
+                if sf.exists(target) and not replace:
+                    return
+                inputstream = uno.getTypeByName('com.sun.star.io.XInputStream')
+                if inputstream in getInterfaceTypes(stream):
+                    sf.writeFile(target, stream)
+                    mediatype = getMimeType(self.ctx, stream)
                     self.MetaData.insertValue('MediaType', mediatype)
+                    stream.closeInput()
                     print("Content.execute() insert 2 ************** %s" % mediatype)
                     if self.Identifier.insertNewContent(self.MetaData):
                         # Need to consum the new Identifier if needed...
                         self.Identifier.deleteNewIdentifier()
-                    print("Content.execute() insert 3")
-                elif self.IsDocument:
-                    stream = command.Argument.Data
-                    replace = command.Argument.ReplaceExisting
-                    sf = getSimpleFile(self.ctx)
-                    url = self.Identifier.User.Provider.SourceURL
-                    target = '%s/%s' % (url, self.Identifier.Id)
-                    if sf.exists(target) and not replace:
-                        return
-                    inputstream = uno.getTypeByName('com.sun.star.io.XInputStream')
-                    if inputstream in getInterfaceTypes(stream):
-                        sf.writeFile(target, stream)
-                        mediatype = getMimeType(self.ctx, stream)
-                        self.MetaData.insertValue('MediaType', mediatype)
-                        stream.closeInput()
-                        print("Content.execute() insert 2 ************** %s" % mediatype)
-                        if self.Identifier.insertNewContent(self.MetaData):
-                            # Need to consum the new Identifier if needed...
-                            self.Identifier.deleteNewIdentifier()
-                            print("Content.execute() insert 3")
-            elif command.Name == 'createNewContent' and self.IsFolder:
-                return self.createNewContent(command.Argument)
-            elif command.Name == 'transfer' and self.IsFolder:
-                # Transfer command is used for document 'File Save' or 'File Save As'
-                # NewTitle come from:
-                # - Last segment path of 'XContent.getIdentifier().getContentIdentifier()' for OpenOffice
-                # - Property 'Title' of 'XContent' for LibreOffice
-                # If the content has been renamed, the last segment is the new Title of the content
-                title = command.Argument.NewTitle
-                source = command.Argument.SourceURL
-                move = command.Argument.MoveData
-                clash = command.Argument.NameClash
-                print("Content.execute() transfert 1 %s - %s -%s - %s" % (title, source, move, clash))
-                # We check if 'NewTitle' is a child of this folder by recovering its ItemId
-                user = self.Identifier.User
-                itemid = user.DataBase.getChildId(user.Id, self.Identifier.Id, title)
-                if itemid is None:
-                    print("Content.execute() transfert 2 %s" % itemid)
-                    # ItemId could not be found: 'NewTitle' does not exist in the folder...
-                    # For new document (File Save As) we use commands:
-                    # - createNewContent: for creating an empty new Content
-                    # - Insert at new Content for committing change
-                    # To execute these commands, we must throw an exception
-                    msg = "Couln't handle Url: %s" % source
-                    raise InteractiveBadTransferURLException(msg, self)
-                print("Content.execute() transfert 3 %s - %s" % (itemid, source))
-                sf = getSimpleFile(self.ctx)
-                if not sf.exists(source):
-                    raise CommandAbortedException("Error while saving file: %s" % source, self)
-                inputstream = sf.openFileRead(source)
-                target = '%s/%s' % (user.Provider.SourceURL, itemid)
-                sf.writeFile(target, inputstream)
-                inputstream.closeInput()
-                # We need to update the Size
-                user.DataBase.updateContent(user.Id, itemid, 'Size', sf.getSize(target))
-                if move:
-                    pass #must delete object
-            elif command.Name == 'flush' and self.IsFolder:
-                pass
-        except CommandAbortedException as e:
-            raise e
-        except InteractiveBadTransferURLException as e:
-            raise e
-        except Exception as e:
-            msg += " ERROR: %s" % e
-            logMessage(self.ctx, SEVERE, msg, "Content", "execute()")
+                        print("Content.execute() insert 3")
+        elif command.Name == 'createNewContent' and self.IsFolder:
+            return self.createNewContent(command.Argument)
+        elif command.Name == 'transfer' and self.IsFolder:
+            # Transfer command is used for document 'File Save' or 'File Save As'
+            # NewTitle come from:
+            # - Last segment path of 'XContent.getIdentifier().getContentIdentifier()' for OpenOffice
+            # - Property 'Title' of 'XContent' for LibreOffice
+            # If the content has been renamed, the last segment is the new Title of the content
+            title = command.Argument.NewTitle
+            source = command.Argument.SourceURL
+            move = command.Argument.MoveData
+            clash = command.Argument.NameClash
+            print("Content.execute() transfert 1 %s - %s -%s - %s" % (title, source, move, clash))
+            # We check if 'NewTitle' is a child of this folder by recovering its ItemId
+            user = self.Identifier.User
+            itemid = user.DataBase.getChildId(user.Id, self.Identifier.Id, title)
+            if itemid is None:
+                print("Content.execute() transfert 2 %s" % itemid)
+                # ItemId could not be found: 'NewTitle' does not exist in the folder...
+                # For new document (File Save As) we use commands:
+                # - createNewContent: for creating an empty new Content
+                # - Insert at new Content for committing change
+                # To execute these commands, we must throw an exception
+                msg = "Couln't handle Url: %s" % source
+                raise InteractiveBadTransferURLException(msg, self)
+            print("Content.execute() transfert 3 %s - %s" % (itemid, source))
+            sf = getSimpleFile(self.ctx)
+            if not sf.exists(source):
+                raise CommandAbortedException("Error while saving file: %s" % source, self)
+            inputstream = sf.openFileRead(source)
+            target = '%s/%s' % (user.Provider.SourceURL, itemid)
+            sf.writeFile(target, inputstream)
+            inputstream.closeInput()
+            # We need to update the Size
+            user.DataBase.updateContent(user.Id, itemid, 'Size', sf.getSize(target))
+            if move:
+                pass #must delete object
+        elif command.Name == 'flush' and self.IsFolder:
+            pass
 
     def abort(self, id):
         pass

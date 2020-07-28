@@ -45,12 +45,11 @@ class Identifier(unohelper.Base,
                  XContentIdentifier,
                  XRestIdentifier,
                  XChild):
-    def __init__(self, ctx, user, uri, callBack, contenttype=''):
+    def __init__(self, ctx, user, uri, contenttype=''):
         msg = "Identifier loading"
         self.ctx = ctx
         self.User = user
         self._uri = uri
-        self.callBack = callBack
         self.IsNew = contenttype != ''
         self._propertySetInfo = {}
         self.MetaData = self._getIdentifier(contenttype)
@@ -91,7 +90,7 @@ class Identifier(unohelper.Base,
 
     # XRestIdentifier
     def createNewIdentifier(self, contenttype):
-        identifier = Identifier(self.ctx, self.User, self._uri, self.callBack, contenttype)
+        identifier = Identifier(self.ctx, self.User, self._uri, contenttype)
         return identifier
 
     def getContent(self):
@@ -148,20 +147,21 @@ class Identifier(unohelper.Base,
 
     def setTitle(self, title):
         # If Title change we need to change Identifier.getContentIdentifier()
-        # And as the uri changes we also have to clear the cache.
         print("Identifier.setTitle() 1")
         if not self.IsNew:
+            # And as the uri changes we also have to clear this Identifier from the cache.
             # New Identifier bypass the cache: new Identifier are created by the
             # folder's Identifier (ie: createNewIdentifier()) and have same uri as this folder.
             print("Identifier.setTitle() 2")
-            self.callBack(self.User, self._uri, self.isFolder())
+            getUcb(self.ctx).createContentIdentifier('%s#' % self.getContentIdentifier())
+            print("Identifier.setTitle() 3")
         url = self.ParentURI
         if not url.endswith('/'):
             url += '/'
         url += title
-        print("Identifier.setTitle() %s" % url)
+        print("Identifier.setTitle() 4 %s" % url)
         self._uri = getUri(self.ctx, getUrl(self.ctx, url))
-        print("Identifier.setTitle() %s" % self.getContentIdentifier())
+        print("Identifier.setTitle() 5 %s" % self.getContentIdentifier())
         return title
 
     def _getIdentifier(self, contenttype):

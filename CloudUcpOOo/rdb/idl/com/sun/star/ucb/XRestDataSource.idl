@@ -5,6 +5,7 @@
 #include <com/sun/star/uri/XUriReference.idl>
 #include <com/sun/star/ucb/XRestDataBase.idl>
 #include <com/sun/star/ucb/XRestProvider.idl>
+#include <com/sun/star/ucb/XRestReplicator.idl>
 #include <com/sun/star/ucb/XRestUser.idl>
 #include <com/sun/star/ucb/XRestIdentifier.idl>
 
@@ -18,12 +19,10 @@ interface XRestDataSource: com::sun::star::uno::XInterface
                                              [in] string Password);
     ::com::sun::star::ucb::XRestIdentifier getIdentifier([in] ::com::sun::star::ucb::XRestUser User,
                                                          [in] ::com::sun::star::uri::XUriReference Uri);
-    void callBack([in] ::com::sun::star::ucb::XRestUser User,
-                  [in] ::com::sun::star::uri::XUriReference Uri,
-                  [in] boolean IsFolder);
 
     [attribute, readonly] ::com::sun::star::ucb::XRestProvider Provider;
     [attribute, readonly] ::com::sun::star::ucb::XRestDataBase DataBase;
+    [attribute, readonly] ::com::sun::star::ucb::XRestReplicator Replicator;
     [attribute, readonly] string Error;
 
 };

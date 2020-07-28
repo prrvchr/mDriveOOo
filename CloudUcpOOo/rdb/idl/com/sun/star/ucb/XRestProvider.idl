@@ -22,7 +22,6 @@ interface XRestProvider: com::sun::star::uno::XInterface
                     [in] string Plugin,
                     [in] string Link,
                     [in] string Folder);
-    boolean initializeUser([in] string Name);
     void initUser([in] ::com::sun::star::uno::XInterface Request,
                   [in] ::com::sun::star::uno::XInterface DataBase,
                   [in] ::com::sun::star::auth::XRestKeyMap User);
@@ -35,7 +34,6 @@ interface XRestProvider: com::sun::star::uno::XInterface
     void setFirstPull([in] ::com::sun::star::auth::XRestKeyMap Item);
     boolean isOnLine();
     boolean isOffLine();
-    string getTimeStamp();
     boolean isLink([in] string ContentType);
     boolean isFolder([in] string ContentType);
     boolean isDocument([in] string ContentType);
@@ -70,10 +68,12 @@ interface XRestProvider: com::sun::star::uno::XInterface
                         [in] ::com::sun::star::auth::XRestKeyMap Item);
     boolean updateTrashed([in] ::com::sun::star::uno::XInterface Request,
                           [in] ::com::sun::star::auth::XRestKeyMap Item);
+
     string getUserId([in] ::com::sun::star::auth::XRestKeyMap User);
     string getUserName([in] ::com::sun::star::auth::XRestKeyMap User);
     string getUserDisplayName([in] ::com::sun::star::auth::XRestKeyMap User);
     string getUserToken([in] ::com::sun::star::auth::XRestKeyMap User);
+
     string getRootId([in] ::com::sun::star::auth::XRestKeyMap Root);
     string getRootTitle([in] ::com::sun::star::auth::XRestKeyMap Root);
     ::com::sun::star::util::DateTime getRootCreated([in] ::com::sun::star::auth::XRestKeyMap Root,
@@ -87,6 +87,7 @@ interface XRestProvider: com::sun::star::uno::XInterface
     boolean getRootCanRename([in] ::com::sun::star::auth::XRestKeyMap Root);
     boolean getRootIsReadOnly([in] ::com::sun::star::auth::XRestKeyMap Root);
     boolean getRootIsVersionable([in] ::com::sun::star::auth::XRestKeyMap Root);
+
     string getItemId([in] ::com::sun::star::auth::XRestKeyMap Item);
     string getItemTitle([in] ::com::sun::star::auth::XRestKeyMap Item);
     ::com::sun::star::util::DateTime getItemCreated([in] ::com::sun::star::auth::XRestKeyMap Item,
@@ -102,6 +103,7 @@ interface XRestProvider: com::sun::star::uno::XInterface
     boolean getItemIsVersionable([in] ::com::sun::star::auth::XRestKeyMap Item);
     sequence <string> getItemParent([in] ::com::sun::star::auth::XRestKeyMap Item,
                                     [in] string RootId);
+
     string getResponseId([in] ::com::sun::star::auth::XRestKeyMap Response,
                          [in] string Default);
     string getResponseTitle([in] ::com::sun::star::auth::XRestKeyMap Response,
@@ -110,7 +112,7 @@ interface XRestProvider: com::sun::star::uno::XInterface
     [attribute, readonly] string Name;
     [attribute, readonly] string Scheme;
     [attribute, readonly] string Plugin;
-    [attribute] short SessionMode;
+    [attribute, readonly] short SessionMode;
     [attribute, readonly] boolean GenerateIds;
     [attribute, readonly] sequence < short > IdentifierRange;
     [attribute, readonly] string Host;

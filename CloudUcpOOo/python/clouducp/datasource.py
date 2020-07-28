@@ -35,8 +35,6 @@ class DataSource(unohelper.Base,
     def __init__(self, ctx, event, scheme, plugin):
         msg = "DataSource for Scheme: %s loading ... " % scheme
         self.ctx = ctx
-        self.scheme = scheme
-        self.plugin = plugin
         self._Users = {}
         self._Identifiers = OrderedDict()
         self.Error = None
@@ -51,21 +49,20 @@ class DataSource(unohelper.Base,
         self.DataBase.addCloseListener(self)
         folder, link = self.DataBase.getContentType()
         self.Provider.initialize(scheme, plugin, folder, link)
-        self.replicator = Replicator(ctx, datasource, self.Provider, self._Users, self.sync)
+        self.Replicator = Replicator(ctx, datasource, self.Provider, self._Users, self.sync)
         msg += "Done"
         logMessage(self.ctx, INFO, msg, 'DataSource', '__init__()')
 
     # XCloseListener
     def queryClosing(self, source, ownership):
-        compact= self.replicator.fullPull
-        if self.replicator.is_alive():
-            self.replicator.cancel()
-            self.replicator.join()
+        if self.Replicator.is_alive():
+            self.Replicator.cancel()
+            self.Replicator.join()
         #self.deregisterInstance(self.Scheme, self.Plugin)
-        self.DataBase.shutdownDataBase(compact)
-        msg = "DataSource queryClosing: Scheme: %s ... Done" % self.scheme
+        self.DataBase.shutdownDataBase(self.Replicator.fullPull)
+        msg = "DataSource queryClosing: Scheme: %s ... Done" % self.Provider.Scheme
         logMessage(self.ctx, INFO, msg, 'DataSource', 'queryClosing()')
-        print("DataSource.queryClosing() OK")
+        print(msg)
     def notifyClosing(self, source):
         pass
 
@@ -88,24 +85,27 @@ class DataSource(unohelper.Base,
     def getIdentifier(self, user, uri):
         # Identifier never change... we can cache it... if it's valid.
         key = self._getIdentifierKey(user, uri)
-        if key in self._Identifiers:
-            identifier = self._Identifiers[key]
-        else:
-            identifier = Identifier(self.ctx, user, uri, self.callBack)
+        identifier = self._Identifiers.get(key, None)
+        if identifier is None:
+            identifier = Identifier(self.ctx, user, uri)
             if identifier.isValid() and user.CanAddChild:
                 self._Identifiers[key] = identifier
+        elif uri.hasFragment():
+            # A Uri with fragment is supposed to be removed from the cache,
+            # usually after the title has been changed
+            self._removeFromCache(key, identifier.isFolder())
+        # To optimize memory usage, the cache size is limited
         if len(self._Identifiers) > g_cache:
             k, i = self._Identifiers.popitem(False)
         return identifier
 
-    def callBack(self, user, uri, isfolder):
+    def _removeFromCache(self, key, isfolder):
         # If the title of the identifier changes, we must remove
         # from the cache this identifier and its children if it's a folder.
-        key = self._getIdentifierKey(user, uri)
-        child = key + '/'
+        child = '%s/' % key
         for identifier in list(self._Identifiers):
             if identifier == key or (isfolder and identifier.startswith(child)):
-                print("DataSource.callBack() %s - %s" % (identifier, key))
+                print("DataSource._removeFromCache() %s - %s" % (identifier, key))
                 del self._Identifiers[identifier]
 
     def _getIdentifierKey(self, user, uri):
