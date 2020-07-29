@@ -95,7 +95,7 @@ class Identifier(unohelper.Base,
     def getContent(self):
         if not self.isValid():
             msg = "Error: can't retreive Identifier"
-            print("Identifier.getContent() 1")
+            print("Identifier.getContent() %s" % msg)
             raise IllegalIdentifierException(msg, self)
         content = Content(self.ctx, self)
         return content
@@ -189,9 +189,12 @@ class Identifier(unohelper.Base,
             else:
                 data = self.User.DataBase.getItem(self.User.Id, itemid, parentid)
             if data is not None:
+                print("Identifier._getIdentifier() 1 %s" % (data.getKeys(), ))
                 self._setCreatableContentsInfo(data)
                 identifier += data
                 self._propertySetInfo = self._getPropertySetInfo()
+        if not identifier.hasValue('IsRoot'):
+            print("Identifier._getIdentifier() 2 ****************************%s\n%s" % (parentid, identifier.getKeys()))
         return identifier
 
     def _getNewIdentifier(self):

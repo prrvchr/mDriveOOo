@@ -10,7 +10,7 @@ from .logger import logMessage
 from .logger import getMessage
 
 
-def getSqlQuery(name, format=None):
+def getSqlQuery(ctx, name, format=None):
 
 
 # Create Static Table Queries
@@ -283,32 +283,25 @@ def getSqlQuery(name, format=None):
         p = (','.join(c), f)
         query = 'SELECT %s FROM %s WHERE "U"."UserName" = ?;' % p
     elif name == 'getRoot':
-        c1 = '"I"."ItemId" "Id"'
-        c2 = '"I"."ItemId" "ObjectId"'
-        c3 = '"I"."Title"'
-        c4 = '"I"."Title" "TitleOnServer"'
-        c5 = '"I"."DateCreated"'
-        c6 = '"I"."DateModified"'
-        c7 = '"I1"."ContentType"'
-        c8 = '"I"."MediaType"'
-        c9 = '"I"."Size"'
-        c10 = '"I"."Trashed"'
-        c11 = 'TRUE "IsRoot"'
-        c12 = '"I1"."IsFolder"'
-        c13 = '"I1"."IsDocument"'
-        c14 = '"C"."CanAddChild"'
-        c15 = '"C"."CanRename"'
-        c16 = '"C"."IsReadOnly"'
-        c17 = '"C"."IsVersionable"'
-        c18 = '"I"."Loaded"'
-        c19 = '%s "CasePreservingURL"' % "''"
-        c20 = 'FALSE "IsHidden"'
-        c21 = 'FALSE "IsVolume"'
-        c22 = 'FALSE "IsRemote"'
-        c23 = 'FALSE "IsRemoveable"'
-        c24 = 'FALSE "IsFloppy"'
-        c25 = 'FALSE "IsCompactDisc"'
-        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25)
+        c1 = '"I"."ItemId" "ObjectId"'
+        c2 = '"I"."Title"'
+        c3 = '"I"."Title" "TitleOnServer"'
+        c4 = '"I"."DateCreated"'
+        c5 = '"I"."DateModified"'
+        c6 = '"I1"."ContentType"'
+        c7 = '"I"."MediaType"'
+        c8 = '"I"."Size"'
+        c9 = '"I"."Trashed"'
+        c10 = 'TRUE "IsRoot"'
+        c11 = '"I1"."IsFolder"'
+        c12 = '"I1"."IsDocument"'
+        c13 = '"C"."CanAddChild"'
+        c14 = '"C"."CanRename"'
+        c15 = '"C"."IsReadOnly"'
+        c16 = '"C"."IsVersionable"'
+        c17 = '"I"."Loaded"'
+        c18 = '%s "CasePreservingURL"' % "''"
+        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17)
         f1 = '"Items" AS "I"'
         f2 = 'INNER JOIN "Item" AS "I1" ON "I"."ItemId"="I1"."ItemId"'
         f3 = 'INNER JOIN "Capabilities" AS "C" ON "I1"."ItemId"="C"."ItemId"'
@@ -316,32 +309,25 @@ def getSqlQuery(name, format=None):
         p = (','.join(c), ' '.join(f))
         query = 'SELECT %s FROM %s WHERE "C"."UserId" = ? AND "C"."ItemId" = ?;' % p
     elif name == 'getItem':
-        c1 = '"I"."ItemId" "Id"'
-        c2 = '"I"."ItemId" "ObjectId"'
-        c3 = 'COALESCE("T"."Title","I"."Title") "Title"'
-        c4 = '"I"."Title" "TitleOnServer"'
-        c5 = '"I"."DateCreated"'
-        c6 = '"I"."DateModified"'
-        c7 = '"I1"."ContentType"'
-        c8 = '"I"."MediaType"'
-        c9 = '"I"."Size"'
-        c10 = '"I"."Trashed"'
-        c11 = 'FALSE "IsRoot"'
-        c12 = '"I1"."IsFolder"'
-        c13 = '"I1"."IsDocument"'
-        c14 = '"C"."CanAddChild"'
-        c15 = '"C"."CanRename"'
-        c16 = '"C"."IsReadOnly"'
-        c17 = '"C"."IsVersionable"'
-        c18 = '"I"."Loaded"'
-        c19 = '%s "CasePreservingURL"' % "''"
-        c20 = 'FALSE "IsHidden"'
-        c21 = 'FALSE "IsVolume"'
-        c22 = 'FALSE "IsRemote"'
-        c23 = 'FALSE "IsRemoveable"'
-        c24 = 'FALSE "IsFloppy"'
-        c25 = 'FALSE "IsCompactDisc"'
-        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25)
+        c1 = '"I"."ItemId" "ObjectId"'
+        c2 = 'COALESCE("T"."Title","I"."Title") "Title"'
+        c3 = '"I"."Title" "TitleOnServer"'
+        c4 = '"I"."DateCreated"'
+        c5 = '"I"."DateModified"'
+        c6 = '"I1"."ContentType"'
+        c7 = '"I"."MediaType"'
+        c8 = '"I"."Size"'
+        c9 = '"I"."Trashed"'
+        c10 = 'FALSE "IsRoot"'
+        c11 = '"I1"."IsFolder"'
+        c12 = '"I1"."IsDocument"'
+        c13 = '"C"."CanAddChild"'
+        c14 = '"C"."CanRename"'
+        c15 = '"C"."IsReadOnly"'
+        c16 = '"C"."IsVersionable"'
+        c17 = '"I"."Loaded"'
+        c18 = '%s "CasePreservingURL"' % "''"
+        c = (c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17)
         f1 = '"Items" AS "I"'
         f2 = 'INNER JOIN "Item" AS "I1" ON "I"."ItemId"="I1"."ItemId"'
         f3 = 'INNER JOIN "Capabilities" AS "C" ON "I1"."ItemId"="C"."ItemId"'
@@ -657,7 +643,6 @@ CREATE PROCEDURE "InsertItem"(IN "UserId" VARCHAR(100),
 # Queries don't exist!!!
     else:
         query = None
-        msg = "dbqueries.getSqlQuery(): ERROR: Query '%s' not found!!!" % name
-        print(msg)
-        #logMessage(ctx, SEVERE, msg, 'dbqueries', 'getSqlQuery()')
+        msg = getMessage(ctx, 130, name)
+        logMessage(ctx, SEVERE, msg, 'dbqueries', 'getSqlQuery()')
     return query

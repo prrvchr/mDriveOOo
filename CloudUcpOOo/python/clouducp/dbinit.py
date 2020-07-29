@@ -54,11 +54,11 @@ def createDataBase(ctx, connection):
         executeQueries(statement, getViews())
     return error
 
-def getTablesAndStatements(statement, version=g_version):
+def getTablesAndStatements(ctx, statement, version=g_version):
     tables = []
     statements = []
-    call = getDataSourceCall(statement.getConnection(), 'getTables')
-    for table in getSequenceFromResult(statement.executeQuery(getSqlQuery('getTableName'))):
+    call = getDataSourceCall(ctx, statement.getConnection(), 'getTables')
+    for table in getSequenceFromResult(statement.executeQuery(getSqlQuery(ctx, 'getTableName'))):
         view = False
         versioned = False
         columns = []
@@ -91,17 +91,17 @@ def getTablesAndStatements(statement, version=g_version):
                                    'ForeignTable': data.getValue('ForeignTable'),
                                    'ForeignColumn': data.getValue('ForeignColumn')})
         if primary:
-            columns.append(getSqlQuery('getPrimayKey', primary))
+            columns.append(getSqlQuery(ctx, 'getPrimayKey', primary))
         for format in unique:
-            columns.append(getSqlQuery('getUniqueConstraint', format))
+            columns.append(getSqlQuery(ctx, 'getUniqueConstraint', format))
         for format in constraint:
-            columns.append(getSqlQuery('getForeignConstraint', format))
+            columns.append(getSqlQuery(ctx, 'getForeignConstraint', format))
         if version >= '2.5.0' and versioned:
-            columns.append(getSqlQuery('getPeriodColumns'))
+            columns.append(getSqlQuery(ctx, 'getPeriodColumns'))
         format = (table, ','.join(columns))
-        query = getSqlQuery('createTable', format)
+        query = getSqlQuery(ctx, 'createTable', format)
         if version >= '2.5.0' and versioned:
-            query += getSqlQuery('getSystemVersioning')
+            query += getSqlQuery(ctx, 'getSystemVersioning')
         tables.append(query)
         if view:
             typed = False
@@ -111,9 +111,9 @@ def getTablesAndStatements(statement, version=g_version):
                     break
             format = {'Table': table}
             if typed:
-                merge = getSqlQuery('createTypedDataMerge', format)
+                merge = getSqlQuery(ctx, 'createTypedDataMerge', format)
             else:
-                merge = getSqlQuery('createUnTypedDataMerge', format)
+                merge = getSqlQuery(ctx, 'createUnTypedDataMerge', format)
             statements.append(merge)
     call.close()
     return tables, statements

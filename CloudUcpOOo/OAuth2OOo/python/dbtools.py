@@ -72,8 +72,8 @@ def getDataBaseConnection(ctx, url, dbname, name='', password='', shutdown=False
         error = e
     return connection, error
 
-def getDataSourceCall(connection, name, format=None):
-    query = getSqlQuery(name, format)
+def getDataSourceCall(ctx, connection, name, format=None):
+    query = getSqlQuery(ctx, name, format)
     call = connection.prepareCall(query)
     return call
 
@@ -93,9 +93,10 @@ def checkDataBase(ctx, connection):
         error = getSqlException(state, 1110, msg)
     return version, error
 
-def executeQueries(statement, queries, format=None):
-    for query in queries:
-        statement.executeQuery(getSqlQuery(query, format))
+def executeQueries(ctx, statement, queries):
+    for name, format in queries:
+        query = getSqlQuery(ctx, name, format)
+        statement.executeQuery(query)
 
 def getDataSourceJavaInfo(location):
     info = {}
@@ -294,14 +295,14 @@ def getValueFromResult(result, index, default=None):
         value = default
     return value
 
-def createStaticTable(statement, tables, readonly=False):
+def createStaticTable(ctx, statement, tables, readonly=False):
     for table in tables:
-        query = getSqlQuery('createTable' + table)
+        query = getSqlQuery(ctx, 'createTable' + table)
         statement.executeUpdate(query)
     for table in tables:
-        statement.executeUpdate(getSqlQuery('setTableSource', table))
+        statement.executeUpdate(getSqlQuery(ctx, 'setTableSource', table))
         if readonly:
-            statement.executeUpdate(getSqlQuery('setTableReadOnly', table))
+            statement.executeUpdate(getSqlQuery(ctx, 'setTableReadOnly', table))
 
 def executeSqlQueries(statement, queries):
     for query in queries:

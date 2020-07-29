@@ -23,6 +23,7 @@ from .dbtools import checkDataBase
 from .dbtools import createStaticTable
 from .dbtools import executeSqlQueries
 from .dbtools import getDataSourceCall
+from .dbtools import executeQueries
 
 from .dbinit import getStaticTables
 from .dbinit import getQueries
@@ -51,16 +52,11 @@ class DataBase(unohelper.Base,
     def createDataBase(self):
         version, error = checkDataBase(self.ctx, self.Connection)
         if error is None:
-            createStaticTable(self._statement, getStaticTables(), True)
-            tables, statements = getTablesAndStatements(self._statement, version)
+            createStaticTable(self.ctx, self._statement, getStaticTables(), True)
+            tables, statements = getTablesAndStatements(self.ctx, self._statement, version)
             executeSqlQueries(self._statement, tables)
-            self._executeQueries(getQueries())
+            executeQueries(self.ctx, self._statement, getQueries())
         return error
-
-    def _executeQueries(self, queries):
-        for name, format in queries:
-            query = getSqlQuery(name, format)
-            self._statement.executeQuery(query)
 
     def getDataSource(self):
         return self.Connection.getParent().DatabaseDocument.DataSource
@@ -73,17 +69,17 @@ class DataBase(unohelper.Base,
 
     def shutdownDataBase(self, compact=False):
         if compact:
-            query = getSqlQuery('shutdownCompact')
+            query = getSqlQuery(self.ctx, 'shutdownCompact')
         else:
-            query = getSqlQuery('shutdown')
+            query = getSqlQuery(self.ctx, 'shutdown')
         self._statement.execute(query)
 
     def createUser(self, user, password):
         name, password = user.getCredential(password)
         format = {'User': name, 'Password': password, 'Role': g_role, 'Admin': g_admin}
-        sql = getSqlQuery('createUser', format)
+        sql = getSqlQuery(self.ctx, 'createUser', format)
         status = self._statement.executeUpdate(sql)
-        sql = getSqlQuery('grantRole', format)
+        sql = getSqlQuery(self.ctx, 'grantRole', format)
         status += self._statement.executeUpdate(sql)
         return status == 0
 
@@ -190,9 +186,9 @@ class DataBase(unohelper.Base,
         update = self._getCall('updateLoaded')
         update.setLong(1, value)
         update.setString(2, itemid)
-        row = update.executeUpdate()
+        update.executeUpdate()
         update.close()
-        return default if row != 1 else value
+        return value
 
     def getIdentifier(self, userid, rootid, uripath):
         call = self._getCall('getIdentifier')
@@ -354,7 +350,6 @@ class DataBase(unohelper.Base,
 
     def _doInsert(self, insert, identifier):
         insert.setString(2, identifier)
-        print("DataBase._doInsert() %s" % identifier)
         insert.addBatch()
 
     # First pull procedure: header of merge request
@@ -391,7 +386,7 @@ class DataBase(unohelper.Base,
         return timestamp
 
     def setSession(self, user=g_dba):
-        query = getSqlQuery('setSession', user)
+        query = getSqlQuery(self.ctx, 'setSession', user)
         self._statement.execute(query)
 
     # Procedure to retrieve all the UPDATE AND INSERT in the 'Capabilities' table
@@ -462,7 +457,7 @@ class DataBase(unohelper.Base,
         call.close()
 
     def _getCall(self, name, format=None):
-        return getDataSourceCall(self.Connection, name, format)
+        return getDataSourceCall(self.ctx, self.Connection, name, format)
 
     def _getPreparedCall(self, name):
         # TODO: cannot use: call = self.Connection.prepareCommand(name, QUERY)
