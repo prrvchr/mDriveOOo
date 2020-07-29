@@ -10,9 +10,11 @@ from com.sun.star.awt import XDialogEventHandler
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from unolib import createService
 from unolib import getFileSequence
 from unolib import getStringResource
 from unolib import getResourceLocation
+from unolib import getConfiguration
 from unolib import getDialog
 
 from onedrive import getLoggerUrl
@@ -77,22 +79,13 @@ class OptionsDialog(unohelper.Base,
         elif method == 'ClearLog':
             self._clearLog(dialog)
             handled = True
+        elif method == 'ViewDataSource':
+            self._doViewDataSource(dialog)
+            handled = True
         return handled
     def getSupportedMethodNames(self):
         return ('external_event', 'ToggleLogger', 'EnableViewer', 'DisableViewer',
-                'ViewLog', 'ClearLog')
-
-    def _doViewDataBase(self, dialog):
-        try:
-            path = getResourceLocation(ctx, g_identifier, 'hsqldb')
-            url = '%s/%s.odb' % (path, g_scheme)
-            desktop = self.ctx.ServiceManager.createInstance('com.sun.star.frame.Desktop')
-            desktop.loadComponentFromURL(url, '_default', 0, ())
-            #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
-            #mri.inspect(connection)
-            print("PyOptionsDialog._doConnect() 2")
-        except Exception as e:
-            print("PyOptionsDialog._doConnect().Error: %s - %s" % (e, traceback.print_exc()))
+                'ViewLog', 'ClearLog', 'ViewDataSource')
 
     def _loadSetting(self, dialog):
         self._loadLoggerSetting(dialog)
@@ -159,6 +152,18 @@ class OptionsDialog(unohelper.Base,
         index = self._getLoggerLevel(dialog.getControl('ComboBox1'))
         handler = dialog.getControl('OptionButton1').State
         setLoggerSetting(self.ctx, enabled, index, handler)
+
+    def _doViewDataSource(self, dialog):
+        try:
+            path = getResourceLocation(self.ctx, g_identifier, 'hsqldb')
+            url = '%s/%s.odb' % (path, g_scheme)
+            desktop = self.ctx.ServiceManager.createInstance('com.sun.star.frame.Desktop')
+            desktop.loadComponentFromURL(url, '_default', 0, ())
+            #mri = self.ctx.ServiceManager.createInstance('mytools.Mri')
+            #mri.inspect(connection)
+            print("PyOptionsDialog._doConnect() 2")
+        except Exception as e:
+            print("PyOptionsDialog._doConnect().Error: %s - %s" % (e, traceback.print_exc()))
 
     # XServiceInfo
     def supportsService(self, service):
