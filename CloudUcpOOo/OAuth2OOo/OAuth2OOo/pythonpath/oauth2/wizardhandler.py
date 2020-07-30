@@ -104,7 +104,8 @@ class WizardHandler(unohelper.Base,
     def _showDialog(self, window, method, item, id=''):
         print("WizardHandler._showDialog() %s - %s" % (method, item))
         dialog = self._getDialog(window, method, item)
-        self._initDialog(dialog, method, item, id)
+        if method != 'Remove':
+            self._initDialog(dialog, method, item, id)
         if dialog.execute():
             self._saveData(window, dialog, method, item, id)
             print("WizardHandler._showDialog() %s - %s - %s" % (method, item, id))
