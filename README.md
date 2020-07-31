@@ -53,7 +53,8 @@ oneDriveOOo uses a local Hsqldb database of version 2.5.1.
 The use of Hsqldb requires the installation and configuration within  
 LibreOffice / OpenOffice of a **JRE version 1.8 minimum** (ie: Java version 8)
 
-Sometimes it may be necessary for LibreOffice users must have no Hsqldb driver installed with LibreOffice (check your Installed Application under Windows or your Packet Manager under Linux)  
+Sometimes it may be necessary for LibreOffice users must have no Hsqldb driver installed with LibreOffice  
+(check your Installed Application under Windows or your Packet Manager under Linux)  
 It seems that version 7.x of LibreOffice has fixed this problem and is able to work with different driver version of Hsqldb simultaneously.  
 OpenOffice doesn't seem to need this workaround.
 
@@ -90,6 +91,8 @@ After authorizing the OAuthOOo application to access your OneDrive, your OneDriv
 * OpenOffice 4.2.0.Build:9820 x86_64 - Ubuntu 20.04 - LxQt 0.14.1
 
 * LibreOffice 6.1.5.2 - Raspbian 10 buster - Raspberry Pi 4 Model B
+
+* LibreOffice 6.4.4.2 (x64) - Windows 7 SP1
 
 I encourage you in case of problem :-(  
 to create an [issue](https://github.com/prrvchr/oneDriveOOo/issues/new)  
