@@ -87,10 +87,9 @@ def checkDataBase(ctx, connection):
     error = None
     version = connection.getMetaData().getDriverVersion()
     if version < g_version:
-        state = getMessage(ctx, 1005)
-        msg = getMessage(ctx, 1109, g_jar)
-        msg += getMessage(ctx, 1110, (g_version, version))
-        error = getSqlException(state, 1110, msg)
+        state = getMessage(ctx, 111)
+        msg = getMessage(ctx, 112, (g_jar, g_version, version))
+        error = getSqlException(state, 1112, msg)
     return version, error
 
 def executeQueries(ctx, statement, queries):

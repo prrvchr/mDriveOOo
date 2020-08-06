@@ -42,16 +42,16 @@ class ContentProvider(unohelper.Base,
         self.event = Event()
         self._currentUserName = None
         self._error = ''
-        msg = "ContentProvider: %s loading ... Done" % self.Plugin
+        msg = getMessage(self.ctx, 301, self.Plugin)
         logMessage(self.ctx, INFO, msg, 'ContentProvider', '__init__()')
 
     def __del__(self):
-       msg = "ContentProvider: %s unloading ... Done" % self.Plugin
+       msg = getMessage(self.ctx, 371, self.Plugin)
        logMessage(self.ctx, INFO, msg, 'ContentProvider', '__del__()')
 
     # XParameterizedContentProvider
     def registerInstance(self, scheme, plugin, replace):
-        msg = "ContentProvider registerInstance: Scheme/Plugin: %s/%s ... Started" % (scheme, plugin)
+        msg = getMessage(self.ctx, 311, (scheme, plugin))
         logMessage(self.ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
         datasource = DataSource(self.ctx, self.event, scheme, plugin)
         if not datasource.isValid():
@@ -60,20 +60,20 @@ class ContentProvider(unohelper.Base,
         self.Scheme = scheme
         self.Plugin = plugin
         self.DataSource = datasource
-        msg = "ContentProvider registerInstance: Scheme/Plugin: %s/%s ... Done" % (scheme, plugin)
+        msg = getMessage(self.ctx, 312, (scheme, plugin))
         logMessage(self.ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
         return self
     def deregisterInstance(self, scheme, argument):
-        msg = "ContentProvider deregisterInstance: Scheme: %s ... Done" % scheme
+        msg = getMessage(self.ctx, 361, scheme)
         logMessage(self.ctx, INFO, msg, 'ContentProvider', 'deregisterInstance()')
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, url):
-        msg = "Identifier: %s ... " % url
-        uri = getUri(self.ctx, getUrl(self.ctx, url))
+        url = getUrl(self.ctx, url)
+        uri = getUri(self.ctx, url)
         user = self._getUser(uri, url)
         identifier = self.DataSource.getIdentifier(user, uri)
-        msg += "Done"
+        msg = getMessage(self.ctx, 331, url)
         logMessage(self.ctx, INFO, msg, 'ContentProvider', 'createContentIdentifier()')
         return identifier
 
@@ -81,38 +81,36 @@ class ContentProvider(unohelper.Base,
     def queryContent(self, identifier):
         url = identifier.getContentIdentifier()
         if not identifier.isValid():
-            msg = "Identitifer: %s ... cannot be found: %s" % (url, self._error)
+            msg = getMessage(self.ctx, 341, (url, self._error))
             logMessage(self.ctx, SEVERE, msg, 'ContentProvider', 'queryContent()')
             raise IllegalIdentifierException(msg, identifier)
         content = identifier.getContent()
         self._currentUserName = identifier.User.Name
-        msg = "Identitifer: %s ... Done" % url
+        msg = getMessage(self.ctx, 342, url)
         logMessage(self.ctx, INFO, msg, 'ContentProvider', 'queryContent()')
         return content
 
     def compareContentIds(self, id1, id2):
         ids = (id1.getContentIdentifier(), id2.getContentIdentifier())
-        msg = "Identifiers: %s - %s ..." % ids
         if id1.Id == id2.Id and id1.User.Id == id2.User.Id:
-            msg += " seem to be the same..."
+            msg = getMessage(self.ctx, 351, ids)
             compare = 0
         else:
-            msg += " doesn't seem to be the same..."
+            msg = getMessage(self.ctx, 352, ids)
             compare = -1
-        msg += " ... Done"
         logMessage(self.ctx, INFO, msg, 'ContentProvider', 'compareContentIds()')
         return compare
 
     def _getUser(self, uri, url):
         if uri is None:
-            self._error = getMessage(self.ctx, 1201, url)
+            self._error = getMessage(self.ctx, 321, url)
             return User(self.ctx)
         if not uri.hasAuthority() or not uri.getPathSegmentCount():
-            self._error = getMessage(self.ctx, 1202, url)
+            self._error = getMessage(self.ctx, 322, url)
             return User(self.ctx)
         name = self._getUserName(uri, url)
         if not name:
-            self._error = getMessage(self.ctx, 1203, url)
+            self._error = getMessage(self.ctx, 323, url)
             return User(self.ctx)
         user = self.DataSource.getUser(name)
         if user is None:

@@ -79,14 +79,14 @@ class Wizard(unohelper.Base,
     # XInitialization
     def initialize(self, args):
         if not isinstance(args, tuple) or len(args) != 2:
-            raise self._getIllegalArgumentException(0, 101)
+            raise self._getIllegalArgumentException(0, 201)
         paths = args[0]
         controller = args[1]
         if not isinstance(paths, tuple) or len(paths) < 2:
-            raise self._getIllegalArgumentException(0, 102)
+            raise self._getIllegalArgumentException(0, 202)
         unotype = uno.getTypeByName('com.sun.star.ui.dialogs.XWizardController')
         if unotype not in getInterfaceTypes(controller):
-            raise self._getIllegalArgumentException(0, 103)
+            raise self._getIllegalArgumentException(0, 203)
         self._paths = paths
         self._multiPaths = isinstance(paths[0], tuple)
         self._controller = controller
@@ -163,10 +163,10 @@ class Wizard(unohelper.Base,
 
     def enablePage(self, page, enabled):
         if page == self._currentPage:
-            raise self._getInvalidStateException(201)
+            raise self._getInvalidStateException(211)
         path = self._getPath(False)
         if page not in path:
-            raise self._getNoSuchElementException(202)
+            raise self._getNoSuchElementException(212)
         index = path.index(page)
         self._getRoadmap().getByIndex(index).Enabled = enabled
 
@@ -188,10 +188,10 @@ class Wizard(unohelper.Base,
         if not self._multiPaths:
             return
         if index not in range(len(self._paths)):
-            raise self._getNoSuchElementException(301)
+            raise self._getNoSuchElementException(221)
         path = self._paths[index]
         if self._currentPage != -1 and self._currentPage not in path:
-            raise self._getInvalidStateException(302)
+            raise self._getInvalidStateException(222)
         if self._currentPath != index or self._isFinal != final:
             self._initPath(index, final)
 

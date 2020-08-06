@@ -23,7 +23,6 @@ import traceback
 class User(unohelper.Base,
            XRestUser):
     def __init__(self, ctx, source=None, name=None, database=None):
-        msg = "User loading"
         self.ctx = ctx
         self.DataBase = database
         # Uri with Scheme but without a Path generate invalid user but we need
@@ -39,7 +38,7 @@ class User(unohelper.Base,
             self.Request = getRequest(self.ctx, self.Provider.Scheme, name)
             self.MetaData = source.DataBase.selectUser(name)
             self.CanAddChild = not self.Provider.GenerateIds
-        msg += " ... Done"
+        msg = getMessage(self.ctx, 401)
         logMessage(self.ctx, INFO, msg, "User", "__init__()")
 
     @property

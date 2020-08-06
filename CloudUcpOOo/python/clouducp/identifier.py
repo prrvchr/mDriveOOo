@@ -35,7 +35,9 @@ from .contenttools import getUcb
 from .contenttools import getUri
 from .contenttools import getUrl
 from .contenttools import getContentInfo
+
 from .logger import logMessage
+from .logger import getMessage
 
 import binascii
 import traceback
@@ -46,14 +48,13 @@ class Identifier(unohelper.Base,
                  XRestIdentifier,
                  XChild):
     def __init__(self, ctx, user, uri, contenttype=''):
-        msg = "Identifier loading"
         self.ctx = ctx
         self.User = user
         self._uri = uri
         self.IsNew = contenttype != ''
         self._propertySetInfo = {}
         self.MetaData = self._getIdentifier(contenttype)
-        msg += " ... Done"
+        msg = getMessage(self.ctx, 501)
         logMessage(self.ctx, INFO, msg, "Identifier", "__init__()")
 
     @property
@@ -118,7 +119,7 @@ class Identifier(unohelper.Base,
             try:
                 sf.writeFile(url, stream)
             except Exception as e:
-                msg = "ERROR: %s - %s" % (e, traceback.print_exc())
+                msg =  getMessage(self.ctx, 511, (e, traceback.print_exc()))
                 logMessage(self.ctx, SEVERE, msg, "Identifier", "getDocumentContent()")
             else:
                 size = sf.getSize(url)

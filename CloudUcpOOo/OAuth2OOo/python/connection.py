@@ -128,7 +128,7 @@ class Connection(unohelper.Base,
         print("Connection.close()********* 1")
         if not self._connection.isClosed():
             self._connection.close()
-        if self._event is nor None:
+        if self._event is not None:
             self._event.set()
         print("Connection.close()********* 2")
 
@@ -143,7 +143,7 @@ class Connection(unohelper.Base,
         if commandtype == TABLE:
             query = 'SELECT * FROM "%s"' % command
         elif commandtype == QUERY:
-            queries = self._connection.getQueries()
+            queries = self.getQueries()
             if queries.hasByName(command):
                 query = queries.getByName(command).Command
         elif commandtype == COMMAND:
@@ -195,16 +195,16 @@ class Connection(unohelper.Base,
     def getUsers(self):
         try:
             print("Connection.getUsers()1")
-            query = getSqlQuery('getUsers')
+            query = getSqlQuery(self.ctx, 'getUsers')
             result = self._connection.createStatement().executeQuery(query)
             users = getSequenceFromResult(result)
-            #query = getSqlQuery('getPrivileges')
+            #query = getSqlQuery(self.ctx, 'getPrivileges')
             #result = self._connection.createStatement().executeQuery(query)
             #privileges = getKeyMapSequenceFromResult(result)
             #mri = createService(self.ctx, 'mytools.Mri')
             #mri.inspect(tuple(privileges))
             print("Connection.getUsers()2 %s" % (users, ))
-            return DataContainer(self._connection, users, 'string')
+            return DataContainer(self.ctx, self._connection, users, 'string')
         except Exception as e:
             print("Connection.getUsers(): %s - %s" % (e, traceback.print_exc()))
 
@@ -298,8 +298,8 @@ class DataContainer(unohelper.Base,
                     XNameAccess,
                     XIndexAccess,
                     XEnumerationAccess):
-    def __init__(self, connection, names, typename):
-        self._elements = {name: DataBaseUser(connection, name) for name in names}
+    def __init__(self, ctx, connection, names, typename):
+        self._elements = {name: DataBaseUser(ctx, connection, name) for name in names}
         self._typename = typename
         print("DataContainer.__init__()")
 
@@ -355,7 +355,8 @@ class DataBaseUser(unohelper.Base,
                    XAdapter,
                    XGroupsSupplier,
                    PropertySet):
-    def __init__(self, connection, username):
+    def __init__(self, ctx, connection, username):
+        self.ctx = ctx
         self._connection = connection
         self.Name = username
         print("DataBaseUser.__init__() %s" % username)
@@ -376,7 +377,7 @@ class DataBaseUser(unohelper.Base,
     # XUser
     def changePassword(self, oldpwd, newpwd):
         print("DataBaseUser.changePassword()")
-        query = getSqlQuery('changePassword', newpwd)
+        query = getSqlQuery(self.ctx, 'changePassword', newpwd)
         print("DataBaseUser.changePassword() %s" % query)
         result = self._connection.createStatement().executeUpdate(query)
         print("DataBaseUser.changePassword() %s" % result)

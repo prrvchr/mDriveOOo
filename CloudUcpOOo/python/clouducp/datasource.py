@@ -127,13 +127,13 @@ class DataSource(unohelper.Base,
                             user.setDataBase(self.DataBase.getDataSource(), password, self.sync)
                             return True
                         else:
-                            self.Error = getMessage(self.ctx, 1106, name)
+                            self.Error = getMessage(self.ctx, 602, name)
                     else:
-                        self.Error = getMessage(self.ctx, 1107, name)
+                        self.Error = getMessage(self.ctx, 603, name)
                 else:
-                    self.Error = getMessage(self.ctx, 1107, name)
+                    self.Error = getMessage(self.ctx, 603, name)
             else:
-                self.Error = getMessage(self.ctx, 1108, name)
+                self.Error = getMessage(self.ctx, 604, name)
         else:
-            self.Error = getMessage(self.ctx, 1105, g_oauth2)
+            self.Error = getMessage(self.ctx, 601, g_oauth2)
         return False
