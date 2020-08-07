@@ -180,7 +180,7 @@ class Wizard(unohelper.Base,
         return False
 
     def goBackTo(self, page):
-        if page in self.self._getPath():
+        if page in self._getPath():
             return self._setCurrentPage(self._currentPage, page)
         return False
 
