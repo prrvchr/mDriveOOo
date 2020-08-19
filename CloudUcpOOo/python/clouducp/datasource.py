@@ -88,17 +88,17 @@ class DataSource(unohelper.Base,
         if uri.getPath() == '/' and uri.hasFragment():
             # A Uri with fragment is supposed to be removed from the cache,
             # usually after the title or Id has been changed
-            identifier = self._removeFromCache(user, uri)
+            identifier = self._removeIdentifierFromCache(user, uri)
         else:
             key = self._getUriKey(user, uri)
             itemid = self._Uris.get(key, None)
-            if itemid is not None:
-                identifier = self._Identifiers.get(itemid, None)
-            if identifier is None:
+            if itemid is None:
                 identifier = Identifier(self.ctx, user, uri)
-                if identifier.isValid() and user.CanAddChild:
+                if identifier.isValid():
                     self._Uris[key] = identifier.Id
                     self._Identifiers[identifier.Id] = identifier
+            else:
+                identifier = self._Identifiers[itemid]
             # To optimize memory usage, the cache size is limited
             if len(self._Identifiers) > g_cache:
                 k, i = self._Identifiers.popitem(False)
