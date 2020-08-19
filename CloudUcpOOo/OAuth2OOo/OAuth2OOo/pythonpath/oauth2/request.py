@@ -491,9 +491,10 @@ class OutputStream(unohelper.Base,
 
 class StreamListener(unohelper.Base,
                      XStreamListener):
-    def __init__(self, ctx, callback, itemid, response):
+    def __init__(self, ctx, callback, username, itemid, response):
         self.ctx = ctx
         self.callback = callback
+        self.username = username
         self.itemid = itemid
         self.response = response
 
@@ -502,7 +503,7 @@ class StreamListener(unohelper.Base,
         pass
     def closed(self):
         if self.response.IsPresent:
-            self.callback(self.itemid, self.response)
+            self.callback(self.username, self.itemid, self.response)
         else:
             msg = "ERROR ..."
             logMessage(self.ctx, SEVERE, msg, "OAuth2Service","StreamListener()")
@@ -525,13 +526,13 @@ class Uploader(unohelper.Base,
         self.callback = callBack
         self.timeout = timeout
 
-    def start(self, itemid, parameter):
+    def start(self, username, itemid, parameter):
         input, size = self._getInputStream(itemid)
         if size:
             optional = 'com.sun.star.beans.Optional<com.sun.star.auth.XRestKeyMap>'
             response = uno.createUnoStruct(optional)
             output = self._getOutputStream(parameter, size, response)
-            listener = self._getStreamListener(itemid, response)
+            listener = self._getStreamListener(username, itemid, response)
             pump = self.ctx.ServiceManager.createInstance('com.sun.star.io.Pump')
             pump.setInputStream(input)
             pump.setOutputStream(output)

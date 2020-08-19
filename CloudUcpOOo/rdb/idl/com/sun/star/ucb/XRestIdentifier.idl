@@ -13,7 +13,9 @@ interface XRestIdentifier: com::sun::star::uno::XInterface
 {
 
     boolean isRoot();
+    boolean isFolder();
     boolean isValid();
+    ::com::sun::star::uno::XInterface getUri();
     ::com::sun::star::ucb::XRestIdentifier createNewIdentifier([in] string ContentType);
     ::com::sun::star::uno::XInterface getContent();
     ::com::sun::star::sdbc::XPreparedStatement getFolderContent([in] ::com::sun::star::auth::XRestKeyMap Content);

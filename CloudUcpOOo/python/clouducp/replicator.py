@@ -49,9 +49,11 @@ class Replicator(unohelper.Base,
         self.canceled = True
         self.sync.set()
         self.join()
-    def callBack(self, itemid, response):
+    def callBack(self, username, itemid, response):
         if response.IsPresent:
-            self.DataBase.updateItemId(self.Provider, itemid, response.Value)
+            self.DataBase.updateItemId(self.Provider, username, itemid, response.Value)
+            return True
+        return False
 
     def run(self):
         try:
@@ -254,7 +256,7 @@ class Replicator(unohelper.Base,
 
     def _pushItem(self, user, uploader, item, operations):
         try:
-            response = True
+            result = True
             # If the synchronization of an INSERT or an UPDATE fails
             # then the user's TimeStamp will not be updated
             itemid = item.getValue('Id')
@@ -263,6 +265,7 @@ class Replicator(unohelper.Base,
                 mediatype = item.getValue('MediaType')
                 if user.Provider.isFolder(mediatype):
                     response = user.Provider.createFolder(user.Request, item)
+                    result = self.callBack(user.Name, itemid, response)
                     format = (item.getValue('Title'), unparseDateTime(item.getValue('TimeStamp')))
                     msg = getMessage(self.ctx, 731, format)
                     logMessage(self.ctx, INFO, msg, "Replicator", "_pushItem()")
@@ -272,27 +275,27 @@ class Replicator(unohelper.Base,
                 elif user.Provider.isDocument(mediatype):
                     if user.Provider.createFile(user.Request, uploader, item):
                         if self._needPush('SizeUpdated', itemid, operations):
-                            response = user.Provider.uploadFile(user.Request, uploader, item, True)
+                            result = user.Provider.uploadFile(uploader, user, item, True)
                         format = (item.getValue('Title'), unparseDateTime(item.getValue('TimeStamp')))
                         msg = getMessage(self.ctx, 732, format)
                         logMessage(self.ctx, INFO, msg, "Replicator", "_pushItem()")
                         print(msg)
             # UPDATE procedures, only a few properties are synchronized: (Size, Title, Trashed)
             elif self._needPush('TitleUpdated', itemid, operations, item):
-                response = user.Provider.updateTitle(user.Request, item)
+                result = user.Provider.updateTitle(user.Request, item)
                 format = (item.getValue('Title'), unparseDateTime(item.getValue('TimeStamp')))
                 msg = getMessage(self.ctx, 733, format)
                 logMessage(self.ctx, INFO, msg, "Replicator", "_pushItem()")
                 print(msg)
             elif self._needPush('SizeUpdated', itemid, operations, item):
-                response = user.Provider.uploadFile(user.Request, uploader, item, False)
+                result = user.Provider.uploadFile(uploader, user, item, False)
                 timestamp = unparseDateTime(item.getValue('TimeStamp'))
                 format = (item.getValue('Title'), timestamp, item.getValue('Size'))
                 msg = getMessage(self.ctx, 734, format)
                 logMessage(self.ctx, INFO, msg, "Replicator", "_pushItem()")
                 print(msg)
             elif self._needPush('TrashedUpdated', itemid, operations, item):
-                response = user.Provider.updateTrashed(user.Request, item)
+                result = user.Provider.updateTrashed(user.Request, item)
                 format = (item.getValue('Title'), unparseDateTime(item.getValue('TimeStamp')))
                 msg = getMessage(self.ctx, 735, format)
                 logMessage(self.ctx, INFO, msg, "Replicator", "_pushItem()")
@@ -301,13 +304,13 @@ class Replicator(unohelper.Base,
                 # UPDATE of other properties (TimeStamp...)
                 print("Replicator._pushItem() Update None")
             #logMessage(self.ctx, INFO, msg, "Replicator", "_pushItem()")
-            if not response:
+            if not result:
                 timestamp = unparseDateTime(item.getValue('TimeStamp'))
                 format = (item.getValue('Title'), timestamp, item.getValue('Id'))
                 msg = getMessage(self.ctx, 736, format)
                 logMessage(self.ctx, SEVERE, msg, "Replicator", "_pushItem()")
                 print(msg)
-            return response
+            return result
         except Exception as e:
             msg = "ERROR: %s - %s" % (e, traceback.print_exc())
             logMessage(self.ctx, SEVERE, msg, "Replicator", "_pushItem()")

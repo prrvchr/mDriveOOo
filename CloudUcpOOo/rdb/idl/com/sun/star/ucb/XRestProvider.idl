@@ -60,8 +60,8 @@ interface XRestProvider: com::sun::star::uno::XInterface
                        [in] ::com::sun::star::auth::XRestKeyMap Item);
     ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> createFolder([in] ::com::sun::star::uno::XInterface Request,
                                                                                         [in] ::com::sun::star::auth::XRestKeyMap Item);
-    boolean uploadFile([in] ::com::sun::star::uno::XInterface Request,
-                       [in] ::com::sun::star::uno::XInterface Uploader,
+    boolean uploadFile([in] ::com::sun::star::uno::XInterface Uploader,
+                       [in] ::com::sun::star::uno::XInterface User,
                        [in] ::com::sun::star::auth::XRestKeyMap Item,
                        [in] boolean New);
     boolean updateTitle([in] ::com::sun::star::uno::XInterface Request,

@@ -13,8 +13,9 @@ interface XRestReplicator: com::sun::star::uno::XInterface
 {
 
     void cancel();
-    void callBack([in] ::com::sun::star::auth::XRestKeyMap Item,
-                  [in] ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> Response);
+    boolean callBack([in] string UserName,
+                     [in] string ItemId,
+                     [in] ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> Response);
 
     [attribute, readonly] ::com::sun::star::ucb::XRestProvider Provider;
     [attribute, readonly] ::com::sun::star::ucb::XRestDataBase DataBase;

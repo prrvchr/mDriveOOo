@@ -9,7 +9,8 @@ module com { module sun { module star { module auth {
 interface XRestUploader: com::sun::star::uno::XInterface
 {
 
-    boolean start([in] string ItemId,
+    boolean start([in] string UserName,
+                  [in] string ItemId,
                   [in] ::com::sun::star::auth::RestRequestParameter Parameter);
 
 };

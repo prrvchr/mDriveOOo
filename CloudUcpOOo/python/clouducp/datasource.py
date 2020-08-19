@@ -36,6 +36,7 @@ class DataSource(unohelper.Base,
         msg = "DataSource for Scheme: %s loading ... " % scheme
         self.ctx = ctx
         self._Users = {}
+        self._Uris = {}
         self._Identifiers = OrderedDict()
         self.Error = None
         self.sync = event
@@ -83,33 +84,49 @@ class DataSource(unohelper.Base,
         return user
 
     def getIdentifier(self, user, uri):
-        # Identifier never change... we can cache it... if it's valid.
-        key = self._getIdentifierKey(user, uri)
-        identifier = self._Identifiers.get(key, None)
-        if identifier is None:
-            identifier = Identifier(self.ctx, user, uri)
-            if identifier.isValid() and user.CanAddChild:
-                self._Identifiers[key] = identifier
-        elif uri.hasFragment():
+        # For performance, we have to cache it... if it's valid.
+        if uri.getPath() == '/' and uri.hasFragment():
             # A Uri with fragment is supposed to be removed from the cache,
-            # usually after the title has been changed
-            self._removeFromCache(key, identifier.isFolder())
-        # To optimize memory usage, the cache size is limited
-        if len(self._Identifiers) > g_cache:
-            k, i = self._Identifiers.popitem(False)
+            # usually after the title or Id has been changed
+            identifier = self._removeFromCache(user, uri)
+        else:
+            key = self._getUriKey(user, uri)
+            itemid = self._Uris.get(key, None)
+            if itemid is not None:
+                identifier = self._Identifiers.get(itemid, None)
+            if identifier is None:
+                identifier = Identifier(self.ctx, user, uri)
+                if identifier.isValid() and user.CanAddChild:
+                    self._Uris[key] = identifier.Id
+                    self._Identifiers[identifier.Id] = identifier
+            # To optimize memory usage, the cache size is limited
+            if len(self._Identifiers) > g_cache:
+                k, i = self._Identifiers.popitem(False)
+                self._removeUriFromCache(i)
         return identifier
 
     # Private methods
-    def _removeFromCache(self, key, isfolder):
-        # If the title of the identifier changes, we must remove
-        # from the cache this identifier and its children if it's a folder.
-        child = '%s/' % key
-        for identifier in list(self._Identifiers):
-            if identifier == key or (isfolder and identifier.startswith(child)):
-                print("DataSource._removeFromCache() %s - %s" % (identifier, key))
-                del self._Identifiers[identifier]
+    def _removeIdentifierFromCache(self, user, uri):
+        # If the title or the Id of the Identifier changes, we must remove
+        # from cache this Identifier, it's Uri and its children if it's a folder.
+        itemid = uri.getFragment()
+        if itemid in self._Identifiers:
+            identifier = self._Identifiers[itemid]
+            self._removeUriFromCache(identifier, True)
+            del self._Identifiers[itemid]
+        else:
+            # We must return an identifier although it is not used
+            identifier = Identifier(self.ctx, user, uri)
+        return identifier
 
-    def _getIdentifierKey(self, user, uri):
+    def _removeUriFromCache(self, identifier, child=False):
+        isfolder = identifier.isFolder()
+        children = '%s/' % self._getUriKey(identifier.User, identifier.getUri())
+        for uri in list(self._Uris):
+            if self._Uris[uri] == identifier.Id or all((child, isfolder, uri.startswith(children))):
+                del self._Uris[uri]
+
+    def _getUriKey(self, user, uri):
         return '%s/%s' % (user.Name, uri.getPath().strip('/.'))
 
     def _initializeUser(self, user, name, password):

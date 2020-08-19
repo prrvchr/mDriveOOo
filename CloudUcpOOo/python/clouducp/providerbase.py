@@ -236,13 +236,13 @@ class ProviderBase(ProviderObject,
     def createFile(self, request, uploader, item):
         return True
 
-    def uploadFile(self, request, uploader, item, new=False):
+    def uploadFile(self, uploader, user, item, new=False):
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
         parameter = self.getRequestParameter(method, item)
-        response = request.execute(parameter)
+        response = user.Request.execute(parameter)
         if response.IsPresent:
             parameter = self.getRequestParameter('getUploadStream', response.Value)
-            return uploader.start(item.getValue('Id'), parameter)
+            return uploader.start(user.Name, item.getValue('Id'), parameter)
         return False
 
     def updateTitle(self, request, item):

@@ -31,6 +31,8 @@ from .dbinit import getTablesAndStatements
 
 from .dbtools import getKeyMapFromResult
 
+from .contenttools import getUcb
+
 from .logger import logMessage
 from .logger import getMessage
 
@@ -255,6 +257,8 @@ class DataBase(unohelper.Base,
             updated = update.execute() == 0
             update.close()
         if updated:
+            # We need to update Capabilities table to be able to retrieve
+            # changes by user with system versioning
             # TODO: I cannot use a procedure performing the two UPDATE 
             # TODO: without the system versioning malfunctioning...
             # TODO: As a workaround I use two successive UPDATE queries
@@ -264,6 +268,7 @@ class DataBase(unohelper.Base,
             update.setString(3, itemid)
             update.execute()
             update.close()
+            # Start Replicator for pushing changes…
             self.sync.set()
 
     def insertNewContent(self, userid, itemid, parentid, content, timestamp):
@@ -408,7 +413,7 @@ class DataBase(unohelper.Base,
         select.close()
         return items
 
-    def updateItemId(self, provider, itemid, response):
+    def updateItemId(self, provider, username, itemid, response):
         newid = provider.getResponseId(response, itemid)
         if newid != itemid:
             update = self._getCall('updateItemId')
@@ -418,6 +423,9 @@ class DataBase(unohelper.Base,
             msg = "execute UPDATE Items - Old ItemId: %s - New ItemId: %s - RowCount: %s" % (itemid, newid, row)
             logMessage(self.ctx, INFO, msg, "DataBase", "updateItemId")
             update.close()
+            # The Id of the item have been changed, we need to clear the Identifier from the cache
+            url = '%s://%s/#%s' % (provider.Scheme, username, itemid)
+            getUcb(self.ctx).createContentIdentifier(url)
 
 # Procedures called internally
     def _mergeItem(self, call, provider, item, id, parents, separator, timestamp):

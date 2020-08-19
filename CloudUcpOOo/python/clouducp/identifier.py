@@ -71,6 +71,8 @@ class Identifier(unohelper.Base,
         return self.Id == self.User.RootId
     def isFolder(self):
         return self.MetaData.getValue('IsFolder')
+    def getUri(self):
+        return self._uri
     def isValid(self):
         return all((self.User.isValid(), self.Id, self.MetaData.hasValue('ObjectId')))
 
@@ -87,7 +89,8 @@ class Identifier(unohelper.Base,
             parent = getUcb(self.ctx).createContentIdentifier(self.ParentURI)
         return parent
     def setParent(self, parent):
-        raise NoSupportException('Parent can not be set', self)
+        msg = getMessage(self.ctx, 511)
+        raise NoSupportException(msg, self)
 
     # XRestIdentifier
     def createNewIdentifier(self, contenttype):
@@ -95,8 +98,7 @@ class Identifier(unohelper.Base,
 
     def getContent(self):
         if not self.isValid():
-            msg = "Error: can't retreive Identifier"
-            print("Identifier.getContent() %s" % msg)
+            msg = getMessage(self.ctx, 521, self.getContentIdentifier())
             raise IllegalIdentifierException(msg, self)
         content = Content(self.ctx, self)
         return content
@@ -119,7 +121,7 @@ class Identifier(unohelper.Base,
             try:
                 sf.writeFile(url, stream)
             except Exception as e:
-                msg =  getMessage(self.ctx, 511, (e, traceback.print_exc()))
+                msg = getMessage(self.ctx, 531, (e, traceback.print_exc()))
                 logMessage(self.ctx, SEVERE, msg, "Identifier", "getDocumentContent()")
             else:
                 size = sf.getSize(url)
@@ -130,27 +132,22 @@ class Identifier(unohelper.Base,
         return url, size
 
     def insertNewContent(self, content):
-        print("Identifier.insertNewContent() %s - %s" % (content.getValue('Title'), self.ParentId))
         timestamp = parseDateTime()
         return self.User.DataBase.insertNewContent(self.User.Id, self.Id, self.ParentId, content, timestamp)
 
     def setTitle(self, title):
         # If Title change we need to change Identifier.getContentIdentifier()
-        print("Identifier.setTitle() 1")
         if not self.IsNew:
             # And as the uri changes we also have to clear this Identifier from the cache.
             # New Identifier bypass the cache: they are created by the folder's Identifier
             # (ie: createNewIdentifier()) and have same uri as this folder.
-            print("Identifier.setTitle() 2")
-            getUcb(self.ctx).createContentIdentifier('%s#' % self.getContentIdentifier())
-            print("Identifier.setTitle() 3")
+            url = '%s://%s/#%s' % (self._uri.getScheme(), self.User.Name, self.Id)
+            getUcb(self.ctx).createContentIdentifier(url)
         url = self.ParentURI
         if not url.endswith('/'):
             url += '/'
         url += title
-        print("Identifier.setTitle() 4 %s" % url)
         self._uri = getUri(self.ctx, getUrl(self.ctx, url))
-        print("Identifier.setTitle() 5 %s" % self.getContentIdentifier())
         self.MetaData.setValue('Title', title)
         # If the identifier is new then the content is not yet in the database.
         # It will be inserted by the insert command of the XCommandProcessor2.execute()
@@ -170,32 +167,25 @@ class Identifier(unohelper.Base,
             # when ContentProvider try to get the Content...
             # (ie: ContentProvider.queryContent() -> Identifier.getContent())
             return identifier
-        userid = self.User.Id
-        rootid = self.User.RootId
         uripath = self._uri.getPath().strip('/.')
-        itemid, parentid, path = self.User.DataBase.getIdentifier(userid, rootid, uripath)
-        if self.IsNew:
-            # New Identifier are created by the parent folder...
-            identifier.setValue('ParentId', itemid)
-            itemid = self._getNewIdentifier()
-            parenturi = self._uri.getUriReference()
-        else:
-            identifier.setValue('ParentId', parentid)
-            parenturi = '%s://%s/%s' % (self._uri.getScheme(), self._uri.getAuthority(), path)
-        identifier.setValue('Id', itemid)
-        identifier.setValue('ParentURI', parenturi)
+        itemid, parentid, path = self.User.DataBase.getIdentifier(self.User.Id, self.User.RootId, uripath)
         if itemid is not None:
             if self.IsNew:
+                # New Identifier are created by the parent folder...
+                identifier.setValue('ParentId', itemid)
+                itemid = self._getNewIdentifier()
+                parenturi = self._uri.getUriReference()
                 data = self._getNewContent(itemid, contenttype)
             else:
+                identifier.setValue('ParentId', parentid)
+                parenturi = '%s://%s/%s' % (self._uri.getScheme(), self._uri.getAuthority(), path)
                 data = self.User.DataBase.getItem(self.User.Id, itemid, parentid)
+            identifier.setValue('Id', itemid)
+            identifier.setValue('ParentURI', parenturi)
             if data is not None:
-                print("Identifier._getIdentifier() 1 %s" % (data.getKeys(), ))
                 self._setCreatableContentsInfo(data)
                 identifier += data
                 self._propertySetInfo = self._getPropertySetInfo()
-        if not identifier.hasValue('IsRoot'):
-            print("Identifier._getIdentifier() 2 ****************************%s\n%s" % (parentid, identifier.getKeys()))
         return identifier
 
     def _getNewIdentifier(self):
@@ -273,7 +263,8 @@ class Identifier(unohelper.Base,
 
     def _getFolderContent(self, content, updated):
         if ONLINE == content.getValue('Loaded') == self.User.Provider.SessionMode:
-            print("DataBase.getFolderContent() whith request *********************************")
+            msg = getMessage(self.ctx, 541, self.getContentIdentifier())
+            logMessage(self.ctx, INFO, msg, "Identifier", "_getFolderContent()")
             updated = self.User.DataBase.updateFolderContent(self.User, content)
         url = self.getContentIdentifier()
         if not url.endswith('/'):

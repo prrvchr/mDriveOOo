@@ -68,7 +68,8 @@ interface XRestDataBase: com::sun::star::uno::XInterface
                       [in] string ParentId,
                       [in] string Title);
     void updateItemId([in] ::com::sun::star::uno::XInterface Provider,
-                      [in] ::com::sun::star::auth::XRestKeyMap Item,
+                      [in] string UserName,
+                      [in] string ItemId,
                       [in] ::com::sun::star::auth::XRestKeyMap Response);
     ::com::sun::star::sdbc::XPreparedStatement getFirstPullCall([in] string UserId,
                                                                 [in] string Separator,
