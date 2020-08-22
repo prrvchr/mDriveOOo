@@ -108,7 +108,7 @@ class Content(unohelper.Base,
         # To avoid circular imports, the creation of new identifiers is delegated to
         # Identifier.createNewIdentifier() since the identifier also creates Content
         # with Identifier.getContent()
-        return self.Identifier.createNewIdentifier(info.Type).getContent()
+        return self.getIdentifier().createNewIdentifier(info.Type).getContent()
 
     # XContent
     def getIdentifier(self):

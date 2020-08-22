@@ -551,8 +551,8 @@ class Uploader(unohelper.Base,
     def _getOutputStream(self, param, size, resp):
         return OutputStream(self.ctx, self.session, param, size, self.chunk, resp, self.timeout)
 
-    def _getStreamListener(self, itemid, response):
-        return StreamListener(self.ctx, self.callback, itemid, response)
+    def _getStreamListener(self, username, itemid, response):
+        return StreamListener(self.ctx, self.callback, username, itemid, response)
 
 
 # Private method

@@ -53,7 +53,7 @@ class Identifier(unohelper.Base,
         self._uri = uri
         self.IsNew = contenttype != ''
         self._propertySetInfo = {}
-        self.MetaData = self._getIdentifier(contenttype)
+        self.MetaData = self._getMetaData(contenttype)
         msg = getMessage(self.ctx, 501)
         logMessage(self.ctx, INFO, msg, "Identifier", "__init__()")
 
@@ -170,34 +170,33 @@ class Identifier(unohelper.Base,
         return tuple(content)
 
     # Private methods
-    def _getIdentifier(self, contenttype):
-        identifier = KeyMap()
+    def _getMetaData(self, contenttype):
+        metadata = KeyMap()
         if not self.User.isValid():
             # Uri with Scheme but without a Path generate invalid user but we need
             # to return an Identifier, and raise an 'IllegalIdentifierException'
             # when ContentProvider try to get the Content...
             # (ie: ContentProvider.queryContent() -> Identifier.getContent())
-            return identifier
+            return metadata
         uripath = self._uri.getPath().strip('/.')
         itemid, parentid, path = self.User.DataBase.getIdentifier(self.User.Id, self.User.RootId, uripath)
         if itemid is not None:
             if self.IsNew:
                 # New Identifier are created by the parent folder...
-                identifier.setValue('ParentId', itemid)
+                metadata.setValue('ParentId', itemid)
                 itemid = self._getNewIdentifier()
                 parenturi = self._uri.getUriReference()
                 data = self._getNewContent(itemid, contenttype)
             else:
-                identifier.setValue('ParentId', parentid)
+                metadata.setValue('ParentId', parentid)
                 parenturi = '%s://%s/%s' % (self._uri.getScheme(), self._uri.getAuthority(), path)
                 data = self.User.DataBase.getItem(self.User.Id, itemid, parentid)
-            identifier.setValue('Id', itemid)
-            identifier.setValue('ParentURI', parenturi)
+            metadata.setValue('Id', itemid)
+            metadata.setValue('ParentURI', parenturi)
             if data is not None:
-                self._setCreatableContentsInfo(data)
-                identifier += data
+                metadata += data
                 self._propertySetInfo = self._getPropertySetInfo()
-        return identifier
+        return metadata
 
     def _getNewIdentifier(self):
         if self.User.Provider.GenerateIds:
