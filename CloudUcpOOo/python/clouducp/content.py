@@ -103,7 +103,7 @@ class Content(unohelper.Base,
 
     # XContentCreator
     def queryCreatableContentsInfo(self):
-        return self.MetaData.getValue('CreatableContentsInfo')
+        return self.getIdentifier().getCreatableContentsInfo()
     def createNewContent(self, info):
         # To avoid circular imports, the creation of new identifiers is delegated to
         # Identifier.createNewIdentifier() since the identifier also creates Content

@@ -71,10 +71,10 @@ class Identifier(unohelper.Base,
         return self.Id == self.User.RootId
     def isFolder(self):
         return self.MetaData.getValue('IsFolder')
-    def getUri(self):
-        return self._uri
     def isValid(self):
         return all((self.User.isValid(), self.Id, self.MetaData.hasValue('ObjectId')))
+    def getUri(self):
+        return self._uri
 
     # XContentIdentifier
     def getContentIdentifier(self):
@@ -158,6 +158,17 @@ class Identifier(unohelper.Base,
         if self.User.Provider.GenerateIds:
             self.User.DataBase.deleteNewIdentifier(self.User.Id, self.Id)
 
+    def getCreatableContentsInfo(self):
+        content = []
+        if self.User.CanAddChild and self.MetaData.getValue('CanAddChild'):
+            provider = self.User.Provider
+            properties = (getProperty('Title', 'string', BOUND), )
+            content.append(getContentInfo(provider.Folder, KIND_FOLDER, properties))
+            content.append(getContentInfo(provider.Office, KIND_DOCUMENT, properties))
+            #if provider.hasProprietaryFormat:
+            #    content.append(getContentInfo(provider.ProprietaryFormat, KIND_DOCUMENT, properties))
+        return tuple(content)
+
     # Private methods
     def _getIdentifier(self, contenttype):
         identifier = KeyMap()
@@ -222,17 +233,6 @@ class Identifier(unohelper.Base,
         data.insertValue('Loaded', True)
         data.insertValue('BaseURI', self.getContentIdentifier())
         return data
-
-    def _setCreatableContentsInfo(self, data):
-        content = []
-        if self.User.CanAddChild and data.getValue('CanAddChild'):
-            provider = self.User.Provider
-            properties = (getProperty('Title', 'string', BOUND), )
-            content.append(getContentInfo(provider.Folder, KIND_FOLDER, properties))
-            content.append(getContentInfo(provider.Office, KIND_DOCUMENT, properties))
-            #if provider.hasProprietaryFormat:
-            #    content.append(getContentInfo(provider.ProprietaryFormat, KIND_DOCUMENT, properties))
-        data.insertValue('CreatableContentsInfo', tuple(content))
 
     def _getPropertySetInfo(self):
         RO = 0 if self.IsNew else READONLY
