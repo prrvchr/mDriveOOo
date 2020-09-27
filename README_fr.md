@@ -1,4 +1,4 @@
-**This [**document**](https://prrvchr.github.io/oneDriveOOo) in English**
+**This [document](https://prrvchr.github.io/oneDriveOOo) in English.**
 
 **L'utilisation de ce logiciel vous soumet à nos** [**Conditions d'utilisation**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_fr) **et à notre** [**Politique de protection des données**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_fr)
 
