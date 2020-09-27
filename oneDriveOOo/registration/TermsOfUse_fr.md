@@ -1,11 +1,11 @@
 # Conditions d'utilisation
 
+**L'utilisation de ce logiciel vous soumet également à nos **[**Règles de Confidentialité**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_fr)**.**
+Concernant l'installation, la configuration et l'utilisation, veuillez consulter la [documentation](https://prrvchr.github.io/oneDriveOOo/README_fr).
+
 ## Introduction:
 
 La bibliothèque oneDriveOOo fait partie d'un projet personnel.
-La documentation complète est disponible [sur cette page](https://prrvchr.github.io/oneDriveOOo/README_fr).
-
-L'utilisation de ce logiciel vous soumet également à nos [**Règles de Confidentialité**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_fr).
 
 ## Responsabilités:
 

@@ -1,5 +1,8 @@
 # Data Protection Policy
 
+**Use of this software also subjects you to our **[**Terms Of Use**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_en)**.**
+Regarding installation, configuration and use, please consult the [documentation](https://prrvchr.github.io/oneDriveOOo).
+
 ## Introduction:
 
 the privacy of our oneDriveOOo software users is very important to us, and we are commited to safeguarding it.
@@ -10,8 +13,6 @@ For simplicity, in the rest of this document, will be named:
 - `oneDriveOOo`:  the oneDriveOOo software in its entirety.
 - `User`: the user of the oneDriveOOo software.
 - `Supplier`: the internet service provider delivering internet services to `oneDriveOOo`.
-
-Use of this software also subjects you to our [**Terms Of Use**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_en)
 
 ## Contact:
 

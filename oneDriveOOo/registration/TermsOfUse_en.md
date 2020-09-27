@@ -1,11 +1,11 @@
 # Terms Of Use
 
+**Use of this software also subjects you to our **[**Data Protection Policy**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_en)**.**
+Regarding installation, configuration and use, please consult the [documentation](https://prrvchr.github.io/oneDriveOOo).
+
 ## Introduction:
 
 The oneDriveOOo library is a part of a personnal project.
-Full documentation is available [on this page](https://prrvchr.github.io/oneDriveOOo).
-
-Use of this software also subjects you to our [**Data Protection Policy**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_en).
 
 ## Responsibilities:
 

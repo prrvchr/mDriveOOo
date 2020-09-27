@@ -1,5 +1,8 @@
 # Politique de protection des données
 
+**L'utilisation de ce logiciel vous soumet également à nos **[**Conditions d'utilisation**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_fr)**.**
+Concernant l'installation, la configuration et l'utilisation, veuillez consulter la [documentation](https://prrvchr.github.io/oneDriveOOo/README_fr).
+
 ## Introduction:
 
 La confidentialité des utilisateurs du logiciel oneDriveOOo est très importante pour nous et nous nous engageons à la protéger.
@@ -10,8 +13,6 @@ Pour plus de simplicité, dans la suite de ce document, on nommera:
 - `oneDriveOOo`:  le logiciel oneDriveOOo dans son intégralité.
 - `Utilisateur`: l'utilisateur du logiciel oneDriveOOo.
 - `Fournisseur`: fournisseur de services Internet fournissant des services Internet à `oneDriveOOo`.
-
-L'utilisation de ce logiciel vous soumet également à nos [**Conditions d'utilisation**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_fr)
 
 ## Contact:
 
