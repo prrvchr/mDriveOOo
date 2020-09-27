@@ -1,20 +1,17 @@
-## Terms Of Use for [oneDriveOOo](https://github.com/prrvchr/oneDriveOOo)
+# Terms Of Use
 
-
-### Introduction:
+## Introduction:
 
 The oneDriveOOo library is a part of a personnal project.
 Full documentation is available [on this page](https://prrvchr.github.io/oneDriveOOo).
 
-Use of this software subjects you to our **Data Protection Policy** as described in [this document](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_en).
+Use of this software also subjects you to our [**Data Protection Policy**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_en).
 
-
-### Responsibilities:
+## Responsibilities:
 
 oneDriveOOo is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**; without even the implied warranty of **MERCHANTABILITY** or **FITNESS FOR A PARTICULAR PURPOSE**.
 
-
-### License:
+## License:
 
 oneDriveOOo is free software; you can redistribute it and/or modify it under the terms of either (at your option):
 
