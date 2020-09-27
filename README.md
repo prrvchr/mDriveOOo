@@ -1,4 +1,4 @@
-[**Ce document en français**](https://prrvchr.github.io/oneDriveOOo/README_fr)
+**Ce [**document**](https://prrvchr.github.io/oneDriveOOo/README_fr) en français**
 
 **The use of this software subjects you to our** [**Terms Of Use**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_en) **and** [**Data Protection Policy**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_en)
 
