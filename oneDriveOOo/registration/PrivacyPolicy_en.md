@@ -1,4 +1,5 @@
-**Use of this software also subjects you to our** [**Terms Of Use**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_en).  
+**Use of this software also subjects you to our** [**Terms Of Use**](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_en).
+
 Regarding installation, configuration and use, please consult the [documentation](https://prrvchr.github.io/oneDriveOOo).
 
 # Data Protection Policy
