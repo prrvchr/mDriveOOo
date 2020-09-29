@@ -6,12 +6,13 @@
 
 ## Introduction:
 
-**oneDriveOOo** is a [LibreOffice](https://www.libreoffice.org/download/download/) and/or [OpenOffice](https://www.openoffice.org/download/index.html) extension allowing to offer you innovative services in these office suites.  
+**oneDriveOOo** is part of a [Suite](https://prrvchr.github.io/) of [LibreOffice](https://www.libreoffice.org/download/download/) and/or [OpenOffice](https://www.openoffice.org/download/index.html) extensions allowing to offer you innovative services in these office suites.  
 This extension allows you to work in LibreOffice / OpenOffice on your Microsoft OneDrive files, even while offline.
 
 Being free software I encourage you:
 - To duplicate its [source code](https://github.com/prrvchr/oneDriveOOo).
 - To make changes, corrections, improvements.
+- To open [issue](https://github.com/prrvchr/oneDriveOOo/issues/new) if needed.
 
 In short, to participate in the development of this extension.
 Because it is together that we can make Free Software smarter.
@@ -70,7 +71,7 @@ or
 
 If you don't give your_account, you will be asked for...
 
-After authorizing the OAuthOOo application to access your Microsoft OneDrive files, your OneDrive files should appear!!! normally  ;-)
+After authorizing the [OAuthOOo](https://prrvchr.github.io/OAuthOOo) application to access your Microsoft OneDrive files, your OneDrive files should appear!!! normally  ;-)
 
 ## Has been tested with:
 

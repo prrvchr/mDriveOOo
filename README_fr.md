@@ -6,12 +6,13 @@
 
 ## Introduction:
 
-**oneDriveOOo** est une extension [LibreOffice](https://fr.libreoffice.org/download/telecharger-libreoffice/) et/ou [OpenOffice](https://www.openoffice.org/fr/Telecharger/) permettant de vous offrir des services inovants dans ces suites bureautique.  
+**oneDriveOOo** fait partie d'une [Suite](https://prrvchr.github.io/README_fr) d'extensions [LibreOffice](https://fr.libreoffice.org/download/telecharger-libreoffice/) et/ou [OpenOffice](https://www.openoffice.org/fr/Telecharger/) permettant de vous offrir des services inovants dans ces suites bureautique.  
 Cette extension vous permet de travailler dans LibreOffice / OpenOffice sur vos fichiers Microsoft OneDrive, même hors ligne.
 
 Etant un logiciel libre je vous encourage:
 - A dupliquer son [code source](https://github.com/prrvchr/oneDriveOOo).
 - A apporter des modifications, des corrections, des ameliorations.
+- D'ouvrir une [issue](https://github.com/prrvchr/gDriveOOo/issues/new) si nécessaire.
 
 Bref, à participer au developpement de cette extension.
 Car c'est ensemble que nous pouvons rendre le Logiciel Libre plus intelligent.
@@ -70,7 +71,7 @@ ou
 
 Si vous ne donnez pas votre_compte, il vous sera demandé...
 
-Après avoir autorisé l'application OAuthOOo à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  ;-)
+Après avoir autorisé l'application [OAuthOOo](https://prrvchr.github.io/OAuthOOo/README_fr) à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  ;-)
 
 ## A été testé avec:
 
