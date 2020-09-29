@@ -1,20 +1,18 @@
-## Conditions d'utilisation pour [OAuth2OOo](https://github.com/prrvchr/OAuth2OOo)
+**L'utilisation de ce logiciel vous soumet également à nos [Règles de Confidentialité](https://prrvchr.github.io/OAuth2OOo/OAuth2OOo/registration/PrivacyPolicy_fr).**
 
+Concernant l'installation, la configuration et l'utilisation, veuillez consulter la [documentation](https://prrvchr.github.io/OAuth2OOo/README_fr).
 
-### Introduction:
+# Conditions d'utilisation
+
+## Introduction:
 
 La bibliothèque OAuth2OOo fait partie d'un projet personnel.
-La documentation complète est disponible [sur cette page](https://prrvchr.github.io/OAuth2OOo).
 
-L'utilisation de ce logiciel vous soumet à nos **Règles de Confidentialité** comme décrites dans [ce document](https://prrvchr.github.io/OAuth2OOo/OAuth2OOo/registration/PrivacyPolicy_fr).
-
-
-### Responsabilités:
+## Responsabilités:
 
 OAuth2OOo est distribué dans l'espoir qu'il sera utile, mais **SANS AUCUNE GARANTIE**; sans même la garantie implicite de **QUALITÉ MARCHANDE** ou **ADAPTATION À UN USAGE PARTICULIER**.
 
-
-### Licence:
+## Licence:
 
 OAuth2OOo est un logiciel gratuit; Vous pouvez le redistribuer et/ou le modifier selon les termes (à votre choix):
 
