@@ -71,7 +71,7 @@ ou
 
 Si vous ne donnez pas votre_compte, il vous sera demandé...
 
-Après avoir autorisé l'application [OAuthOOo](https://prrvchr.github.io/OAuthOOo/README_fr) à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  ;-)
+Après avoir autorisé l'application [OAuth2OOo](https://prrvchr.github.io/OAuth2OOo/README_fr) à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  ;-)
 
 ## A été testé avec:
 
