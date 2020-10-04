@@ -1,4 +1,4 @@
-[**Ce document en français**](https://prrvchr.github.io/OAuth2OOo/README_fr)
+**Ce [document](https://prrvchr.github.io/OAuth2OOo/README_fr) en français.**
 
 **The use of this software subjects you to our** [**Terms Of Use**](https://prrvchr.github.io/OAuth2OOo/OAuth2OOo/registration/TermsOfUse_en) **and** [**Data Protection Policy**](https://prrvchr.github.io/OAuth2OOo/OAuth2OOo/registration/PrivacyPolicy_en).
 
