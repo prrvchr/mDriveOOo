@@ -3,8 +3,9 @@
 WorkBench=OAuth2OOo
 OOoProgram=/usr/lib/libreoffice/program
 Path=$(dirname "${0}")
+File=${Path}/${WorkBench}/types.rdb
 
-rm ${Path}/${WorkBench}/types.rdb
+rm -f ${File}
 
 ./rdb/make_rdb.sh ${WorkBench} com/sun/star/auth/RestRequestTokenType
 ./rdb/make_rdb.sh ${WorkBench} com/sun/star/auth/RestRequestToken
@@ -22,4 +23,6 @@ rm ${Path}/${WorkBench}/types.rdb
 
 read -p "Press enter to continue"
 
-${OOoProgram}/regview ${Path}/${WorkBench}/types.rdb
+if test -f "${File}"; then
+    ${OOoProgram}/regview ${File}
+fi
