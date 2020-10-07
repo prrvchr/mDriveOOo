@@ -95,7 +95,6 @@ class OptionsDialog(unohelper.Base,
         elif method == 'ClearLog':
             self._clearLog(dialog)
             handled = True
-
         return handled
     def getSupportedMethodNames(self):
         return ('external_event', 'TextChanged', 'SelectionChanged', 'Connect', 'Remove', 'Reset',
@@ -121,7 +120,7 @@ class OptionsDialog(unohelper.Base,
                     user = getUserNameFromHandler(self.ctx, url, self, message)
             autoclose = bool(dialog.getControl('CheckBox2').State)
             print("OptionDialog._doConnect() 3 %s - %s - %s" % (user, url, autoclose))
-            enabled = self.service.getAuthorization(url, user, autoclose)
+            enabled = self.service.getAuthorization(url, user, autoclose, dialog.getPeer())
             print("OptionDialog._doConnect() 4")
         except Exception as e:
             msg = "Error: %s - %s" % (e, traceback.print_exc())

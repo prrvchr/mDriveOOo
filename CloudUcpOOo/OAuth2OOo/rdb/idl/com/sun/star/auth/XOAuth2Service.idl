@@ -12,6 +12,7 @@
 #include <com/sun/star/container/XEnumeration.idl>
 #include <com/sun/star/sdbc/XConnection.idl>
 #include <com/sun/star/logging/XLogger.idl>
+#include <com/sun/star/awt/XWindowPeer.idl>
 
 module com { module sun { module star { module auth {
 
@@ -30,7 +31,8 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
 
     boolean getAuthorization([in] string ResourceUrl,
                              [in] string UserName,
-                             [in] boolean AutoClose);
+                             [in] boolean AutoClose,
+                             [in] ::com::sun::star::awt::XWindowPeer Parent);
 
     string getToken([in] string Format);
 

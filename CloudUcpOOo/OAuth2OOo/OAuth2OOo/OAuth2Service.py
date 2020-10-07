@@ -167,10 +167,10 @@ class OAuth2Service(unohelper.Base,
     def getSessionMode(self, host):
         return getSessionMode(self.ctx, host)
 
-    def getAuthorization(self, url, username, close=True):
+    def getAuthorization(self, url, username, close=True, parent=None):
         authorized = False
         msg = "Wizard Loading ..."
-        wizard = Wizard(self.ctx, g_wizard_page, True)
+        wizard = Wizard(self.ctx, g_wizard_page, True, parent)
         controller = WizardController(self.ctx, wizard, self.Session, url, username, close)
         arguments = (g_wizard_paths, controller)
         wizard.initialize(arguments)
