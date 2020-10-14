@@ -184,17 +184,9 @@ class OptionsDialog(unohelper.Base,
     def _loadLoggerSetting(self, dialog):
         enabled, index, handler = getLoggerSetting(self.ctx)
         dialog.getControl('CheckBox1').State = int(enabled)
-        self._setLoggerLevel(dialog.getControl('ListBox1'), index)
+        dialog.getControl('ListBox1').selectItemPos(index, True)
         dialog.getControl('OptionButton%s' % handler).State = 1
         self._toggleLogger(dialog, enabled)
-
-    def _setLoggerLevel(self, control, index):
-        level = self._getLoggerLevelText(control.Model.Name, index)
-        control.selectItem(level, True)
-
-    def _getLoggerLevelText(self, name, index):
-        text = 'OptionsDialog.%s.StringItemList.%s' % (name, index)
-        return self.stringResource.resolveString(text)
 
     def _saveLoggerSetting(self, dialog):
         enabled = bool(dialog.getControl('CheckBox1').State)

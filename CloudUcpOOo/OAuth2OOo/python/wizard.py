@@ -34,7 +34,7 @@ from .configuration import g_identifier
 from .configuration import g_extension
 
 from .logger import getMessage
-
+g_message = 'wizard'
 
 import traceback
 
@@ -79,14 +79,14 @@ class Wizard(unohelper.Base,
     # XInitialization
     def initialize(self, args):
         if not isinstance(args, tuple) or len(args) != 2:
-            raise self._getIllegalArgumentException(0, 201)
+            raise self._getIllegalArgumentException(0, 101)
         paths = args[0]
         controller = args[1]
         if not isinstance(paths, tuple) or len(paths) < 2:
-            raise self._getIllegalArgumentException(0, 202)
+            raise self._getIllegalArgumentException(0, 102)
         unotype = uno.getTypeByName('com.sun.star.ui.dialogs.XWizardController')
         if unotype not in getInterfaceTypes(controller):
-            raise self._getIllegalArgumentException(0, 203)
+            raise self._getIllegalArgumentException(0, 103)
         self._paths = paths
         self._multiPaths = isinstance(paths[0], tuple)
         self._controller = controller
@@ -163,10 +163,10 @@ class Wizard(unohelper.Base,
 
     def enablePage(self, page, enabled):
         if page == self._currentPage:
-            raise self._getInvalidStateException(211)
+            raise self._getInvalidStateException(111)
         path = self._getPath(False)
         if page not in path:
-            raise self._getNoSuchElementException(212)
+            raise self._getNoSuchElementException(112)
         index = path.index(page)
         self._getRoadmap().getByIndex(index).Enabled = enabled
 
@@ -188,10 +188,10 @@ class Wizard(unohelper.Base,
         if not self._multiPaths:
             return
         if index not in range(len(self._paths)):
-            raise self._getNoSuchElementException(221)
+            raise self._getNoSuchElementException(121)
         path = self._paths[index]
         if self._currentPage != -1 and self._currentPage not in path:
-            raise self._getInvalidStateException(222)
+            raise self._getInvalidStateException(122)
         if self._currentPath != index or self._isFinal != final:
             self._initPath(index, final)
 
@@ -460,18 +460,18 @@ class Wizard(unohelper.Base,
     def _getIllegalArgumentException(self, position, code):
         e = IllegalArgumentException()
         e.ArgumentPosition = position
-        e.Message = getMessage(self.ctx, code)
+        e.Message = getMessage(self.ctx, g_message, code)
         e.Context = self
         return e
 
     def _getInvalidStateException(self, code):
         e = InvalidStateException()
-        e.Message = getMessage(self.ctx, code)
+        e.Message = getMessage(self.ctx, g_message, code)
         e.Context = self
         return e
 
     def _getNoSuchElementException(self, code):
         e = NoSuchElementException()
-        e.Message = getMessage(self.ctx, code)
+        e.Message = getMessage(self.ctx, g_message, code)
         e.Context = self
         return e

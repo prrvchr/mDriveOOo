@@ -12,7 +12,7 @@
    <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:ToggleLogger" script:language="UNO"/>
   </dlg:checkbox>
   <dlg:text dlg:id="Label1" dlg:tab-index="2" dlg:left="60" dlg:top="12" dlg:width="15" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label1.HelpText" dlg:value="&amp;OptionsDialog.Label1.Label" dlg:valign="center"/>
-  <dlg:menulist dlg:id="ListBox1" dlg:tab-index="3" dlg:left="80" dlg:top="12" dlg:width="40" dlg:height="15" dlg:help-text="&amp;OptionsDialog.ListBox1.HelpText" dlg:value="&amp;OptionsDialog.ListBox1.Text" dlg:spin="true">
+  <dlg:menulist dlg:id="ListBox1" dlg:tab-index="3" dlg:left="80" dlg:top="12" dlg:width="45" dlg:height="15" dlg:help-text="&amp;OptionsDialog.ListBox1.HelpText" dlg:value="&amp;OptionsDialog.ListBox1.Text" dlg:spin="true">
    <dlg:menupopup>
     <dlg:menuitem dlg:value="&amp;OptionsDialog.ListBox1.StringItemList.0"/>
     <dlg:menuitem dlg:value="&amp;OptionsDialog.ListBox1.StringItemList.1"/>
@@ -25,10 +25,10 @@
    </dlg:menupopup>
   </dlg:menulist>
   <dlg:radiogroup>
-   <dlg:radio dlg:id="OptionButton1" dlg:tab-index="4" dlg:left="125" dlg:top="15" dlg:width="35" dlg:height="8" dlg:help-text="&amp;OptionsDialog.OptionButton1.HelpText" dlg:value="&amp;OptionsDialog.OptionButton1.Label">
+   <dlg:radio dlg:id="OptionButton1" dlg:tab-index="4" dlg:left="130" dlg:top="15" dlg:width="35" dlg:height="8" dlg:help-text="&amp;OptionsDialog.OptionButton1.HelpText" dlg:value="&amp;OptionsDialog.OptionButton1.Label">
     <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:DisableViewer" script:language="UNO"/>
    </dlg:radio>
-   <dlg:radio dlg:id="OptionButton2" dlg:tab-index="5" dlg:left="165" dlg:top="15" dlg:width="35" dlg:height="8" dlg:help-text="&amp;OptionsDialog.OptionButton2.HelpText" dlg:value="&amp;OptionsDialog.OptionButton2.Label">
+   <dlg:radio dlg:id="OptionButton2" dlg:tab-index="5" dlg:left="170" dlg:top="15" dlg:width="35" dlg:height="8" dlg:help-text="&amp;OptionsDialog.OptionButton2.HelpText" dlg:value="&amp;OptionsDialog.OptionButton2.Label">
     <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableViewer" script:language="UNO"/>
    </dlg:radio>
   </dlg:radiogroup>

@@ -20,11 +20,10 @@ from .configuration import g_identifier
 g_loggerPool = {}
 g_stringResource = {}
 g_pathResource = 'resource'
-g_fileResource = 'MessageStrings'
 
 
-def getMessage(ctx, resource, format=()):
-    msg = _getResource(ctx).resolveString('%s' % resource)
+def getMessage(ctx, fileresource, resource, format=()):
+    msg = _getResource(ctx, fileresource).resolveString('%s' % resource)
     if format:
         msg = msg % format
     return msg
@@ -75,11 +74,12 @@ def _getLogger(ctx, logger=g_logger):
         g_loggerPool[logger] = log
     return g_loggerPool[logger]
 
-def _getResource(ctx, identifier=g_identifier):
-    if identifier not in g_stringResource:
-        resource = getStringResource(ctx, identifier, g_pathResource, g_fileResource)
-        g_stringResource[identifier] = resource
-    return g_stringResource[identifier]
+def _getResource(ctx, fileresource, identifier=g_identifier):
+    if fileresource not in g_stringResource:
+        print("logger.py._getResource() %s" % fileresource)
+        resource = getStringResource(ctx, identifier, g_pathResource, fileresource)
+        g_stringResource[fileresource] = resource
+    return g_stringResource[fileresource]
 
 def _getLoggerConfiguration(ctx, logger):
     nodepath = '/org.openoffice.Office.Logging/Settings'

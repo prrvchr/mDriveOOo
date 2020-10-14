@@ -24,6 +24,7 @@ from .database import DataBase
 
 from .logger import logMessage
 from .logger import getMessage
+g_message = 'datasource'
 
 from collections import OrderedDict
 import traceback
@@ -144,13 +145,13 @@ class DataSource(unohelper.Base,
                             user.setDataBase(self.DataBase.getDataSource(), password, self.sync)
                             return True
                         else:
-                            self.Error = getMessage(self.ctx, 602, name)
+                            self.Error = getMessage(self.ctx, g_message, 102, name)
                     else:
-                        self.Error = getMessage(self.ctx, 603, name)
+                        self.Error = getMessage(self.ctx, g_message, 103, name)
                 else:
-                    self.Error = getMessage(self.ctx, 603, name)
+                    self.Error = getMessage(self.ctx, g_message, 103, name)
             else:
-                self.Error = getMessage(self.ctx, 604, name)
+                self.Error = getMessage(self.ctx, g_message, 104, name)
         else:
-            self.Error = getMessage(self.ctx, 601, g_oauth2)
+            self.Error = getMessage(self.ctx, g_message, 101, g_oauth2)
         return False

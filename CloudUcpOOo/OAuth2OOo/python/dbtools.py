@@ -27,6 +27,7 @@ from .dbconfig import g_shutdown
 from .dbconfig import g_version
 
 from .logger import getMessage
+g_message = 'dbtools'
 
 import traceback
 
@@ -87,8 +88,8 @@ def checkDataBase(ctx, connection):
     error = None
     version = connection.getMetaData().getDriverVersion()
     if version < g_version:
-        state = getMessage(ctx, 111)
-        msg = getMessage(ctx, 112, (g_jar, g_version, version))
+        state = getMessage(ctx, g_message, 101)
+        msg = getMessage(ctx, g_message, 102, (g_jar, g_version, version))
         error = getSqlException(state, 1112, msg)
     return version, error
 

@@ -8,6 +8,7 @@ from .dbconfig import g_csv
 
 from .logger import logMessage
 from .logger import getMessage
+g_message = 'dbqueries'
 
 
 def getSqlQuery(ctx, name, format=None):
@@ -643,6 +644,6 @@ CREATE PROCEDURE "InsertItem"(IN "UserId" VARCHAR(100),
 # Queries don't exist!!!
     else:
         query = None
-        msg = getMessage(ctx, 101, name)
+        msg = getMessage(ctx, g_message, 101, name)
         logMessage(ctx, SEVERE, msg, 'dbqueries', 'getSqlQuery()')
     return query

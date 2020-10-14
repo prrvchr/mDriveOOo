@@ -38,6 +38,7 @@ from .contenttools import getContentInfo
 
 from .logger import logMessage
 from .logger import getMessage
+g_message = 'identifier'
 
 import binascii
 import traceback
@@ -54,7 +55,7 @@ class Identifier(unohelper.Base,
         self.IsNew = contenttype != ''
         self._propertySetInfo = {}
         self.MetaData = self._getMetaData(contenttype)
-        msg = getMessage(self.ctx, 501)
+        msg = getMessage(self.ctx, g_message, 101)
         logMessage(self.ctx, INFO, msg, "Identifier", "__init__()")
 
     @property
@@ -89,7 +90,7 @@ class Identifier(unohelper.Base,
             parent = getUcb(self.ctx).createContentIdentifier(self.ParentURI)
         return parent
     def setParent(self, parent):
-        msg = getMessage(self.ctx, 511)
+        msg = getMessage(self.ctx, g_message, 111)
         raise NoSupportException(msg, self)
 
     # XRestIdentifier
@@ -98,7 +99,7 @@ class Identifier(unohelper.Base,
 
     def getContent(self):
         if not self.isValid():
-            msg = getMessage(self.ctx, 521, self.getContentIdentifier())
+            msg = getMessage(self.ctx, g_message, 121, self.getContentIdentifier())
             raise IllegalIdentifierException(msg, self)
         content = Content(self.ctx, self)
         return content
@@ -121,7 +122,7 @@ class Identifier(unohelper.Base,
             try:
                 sf.writeFile(url, stream)
             except Exception as e:
-                msg = getMessage(self.ctx, 531, (e, traceback.print_exc()))
+                msg = getMessage(self.ctx, g_message, 131, (e, traceback.print_exc()))
                 logMessage(self.ctx, SEVERE, msg, "Identifier", "getDocumentContent()")
             else:
                 size = sf.getSize(url)
@@ -262,7 +263,7 @@ class Identifier(unohelper.Base,
 
     def _getFolderContent(self, content, updated):
         if ONLINE == content.getValue('Loaded') == self.User.Provider.SessionMode:
-            msg = getMessage(self.ctx, 541, self.getContentIdentifier())
+            msg = getMessage(self.ctx, g_message, 141, self.getContentIdentifier())
             logMessage(self.ctx, INFO, msg, "Identifier", "_getFolderContent()")
             updated = self.User.DataBase.updateFolderContent(self.User, content)
         url = self.getContentIdentifier()

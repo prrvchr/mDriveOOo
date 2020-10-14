@@ -16,6 +16,7 @@ from .database import DataBase
 
 from .logger import logMessage
 from .logger import getMessage
+g_message = 'user'
 
 import traceback
 
@@ -38,7 +39,7 @@ class User(unohelper.Base,
             self.Request = getRequest(self.ctx, self.Provider.Scheme, name)
             self.MetaData = source.DataBase.selectUser(name)
             self.CanAddChild = not self.Provider.GenerateIds
-        msg = getMessage(self.ctx, 401)
+        msg = getMessage(self.ctx, g_message, 101)
         logMessage(self.ctx, INFO, msg, "User", "__init__()")
 
     @property
