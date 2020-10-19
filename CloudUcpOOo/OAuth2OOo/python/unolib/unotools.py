@@ -87,8 +87,8 @@ def getConfiguration(ctx, nodepath, update=False):
     return provider.createInstanceWithArguments(service, arguments)
 
 def getCurrentLocale(ctx):
-    service = '/org.openoffice.Setup/L10N'
-    parts = getConfiguration(ctx, service).getByName('ooLocale').split('-')
+    nodepath = '/org.openoffice.Setup/L10N'
+    parts = getConfiguration(ctx, nodepath).getByName('ooLocale').split('-')
     locale = uno.createUnoStruct('com.sun.star.lang.Locale', parts[0], '', '')
     if len(parts) > 1:
         locale.Country = parts[1]
@@ -103,7 +103,7 @@ def getStringResource(ctx, identifier, path=None, filename='DialogStrings', loca
     if locale is None:
         locale = getCurrentLocale(ctx)
     args = (location, True, locale, filename, '', InteractionHandler())
-    return ctx.ServiceManager.createInstanceWithArgumentsAndContext(service, args, ctx)
+    return createService(ctx, service, *args)
 
 def generateUuid():
     return binascii.hexlify(uno.generateUuid().value).decode('utf-8')
@@ -144,8 +144,10 @@ def createMessageBox(peer, message, title, box='message', buttons=2):
     box = uno.Enum('com.sun.star.awt.MessageBoxType', boxtypes.get(box, 'MESSAGEBOX'))
     return peer.getToolkit().createMessageBox(peer, box, buttons, title, message)
 
-def createService(ctx, name, **kwargs):
-    if kwargs:
+def createService(ctx, name, *args, **kwargs):
+    if args:
+        service = ctx.ServiceManager.createInstanceWithArgumentsAndContext(name, args, ctx)
+    elif kwargs:
         arguments = getNamedValueSet(kwargs)
         service = ctx.ServiceManager.createInstanceWithArgumentsAndContext(name, arguments, ctx)
     else:
@@ -188,10 +190,16 @@ def getPropertySetInfoChangeEvent(source, name, reason, handle=-1):
 
 def getInteractionHandler(ctx):
     service = 'com.sun.star.task.InteractionHandler'
+    kwargs = {'Parent': getParentWindow(ctx)}
+    return createService(ctx, service, **kwargs)
+
+def getParentWindow(ctx):
     desktop = createService(ctx, 'com.sun.star.frame.Desktop')
-    args = getPropertyValueSet({'Parent': desktop.ActiveFrame.ComponentWindow})
-    interaction = ctx.ServiceManager.createInstanceWithArgumentsAndContext(service, args, ctx)
-    return interaction
+    try:
+        parent = desktop.getCurrentFrame().getContainerWindow()
+    except:
+        parent = None
+    return parent
 
 def getDateTime(utc=True):
     if utc:

@@ -15,6 +15,8 @@ from com.sun.star.ucb.ConnectionMode import ONLINE
 from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
 from com.sun.star.ui.dialogs.ExecutableDialogResults import CANCEL
 
+from com.sun.star.frame.FrameSearchFlag import GLOBAL
+
 from com.sun.star.uno import Exception as UnoException
 from com.sun.star.auth import OAuth2Request
 
@@ -25,6 +27,8 @@ from unolib import getStringResource
 from unolib import createService
 from unolib import getConfiguration
 from unolib import getDialog
+from unolib import getInterfaceTypes
+from unolib import getParentWindow
 
 from oauth2 import Request
 from oauth2 import Enumeration
@@ -262,13 +266,21 @@ class OAuth2Service(unohelper.Base,
         if self.Setting.Initialized and self.Setting.Url.Scope.Authorized:
             return True
         msg = "OAuth2 initialization ... AuthorizationCode needed ..."
-        if self.getAuthorization(self.ResourceUrl, self.UserName, True):
+        parent = getParentWindow(self.ctx)
+        if self.getAuthorization(self.ResourceUrl, self.UserName, True, parent):
             msg += " Done"
             logMessage(self.ctx, INFO, msg, 'OAuth2Service', '_isAuthorized()')
             return True
         msg += " ERROR: Wizard Aborted!!!"
         logMessage(self.ctx, SEVERE, msg, 'OAuth2Service', '_isAuthorized()')
         return False
+
+    def _getToolkit(self):
+        return createService(self.ctx, 'com.sun.star.awt.Toolkit')
+
+    def _isDocument(self, frame):
+        controller = frame.getController()
+        return controller.getModel() is not None
 
     def _getException(self, message):
         error = UnoException()
