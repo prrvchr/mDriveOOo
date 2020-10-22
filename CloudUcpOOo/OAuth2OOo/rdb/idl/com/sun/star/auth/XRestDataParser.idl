@@ -8,7 +8,9 @@ module com { module sun { module star { module auth {
 interface XRestDataParser: com::sun::star::uno::XInterface
 {
 
-    any jsonParser([in] sequence<any> Data);
+    any parseResponse([in] any Response);
+
+    [attribute, readonly] string DataType;
 
 };
 
