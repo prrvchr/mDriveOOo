@@ -1,6 +1,28 @@
 #!
 # -*- coding: utf_8 -*-
 
+'''
+    Copyright (c) 2020 https://prrvchr.github.io
+
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the Software
+    is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+'''
+
 import uno
 
 from com.sun.star.lang import WrappedTargetRuntimeException
@@ -14,6 +36,7 @@ from .oauth2config import g_oauth2
 
 import datetime
 import binascii
+import six
 import traceback
 
 
@@ -31,11 +54,36 @@ def getConnectionMode(ctx, host, port=80):
 def getSimpleFile(ctx):
     return createService(ctx, 'com.sun.star.ucb.SimpleFileAccess')
 
+def getUrl(ctx, location):
+    url = uno.createUnoStruct('com.sun.star.util.URL')
+    url.Complete = location
+    transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
+    success, url = transformer.parseStrict(url)
+    return url
+
 def getRequest(ctx, scheme, name):
     request = createService(ctx, g_oauth2)
     if request is not None:
         request.initializeSession(scheme, name)
     return request
+
+def getOAuth2(ctx, url, name):
+    oauth2 = createService(ctx, g_oauth2)
+    if oauth2 is not None:
+        oauth2.initializeSession(url, name)
+    return oauth2
+
+def getExceptionMessage(exception):
+    messages = [arg for arg in exception.args if isinstance(arg, six.string_types)]
+    if len(messages) == 0:
+        message = str(exception)
+    elif len(messages) == 1:
+        message = messages[0]
+    else:
+        message = max(messages, key=len)
+    if isinstance(message, six.binary_type):
+        message = message.decode('utf-8')
+    return message
 
 def getFileSequence(ctx, url, default=None):
     length, sequence = 0, uno.ByteSequence(b'')
@@ -110,7 +158,7 @@ def generateUuid():
 
 def getDialog(ctx, library, xdl, handler=None, window=None):
     dialog = None
-    provider = createService(ctx, 'com.sun.star.awt.DialogProvider')
+    provider = createService(ctx, 'com.sun.star.awt.DialogProvider2')
     url = getDialogUrl(library, xdl)
     if handler is None and window is None:
         dialog = provider.createDialog(url)

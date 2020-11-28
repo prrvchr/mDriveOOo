@@ -18,8 +18,11 @@ from com.sun.star.logging.LogLevel import SEVERE
 from unolib import createService
 from unolib import getStringResource
 
+print("wizardserver.py 1")
 from .requests.compat import unquote_plus
+print("wizardserver.py 2")
 from .requests.compat import urlencode
+print("wizardserver.py 3")
 
 from .logger import logMessage
 

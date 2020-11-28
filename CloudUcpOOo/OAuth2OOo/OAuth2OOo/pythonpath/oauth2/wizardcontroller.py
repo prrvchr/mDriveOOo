@@ -20,8 +20,9 @@ from unolib import getProperty
 from unolib import getStringResource
 from unolib import getContainerWindow
 from unolib import getDialogUrl
-
+print("wizardcontroller.py 1")
 from .wizardhandler import WizardHandler
+print("wizardcontroller.py 2")
 from .wizardserver import WizardServer
 from .wizardpage import WizardPage
 from .wizardsetting import WizardSetting

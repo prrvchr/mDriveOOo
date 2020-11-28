@@ -1,6 +1,28 @@
 #!
 # -*- coding: utf_8 -*-
 
+'''
+    Copyright (c) 2020 https://prrvchr.github.io
+
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the Software
+    is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+'''
+
 import uno
 
 from com.sun.star.sdbc import SQLException
@@ -277,16 +299,22 @@ def getValueFromResult(result, index, default=None):
     dbtype = result.MetaData.getColumnTypeName(index)
     if dbtype == 'VARCHAR':
         value = result.getString(index)
-    elif dbtype == 'TIMESTAMP':
-        value = result.getTimestamp(index)
     elif dbtype == 'BOOLEAN':
         value = result.getBoolean(index)
-    elif dbtype in ('TINYINT', 'SMALLINT', 'INTEGER', 'BIGINT'):
+    elif dbtype == 'TINYINT':
+        value = result.getByte(index)
+    elif dbtype == 'SMALLINT':
+        value = result.getShort(index)
+    elif dbtype == 'INTEGER':
         value = result.getInt(index)
+    elif dbtype == 'BIGINT':
+        value = result.getLong(index)
     elif dbtype == 'FLOAT':
         value = result.getFloat(index)
     elif dbtype == 'DOUBLE':
         value = result.getDouble(index)
+    elif dbtype == 'TIMESTAMP':
+        value = result.getTimestamp(index)
     elif dbtype == 'TIME':
         value = result.getTime(index)
     elif dbtype == 'DATE':

@@ -12,7 +12,9 @@ from unolib import KeyMap
 from unolib import NoOAuth2
 from unolib import getCurrentLocale
 
+print("oauth2tools.py 1")
 from .requests.compat import urlencode
+print("oauth2tools.py 2")
 
 import json
 import base64

@@ -9,6 +9,9 @@ interface XInteractionUserName: com::sun::star::task::XInteractionContinuation
 {
 
     void setUserName([in] string UserName);
+    string getUserName();
+    void setToken([in] string Token);
+    string getToken();
 
 };
 

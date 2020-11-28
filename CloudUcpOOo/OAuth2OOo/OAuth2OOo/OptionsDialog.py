@@ -18,6 +18,7 @@ from unolib import getConfiguration
 from unolib import getInteractionHandler
 from unolib import InteractionRequest
 from unolib import getUserNameFromHandler
+from unolib import getOAuth2UserName
 from unolib import getDialog
 
 from oauth2 import getLoggerUrl
@@ -25,9 +26,14 @@ from oauth2 import getLoggerSetting
 from oauth2 import setLoggerSetting
 from oauth2 import clearLogger
 from oauth2 import logMessage
+from oauth2 import getMessage
+g_message = 'OptionsDialog'
+
 from oauth2 import g_identifier
 from oauth2 import g_oauth2
 
+from oauth2 import requests
+import sys
 import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
@@ -95,10 +101,14 @@ class OptionsDialog(unohelper.Base,
         elif method == 'ClearLog':
             self._clearLog(dialog)
             handled = True
+        elif method == 'LogInfo':
+            self._logInfo(dialog)
+            handled = True
         return handled
     def getSupportedMethodNames(self):
-        return ('external_event', 'TextChanged', 'SelectionChanged', 'Connect', 'Remove', 'Reset',
-                'AutoClose', 'ToggleLogger', 'EnableViewer', 'DisableViewer', 'ViewLog', 'ClearLog')
+        return ('external_event', 'TextChanged', 'SelectionChanged', 'Connect',
+                'Remove', 'Reset','AutoClose', 'ToggleLogger', 'EnableViewer',
+                'DisableViewer', 'ViewLog', 'ClearLog', 'LogInfo')
 
     def _doTextChanged(self, dialog, control):
         enabled = control.Text != ''
@@ -117,7 +127,7 @@ class OptionsDialog(unohelper.Base,
                 message = "Authentication needed!!!"
                 if self.service.initializeUrl(url):
                     print("OptionDialog._doConnect() 2 %s" % url)
-                    user = getUserNameFromHandler(self.ctx, url, self, message)
+                    user = getOAuth2UserName(self.ctx, self, url, message)
             autoclose = bool(dialog.getControl('CheckBox2').State)
             print("OptionDialog._doConnect() 3 %s - %s - %s" % (user, url, autoclose))
             enabled = self.service.getAuthorization(url, user, autoclose, dialog.getPeer())
@@ -170,12 +180,29 @@ class OptionsDialog(unohelper.Base,
     def _clearLog(self, dialog):
         try:
             clearLogger()
-            logMessage(self.ctx, INFO, "ClearingLog ... Done", 'OptionsDialog', '_doClearLog()')
+            msg = getMessage(self.ctx, g_message, 101)
+            logMessage(self.ctx, INFO, msg, 'OptionsDialog', '_clearLog()')
             url = getLoggerUrl(self.ctx)
             self._setDialogText(dialog, url)
         except Exception as e:
             msg = "Error: %s - %s" % (e, traceback.print_exc())
-            logMessage(self.ctx, SEVERE, msg, "OptionsDialog", "_doClearLog()")
+            logMessage(self.ctx, SEVERE, msg, "OptionsDialog", "_clearLog()")
+
+    def _logInfo(self, dialog):
+        version  = ' '.join(sys.version.split())
+        msg = getMessage(self.ctx, g_message, 111, version)
+        logMessage(self.ctx, INFO, msg, "OptionsDialog", "_logInfo()")
+        msg = getMessage(self.ctx, g_message, 112, requests.__version__)
+        logMessage(self.ctx, INFO, msg, "OptionsDialog", "_logInfo()")
+        msg = getMessage(self.ctx, g_message, 113, requests.urllib3.__version__)
+        logMessage(self.ctx, INFO, msg, "OptionsDialog", "_logInfo()")
+        if requests.ssl is None:
+            msg = getMessage(self.ctx, g_message, 115)
+        else:
+            msg = getMessage(self.ctx, g_message, 114, requests.ssl.OPENSSL_VERSION)
+        logMessage(self.ctx, INFO, msg, "OptionsDialog", "_logInfo()")
+        url = getLoggerUrl(self.ctx)
+        self._setDialogText(dialog, url)
 
     def _setDialogText(self, dialog, url):
         length, sequence = getFileSequence(self.ctx, url)

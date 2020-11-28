@@ -45,13 +45,13 @@ from oauth2 import WizardController
 from oauth2 import getRefreshToken
 from oauth2 import logMessage
 from oauth2 import g_identifier
+from oauth2 import g_extension
 from oauth2 import g_oauth2
 from oauth2 import g_wizard_paths
 from oauth2 import g_wizard_page
 from oauth2 import g_refresh_overlap
 from oauth2 import requests
 
-import sys
 import time
 
 import traceback
@@ -70,19 +70,20 @@ class OAuth2Service(unohelper.Base,
         self.ctx = ctx
         self.configuration = getConfiguration(self.ctx, g_identifier, True)
         self.Setting = OAuth2Setting(self.ctx)
-        self.Session = self._getSession()
+        version = self._getSSLVersion()
+        self.Session = self._getSession(version)
         self._Url = ''
         self._Provider = KeyMap()
         self._Users = None
         self._UserName = ''
         self._User = KeyMap()
-        self.Parent = None
+        self._parent = None
         self._Warnings = []
         self._Error = None
         self.Error = ''
         self.stringResource = getStringResource(self.ctx, g_identifier, 'OAuth2OOo')
         self._SessionMode = OFFLINE
-        self._checkSSL()
+        #self._checkSSL()
 
     @property
     def ResourceUrl(self):
@@ -101,7 +102,7 @@ class OAuth2Service(unohelper.Base,
     def initialize(self, properties):
         for property in properties:
             if property.Name == 'Parent':
-                self.Parent = property.Value
+                self._parent = property.Value
 
     # XInteractionHandler2, XInteractionHandler
     def handle(self, interaction):
@@ -113,10 +114,30 @@ class OAuth2Service(unohelper.Base,
         # TODO: at line 525 in "_uno_struct__setattr__"
         # TODO: as a workaround we must set an "args" attribute of type "sequence<any>" to
         # TODO: IDL file of com.sun.star.auth.OAuth2Request Exception who is normally returned...
-        url = interaction.getRequest().ResourceUrl
+        request = interaction.getRequest()
+        url = request.ResourceUrl
+        user = request.UserName
+        print("handleInteractionRequest() %s - %s" %(type(user), user))
+        if user != '':
+            approved = self._getToken(interaction, url, user, request.Format)
+        else:
+            approved = self._showUserDialog(interaction, url, request.Message)
+        return approved
+
+    def _getToken(self, interaction, url, user, format):
+        self.initializeSession(url, user)
+        token = self.getToken(format)
+        status = 1 if token != '' else 0
+        continuation = interaction.getContinuations()[status]
+        if status:
+            continuation.setToken(token)
+        continuation.select()
+        return status == 1
+
+    def _showUserDialog(self, interaction, url, message):
         provider = self._getProviderNameFromUrl(url)
-        dialog = getDialog(self.ctx, 'OAuth2OOo', 'UserDialog', DialogHandler(), self.Parent)
-        self._initUserDialog(dialog, provider)
+        dialog = getDialog(self.ctx, g_extension, 'UserDialog', DialogHandler(), self._parent)
+        self._initUserDialog(dialog, provider, message)
         status = dialog.execute()
         approved = status == OK
         continuation = interaction.getContinuations()[status]
@@ -126,11 +147,11 @@ class OAuth2Service(unohelper.Base,
         dialog.dispose()
         return approved
 
-    def _initUserDialog(self, dialog, name=''):
+    def _initUserDialog(self, dialog, provider, message):
         title = self.stringResource.resolveString('UserDialog.Title')
         label = self.stringResource.resolveString('UserDialog.Label1.Label')
-        dialog.setTitle(title % name)
-        dialog.getControl('Label1').Text = label % name
+        dialog.setTitle(title % provider)
+        dialog.getControl('Label1').Text = label % message
 
     def _getUserName(self, dialog):
         return dialog.getControl('TextField1').Model.Text
@@ -174,11 +195,16 @@ class OAuth2Service(unohelper.Base,
     def getAuthorization(self, url, username, close=True, parent=None):
         authorized = False
         msg = "Wizard Loading ..."
+        print("OAuth2Service.getAuthorization() 1")
         wizard = Wizard(self.ctx, g_wizard_page, True, parent)
+        print("OAuth2Service.getAuthorization() 2")
         controller = WizardController(self.ctx, wizard, self.Session, url, username, close)
+        print("OAuth2Service.getAuthorization() 3")
         arguments = (g_wizard_paths, controller)
+        print("OAuth2Service.getAuthorization() 4")
         wizard.initialize(arguments)
         msg += " Done ..."
+        print("OAuth2Service.getAuthorization() 5")
         if wizard.execute() == OK:
             msg +=  " Retrieving Authorization Code ..."
             if controller.Error:
@@ -196,22 +222,18 @@ class OAuth2Service(unohelper.Base,
     def getToken(self, format=''):
         level = INFO
         msg = "Request Token ... "
-        print("OAuth2Service.getToken() 1")
         if not self._isAuthorized():
             level = SEVERE
             msg += "ERROR: Cannot InitializeSession()..."
             token = ''
         elif self.Setting.Url.Scope.Provider.User.HasExpired:
-            print("OAuth2Service.getToken() 2")
             provider = self.Setting.Url.Scope.Provider.MetaData
             user = self.Setting.Url.Scope.Provider.User
             token, self._Error = getRefreshToken(self.Session, provider, user.MetaData, self.Timeout)
             if token.IsPresent:
-                print("OAuth2Service.getToken() 3")
                 user.MetaData = token.Value
                 token = user.AccessToken
                 msg += "Refresh needed ... Done"
-                print("OAuth2Service.getToken() 4")
             else:
                 level = SEVERE
                 msg += "ERROR: Cannot RefreshToken()..."
@@ -248,31 +270,48 @@ class OAuth2Service(unohelper.Base,
     def getUploader(self, chunk, url, user):
         return Uploader(self.ctx, self.Session, chunk, url, user.callBack, self.Timeout)
 
-    def _getSession(self):
-        if sys.version_info[0] < 3:
-            requests.packages.urllib3.disable_warnings()
-        session = requests.Session()
-        session.auth = OAuth2OOo(self)
-        session.codes = requests.codes
+    def _getSession(self, version):
+        print("OAuth2Service._getSession() 1 %s" % version)
+        session = None
+        #if sys.version_info[0] < 3:
+        #    requests.packages.urllib3.disable_warnings()
+        if version is not None:
+            #if version < 'OpenSSL 1.0.0':
+            #    print("OAuth2Service._getSession() 2 %s" % version)
+            #    monkey.patch()
+            #    print("OAuth2Service._getSession() 3 %s" % version)
+            session = requests.Session()
+            session.auth = OAuth2OOo(self)
+            session.codes = requests.codes
         return session
 
-    def _checkSSL(self):
+    def _getSSLVersion(self):
         try:
             import ssl
         except ImportError:
             self.Error = "Can't load module: 'ssl.py'. Your Python SSL configuration is broken..."
+            version = None
+        else:
+            version = ssl.OPENSSL_VERSION
+            print("OAuth2Service._getSSLVersion() %s" % version)
+        return version
 
     def _isAuthorized(self):
+        print("OAuth2Service._isAuthorized() 1")
         if self.Setting.Initialized and self.Setting.Url.Scope.Authorized:
             return True
+        print("OAuth2Service._isAuthorized() 2")
         msg = "OAuth2 initialization ... AuthorizationCode needed ..."
-        parent = getParentWindow(self.ctx)
+        parent = getParentWindow(self.ctx) if self._parent is None else self._parent
+        print("OAuth2Service._isAuthorized() 3")
         if self.getAuthorization(self.ResourceUrl, self.UserName, True, parent):
+            print("OAuth2Service._isAuthorized() 4")
             msg += " Done"
             logMessage(self.ctx, INFO, msg, 'OAuth2Service', '_isAuthorized()')
             return True
         msg += " ERROR: Wizard Aborted!!!"
         logMessage(self.ctx, SEVERE, msg, 'OAuth2Service', '_isAuthorized()')
+        print("OAuth2Service._isAuthorized() 5")
         return False
 
     def _getToolkit(self):

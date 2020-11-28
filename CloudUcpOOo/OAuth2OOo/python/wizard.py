@@ -1,6 +1,28 @@
 #!
 # -*- coding: utf_8 -*-
 
+'''
+    Copyright (c) 2020 https://prrvchr.github.io
+
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the Software
+    is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+'''
+
 import uno
 import unohelper
 
@@ -45,6 +67,7 @@ class Wizard(unohelper.Base,
              XItemListener,
              XDialogEventHandler):
     def __init__(self, ctx, auto=-1, resize=False, parent=None):
+        print("Wizard.__init__() 1")
         self.ctx = ctx
         self._auto = auto
         self._resize = resize
@@ -58,12 +81,18 @@ class Wizard(unohelper.Base,
         self._multiPaths = False
         self._controller = None
         self._helpUrl = ''
+        print("Wizard.__init__() 2")
         self._stringResource = getStringResource(self.ctx, g_identifier, g_extension)
+        print("Wizard.__init__() 3")
+        #self._dialog = getDialog(self.ctx, g_extension, 'Wizard')
         self._dialog = getDialog(self.ctx, g_extension, 'Wizard', self, parent)
         point = uno.createUnoStruct('com.sun.star.awt.Point', 0, 0)
         size = uno.createUnoStruct('com.sun.star.awt.Size', 85, 180)
+        print("Wizard.__init__() 4")
         roadmap = self._getRoadmapControl('RoadmapControl1', point, size)
+        print("Wizard.__init__() 5")
         roadmap.addItemListener(self)
+        print("Wizard.__init__() 6")
 
     @property
     def HelpURL(self):

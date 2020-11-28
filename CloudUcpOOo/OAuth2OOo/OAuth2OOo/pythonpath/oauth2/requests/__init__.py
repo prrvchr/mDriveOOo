@@ -100,9 +100,11 @@ try:
         ssl = None
 
     if not getattr(ssl, "HAS_SNI", False):
+        print("requests.__init__.py 1")
         from urllib3.contrib import pyopenssl
+        print("requests.__init__.py 2")
         pyopenssl.inject_into_urllib3()
-
+        print("requests.__init__.py 3")
         # Check cryptography version
         from cryptography import __version__ as cryptography_version
         _check_cryptography(cryptography_version)

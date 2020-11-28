@@ -14,6 +14,7 @@ interface XRestKeyMap: com::sun::star::container::XStringKeyMap
                  [in] any Value);
     any getDefaultValue([in] string Key,
                         [in] any Default);
+    void update([in] ::com::sun::star::auth::XRestKeyMap Keymap);
     void fromJson([in] string JsonStr);
     void fromJsonKey([in] string Key,
                      [in] string JsonStr);

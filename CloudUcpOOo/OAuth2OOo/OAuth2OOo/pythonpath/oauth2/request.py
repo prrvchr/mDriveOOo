@@ -29,10 +29,13 @@ from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
 from com.sun.star.auth.RestRequestTokenType import TOKEN_SYNC
 
 from unolib import KeyMap
+print("request.py 1")
 from unolib import NoOAuth2
-
+print("request.py 2")
 from .logger import logMessage
+print("request.py 3")
 from . import requests
+print("request.py 4")
 
 import traceback
 import sys
@@ -173,9 +176,10 @@ def execute(session, parameter, timeout, parser=None):
                 response.Value = r.json(object_pairs_hook=parser.parseResponse)
                 response.IsPresent = True
             elif parser.DataType == 'Xml':
-                response.Value = parser.parseResponse(r.text)
+                response.Value = parser.parseResponse(r.content)
                 response.IsPresent = True
     return response, error
+
 
 class Request(unohelper.Base,
               XRestRequest):
@@ -573,6 +577,8 @@ def _getKeyWordArguments(parameter):
         kwargs['auth'] = NoOAuth2()
     if parameter.NoRedirect:
         kwargs['allow_redirects'] = False
+    if parameter.NoVerify:
+        kwargs['verify'] = False
     return kwargs
 
 def _parseResponse(response):

@@ -18,12 +18,13 @@ from unolib import getStringResource
 
 from .dialoghandler import DialogHandler
 
+print("wizardhandler.py 1")
 from .oauth2tools import getActivePath
 from .oauth2tools import openUrl
 from .oauth2tools import updatePageTokenUI
 from .oauth2tools import getRefreshToken
 from .oauth2tools import saveTokenToConfiguration
-
+print("wizardhandler.py 2")
 from .configuration import g_identifier
 
 from .logger import logMessage

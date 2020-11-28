@@ -4,7 +4,6 @@
 # OAuth2 configuration
 g_extension = 'OAuth2OOo'
 g_identifier = 'com.gmail.prrvchr.extensions.%s' % g_extension
-g_logger = '%s.Logger' % g_identifier
 g_oauth2 = '%s.OAuth2Service' % g_identifier
 
 g_wizard_page = 2 # -1 to disable
