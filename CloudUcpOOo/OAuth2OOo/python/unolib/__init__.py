@@ -71,6 +71,5 @@ from .oauth2lib import InteractionRequest
 from .oauth2lib import NoOAuth2
 from .oauth2lib import OAuth2OOo
 
-from .oauth2core import getUserNameFromHandler
 from .oauth2core import getOAuth2UserName
 from .oauth2core import getOAuth2Token

@@ -23,22 +23,9 @@
     OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
-#from __futur__ import absolute_import
-
-import uno
-
 from .oauth2lib import InteractionRequest
 from .unotools import getInteractionHandler
 
-
-def getUserNameFromHandler(ctx, url, source, message=''):
-    username = ''
-    handler = getInteractionHandler(ctx)
-    interaction = InteractionRequest(source, url, message)
-    if handler.handleInteractionRequest(interaction):
-        continuation = interaction.getContinuations()[-1]
-        username = continuation.getUserName()
-    return username
 
 def getOAuth2UserName(ctx, source, url, message=''):
     username = ''

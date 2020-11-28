@@ -17,7 +17,6 @@ from unolib import getNamedValueSet
 from unolib import getConfiguration
 from unolib import getInteractionHandler
 from unolib import InteractionRequest
-from unolib import getUserNameFromHandler
 from unolib import getOAuth2UserName
 from unolib import getDialog
 
