@@ -1,1 +1,1 @@
-../../../CloudUcpOOo/OAuth2OOo/python/dbconfig.py
+../../../CloudUcpOOo/OAuth2OOo/python/database/dbconfig.py
