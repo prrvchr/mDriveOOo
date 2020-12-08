@@ -3,19 +3,15 @@
 # for complete details.
 
 from __future__ import absolute_import, division, print_function
-print("x509/extensions.py 1")
+
 import abc
-print("x509/extensions.py 2")
 import datetime
-print("x509/extensions.py 3")
 import hashlib
-print("x509/extensions.py 4")
 import ipaddress
-print("x509/extensions.py 5")
 from enum import Enum
-print("x509/extensions.py 6")
+
 import six
-print("x509/extensions.py 7")
+
 from cryptography import utils
 from cryptography.hazmat._der import (
     BIT_STRING,
@@ -23,18 +19,14 @@ from cryptography.hazmat._der import (
     OBJECT_IDENTIFIER,
     SEQUENCE,
 )
-print("x509/extensions.py 8")
 from cryptography.hazmat.primitives import constant_time, serialization
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.x509.certificate_transparency import (
     SignedCertificateTimestamp,
 )
-print("x509/extensions.py 9")
 from cryptography.x509.general_name import GeneralName, IPAddress, OtherName
-print("x509/extensions.py 10")
 from cryptography.x509.name import RelativeDistinguishedName
-print("x509/extensions.py 11")
 from cryptography.x509.oid import (
     CRLEntryExtensionOID,
     ExtensionOID,
@@ -42,7 +34,7 @@ from cryptography.x509.oid import (
     ObjectIdentifier,
 )
 
-print("x509/extensions.py 12")
+
 def _key_identifier_from_public_key(public_key):
     if isinstance(public_key, RSAPublicKey):
         data = public_key.public_bytes(
@@ -82,7 +74,7 @@ def _key_identifier_from_public_key(public_key):
 
     return hashlib.sha1(data).digest()
 
-print("x509/extensions.py 13")
+
 def _make_sequence_methods(field_name):
     def len_method(self):
         return len(getattr(self, field_name))
@@ -107,7 +99,7 @@ class ExtensionNotFound(Exception):
         super(ExtensionNotFound, self).__init__(msg)
         self.oid = oid
 
-print("x509/extensions.py 14")
+
 @six.add_metaclass(abc.ABCMeta)
 class ExtensionType(object):
     @abc.abstractproperty
@@ -116,7 +108,7 @@ class ExtensionType(object):
         Returns the oid associated with the given extension type.
         """
 
-print("x509/extensions.py 15")
+
 class Extensions(object):
     def __init__(self, extensions):
         self._extensions = extensions
@@ -149,7 +141,7 @@ class Extensions(object):
     def __repr__(self):
         return "<Extensions({})>".format(self._extensions)
 
-print("x509/extensions.py 16")
+
 @utils.register_interface(ExtensionType)
 class CRLNumber(object):
     oid = ExtensionOID.CRL_NUMBER
@@ -177,7 +169,7 @@ class CRLNumber(object):
 
     crl_number = utils.read_only_property("_crl_number")
 
-print("x509/extensions.py 17")
+
 @utils.register_interface(ExtensionType)
 class AuthorityKeyIdentifier(object):
     oid = ExtensionOID.AUTHORITY_KEY_IDENTIFIER
@@ -269,7 +261,7 @@ class AuthorityKeyIdentifier(object):
         "_authority_cert_serial_number"
     )
 
-print("x509/extensions.py 18")
+
 @utils.register_interface(ExtensionType)
 class SubjectKeyIdentifier(object):
     oid = ExtensionOID.SUBJECT_KEY_IDENTIFIER
@@ -297,7 +289,7 @@ class SubjectKeyIdentifier(object):
 
     def __hash__(self):
         return hash(self.digest)
-print("x509/extensions.py 19")
+
 
 @utils.register_interface(ExtensionType)
 class AuthorityInformationAccess(object):
@@ -979,7 +971,7 @@ class TLSFeatureType(Enum):
     status_request_v2 = 17
 
 
-#_TLS_FEATURE_TYPE_TO_ENUM = {x.value: x for x in TLSFeatureType}
+_TLS_FEATURE_TYPE_TO_ENUM = {x.value: x for x in TLSFeatureType}
 
 
 @utils.register_interface(ExtensionType)
@@ -1708,4 +1700,3 @@ class UnrecognizedExtension(object):
 
     def __hash__(self):
         return hash((self.oid, self.value))
-print("x509/extensions.py  OK *******")

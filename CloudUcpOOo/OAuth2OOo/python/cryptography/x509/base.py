@@ -3,14 +3,14 @@
 # for complete details.
 
 from __future__ import absolute_import, division, print_function
-print("x509/base.py 1")
+
 import abc
 import datetime
 import os
 from enum import Enum
-print("x509/base.py 2")
+
 import six
-print("x509/base.py 3")
+
 from cryptography import utils
 from cryptography.hazmat.backends import _get_backend
 from cryptography.hazmat.primitives.asymmetric import (
@@ -20,17 +20,14 @@ from cryptography.hazmat.primitives.asymmetric import (
     ed448,
     rsa,
 )
-print("x509/base.py 4")
 from cryptography.x509.extensions import Extension, ExtensionType
-print("x509/base.py 5")
 from cryptography.x509.name import Name
-print("x509/base.py 6")
 from cryptography.x509.oid import ObjectIdentifier
-print("x509/base.py 7")
+
 
 _EARLIEST_UTC_TIME = datetime.datetime(1950, 1, 1)
 
-print("x509/base.py 8")
+
 class AttributeNotFound(Exception):
     def __init__(self, msg, oid):
         super(AttributeNotFound, self).__init__(msg)
@@ -893,4 +890,3 @@ class RevokedCertificateBuilder(object):
 
 def random_serial_number():
     return utils.int_from_bytes(os.urandom(20), "big") >> 1
-print("x509/base.py  OK *******")

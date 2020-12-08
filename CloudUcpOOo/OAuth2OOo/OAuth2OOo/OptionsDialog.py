@@ -1,6 +1,32 @@
 #!
 # -*- coding: utf_8 -*-
 
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
+
 import uno
 import unohelper
 
@@ -19,6 +45,7 @@ from unolib import getInteractionHandler
 from unolib import InteractionRequest
 from unolib import getOAuth2UserName
 from unolib import getDialog
+from unolib import getExceptionMessage
 
 from oauth2 import getLoggerUrl
 from oauth2 import getLoggerSetting
@@ -32,6 +59,7 @@ from oauth2 import g_identifier
 from oauth2 import g_oauth2
 
 from oauth2 import requests
+import os
 import sys
 import traceback
 
@@ -191,21 +219,33 @@ class OptionsDialog(unohelper.Base,
         version  = ' '.join(sys.version.split())
         msg = getMessage(self.ctx, g_message, 111, version)
         logMessage(self.ctx, INFO, msg, "OptionsDialog", "_logInfo()")
-        msg = getMessage(self.ctx, g_message, 112, requests.__version__)
+        path = os.pathsep.join(sys.path)
+        msg = getMessage(self.ctx, g_message, 112, path)
         logMessage(self.ctx, INFO, msg, "OptionsDialog", "_logInfo()")
-        msg = getMessage(self.ctx, g_message, 113, requests.urllib3.__version__)
+        msg = getMessage(self.ctx, g_message, 113, requests.__version__)
         logMessage(self.ctx, INFO, msg, "OptionsDialog", "_logInfo()")
-        if requests.ssl is None:
-            msg = getMessage(self.ctx, g_message, 115)
+        msg = getMessage(self.ctx, g_message, 114, requests.urllib3.__version__)
+        logMessage(self.ctx, INFO, msg, "OptionsDialog", "_logInfo()")
+        try:
+            import ssl
+        except ImportError as e:
+            print("OptionsDialog._logInfo() 1 %s" % (dir(e), ))
+            msg = getExceptionMessage(e)
+            print("OptionsDialog._logInfo() 2")
+            msg = getMessage(self.ctx, g_message, 116, msg)
         else:
-            msg = getMessage(self.ctx, g_message, 114, requests.ssl.OPENSSL_VERSION)
+            msg = getMessage(self.ctx, g_message, 115, ssl.OPENSSL_VERSION)
+            print("OptionsDialog._logInfo() 3")
         logMessage(self.ctx, INFO, msg, "OptionsDialog", "_logInfo()")
         url = getLoggerUrl(self.ctx)
         self._setDialogText(dialog, url)
 
     def _setDialogText(self, dialog, url):
+        control = dialog.getControl('TextField1')
         length, sequence = getFileSequence(self.ctx, url)
-        dialog.getControl('TextField1').Text = sequence.value.decode('utf-8')
+        control.Text = sequence.value.decode('utf-8')
+        selection = uno.createUnoStruct('com.sun.star.awt.Selection', length, length)
+        control.setSelection(selection)
 
     def _loadLoggerSetting(self, dialog):
         enabled, index, handler = getLoggerSetting(self.ctx)

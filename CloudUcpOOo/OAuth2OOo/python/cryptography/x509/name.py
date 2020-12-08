@@ -3,18 +3,15 @@
 # for complete details.
 
 from __future__ import absolute_import, division, print_function
-import traceback
-print("x509/name.py 1")
+
 from enum import Enum
-print("x509/name.py 2")
+
 import six
-print("x509/name.py 3")
+
 from cryptography import utils
-print("x509/name.py 4")
 from cryptography.hazmat.backends import _get_backend
-print("x509/name.py 5")
 from cryptography.x509.oid import NameOID, ObjectIdentifier
-print("x509/name.py 6")
+
 
 class _ASN1Type(Enum):
     UTF8String = 12
@@ -28,15 +25,9 @@ class _ASN1Type(Enum):
     UniversalString = 28
     BMPString = 30
 
-print("x509/name.py 7")
-try:
-    _ASN1_TYPE_TO_ENUM = {i.value: i for i in _ASN1Type}
-except Exception as e:
-    msg = "Error: %s - %s" % (e, traceback.print_exc())
-    print(msg)
-print("x509/name.py 8")
+
+_ASN1_TYPE_TO_ENUM = {i.value: i for i in _ASN1Type}
 _SENTINEL = object()
-print("x509/name.py 9")
 _NAMEOID_DEFAULT_TYPE = {
     NameOID.COUNTRY_NAME: _ASN1Type.PrintableString,
     NameOID.JURISDICTION_COUNTRY_NAME: _ASN1Type.PrintableString,
@@ -45,7 +36,7 @@ _NAMEOID_DEFAULT_TYPE = {
     NameOID.EMAIL_ADDRESS: _ASN1Type.IA5String,
     NameOID.DOMAIN_COMPONENT: _ASN1Type.IA5String,
 }
-print("x509/name.py 10")
+
 #: Short attribute names from RFC 4514:
 #: https://tools.ietf.org/html/rfc4514#page-7
 _NAMEOID_TO_NAME = {
@@ -60,7 +51,7 @@ _NAMEOID_TO_NAME = {
     NameOID.USER_ID: "UID",
 }
 
-print("x509/name.py 11")
+
 def _escape_dn_value(val):
     """Escape special characters in RFC4514 Distinguished Name value."""
 
@@ -84,7 +75,7 @@ def _escape_dn_value(val):
 
     return val
 
-print("x509/name.py 12")
+
 class NameAttribute(object):
     def __init__(self, oid, value, _type=_SENTINEL):
         if not isinstance(oid, ObjectIdentifier):
@@ -148,7 +139,7 @@ class NameAttribute(object):
     def __repr__(self):
         return "<NameAttribute(oid={0.oid}, value={0.value!r})>".format(self)
 
-print("x509/name.py 13")
+
 class RelativeDistinguishedName(object):
     def __init__(self, attributes):
         attributes = list(attributes)
@@ -197,7 +188,7 @@ class RelativeDistinguishedName(object):
     def __repr__(self):
         return "<RelativeDistinguishedName({})>".format(self.rfc4514_string())
 
-print("x509/name.py 14")
+
 class Name(object):
     def __init__(self, attributes):
         attributes = list(attributes)
@@ -268,5 +259,3 @@ class Name(object):
             return "<Name({})>".format(rdns.encode("utf8"))
         else:
             return "<Name({})>".format(rdns)
-
-print("x509/name.py OK ***************")

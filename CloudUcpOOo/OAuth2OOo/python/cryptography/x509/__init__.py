@@ -4,9 +4,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-print("x509/__init__.py 1")
 from cryptography.x509 import certificate_transparency
-print("x509/__init__.py 2")
 from cryptography.x509.base import (
     AttributeNotFound,
     Certificate,
@@ -27,7 +25,6 @@ from cryptography.x509.base import (
     load_pem_x509_csr,
     random_serial_number,
 )
-print("x509/__init__.py 3")
 from cryptography.x509.extensions import (
     AccessDescription,
     AuthorityInformationAccess,
@@ -71,7 +68,6 @@ from cryptography.x509.extensions import (
     UnrecognizedExtension,
     UserNotice,
 )
-print("x509/__init__.py 4")
 from cryptography.x509.general_name import (
     DNSName,
     DirectoryName,
@@ -84,13 +80,11 @@ from cryptography.x509.general_name import (
     UnsupportedGeneralNameType,
     _GENERAL_NAMES,
 )
-print("x509/__init__.py 5")
 from cryptography.x509.name import (
     Name,
     NameAttribute,
     RelativeDistinguishedName,
 )
-print("x509/__init__.py 6")
 from cryptography.x509.oid import (
     AuthorityInformationAccessOID,
     CRLEntryExtensionOID,
@@ -103,7 +97,7 @@ from cryptography.x509.oid import (
     _SIG_OIDS_TO_HASH,
 )
 
-print("x509/__init__.py 7")
+
 OID_AUTHORITY_INFORMATION_ACCESS = ExtensionOID.AUTHORITY_INFORMATION_ACCESS
 OID_AUTHORITY_KEY_IDENTIFIER = ExtensionOID.AUTHORITY_KEY_IDENTIFIER
 OID_BASIC_CONSTRAINTS = ExtensionOID.BASIC_CONSTRAINTS
@@ -172,7 +166,7 @@ OID_INVALIDITY_DATE = CRLEntryExtensionOID.INVALIDITY_DATE
 
 OID_CA_ISSUERS = AuthorityInformationAccessOID.CA_ISSUERS
 OID_OCSP = AuthorityInformationAccessOID.OCSP
-print("x509/__init__.py 8")
+
 __all__ = [
     "certificate_transparency",
     "load_pem_x509_certificate",
@@ -252,4 +246,3 @@ __all__ = [
     "OCSPNonce",
     "SignedCertificateTimestamps",
 ]
-print("x509/__init__.py  OK *******")

@@ -1,15 +1,13 @@
 #ifndef __com_sun_star_auth_OAuth2Request_idl__
 #define __com_sun_star_auth_OAuth2Request_idl__
 
-#include <com/sun/star/uno/Exception.idl>
-#include <com/sun/star/task/InteractionClassification.idl>
+#include <com/sun/star/task/ClassifiedInteractionRequest.idl>
 
 module com {  module sun {  module star {  module auth {
 
-exception OAuth2Request: com::sun::star::uno::Exception
+exception OAuth2Request: com::sun::star::task::ClassifiedInteractionRequest
 {
 
-    com::sun::star::task::InteractionClassification Classification;
     string ResourceUrl;
     string UserName;
     string Format;

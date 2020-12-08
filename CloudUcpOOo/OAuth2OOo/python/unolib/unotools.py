@@ -1,27 +1,31 @@
 #!
 # -*- coding: utf_8 -*-
 
-'''
-    Copyright (c) 2020 https://prrvchr.github.io
-
-    Permission is hereby granted, free of charge, to any person obtaining
-    a copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the Software
-    is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-'''
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
 
 import uno
 
@@ -36,7 +40,7 @@ from .oauth2config import g_oauth2
 
 import datetime
 import binascii
-import six
+from six import binary_type, string_types
 import traceback
 
 
@@ -74,15 +78,22 @@ def getOAuth2(ctx, url, name):
     return oauth2
 
 def getExceptionMessage(exception):
-    messages = [arg for arg in exception.args if isinstance(arg, six.string_types)]
-    if len(messages) == 0:
-        message = str(exception)
-    elif len(messages) == 1:
+    messages = []
+    if hasattr(exception, 'args'):
+        messages = [arg for arg in exception.args if isinstance(arg, string_types)]
+    count = len(messages)
+    if count == 0:
+        try:
+            message = str(exception)
+        except UnicodeDecodeError:
+            message = repr(exception)
+    elif count == 1:
         message = messages[0]
     else:
         message = max(messages, key=len)
-    if isinstance(message, six.binary_type):
+    if isinstance(message, binary_type):
         message = message.decode('utf-8')
+    message = ' '.join(message.split())
     return message
 
 def getFileSequence(ctx, url, default=None):
@@ -99,12 +110,14 @@ def _getSequence(inputstream, length):
     inputstream.closeInput()
     return length, sequence
 
-def getInterfaceTypes(interface):
-    try:
-        types = interface.getTypes()
-    except:
-        types = ()
-    return types
+def hasInterface(component, interface):
+    for t in _getComponentTypes(component):
+        if t.typeName == interface:
+            return True
+    return False
+
+def getInterfaceTypes(component):
+    return _getComponentTypes(component)
 
 def getProperty(name, type=None, attributes=None, handle=-1):
     property = uno.createUnoStruct('com.sun.star.beans.Property')
@@ -162,8 +175,12 @@ def getDialog(ctx, library, xdl, handler=None, window=None):
     url = getDialogUrl(library, xdl)
     if handler is None and window is None:
         dialog = provider.createDialog(url)
+        toolkit = createService(ctx, 'com.sun.star.awt.Toolkit')
+        dialog.createPeer(toolkit, None)
     elif handler is not None and window is None:
         dialog = provider.createDialogWithHandler(url, handler)
+        toolkit = createService(ctx, 'com.sun.star.awt.Toolkit')
+        dialog.createPeer(toolkit, None)
     else:
         args = getNamedValueSet({'ParentWindow': window, 'EventHandler': handler})
         dialog = provider.createDialogWithArguments(url, args)
@@ -306,3 +323,10 @@ def _getDateTime(microsecond=0, second=0, minute=0, hour=0, day=1, month=1, year
     if hasattr(t, 'IsUTC'):
         t.IsUTC = utc
     return t
+
+def _getComponentTypes(component):
+    if uno.isInterface(component):
+        types = component.getTypes()
+    else:
+        types = ()
+    return types

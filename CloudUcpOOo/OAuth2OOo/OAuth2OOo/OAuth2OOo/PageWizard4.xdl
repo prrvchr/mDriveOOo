@@ -5,10 +5,10 @@
   <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
  </dlg:styles>
  <dlg:bulletinboard>
-  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="0" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="45" dlg:help-text="&amp;PageWizard4.FrameControl1.HelpText">
+  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="10" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="45" dlg:help-text="&amp;PageWizard4.FrameControl1.HelpText">
    <dlg:title dlg:value="&amp;PageWizard4.FrameControl1.Label"/>
   </dlg:titledbox>
-  <dlg:textfield dlg:id="TextField1" dlg:tab-index="1" dlg:left="20" dlg:top="30" dlg:width="245" dlg:height="15" dlg:tag="AuthorizationCode" dlg:help-text="&amp;PageWizard4.TextField1.HelpText" dlg:value="&amp;PageWizard4.TextField1.Text">
+  <dlg:textfield dlg:id="TextField1" dlg:tab-index="11" dlg:left="20" dlg:top="30" dlg:width="245" dlg:height="15" dlg:tag="AuthorizationCode" dlg:help-text="&amp;PageWizard4.TextField1.HelpText" dlg:value="&amp;PageWizard4.TextField1.Text">
    <script:event script:event-name="on-textchange" script:macro-name="vnd.sun.star.UNO:Changed" script:language="UNO"/>
   </dlg:textfield>
  </dlg:bulletinboard>

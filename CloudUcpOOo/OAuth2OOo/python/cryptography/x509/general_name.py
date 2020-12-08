@@ -3,21 +3,17 @@
 # for complete details.
 
 from __future__ import absolute_import, division, print_function
-print("x509/general_name.py 1")
+
 import abc
-print("x509/general_name.py 2")
 import ipaddress
-print("x509/general_name.py 3")
 from email.utils import parseaddr
-print("x509/general_name.py 4")
+
 import six
-print("x509/general_name.py 5")
+
 from cryptography import utils
-print("x509/general_name.py 6")
 from cryptography.x509.name import Name
-print("x509/general_name.py 7")
 from cryptography.x509.oid import ObjectIdentifier
-print("x509/general_name.py 8")
+
 
 _GENERAL_NAMES = {
     0: "otherName",
@@ -31,7 +27,7 @@ _GENERAL_NAMES = {
     8: "registeredID",
 }
 
-print("x509/general_name.py 9")
+
 class UnsupportedGeneralNameType(Exception):
     def __init__(self, msg, type):
         super(UnsupportedGeneralNameType, self).__init__(msg)

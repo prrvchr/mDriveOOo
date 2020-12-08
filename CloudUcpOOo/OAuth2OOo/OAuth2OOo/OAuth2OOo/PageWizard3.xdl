@@ -6,9 +6,9 @@
   <dlg:style dlg:style-id="1" dlg:background-color="0xeeeeee" dlg:border="none"/>
  </dlg:styles>
  <dlg:bulletinboard>
-  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="0" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="120" dlg:help-text="&amp;PageWizard3.FrameControl1.HelpText">
+  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="10" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="120" dlg:help-text="&amp;PageWizard3.FrameControl1.HelpText">
    <dlg:title dlg:value="&amp;PageWizard3.FrameControl1.Label"/>
   </dlg:titledbox>
-  <dlg:progressmeter dlg:id="ProgressBar1" dlg:tab-index="1" dlg:left="20" dlg:top="25" dlg:width="245" dlg:height="15" dlg:help-text="&amp;PageWizard3.ProgressBar1.HelpText" dlg:value="0"/>
+  <dlg:progressmeter dlg:id="ProgressBar1" dlg:tab-index="11" dlg:left="20" dlg:top="25" dlg:width="245" dlg:height="15" dlg:help-text="&amp;PageWizard3.ProgressBar1.HelpText" dlg:value="0"/>
  </dlg:bulletinboard>
 </dlg:window>

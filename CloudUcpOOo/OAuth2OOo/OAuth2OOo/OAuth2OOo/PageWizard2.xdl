@@ -6,17 +6,17 @@
   <dlg:style dlg:style-id="1" dlg:font-weight="150"/>
  </dlg:styles>
  <dlg:bulletinboard>
-  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="0" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="92" dlg:help-text="&amp;PageWizard2.FrameControl1.HelpText">
+  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="10" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="92" dlg:help-text="&amp;PageWizard2.FrameControl1.HelpText">
    <dlg:title dlg:value="&amp;PageWizard2.FrameControl1.Label"/>
   </dlg:titledbox>
-  <dlg:textfield dlg:id="TextField1" dlg:tab-index="1" dlg:left="20" dlg:top="25" dlg:width="245" dlg:height="15" dlg:help-text="&amp;PageWizard2.TextField1.HelpText" dlg:readonly="true" dlg:value="&amp;PageWizard2.TextField1.Text"/>
-  <dlg:checkbox dlg:style-id="0" dlg:id="CheckBox1" dlg:tab-index="2" dlg:left="20" dlg:top="50" dlg:width="245" dlg:height="18" dlg:tag="AcceptPolicy" dlg:help-text="&amp;PageWizard2.CheckBox1.HelpText" dlg:value="&amp;PageWizard2.CheckBox1.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:checked="false">
+  <dlg:textfield dlg:id="TextField1" dlg:tab-index="11" dlg:left="20" dlg:top="25" dlg:width="245" dlg:height="15" dlg:help-text="&amp;PageWizard2.TextField1.HelpText" dlg:readonly="true" dlg:value="&amp;PageWizard2.TextField1.Text"/>
+  <dlg:checkbox dlg:style-id="0" dlg:id="CheckBox1" dlg:tab-index="12" dlg:left="20" dlg:top="50" dlg:width="245" dlg:height="18" dlg:tag="AcceptPolicy" dlg:help-text="&amp;PageWizard2.CheckBox1.HelpText" dlg:value="&amp;PageWizard2.CheckBox1.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:checked="false">
    <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:StateChange" script:language="UNO"/>
   </dlg:checkbox>
-  <dlg:button dlg:style-id="1" dlg:id="CommandButton1" dlg:tab-index="3" dlg:left="30" dlg:top="75" dlg:width="100" dlg:height="15" dlg:help-text="&amp;PageWizard2.CommandButton1.HelpText" dlg:value="&amp;PageWizard2.CommandButton1.Label">
+  <dlg:button dlg:style-id="1" dlg:id="CommandButton1" dlg:tab-index="13" dlg:left="30" dlg:top="75" dlg:width="100" dlg:height="15" dlg:help-text="&amp;PageWizard2.CommandButton1.HelpText" dlg:value="&amp;PageWizard2.CommandButton1.Label">
    <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:LoadUrl" script:language="UNO"/>
   </dlg:button>
-  <dlg:button dlg:style-id="1" dlg:id="CommandButton2" dlg:tab-index="4" dlg:left="157" dlg:top="75" dlg:width="100" dlg:height="15" dlg:help-text="&amp;PageWizard2.CommandButton2.HelpText" dlg:value="&amp;PageWizard2.CommandButton2.Label">
+  <dlg:button dlg:style-id="1" dlg:id="CommandButton2" dlg:tab-index="14" dlg:left="157" dlg:top="75" dlg:width="100" dlg:height="15" dlg:help-text="&amp;PageWizard2.CommandButton2.HelpText" dlg:value="&amp;PageWizard2.CommandButton2.Label">
    <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:LoadUrl" script:language="UNO"/>
   </dlg:button>
  </dlg:bulletinboard>

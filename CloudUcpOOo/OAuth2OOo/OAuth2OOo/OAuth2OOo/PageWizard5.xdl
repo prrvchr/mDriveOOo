@@ -5,24 +5,24 @@
   <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
  </dlg:styles>
  <dlg:bulletinboard>
-  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="0" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="145" dlg:help-text="&amp;PageWizard5.FrameControl1.HelpText">
+  <dlg:titledbox dlg:style-id="0" dlg:id="FrameControl1" dlg:tab-index="10" dlg:left="10" dlg:top="10" dlg:width="265" dlg:height="145" dlg:help-text="&amp;PageWizard5.FrameControl1.HelpText">
    <dlg:title dlg:value="&amp;PageWizard5.FrameControl1.Label"/>
   </dlg:titledbox>
-  <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:left="20" dlg:top="25" dlg:width="75" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label1.HelpText" dlg:value="&amp;PageWizard5.Label1.Label" dlg:valign="center" dlg:tabstop="false"/>
-  <dlg:text dlg:id="Label2" dlg:tab-index="2" dlg:left="100" dlg:top="25" dlg:width="165" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label2.HelpText" dlg:value="&amp;PageWizard5.Label2.Label" dlg:valign="center" dlg:tabstop="false"/>
-  <dlg:text dlg:id="Label3" dlg:tab-index="3" dlg:left="20" dlg:top="50" dlg:width="75" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label3.HelpText" dlg:value="&amp;PageWizard5.Label3.Label" dlg:valign="center" dlg:tabstop="false"/>
-  <dlg:text dlg:id="Label4" dlg:tab-index="4" dlg:left="100" dlg:top="50" dlg:width="165" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label4.HelpText" dlg:value="&amp;PageWizard5.Label4.Label" dlg:valign="center" dlg:tabstop="false"/>
-  <dlg:text dlg:id="Label5" dlg:tab-index="5" dlg:left="20" dlg:top="75" dlg:width="75" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label5.HelpText" dlg:value="&amp;PageWizard5.Label5.Label" dlg:valign="center" dlg:tabstop="false"/>
-  <dlg:text dlg:id="Label6" dlg:tab-index="6" dlg:left="100" dlg:top="75" dlg:width="165" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label6.HelpText" dlg:value="&amp;PageWizard5.Label6.Label" dlg:valign="center" dlg:tabstop="false"/>
-  <dlg:text dlg:id="Label7" dlg:tab-index="7" dlg:left="20" dlg:top="100" dlg:width="75" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label7.HelpText" dlg:value="&amp;PageWizard5.Label7.Label" dlg:valign="center" dlg:tabstop="false"/>
-  <dlg:text dlg:id="Label8" dlg:tab-index="8" dlg:left="100" dlg:top="100" dlg:width="165" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label8.HelpText" dlg:value="&amp;PageWizard5.Label8.Label" dlg:valign="center" dlg:tabstop="false"/>
-  <dlg:button dlg:id="CommandButton1" dlg:tab-index="9" dlg:disabled="true" dlg:left="30" dlg:top="125" dlg:width="45" dlg:height="15" dlg:tag="RefreshToken" dlg:help-text="&amp;PageWizard5.CommandButton1.HelpText" dlg:value="&amp;PageWizard5.CommandButton1.Label">
+  <dlg:text dlg:id="Label1" dlg:tab-index="11" dlg:left="20" dlg:top="25" dlg:width="75" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label1.HelpText" dlg:value="&amp;PageWizard5.Label1.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:text dlg:id="Label2" dlg:tab-index="12" dlg:left="100" dlg:top="25" dlg:width="165" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label2.HelpText" dlg:value="&amp;PageWizard5.Label2.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:text dlg:id="Label3" dlg:tab-index="13" dlg:left="20" dlg:top="50" dlg:width="75" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label3.HelpText" dlg:value="&amp;PageWizard5.Label3.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:text dlg:id="Label4" dlg:tab-index="14" dlg:left="100" dlg:top="50" dlg:width="165" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label4.HelpText" dlg:value="&amp;PageWizard5.Label4.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:text dlg:id="Label5" dlg:tab-index="15" dlg:left="20" dlg:top="75" dlg:width="75" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label5.HelpText" dlg:value="&amp;PageWizard5.Label5.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:text dlg:id="Label6" dlg:tab-index="16" dlg:left="100" dlg:top="75" dlg:width="165" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label6.HelpText" dlg:value="&amp;PageWizard5.Label6.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:text dlg:id="Label7" dlg:tab-index="17" dlg:left="20" dlg:top="100" dlg:width="75" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label7.HelpText" dlg:value="&amp;PageWizard5.Label7.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:text dlg:id="Label8" dlg:tab-index="18" dlg:left="100" dlg:top="100" dlg:width="165" dlg:height="15" dlg:help-text="&amp;PageWizard5.Label8.HelpText" dlg:value="&amp;PageWizard5.Label8.Label" dlg:valign="center" dlg:tabstop="false"/>
+  <dlg:button dlg:id="CommandButton1" dlg:tab-index="19" dlg:disabled="true" dlg:left="30" dlg:top="125" dlg:width="45" dlg:height="15" dlg:tag="RefreshToken" dlg:help-text="&amp;PageWizard5.CommandButton1.HelpText" dlg:value="&amp;PageWizard5.CommandButton1.Label">
    <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Refresh" script:language="UNO"/>
   </dlg:button>
-  <dlg:button dlg:id="CommandButton2" dlg:tab-index="10" dlg:disabled="true" dlg:left="120" dlg:top="125" dlg:width="45" dlg:height="15" dlg:tag="RemoveToken" dlg:help-text="&amp;PageWizard5.CommandButton2.HelpText" dlg:value="&amp;PageWizard5.CommandButton2.Label">
+  <dlg:button dlg:id="CommandButton2" dlg:tab-index="20" dlg:disabled="true" dlg:left="120" dlg:top="125" dlg:width="45" dlg:height="15" dlg:tag="RemoveToken" dlg:help-text="&amp;PageWizard5.CommandButton2.HelpText" dlg:value="&amp;PageWizard5.CommandButton2.Label">
    <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Remove" script:language="UNO"/>
   </dlg:button>
-  <dlg:button dlg:id="CommandButton3" dlg:tab-index="11" dlg:disabled="true" dlg:left="210" dlg:top="125" dlg:width="45" dlg:height="15" dlg:tag="ResetToken" dlg:help-text="&amp;PageWizard5.CommandButton3.HelpText" dlg:value="&amp;PageWizard5.CommandButton3.Label">
+  <dlg:button dlg:id="CommandButton3" dlg:tab-index="21" dlg:disabled="true" dlg:left="210" dlg:top="125" dlg:width="45" dlg:height="15" dlg:tag="ResetToken" dlg:help-text="&amp;PageWizard5.CommandButton3.HelpText" dlg:value="&amp;PageWizard5.CommandButton3.Label">
    <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Reset" script:language="UNO"/>
   </dlg:button>
  </dlg:bulletinboard>

@@ -1,6 +1,32 @@
 #!
 # -*- coding: utf_8 -*-
 
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
+
 import uno
 import unohelper
 
@@ -100,9 +126,12 @@ class OAuth2Service(unohelper.Base,
 
     # XInitialization
     def initialize(self, properties):
+        print("OAuth2Service.initialize() 1")
         for property in properties:
+            print("OAuth2Service.initialize() 2")
             if property.Name == 'Parent':
                 self._parent = property.Value
+                print("OAuth2Service.initialize() 3 %s" % self._parent)
 
     # XInteractionHandler2, XInteractionHandler
     def handle(self, interaction):
@@ -114,10 +143,14 @@ class OAuth2Service(unohelper.Base,
         # TODO: at line 525 in "_uno_struct__setattr__"
         # TODO: as a workaround we must set an "args" attribute of type "sequence<any>" to
         # TODO: IDL file of com.sun.star.auth.OAuth2Request Exception who is normally returned...
+        print("OAuth2Service.handleInteractionRequest() 1")
         request = interaction.getRequest()
+        mri = createService(self.ctx, 'mytools.Mri')
+        if mri:
+            print("OAuth2Service.handleInteractionRequest() 2")
+            mri.inspect(interaction)
         url = request.ResourceUrl
         user = request.UserName
-        print("handleInteractionRequest() %s - %s" %(type(user), user))
         if user != '':
             approved = self._getToken(interaction, url, user, request.Format)
         else:
@@ -204,6 +237,7 @@ class OAuth2Service(unohelper.Base,
         print("OAuth2Service.getAuthorization() 4")
         wizard.initialize(arguments)
         msg += " Done ..."
+        #wizard.DialogWindow.toFront()
         print("OAuth2Service.getAuthorization() 5")
         if wizard.execute() == OK:
             msg +=  " Retrieving Authorization Code ..."
@@ -249,6 +283,7 @@ class OAuth2Service(unohelper.Base,
     def execute(self, parameter):
         response, error = execute(self.Session, parameter, self.Timeout)
         if error:
+            logMessage(self.ctx, SEVERE, error, 'OAuth2Service', 'execute()')
             self._Warnings.append(self._getException(error))
         return response
 
