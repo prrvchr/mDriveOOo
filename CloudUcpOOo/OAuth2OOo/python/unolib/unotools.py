@@ -325,8 +325,8 @@ def _getDateTime(microsecond=0, second=0, minute=0, hour=0, day=1, month=1, year
     return t
 
 def _getComponentTypes(component):
-    if uno.isInterface(component):
+    try:
         types = component.getTypes()
-    else:
+    except:
         types = ()
     return types

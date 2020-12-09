@@ -6,18 +6,18 @@
   </dlg:styles>
   <dlg:bulletinboard>
     <dlg:fixedline dlg:id="FixedLine1" dlg:tab-index="0" dlg:left="0" dlg:top="3" dlg:width="85" dlg:height="5" dlg:help-text="&amp;Wizard.FixedLine1.HelpText" dlg:value="&amp;Wizard.FixedLine1.Label"/>
-    <dlg:button dlg:id="CommandButton5" dlg:tab-index="101" dlg:disabled="true" dlg:left="5" dlg:top="185" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton5.HelpText" dlg:value="&amp;Wizard.CommandButton5.Label">
+    <dlg:button dlg:id="CommandButton5" dlg:tab-index="101" dlg:disabled="true" dlg:left="5" dlg:top="186" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton5.HelpText" dlg:value="&amp;Wizard.CommandButton5.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Help" script:language="UNO"/>
     </dlg:button>
-    <dlg:button dlg:id="CommandButton4" dlg:tab-index="102" dlg:disabled="true" dlg:left="185" dlg:top="185" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton4.HelpText" dlg:value="&amp;Wizard.CommandButton4.Label">
+    <dlg:button dlg:id="CommandButton4" dlg:tab-index="102" dlg:disabled="true" dlg:left="165" dlg:top="186" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton4.HelpText" dlg:value="&amp;Wizard.CommandButton4.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Previous" script:language="UNO"/>
     </dlg:button>
-    <dlg:button dlg:id="CommandButton3" dlg:tab-index="103" dlg:disabled="true" dlg:left="235" dlg:top="185" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton3.HelpText" dlg:default="true" dlg:value="&amp;Wizard.CommandButton3.Label">
+    <dlg:button dlg:id="CommandButton3" dlg:tab-index="103" dlg:disabled="true" dlg:left="220" dlg:top="186" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton3.HelpText" dlg:default="true" dlg:value="&amp;Wizard.CommandButton3.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Next" script:language="UNO"/>
     </dlg:button>
-    <dlg:button dlg:id="CommandButton2" dlg:tab-index="104" dlg:disabled="true" dlg:left="285" dlg:top="185" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton2.HelpText" dlg:value="&amp;Wizard.CommandButton2.Label">
+    <dlg:button dlg:id="CommandButton2" dlg:tab-index="104" dlg:disabled="true" dlg:left="275" dlg:top="186" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton2.HelpText" dlg:value="&amp;Wizard.CommandButton2.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Finish" script:language="UNO"/>
     </dlg:button>
-    <dlg:button dlg:id="CommandButton1" dlg:tab-index="105" dlg:disabled="false" dlg:left="335" dlg:top="185" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton1.HelpText" dlg:value="&amp;Wizard.CommandButton1.Label" dlg:button-type="cancel"/>
+    <dlg:button dlg:id="CommandButton1" dlg:tab-index="105" dlg:disabled="false" dlg:left="330" dlg:top="186" dlg:width="50" dlg:height="14" dlg:help-text="&amp;Wizard.CommandButton1.HelpText" dlg:value="&amp;Wizard.CommandButton1.Label" dlg:button-type="cancel"/>
   </dlg:bulletinboard>
 </dlg:window>
