@@ -3,36 +3,38 @@
   xmlns="http://openoffice.org/extensions/description/2006"
   xmlns:d="http://openoffice.org/extensions/description/2006"
   xmlns:xlink="http://www.w3.org/1999/xlink">
-    <version value="0.0.5" />
-    <identifier value="com.gmail.prrvchr.extensions.OAuth2OOo" />
-    <platform value="all" />
+    <version value="0.0.5"/>
+    <identifier value="com.gmail.prrvchr.extensions.OAuth2OOo"/>
+    <platform value="all"/>
     <dependencies>
         <OpenOffice.org-minimal-version value="4.1" d:name="OpenOffice.org 4.1"/>
     </dependencies>
     <update-information>
-        <src xlink:href="https://prrvchr.github.io/OAuth2OOo/OAuth2OOo.update.xml" />
+        <src xlink:href="https://prrvchr.github.io/OAuth2OOo/OAuth2OOo.update.xml"/>
     </update-information>
     <publisher>
-        <name xlink:href="https://prrvchr.github.io/OAuth2OOo" lang="en">OAuth2.0 for LibreOffice / OpenOffice</name>
+        <name xlink:href="https://prrvchr.github.io/OAuth2OOo/" lang="en-US">OAuth2.0 for LibreOffice / OpenOffice</name>
+        <name xlink:href="https://prrvchr.github.io/OAuth2OOo/README_fr" lang="fr-FR">OAuth2.0 pour LibreOffice / OpenOffice</name>
     </publisher>
     <registration>
-        <simple-license accept-by="admin" suppress-on-update="true" >
-            <license-text xlink:href="registration/TermsOfUse_fr.md" lang="fr-FR" />
-            <license-text xlink:href="registration/TermsOfUse_en.md" lang="en-US" />
+        <simple-license accept-by="admin" suppress-on-update="true">
+            <license-text xlink:href="registration/TermsOfUse_en.md" lang="en-US"/>
+            <license-text xlink:href="registration/TermsOfUse_fr.md" lang="fr-FR"/>
         </simple-license>
     </registration>
     <release-notes>
-        <src xlink:href="https://prrvchr.github.io/OAuth2OOo" lang="en" />
+        <src xlink:href="https://prrvchr.github.io/OAuth2OOo/" lang="en-US"/>
+        <src xlink:href="https://prrvchr.github.io/OAuth2OOo/README_fr" lang="fr-FR"/>
     </release-notes>
     <display-name>
-        <name lang="en">OAuth2OOo</name>
+        <name lang="en-US">OAuth2OOo</name>
     </display-name>
     <icon>
-        <default xlink:href="OAuth2OOo/OAuth2.png" />
-        <high-contrast xlink:href="OAuth2OOo/OAuth2.png" />
+        <default xlink:href="OAuth2OOo/OAuth2.png"/>
+        <high-contrast xlink:href="OAuth2OOo/OAuth2.png"/>
     </icon>
     <extension-description>
-        <src xlink:href="description/desc_en.txt" lang="en" />
-        <src xlink:href="description/desc_fr.txt" lang="fr" />
+        <src xlink:href="description/desc_en.txt" lang="en-US"/>
+        <src xlink:href="description/desc_fr.txt" lang="fr-FR"/>
     </extension-description>
 </description>
