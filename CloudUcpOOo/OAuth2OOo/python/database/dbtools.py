@@ -287,6 +287,20 @@ def getSequenceFromResult(result, sequence=None, index=1, provider=None):
         sequence.append(value)
     return sequence
 
+def getDictFromResult(result):
+    values = {}
+    index = range(1, result.MetaData.ColumnCount +1)
+    while result.next():
+        for i in index:
+            if i == 1:
+                key = getValueFromResult(result, i)
+            else:
+                value = getValueFromResult(result, i)
+            if result.wasNull():
+                value = None
+        values[key] = value
+    return values
+
 def getRowResult(result, index=(0,), separator=' '):
     sequence = []
     if len(index) > 0:

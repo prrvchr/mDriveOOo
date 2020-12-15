@@ -45,7 +45,7 @@ import traceback
 
 class WizardView(unohelper.Base):
     def __init__(self, ctx, handler, xdl, parent):
-        self._spacer = 6
+        self._spacer = 5
         rectangle = uno.createUnoStruct('com.sun.star.awt.Rectangle', 0, 0, 85, 180)
         self._roadmap = {'name': 'RoadmapControl1', 'index': 1, 'area': rectangle}
         self._button = {CANCEL: 1, FINISH: 2, NEXT: 3, PREVIOUS: 4, HELP: 5}

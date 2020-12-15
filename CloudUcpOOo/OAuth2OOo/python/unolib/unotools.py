@@ -58,12 +58,15 @@ def getConnectionMode(ctx, host, port=80):
 def getSimpleFile(ctx):
     return createService(ctx, 'com.sun.star.ucb.SimpleFileAccess')
 
-def getUrl(ctx, location):
+def getUrl(ctx, location, protocol=None):
     url = uno.createUnoStruct('com.sun.star.util.URL')
     url.Complete = location
     transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
-    success, url = transformer.parseStrict(url)
-    return url
+    if protocol is None:
+        success, url = transformer.parseStrict(url)
+    else:
+        success, url = transformer.parseSmart(url, protocol)
+    return url if success else None
 
 def getRequest(ctx, scheme, name):
     request = createService(ctx, g_oauth2)

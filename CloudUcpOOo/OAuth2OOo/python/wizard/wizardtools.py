@@ -31,15 +31,15 @@ import uno
 import unohelper
 
 
-def getRowSetOrders(rowset):
-    orders = [order.strip('"') for order in rowset.Order.replace(' ', '').split(',')]
-    return orders
-
-def setRowSetOrders(orders):
-    rowsetorder = '%s' % '", "'.join(orders)
+def getOrder(orders):
+    order = ''
     if len(orders) > 0:
-        rowsetorder = '"%s"' % rowsetorder
-    return rowsetorder
+        order = '"%s"' % '", "'.join(orders)
+    return order
+
+def getOrders(query):
+    orders = [order.strip('"') for order in query.replace(' ', '').split(',')]
+    return orders
 
 # TODO: On OpenOffice listbox.getSelectedItems() return a "ByteSequence instance" on empty selection
 def getSelectedItems(control):
