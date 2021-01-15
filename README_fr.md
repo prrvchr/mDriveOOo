@@ -12,7 +12,7 @@ Cette extension vous permet de travailler dans LibreOffice / OpenOffice sur vos 
 Etant un logiciel libre je vous encourage:
 - A dupliquer son [code source](https://github.com/prrvchr/oneDriveOOo).
 - A apporter des modifications, des corrections, des ameliorations.
-- D'ouvrir une [issue](https://github.com/prrvchr/gDriveOOo/issues/new) si nécessaire.
+- D'ouvrir un [dysfonctionnement](https://github.com/prrvchr/gDriveOOo/issues/new) si nécessaire.
 
 Bref, à participer au developpement de cette extension.
 Car c'est ensemble que nous pouvons rendre le Logiciel Libre plus intelligent.
@@ -20,15 +20,16 @@ Car c'est ensemble que nous pouvons rendre le Logiciel Libre plus intelligent.
 ## Prérequis:
 
 oneDriveOOo utilise une base de données locale HsqlDB version 2.5.1.  
-L'utilisation de HsqlDB nécessite l'installation et la configuration dans
-LibreOffice / OpenOffice d'un **JRE version 1.8 minimum** (c'est-à-dire: Java version 8)
+L'utilisation de HsqlDB nécessite l'installation et la configuration dans LibreOffice / OpenOffice d'un **JRE version 1.8 minimum** (c'est-à-dire: Java version 8)  
+Je vous recommande [AdoptOpenJDK](https://adoptopenjdk.net/) comme source d'installation de Java.
 
-Parfois, il peut être nécessaire pour les utilisateurs de LibreOffice de ne pas avoir de pilote HsqlDB installé avec LibreOffice  
-(vérifiez vos applications installées sous Windows ou votre gestionnaire de paquets sous Linux)  
-~~Il semble que les versions 6.4.x et 7.x de LibreOffice aient résolu ce problème et sont capables de fonctionner simultanément avec différentes versions de pilote de HsqlDB.~~  
-Après de nombreux tests, il semble que LibreOffice (6.4.x et 7.x) ne puisse pas charger un pilote HsqlDB fourni (hsqldb.jar v2.5.1), si le pilote HsqlDB intégré est installé (et même la solution est parfois de renommer le fichier hsqldb.jar dans /usr/share/java, la désinstallation du paquet libreoffice-sdbc-hsqldb ne semble pas suffisante...)  
-Pour surmonter cette limitation et si vous souhaitez utiliser HsqlDB intégré, supprimez le pilote HsqlDB intégré (hsqldb.jar v1.8.0) et installez cette extension: [HsqlDBembeddedOOo](https://prrvchr.github.io/HsqlDBembeddedOOo/) pour remplacer le pilote HsqlDB intégré disfonctionnant de LibreOffice.  
-OpenOffice ne semble pas avoir besoin de cette solution de contournement.
+Si vous utilisez LibreOffice sous Linux, alors vous êtes sujet au [dysfonctionnement 139538](https://bugs.documentfoundation.org/show_bug.cgi?id=139538).  
+Pour contourner le problème, veuillez désinstaller les paquets:
+- libreoffice-sdbc-hsqldb
+- libhsqldb1.8.0-java
+
+Si vous souhaitez quand même utiliser la fonctionnalité HsqlDB intégré fournie par LibreOffice, alors installez l'extension [HsqlDBembeddedOOo](https://prrvchr.github.io/HsqlDBembeddedOOo/README_fr).  
+OpenOffice et LibreOffice sous Windows ne sont pas soumis à ce dysfonctionnement.
 
 ## Installation:
 
@@ -81,7 +82,7 @@ Après avoir autorisé l'application [OAuth2OOo](https://prrvchr.github.io/OAuth
 
 * LibreOffice 7.0.0.0.alpha1 - Ubuntu 20.04 -  LxQt 0.14.1
 
-* OpenOffice 4.1.5 x86_64 - Ubuntu 20.04 - LxQt 0.14.1
+* OpenOffice 4.1.8 x86_64 - Ubuntu 20.04 - LxQt 0.14.1
 
 * OpenOffice 4.2.0.Build:9820 x86_64 - Ubuntu 20.04 - LxQt 0.14.1
 
@@ -90,7 +91,7 @@ Après avoir autorisé l'application [OAuth2OOo](https://prrvchr.github.io/OAuth
 * LibreOffice 6.4.4.2 (x64) - Windows 7 SP1
 
 Je vous encourage en cas de problème :-(  
-de créer une [issue](https://github.com/prrvchr/oneDriveOOo/issues/new)  
+de créer un [dysfonctionnement](https://github.com/prrvchr/oneDriveOOo/issues/new)  
 J'essaierai de la résoudre ;-)
 
 ## Historique:
