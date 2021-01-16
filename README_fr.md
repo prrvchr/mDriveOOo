@@ -23,7 +23,7 @@ oneDriveOOo utilise une base de données locale HsqlDB version 2.5.1.
 L'utilisation de HsqlDB nécessite l'installation et la configuration dans LibreOffice / OpenOffice d'un **JRE version 1.8 minimum** (c'est-à-dire: Java version 8)  
 Je vous recommande [AdoptOpenJDK](https://adoptopenjdk.net/) comme source d'installation de Java.
 
-Si vous utilisez LibreOffice sous Linux, alors vous êtes sujet au [dysfonctionnement 139538](https://bugs.documentfoundation.org/show_bug.cgi?id=139538).  
+Si vous utilisez **LibreOffice sous Linux**, alors vous êtes sujet au [dysfonctionnement 139538](https://bugs.documentfoundation.org/show_bug.cgi?id=139538).  
 Pour contourner le problème, veuillez désinstaller les paquets:
 - libreoffice-sdbc-hsqldb
 - libhsqldb1.8.0-java
