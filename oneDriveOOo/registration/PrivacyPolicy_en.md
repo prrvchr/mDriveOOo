@@ -1,8 +1,8 @@
+# ![oneDriveOOo logo](https://prrvchr.github.io/oneDriveOOo/img/oneDriveOOo.png) oneDriveOOo - Data Protection Policy
+
 **Use of this software also subjects you to our [Terms Of Use](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_en).**
 
 Regarding installation, configuration and use, please consult the [documentation](https://prrvchr.github.io/oneDriveOOo).
-
-# Data Protection Policy
 
 ## Introduction:
 

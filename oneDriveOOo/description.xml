@@ -30,8 +30,8 @@
         <name lang="en-US">oneDriveOOo</name>
     </display-name>
     <icon>
-        <default xlink:href="oneDriveOOo/oneDrive.png"/>
-        <high-contrast xlink:href="oneDriveOOo/oneDrive.png"/>
+        <default xlink:href="oneDriveOOo/oneDriveOOo.png"/>
+        <high-contrast xlink:href="oneDriveOOo/oneDriveOOo.png"/>
     </icon>
     <extension-description>
         <src xlink:href="description/desc_en.txt" lang="en-US"/>
