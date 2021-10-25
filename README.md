@@ -22,7 +22,7 @@ Because it is together that we can make Free Software smarter.
 ## Requirement:
 
 oneDriveOOo uses a local HsqlDB database of version 2.5.1.  
-The use of HsqlDB requires the installation and configuration within LibreOffice / OpenOffice of a **JRE version 1.8 minimum** (ie: Java version 8)  
+The use of HsqlDB requires the installation and configuration within LibreOffice / OpenOffice of a **JRE version 11 or after**.  
 I recommend [AdoptOpenJDK](https://adoptopenjdk.net/) as your Java installation source.
 
 If you are using **LibreOffice on Linux**, then you are subject to [bug 139538](https://bugs.documentfoundation.org/show_bug.cgi?id=139538).  
@@ -38,11 +38,11 @@ OpenOffice and LibreOffice on Windows are not subject to this malfunction.
 It seems important that the file was not renamed when it was downloaded.
 If necessary, rename it before installing it.
 
-- Install [OAuth2OOo.oxt](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt) extension version 0.0.5.
+- Install ![OAuth2OOo logo](https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.png) **[OAuth2OOo.oxt](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt)** extension version 0.0.5.
 
 You must first install this extension, if it is not already installed.
 
-- Install [oneDriveOOo.oxt](https://github.com/prrvchr/oneDriveOOo/raw/master/oneDriveOOo.oxt) extension version 0.0.5.
+- Install ![oneDriveOOo logo](img/oneDriveOOo.png) **[oneDriveOOo.oxt](https://github.com/prrvchr/oneDriveOOo/raw/master/oneDriveOOo.oxt)** extension version 0.0.5.
 
 Restart LibreOffice / OpenOffice after installation.
 
