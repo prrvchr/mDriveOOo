@@ -58,6 +58,9 @@
             <prop oor:name="RedirectPort">
                 <value>8080</value>
             </prop>
+            <prop oor:name="SignIn">
+                <value>false</value>
+            </prop>
         </node>
     </node>
 </oor:component-data>
