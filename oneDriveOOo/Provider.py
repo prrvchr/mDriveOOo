@@ -13,9 +13,9 @@ from com.sun.star.auth.RestRequestTokenType import TOKEN_QUERY
 from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
 from com.sun.star.auth.RestRequestTokenType import TOKEN_SYNC
 
-from unolib import KeyMap
-
+from onedrive import KeyMap
 from onedrive import ProviderBase
+
 from onedrive import g_identifier
 from onedrive import g_provider
 from onedrive import g_host

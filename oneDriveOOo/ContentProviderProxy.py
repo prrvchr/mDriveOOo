@@ -16,8 +16,8 @@ from com.sun.star.beans.PropertyAttribute import READONLY
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from unolib import PropertySet
-from unolib import getProperty
+from onedrive import PropertySet
+from onedrive import getProperty
 
 from onedrive import ContentProvider
 

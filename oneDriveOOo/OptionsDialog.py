@@ -10,12 +10,12 @@ from com.sun.star.awt import XDialogEventHandler
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from unolib import createService
-from unolib import getFileSequence
-from unolib import getStringResource
-from unolib import getResourceLocation
-from unolib import getConfiguration
-from unolib import getDialog
+from onedrive import createService
+from onedrive import getFileSequence
+from onedrive import getStringResource
+from onedrive import getResourceLocation
+from onedrive import getConfiguration
+from onedrive import getDialog
 
 from onedrive import getLoggerUrl
 from onedrive import getLoggerSetting
