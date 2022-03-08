@@ -1,27 +1,31 @@
 #!
 # -*- coding: utf_8 -*-
 
-'''
-    Copyright (c) 2020 https://prrvchr.github.io
-
-    Permission is hereby granted, free of charge, to any person obtaining
-    a copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the Software
-    is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-'''
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
 
 import uno
 import unohelper
@@ -48,9 +52,10 @@ from com.sun.star.logging.LogLevel import SEVERE
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 from com.sun.star.ucb.ConnectionMode import ONLINE
 
-from unolib import KeyMap
-from unolib import getProperty
-from unolib import parseDateTime
+from .unolib import KeyMap
+
+from .unotool import getProperty
+from .unotool import parseDateTime
 
 from .content import Content
 from .contenttools import getUcb
@@ -127,11 +132,15 @@ class Identifier(unohelper.Base,
         return content
 
     def getFolderContent(self, content):
-        select, updated = self._getFolderContent(content, False)
-        if updated:
-            loaded = self.User.DataBase.updateLoaded(self.User.Id, self.Id, OFFLINE, ONLINE)
-            content.insertValue('Loaded', loaded)
-        return select
+        try:
+            select, updated = self._getFolderContent(content, False)
+            if updated:
+                loaded = self.User.DataBase.updateLoaded(self.User.Id, self.Id, OFFLINE, ONLINE)
+                content.insertValue('Loaded', loaded)
+            return select
+        except Exception as e:
+            msg = "Error: %s" % traceback.print_exc()
+            print(msg)
 
     def getDocumentContent(self, sf, content, size):
         size = 0
@@ -293,4 +302,5 @@ class Identifier(unohelper.Base,
             url += '/'
         mode = self.User.Provider.SessionMode
         select = self.User.DataBase.getChildren(self.User.Id, self.Id, url, mode)
+        print("Identifier._getFolderContent()")
         return select, updated

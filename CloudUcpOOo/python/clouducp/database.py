@@ -1,27 +1,31 @@
 #!
 # -*- coding: utf_8 -*-
 
-'''
-    Copyright (c) 2020 https://prrvchr.github.io
-
-    Permission is hereby granted, free of charge, to any person obtaining
-    a copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the Software
-    is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-'''
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
 
 import uno
 import unohelper
@@ -32,8 +36,10 @@ from com.sun.star.sdb.CommandType import QUERY
 
 from com.sun.star.ucb import XRestDataBase
 
-from unolib import KeyMap
-from unolib import parseDateTime
+from .unolib import KeyMap
+
+from .unotool import parseDateTime
+from .unotool import createService
 
 from .configuration import g_admin
 
@@ -41,17 +47,18 @@ from .dbqueries import getSqlQuery
 from .dbconfig import g_role
 from .dbconfig import g_dba
 
-from .dbtools import checkDataBase
-from .dbtools import createStaticTable
-from .dbtools import executeSqlQueries
-from .dbtools import getDataSourceCall
-from .dbtools import executeQueries
+from .dbtool import Array
+
+from .dbtool import checkDataBase
+from .dbtool import createStaticTable
+from .dbtool import executeSqlQueries
+from .dbtool import getDataSourceCall
+from .dbtool import getKeyMapFromResult
+from .dbtool import executeQueries
 
 from .dbinit import getStaticTables
 from .dbinit import getQueries
 from .dbinit import getTablesAndStatements
-
-from .dbtools import getKeyMapFromResult
 
 from .contenttools import getUcb
 
@@ -64,7 +71,7 @@ import traceback
 class DataBase(unohelper.Base,
                XRestDataBase):
     def __init__(self, ctx, datasource, name='', password='', sync=None):
-        self.ctx = ctx
+        self._ctx = ctx
         self._statement = datasource.getConnection(name, password).createStatement()
         self.sync = sync
 
@@ -74,13 +81,21 @@ class DataBase(unohelper.Base,
 
 # Procedures called by the DataSource
     def createDataBase(self):
-        version, error = checkDataBase(self.ctx, self.Connection)
-        if error is None:
-            createStaticTable(self.ctx, self._statement, getStaticTables(), True)
-            tables, statements = getTablesAndStatements(self.ctx, self._statement, version)
-            executeSqlQueries(self._statement, tables)
-            executeQueries(self.ctx, self._statement, getQueries())
-        return error
+        try:
+            print("DataBase.createDataBase() 1")
+            version, error = checkDataBase(self._ctx, self.Connection)
+            if error is None:
+                createStaticTable(self._ctx, self._statement, getStaticTables(), True)
+                tables, statements = getTablesAndStatements(self._ctx, self._statement, version)
+                print("DataBase.createDataBase() 2")
+                executeSqlQueries(self._statement, tables)
+                executeQueries(self._ctx, self._statement, getQueries())
+                print("DataBase.createDataBase() 3")
+            print("DataBase.createDataBase() 4")
+            return error
+        except Exception as e:
+            msg = "Error: %s" % traceback.print_exc()
+            print(msg)
 
     def getDataSource(self):
         return self.Connection.getParent().DatabaseDocument.DataSource
@@ -93,17 +108,17 @@ class DataBase(unohelper.Base,
 
     def shutdownDataBase(self, compact=False):
         if compact:
-            query = getSqlQuery(self.ctx, 'shutdownCompact')
+            query = getSqlQuery(self._ctx, 'shutdownCompact')
         else:
-            query = getSqlQuery(self.ctx, 'shutdown')
+            query = getSqlQuery(self._ctx, 'shutdown')
         self._statement.execute(query)
 
     def createUser(self, user, password):
         name, password = user.getCredential(password)
         format = {'User': name, 'Password': password, 'Role': g_role, 'Admin': g_admin}
-        sql = getSqlQuery(self.ctx, 'createUser', format)
+        sql = getSqlQuery(self._ctx, 'createUser', format)
         status = self._statement.executeUpdate(sql)
-        sql = getSqlQuery(self.ctx, 'grantRole', format)
+        sql = getSqlQuery(self._ctx, 'grantRole', format)
         status += self._statement.executeUpdate(sql)
         return status == 0
 
@@ -170,19 +185,17 @@ class DataBase(unohelper.Base,
 
     def updateFolderContent(self, user, content):
         rows = []
-        separator = ','
         timestamp = parseDateTime()
         call = self._getCall('mergeItem')
         call.setString(1, user.Id)
-        call.setString(2, separator)
-        call.setLong(3, 0)
-        call.setTimestamp(4, timestamp)
+        call.setLong(2, 0)
+        call.setTimestamp(3, timestamp)
         enumerator = user.Provider.getFolderContent(user.Request, content)
         while enumerator.hasMoreElements():
             item = enumerator.nextElement()
             itemid = user.Provider.getItemId(item)
             parents = user.Provider.getItemParent(item, user.RootId)
-            rows.append(self._mergeItem(call, user.Provider, item, itemid, parents, separator, timestamp))
+            rows.append(self._mergeItem(call, user.Provider, item, itemid, parents, timestamp))
             call.addBatch()
         if enumerator.RowCount > 0:
             call.executeBatch()
@@ -193,8 +206,8 @@ class DataBase(unohelper.Base,
         #TODO: Can't have a ResultSet of type SCROLL_INSENSITIVE with a Procedure,
         #TODO: as a workaround we use a simple quey...
         select = self._getCall('getChildren')
-        scroll = 'com.sun.star.sdbc.ResultSetType.SCROLL_INSENSITIVE'
-        select.ResultSetType = uno.getConstantByName(scroll)
+        scroll = uno.getConstantByName('com.sun.star.sdbc.ResultSetType.SCROLL_INSENSITIVE')
+        select.ResultSetType = scroll
         # OpenOffice / LibreOffice Columns:
         #    ['Title', 'Size', 'DateModified', 'DateCreated', 'IsFolder', 'TargetURL', 'IsHidden',
         #    'IsVolume', 'IsRemote', 'IsRemoveable', 'IsFloppy', 'IsCompactDisc']
@@ -296,21 +309,20 @@ class DataBase(unohelper.Base,
     def insertNewContent(self, userid, itemid, parentid, content, timestamp):
         call = self._getCall('insertItem')
         call.setString(1, userid)
-        call.setString(2, ',')
-        call.setLong(3, 1)
-        call.setTimestamp(4, timestamp)
-        call.setString(5, itemid)
-        call.setString(6, content.getValue("Title"))
-        call.setTimestamp(7, content.getValue('DateCreated'))
-        call.setTimestamp(8, content.getValue('DateModified'))
-        call.setString(9, content.getValue('MediaType'))
-        call.setLong(10, content.getValue('Size'))
-        call.setBoolean(11, content.getValue('Trashed'))
-        call.setBoolean(12, content.getValue('CanAddChild'))
-        call.setBoolean(13, content.getValue('CanRename'))
-        call.setBoolean(14, content.getValue('IsReadOnly'))
-        call.setBoolean(15, content.getValue('IsVersionable'))
-        call.setString(16, parentid)
+        call.setLong(2, 1)
+        call.setTimestamp(3, timestamp)
+        call.setString(4, itemid)
+        call.setString(5, content.getValue("Title"))
+        call.setTimestamp(6, content.getValue('DateCreated'))
+        call.setTimestamp(7, content.getValue('DateModified'))
+        call.setString(8, content.getValue('MediaType'))
+        call.setLong(9, content.getValue('Size'))
+        call.setBoolean(10, content.getValue('Trashed'))
+        call.setBoolean(11, content.getValue('CanAddChild'))
+        call.setBoolean(12, content.getValue('CanRename'))
+        call.setBoolean(13, content.getValue('IsReadOnly'))
+        call.setBoolean(14, content.getValue('IsVersionable'))
+        call.setString(15, parentid)
         result = call.execute() == 0
         call.close()
         if result:
@@ -380,17 +392,16 @@ class DataBase(unohelper.Base,
         insert.addBatch()
 
     # First pull procedure: header of merge request
-    def getFirstPullCall(self, userid, separator, loaded, timestamp):
+    def getFirstPullCall(self, userid, loaded, timestamp):
         call = self._getCall('mergeItem')
         call.setString(1, userid)
-        call.setString(2, separator)
-        call.setInt(3, loaded)
-        call.setTimestamp(4, timestamp)
+        call.setInt(2, loaded)
+        call.setTimestamp(3, timestamp)
         return call
 
     # First pull procedure: body of merge request
-    def setFirstPullCall(self, call, provider, item, itemid, parents, separator, timestamp):
-        row = self._mergeItem(call, provider, item, itemid, parents, separator, timestamp)
+    def setFirstPullCall(self, call, provider, item, itemid, parents, timestamp):
+        row = self._mergeItem(call, provider, item, itemid, parents, timestamp)
         call.addBatch()
         return row
 
@@ -413,7 +424,7 @@ class DataBase(unohelper.Base,
         return timestamp
 
     def setSession(self, user=g_dba):
-        query = getSqlQuery(self.ctx, 'setSession', user)
+        query = getSqlQuery(self._ctx, 'setSession', user)
         self._statement.execute(query)
 
     # Procedure to retrieve all the UPDATE AND INSERT in the 'Capabilities' table
@@ -443,51 +454,50 @@ class DataBase(unohelper.Base,
             update.setString(2, itemid)
             row = update.executeUpdate()
             msg = "execute UPDATE Items - Old ItemId: %s - New ItemId: %s - RowCount: %s" % (itemid, newid, row)
-            logMessage(self.ctx, INFO, msg, "DataBase", "updateItemId")
+            logMessage(self._ctx, INFO, msg, "DataBase", "updateItemId")
             update.close()
             # The Id of the item have been changed, we need to clear the Identifier from the cache
             url = '%s://%s/#%s' % (provider.Scheme, username, itemid)
-            getUcb(self.ctx).createContentIdentifier(url)
+            getUcb(self._ctx).createContentIdentifier(url)
 
 # Procedures called internally
-    def _mergeItem(self, call, provider, item, id, parents, separator, timestamp):
-        call.setString(5, id)
-        call.setString(6, provider.getItemTitle(item))
-        call.setTimestamp(7, provider.getItemCreated(item, timestamp))
-        call.setTimestamp(8, provider.getItemModified(item, timestamp))
-        call.setString(9, provider.getItemMediaType(item))
-        call.setLong(10, provider.getItemSize(item))
-        call.setBoolean(11, provider.getItemTrashed(item))
-        call.setBoolean(12, provider.getItemCanAddChild(item))
-        call.setBoolean(13, provider.getItemCanRename(item))
-        call.setBoolean(14, provider.getItemIsReadOnly(item))
-        call.setBoolean(15, provider.getItemIsVersionable(item))
-        call.setString(16, separator.join(parents))
+    def _mergeItem(self, call, provider, item, id, parents, timestamp):
+        call.setString(4, id)
+        call.setString(5, provider.getItemTitle(item))
+        call.setTimestamp(6, provider.getItemCreated(item, timestamp))
+        call.setTimestamp(7, provider.getItemModified(item, timestamp))
+        call.setString(8, provider.getItemMediaType(item))
+        call.setLong(9, provider.getItemSize(item))
+        call.setBoolean(10, provider.getItemTrashed(item))
+        call.setBoolean(11, provider.getItemCanAddChild(item))
+        call.setBoolean(12, provider.getItemCanRename(item))
+        call.setBoolean(13, provider.getItemIsReadOnly(item))
+        call.setBoolean(14, provider.getItemIsVersionable(item))
+        call.setArray(15, Array('VARCHAR', parents))
         return 1
 
     def _mergeRoot(self, provider, userid, rootid, rootname, root, timestamp):
         call = self._getCall('mergeItem')
         call.setString(1, userid)
-        call.setString(2, ',')
-        call.setLong(3, 0)
-        call.setTimestamp(4, timestamp)
-        call.setString(5, rootid)
-        call.setString(6, rootname)
-        call.setTimestamp(7, provider.getRootCreated(root, timestamp))
-        call.setTimestamp(8, provider.getRootModified(root, timestamp))
-        call.setString(9, provider.getRootMediaType(root))
-        call.setLong(10, provider.getRootSize(root))
-        call.setBoolean(11, provider.getRootTrashed(root))
-        call.setBoolean(12, provider.getRootCanAddChild(root))
-        call.setBoolean(13, provider.getRootCanRename(root))
-        call.setBoolean(14, provider.getRootIsReadOnly(root))
-        call.setBoolean(15, provider.getRootIsVersionable(root))
-        call.setString(16, '')
+        call.setLong(2, 0)
+        call.setTimestamp(3, timestamp)
+        call.setString(4, rootid)
+        call.setString(5, rootname)
+        call.setTimestamp(6, provider.getRootCreated(root, timestamp))
+        call.setTimestamp(7, provider.getRootModified(root, timestamp))
+        call.setString(8, provider.getRootMediaType(root))
+        call.setLong(9, provider.getRootSize(root))
+        call.setBoolean(10, provider.getRootTrashed(root))
+        call.setBoolean(11, provider.getRootCanAddChild(root))
+        call.setBoolean(12, provider.getRootCanRename(root))
+        call.setBoolean(13, provider.getRootIsReadOnly(root))
+        call.setBoolean(14, provider.getRootIsVersionable(root))
+        call.setArray(15, Array('VARCHAR'))
         call.executeUpdate()
         call.close()
 
     def _getCall(self, name, format=None):
-        return getDataSourceCall(self.ctx, self.Connection, name, format)
+        return getDataSourceCall(self._ctx, self.Connection, name, format)
 
     def _getPreparedCall(self, name):
         # TODO: cannot use: call = self.Connection.prepareCommand(name, QUERY)

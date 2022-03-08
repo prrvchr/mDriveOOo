@@ -33,8 +33,8 @@ from com.sun.star.logging.LogLevel import FINEST
 from com.sun.star.logging.LogLevel import ALL
 from com.sun.star.logging.LogLevel import OFF
 
-from unolib import getConfiguration
-from unolib import getStringResource
+from .unotool import getConfiguration
+from .unotool import getStringResource
 
 from .configuration import g_identifier
 

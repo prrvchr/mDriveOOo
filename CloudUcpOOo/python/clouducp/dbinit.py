@@ -1,51 +1,56 @@
 #!
 # -*- coding: utf_8 -*-
 
-'''
-    Copyright (c) 2020 https://prrvchr.github.io
-
-    Permission is hereby granted, free of charge, to any person obtaining
-    a copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the Software
-    is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-'''
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
 
 from com.sun.star.sdbc import SQLException
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from unolib import KeyMap
-from unolib import createService
-from unolib import getResourceLocation
-from unolib import getSimpleFile
+from .unolib import KeyMap
+
+from .unotool import createService
+from .unotool import getResourceLocation
+from .unotool import getSimpleFile
 
 from .dbconfig import g_path
 from .dbconfig import g_version
 from .dbconfig import g_role
 
-from .dbtools import registerDataSource
-from .dbtools import executeQueries
-from .dbtools import executeSqlQueries
-from .dbtools import getDataSourceConnection
-from .dbtools import getDataSourceCall
-from .dbtools import getSequenceFromResult
-from .dbtools import getKeyMapFromResult
-from .dbtools import createDataSource
-from .dbtools import checkDataBase
-from .dbtools import createStaticTable
+from .dbtool import registerDataSource
+from .dbtool import executeQueries
+from .dbtool import executeSqlQueries
+from .dbtool import getDataSourceConnection
+from .dbtool import getDataSourceCall
+from .dbtool import getSequenceFromResult
+from .dbtool import getKeyMapFromResult
+from .dbtool import createDataSource
+from .dbtool import checkDataBase
+from .dbtool import createStaticTable
 
 from .dbqueries import getSqlQuery
 
@@ -96,8 +101,6 @@ def getTablesAndStatements(ctx, statement, version=g_version):
             column = data.getValue('Column')
             definition = '"%s"' % column
             definition += ' %s' % data.getValue('Type')
-            lenght = data.getValue('Lenght')
-            definition += '(%s)' % lenght if lenght else ''
             default = data.getValue('Default')
             definition += ' DEFAULT %s' % default if default else ''
             options = data.getValue('Options')

@@ -35,12 +35,13 @@ from com.sun.star.sdbc import SQLWarning
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from unolib import KeyMap
-from unolib import createService
-from unolib import getPropertyValue
-from unolib import getPropertyValueSet
-from unolib import getResourceLocation
-from unolib import getSimpleFile
+from .unolib import KeyMap
+
+from .unotool import createService
+from .unotool import getPropertyValue
+from .unotool import getPropertyValueSet
+from .unotool import getResourceLocation
+from .unotool import getSimpleFile
 
 from .dbqueries import getSqlQuery
 

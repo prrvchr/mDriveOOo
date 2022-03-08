@@ -1,27 +1,31 @@
 #!
 # -*- coding: utf_8 -*-
 
-'''
-    Copyright (c) 2020 https://prrvchr.github.io
-
-    Permission is hereby granted, free of charge, to any person obtaining
-    a copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the Software
-    is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-'''
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
 
 import uno
 import unohelper
@@ -39,9 +43,11 @@ from com.sun.star.ucb import XCommandInfo
 from com.sun.star.ucb import XCommandInfoChangeNotifier
 from com.sun.star.ucb import UnsupportedCommandException
 
-from unolib import g_oauth2
-from unolib import PropertySet
-from unolib import getProperty
+from .oauth2lib import g_oauth2
+
+from .unolib import PropertySet
+
+from .unotool import getProperty
 
 from .contenttools import getUcb
 from .contenttools import getParametersRequest
@@ -292,13 +298,18 @@ class ContentResultSet(unohelper.Base,
                        XResultSetMetaDataSupplier,
                        XContentAccess):
     def __init__(self, ctx, select):
-        self.ctx = ctx
-        result = select.executeQuery()
-        result.last()
-        self.RowCount = result.getRow()
-        self.IsRowCountFinal = True
-        result.beforeFirst()
-        self.result = result
+        try:
+            self.ctx = ctx
+            result = select.executeQuery()
+            result.last()
+            self.RowCount = result.getRow()
+            self.IsRowCountFinal = True
+            result.beforeFirst()
+            self.result = result
+            print("ContentResultSet.__init__() %s" % self.RowCount)
+        except Exception as e:
+            msg = "Error: %s" % traceback.print_exc()
+            print(msg)
     def __del__(self):
         pass
     def _getPropertySetInfo(self):

@@ -1,27 +1,31 @@
 #!
 # -*- coding: utf_8 -*-
 
-'''
-    Copyright (c) 2020 https://prrvchr.github.io
-
-    Permission is hereby granted, free of charge, to any person obtaining
-    a copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the Software
-    is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-'''
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
 
 import uno
 import unohelper
@@ -52,10 +56,11 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb import XRestContent
 
-from unolib import getSimpleFile
-from unolib import getProperty
-from unolib import PropertySetInfo
-from unolib import getInterfaceTypes
+from .unolib import PropertySetInfo
+
+from .unotool import getSimpleFile
+from .unotool import getProperty
+from .unotool import getInterfaceTypes
 
 from .contentlib import CommandInfo
 from .contentlib import Row
@@ -167,12 +172,16 @@ class Content(unohelper.Base,
             user.DataBase.updateContent(user.Id, self.Identifier.Id, 'Trashed', True)
         elif command.Name == 'open':
             if self.IsFolder:
+                print("Content.execute() open 1")
                 # Not Used: command.Argument.Properties - Implement me ;-)
                 select = self.Identifier.getFolderContent(self.MetaData)
+                print("Content.execute() open 2")
                 msg += " IsFolder: %s" % self.IsFolder
                 logMessage(self.ctx, INFO, msg, "Content", "execute()")
+                print("Content.execute() open 3")
                 return DynamicResultSet(self.ctx, select)
             elif self.IsDocument:
+                print("Content.execute() open 4")
                 sf = getSimpleFile(self.ctx)
                 url, size = self.Identifier.getDocumentContent(sf, self.MetaData, 0)
                 if not size:

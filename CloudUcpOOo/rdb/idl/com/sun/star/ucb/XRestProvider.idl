@@ -81,7 +81,7 @@ interface XRestProvider: com::sun::star::uno::XInterface
     ::com::sun::star::util::DateTime getRootModified([in] ::com::sun::star::auth::XRestKeyMap Root,
                                                      [in] ::com::sun::star::util::DateTime TimeStamp);
     string getRootMediaType([in] ::com::sun::star::auth::XRestKeyMap Root);
-    long getRootSize([in] ::com::sun::star::auth::XRestKeyMap Root);
+    hyper getRootSize([in] ::com::sun::star::auth::XRestKeyMap Root);
     boolean getRootTrashed([in] ::com::sun::star::auth::XRestKeyMap Root);
     boolean getRootCanAddChild([in] ::com::sun::star::auth::XRestKeyMap Root);
     boolean getRootCanRename([in] ::com::sun::star::auth::XRestKeyMap Root);
@@ -95,7 +95,7 @@ interface XRestProvider: com::sun::star::uno::XInterface
     ::com::sun::star::util::DateTime getItemModified([in] ::com::sun::star::auth::XRestKeyMap Item,
                                                      [in] ::com::sun::star::util::DateTime TimeStamp);
     string getItemMediaType([in] ::com::sun::star::auth::XRestKeyMap Item);
-    long getItemSize([in] ::com::sun::star::auth::XRestKeyMap Item);
+    hyper getItemSize([in] ::com::sun::star::auth::XRestKeyMap Item);
     boolean getItemTrashed([in] ::com::sun::star::auth::XRestKeyMap Item);
     boolean getItemCanAddChild([in] ::com::sun::star::auth::XRestKeyMap Item);
     boolean getItemCanRename([in] ::com::sun::star::auth::XRestKeyMap Item);
