@@ -1,0 +1,19 @@
+#ifndef __com_sun_star_auth_RestRequestEnumerator_idl__
+#define __com_sun_star_auth_RestRequestEnumerator_idl__
+
+#include <com/sun/star/auth/RestRequestToken.idl>
+
+module com { module sun { module star { module auth {
+
+struct RestRequestEnumerator
+{
+
+    ::com::sun::star::auth::RestRequestToken Token;
+    string Field;
+
+
+};
+
+}; }; }; };
+
+#endif

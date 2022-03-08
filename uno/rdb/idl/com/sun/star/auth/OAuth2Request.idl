@@ -1,0 +1,20 @@
+#ifndef __com_sun_star_auth_OAuth2Request_idl__
+#define __com_sun_star_auth_OAuth2Request_idl__
+
+#include <com/sun/star/task/ClassifiedInteractionRequest.idl>
+
+module com {  module sun {  module star {  module auth {
+
+exception OAuth2Request: com::sun::star::task::ClassifiedInteractionRequest
+{
+
+    string ResourceUrl;
+    string UserName;
+    string Format;
+    sequence<any> args;
+
+};
+
+}; }; }; };
+
+#endif

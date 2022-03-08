@@ -1,0 +1,20 @@
+#ifndef __com_sun_star_auth_RestRequestTokenType_idl__
+#define __com_sun_star_auth_RestRequestTokenType_idl__
+
+module com { module sun { module star { module auth {
+
+constants RestRequestTokenType
+{
+
+    const long TOKEN_NONE = 0;
+    const long TOKEN_URL = 1;
+    const long TOKEN_REDIRECT = 2;
+    const long TOKEN_QUERY = 4;
+    const long TOKEN_JSON = 8;
+    const long TOKEN_SYNC = 16;
+
+};
+
+}; }; }; };
+
+#endif

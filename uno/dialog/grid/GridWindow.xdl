@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="GridWindow" dlg:left="0" dlg:top="0" dlg:width="275" dlg:height="180" dlg:help-text="&amp;GridWindow.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;GridWindow.Title" dlg:withtitlebar="false">
+  <dlg:bulletinboard>
+    <dlg:button dlg:id="CommandButton1" dlg:tab-index="0" dlg:left="0" dlg:top="0" dlg:width="8" dlg:height="10" dlg:help-text="&amp;GridWindow.CommandButton1.HelpText" dlg:value="&amp;GridWindow.CommandButton1.Label" dlg:toggled="1">
+      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:showControls" script:language="UNO"/>
+    </dlg:button>
+    <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:page="2" dlg:left="15" dlg:top="0" dlg:width="60" dlg:height="14" dlg:help-text="&amp;GridWindow.Label1.HelpText" dlg:value="&amp;GridWindow.Label1.Label" dlg:valign="center"/>
+    <dlg:menulist dlg:id="ListBox1" dlg:tab-index="2" dlg:page="2" dlg:left="85" dlg:top="0" dlg:width="50" dlg:height="14" dlg:help-text="&amp;GridWindow.ListBox1.HelpText" dlg:value="&amp;GridWindow.ListBox1.Text" dlg:spin="true">
+      <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:ChangeColumn" script:language="UNO"/>
+    </dlg:menulist>
+    <dlg:text dlg:id="Label2" dlg:tab-index="3" dlg:page="2" dlg:left="145" dlg:top="0" dlg:width="35" dlg:height="14" dlg:help-text="&amp;GridWindow.Label2.HelpText" dlg:value="&amp;GridWindow.Label2.Label" dlg:valign="center"/>
+    <dlg:menulist dlg:id="ListBox2" dlg:tab-index="4" dlg:page="2" dlg:left="185" dlg:top="0" dlg:width="50" dlg:height="14" dlg:help-text="&amp;GridWindow.ListBox2.HelpText" dlg:value="&amp;GridWindow.ListBox2.Text" dlg:spin="true">
+      <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:ChangeOrder" script:language="UNO"/>
+    </dlg:menulist>
+    <dlg:checkbox dlg:id="CheckBox1" dlg:tab-index="5" dlg:page="2" dlg:left="240" dlg:top="3" dlg:width="35" dlg:height="8" dlg:help-text="&amp;GridWindow.CheckBox1.HelpText" dlg:value="&amp;GridWindow.CheckBox1.Label" dlg:valign="center" dlg:checked="false"/>
+  </dlg:bulletinboard>
+</dlg:window>

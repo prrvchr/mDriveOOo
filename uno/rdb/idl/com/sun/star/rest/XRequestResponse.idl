@@ -1,0 +1,33 @@
+#ifndef __com_sun_star_rest_XRequestResponse_idl__
+#define __com_sun_star_rest_XRequestResponse_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/auth/XRestKeyMap.idl>
+
+module com { module sun { module star { module rest {
+
+interface XRequestResponse: com::sun::star::uno::XInterface
+{
+
+    void close();
+    string getHeader([in] string Header);
+
+    [attribute, readonly] string Name;
+    [attribute, readonly] string Method;
+    [attribute, readonly] long StatusCode;
+    [attribute, readonly] string ApparentEncoding;
+    [attribute] string Encoding;
+    [attribute, readonly] string Text;
+    [attribute, readonly] sequence<byte> Content;
+    [attribute, readonly] any Data;
+    [attribute, readonly] com::sun::star::auth::XRestKeyMap Json;
+    [attribute, readonly] boolean Ok;
+    [attribute, readonly] boolean IsPermanentRedirect;
+    [attribute, readonly] boolean IsRedirect;
+    [attribute, readonly] long Elapsed;
+
+};
+
+}; }; }; };
+
+#endif

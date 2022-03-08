@@ -1,0 +1,21 @@
+#ifndef __com_sun_star_auth_RestRequestToken_idl__
+#define __com_sun_star_auth_RestRequestToken_idl__
+
+module com { module sun { module star { module auth {
+
+struct RestRequestToken
+{
+
+    long Type;
+    string Field;
+    string Value;
+    boolean IsConditional;
+    string ConditionField;
+    any ConditionValue;
+    string SyncField;
+
+};
+
+}; }; }; };
+
+#endif
