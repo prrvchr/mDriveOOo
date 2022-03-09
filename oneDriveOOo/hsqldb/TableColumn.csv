@@ -1,4 +1,4 @@
-Table|Column|TypeName|Default|Options|Primary|Unique|ForeignTable|ForeignColumn
+Table|Column|Type|Default|Options|Primary|Unique|ForeignTable|ForeignColumn
 0|0|VARCHAR(100)||NOT NULL|true|false||
 0|1|VARCHAR(100)||NOT NULL|false|true||
 0|2|VARCHAR(100)|||false|false||
