@@ -59,7 +59,7 @@ def getSqlQuery(ctx, name, format=None):
     elif name == 'createTableTableColumn':
         c1 = '"Table" INTEGER NOT NULL'
         c2 = '"Column" INTEGER NOT NULL'
-        c3 = '"TypeName" VARCHAR(100) NOT NULL'
+        c3 = '"Type" VARCHAR(100) NOT NULL'
         c4 = '"Default" VARCHAR(100) DEFAULT NULL'
         c5 = '"Options" VARCHAR(100) DEFAULT NULL'
         c6 = '"Primary" BOOLEAN NOT NULL'
@@ -258,7 +258,7 @@ def getSqlQuery(ctx, name, format=None):
         s2 = '"C"."Column" AS "ColumnId"'
         s3 = '"T"."Name" AS "Table"'
         s4 = '"C"."Name" AS "Column"'
-        s5 = '"TC"."TypeName" AS "Type"'
+        s5 = '"TC"."Type"'
         s6 = '"TC"."Default"'
         s7 = '"TC"."Options"'
         s8 = '"TC"."Primary"'

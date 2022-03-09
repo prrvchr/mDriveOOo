@@ -81,11 +81,17 @@ def createDataBase(ctx, connection):
         executeQueries(statement, getViews())
     return error
 
+def _getTableNames(ctx, statement):
+    result = statement.executeQuery(getSqlQuery(ctx, 'getTableNames'))
+    names = getSequenceFromResult(result)
+    result.close()
+    return names
+
 def getTablesAndStatements(ctx, statement, version=g_version):
     tables = []
     statements = []
     call = getDataSourceCall(ctx, statement.getConnection(), 'getTables')
-    for table in getSequenceFromResult(statement.executeQuery(getSqlQuery(ctx, 'getTableName'))):
+    for table in _getTableNames(ctx, statement):
         view = False
         versioned = False
         columns = []
