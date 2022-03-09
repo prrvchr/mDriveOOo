@@ -13,20 +13,10 @@
     <dlg:checkbox dlg:id="CheckBox1" dlg:tab-index="3" dlg:left="190" dlg:top="20" dlg:width="60" dlg:height="15" dlg:help-text="&amp;LogWindow.CheckBox1.HelpText" dlg:value="&amp;LogWindow.CheckBox1.Label" dlg:valign="center" dlg:checked="false">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:ToggleLogger" script:language="UNO"/>
     </dlg:checkbox>
-    <dlg:text dlg:id="Label2" dlg:tab-index="4" dlg:left="10" dlg:top="40" dlg:width="25" dlg:height="15" dlg:help-text="&amp;LogWindow.Label2.HelpText" dlg:value="&amp;LogWindow.Label2.Label" dlg:valign="center"/>
-    <dlg:radiogroup>
-      <dlg:radio dlg:id="OptionButton1" dlg:tab-index="5" dlg:left="40" dlg:top="40" dlg:width="35" dlg:height="15" dlg:help-text="&amp;LogWindow.OptionButton1.HelpText" dlg:value="&amp;LogWindow.OptionButton1.Label" dlg:valign="center">
-        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:DisableViewer" script:language="UNO"/>
-      </dlg:radio>
-      <dlg:radio dlg:id="OptionButton2" dlg:tab-index="6" dlg:left="80" dlg:top="40" dlg:width="30" dlg:height="15" dlg:help-text="&amp;LogWindow.OptionButton2.HelpText" dlg:value="&amp;LogWindow.OptionButton2.Label" dlg:valign="center">
-        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableViewer" script:language="UNO"/>
-      </dlg:radio>
-    </dlg:radiogroup>
-    <dlg:button dlg:id="CommandButton1" dlg:tab-index="7" dlg:disabled="true" dlg:left="115" dlg:top="40" dlg:width="45" dlg:height="15" dlg:help-text="&amp;LogWindow.CommandButton1.HelpText" dlg:value="&amp;LogWindow.CommandButton1.Label">
-      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ViewLog" script:language="UNO"/>
-    </dlg:button>
-    <dlg:text dlg:id="Label3" dlg:tab-index="8" dlg:left="180" dlg:top="40" dlg:width="20" dlg:height="15" dlg:help-text="&amp;LogWindow.Label3.HelpText" dlg:value="&amp;LogWindow.Label3.Label" dlg:valign="center"/>
-    <dlg:menulist dlg:id="ListBox2" dlg:tab-index="9" dlg:left="205" dlg:top="40" dlg:width="45" dlg:height="15" dlg:help-text="&amp;LogWindow.ListBox2.HelpText" dlg:spin="true">
+
+
+    <dlg:text dlg:id="Label2" dlg:tab-index="4" dlg:left="10" dlg:top="40" dlg:width="20" dlg:height="15" dlg:help-text="&amp;LogWindow.Label2.HelpText" dlg:value="&amp;LogWindow.Label2.Label" dlg:valign="center"/>
+    <dlg:menulist dlg:id="ListBox2" dlg:tab-index="5" dlg:left="35" dlg:top="40" dlg:width="45" dlg:height="15" dlg:help-text="&amp;LogWindow.ListBox2.HelpText" dlg:spin="true">
       <dlg:menupopup>
         <dlg:menuitem dlg:value="&amp;LogWindow.ListBox2.StringItemList.0"/>
         <dlg:menuitem dlg:value="&amp;LogWindow.ListBox2.StringItemList.1"/>
@@ -38,5 +28,19 @@
         <dlg:menuitem dlg:value="&amp;LogWindow.ListBox2.StringItemList.7"/>
       </dlg:menupopup>
     </dlg:menulist>
+
+    <dlg:text dlg:id="Label3" dlg:tab-index="6" dlg:left="100" dlg:top="40" dlg:width="25" dlg:height="15" dlg:help-text="&amp;LogWindow.Label3.HelpText" dlg:value="&amp;LogWindow.Label3.Label" dlg:valign="center"/>
+    <dlg:radiogroup>
+      <dlg:radio dlg:id="OptionButton1" dlg:tab-index="7" dlg:left="130" dlg:top="40" dlg:width="35" dlg:height="15" dlg:help-text="&amp;LogWindow.OptionButton1.HelpText" dlg:value="&amp;LogWindow.OptionButton1.Label" dlg:valign="center">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:DisableViewer" script:language="UNO"/>
+      </dlg:radio>
+      <dlg:radio dlg:id="OptionButton2" dlg:tab-index="8" dlg:left="170" dlg:top="40" dlg:width="30" dlg:height="15" dlg:help-text="&amp;LogWindow.OptionButton2.HelpText" dlg:value="&amp;LogWindow.OptionButton2.Label" dlg:valign="center">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableViewer" script:language="UNO"/>
+      </dlg:radio>
+    </dlg:radiogroup>
+    <dlg:button dlg:id="CommandButton1" dlg:tab-index="9" dlg:disabled="true" dlg:left="205" dlg:top="40" dlg:width="45" dlg:height="15" dlg:help-text="&amp;LogWindow.CommandButton1.HelpText" dlg:value="&amp;LogWindow.CommandButton1.Label">
+      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ViewLog" script:language="UNO"/>
+    </dlg:button>
+
   </dlg:bulletinboard>
 </dlg:window>

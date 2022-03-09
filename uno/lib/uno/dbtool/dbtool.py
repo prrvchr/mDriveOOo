@@ -158,8 +158,9 @@ def createDataSource1(dbcontext, location, dbname, shutdown):
     datasource.URL = getDataSourceLocation(location, dbname, shutdown)
     return datasource
 
-def getDataSourceLocation(location, dbname, shutdown=False):
+def getDataSourceLocation1(location, dbname, shutdown):
     url = '%s%s/%s%s' % (g_protocol, location, dbname, g_options)
+    print("dbtool.getDataSourceLocation() %s" % url)
     if shutdown:
         url += g_shutdown
     return url
@@ -318,11 +319,7 @@ def getKeyMapFromResult(result, keymap=None, provider=None):
     keymap = KeyMap() if keymap is None else keymap
     for i in range(1, result.MetaData.ColumnCount +1):
         name = result.MetaData.getColumnName(i)
-        value = getValueFromResult(result, i)
-        if value is None:
-            continue
-        if result.wasNull():
-            value = None
+        value = getResultValue(result, i)
         if provider:
             value = provider.transform(name, value)
         keymap.insertValue(name, value)
@@ -332,11 +329,7 @@ def getDataFromResult(result, provider=None):
     data = {}
     for i in range(1, result.MetaData.ColumnCount +1):
         name = result.MetaData.getColumnName(i)
-        value = getValueFromResult(result, i)
-        if value is None:
-            continue
-        if result.wasNull():
-            value = None
+        value = getResultValue(result, i)
         if provider:
             value = provider.transform(name, value)
         data[name] = value
@@ -348,9 +341,7 @@ def getRowDict(result, default=None, count=None):
         count = result.MetaData.ColumnCount +1
     for i in range(1, count):
         name = result.MetaData.getColumnLabel(i)
-        value = getValueFromResult(result, i, default)
-        if result.wasNull():
-            value = default
+        value = getResultValue(result, i, default)
         row[name] = value
     return row
 
@@ -360,9 +351,7 @@ def getObjectFromResult(result, default=None, count=None):
         count = result.MetaData.ColumnCount +1
     for i in range(1, count):
         name = result.MetaData.getColumnLabel(i)
-        value = getValueFromResult(result, i, default)
-        if result.wasNull():
-            value = default
+        value = getResultValue(result, i, default)
         setattr(obj, name, value)
     return obj
 
@@ -381,11 +370,7 @@ def getKeyMapSequenceFromResult(result, provider=None):
         keymap = KeyMap()
         for i in range(1, count):
             name = result.MetaData.getColumnName(i)
-            value = getValueFromResult(result, i)
-            if value is None:
-                continue
-            if result.wasNull():
-                value = None
+            value = getResultValue(result, i)
             if provider:
                 value = provider.transform(name, value)
             keymap.insertValue(name, value)
@@ -397,9 +382,9 @@ def getKeyMapKeyMapFromResult(result):
     count = result.MetaData.ColumnCount +1
     while result.next():
         keymap = KeyMap()
-        name = getValueFromResult(result, 1)
+        name = getResultValue(result, 1)
         for i in range(2, count):
-            v = getValueFromResult(result, i)
+            v = getResultValue(result, i)
             n = result.MetaData.getColumnName(i)
             keymap.insertValue(n, v)
         sequence.insertValue(name, keymap)
@@ -409,11 +394,7 @@ def getSequenceFromResult(result, index=1, default=None, transformer=None):
     sequence = []
     name = result.MetaData.getColumnName(index)
     while result.next():
-        value = getValueFromResult(result, index)
-#        if value is None:
-#            continue
-        if result.wasNull():
-            value = default
+        value = getResultValue(result, index, default)
         if transformer is not None:
             value = transformer.transform(name, value)
         sequence.append(value)
@@ -425,11 +406,9 @@ def getDictFromResult(result):
     while result.next():
         for i in index:
             if i == 1:
-                key = getValueFromResult(result, i)
+                key = getResultValue(result, i)
             else:
-                value = getValueFromResult(result, i)
-            if result.wasNull():
-                value = None
+                value = getResultValue(result, i)
         values[key] = value
     return values
 
@@ -441,57 +420,62 @@ def getRowResult(result, index=(0,), separator=' '):
             values = []
             for i in index:
                 column = i + 1
-                values.append('%s' % getValueFromResult(result, column, ''))
+                values.append('%s' % getResultValue(result, column, ''))
             sequence.append(separator.join(values))
     return tuple(sequence)
 
 def getValueFromResult(result, index=1, default=None):
     dbtype = result.MetaData.getColumnTypeName(index)
+    return getRowValue(result, dbtype, index, default)
+
+def getResultValue(result, index=1, default=None):
+    dbtype = result.MetaData.getColumnTypeName(index)
+    return getRowValue(result, dbtype, index, default)
+
+def getRowValue(row, dbtype, index=1, default=None):
     if dbtype == 'VARCHAR':
-        value = result.getString(index)
-    elif dbtype == 'CHARACTER':
-        value = result.getString(index)
+        value = row.getString(index)
     elif dbtype == 'BOOLEAN':
-        value = result.getBoolean(index)
+        value = row.getBoolean(index)
     elif dbtype == 'TINYINT':
-        value = result.getByte(index)
+        value = row.getShort(index)
     elif dbtype == 'SMALLINT':
-        value = result.getShort(index)
+        value = row.getShort(index)
     elif dbtype == 'INTEGER':
-        value = result.getInt(index)
+        value = row.getInt(index)
     elif dbtype == 'BIGINT':
-        value = result.getLong(index)
+        value = row.getLong(index)
     elif dbtype == 'FLOAT':
-        value = result.getFloat(index)
+        value = row.getFloat(index)
     elif dbtype == 'DOUBLE':
-        value = result.getDouble(index)
-    elif dbtype.startswith('TIMESTAMP'):
-        value = result.getTimestamp(index)
+        value = row.getDouble(index)
+    elif dbtype == 'TIMESTAMP':
+        value = row.getTimestamp(index)
     elif dbtype == 'TIME':
-        value = result.getTime(index)
+        value = row.getTime(index)
     elif dbtype == 'DATE':
-        value = result.getDate(index)
-    elif dbtype == 'BINARY':
-        value = result.getBytes(index).value
+        value = row.getDate(index)
     elif dbtype.endswith('ARRAY'):
-        value = result.getArray(index)
+        value = row.getArray(index)
+        if not row.wasNull():
+            value = value.getArray(None)
     else:
+        value = default
+    if row.wasNull():
         value = default
     return value
 
 def createStaticTable(ctx, statement, tables, readonly=False):
     for table in tables:
-        query = getSqlQuery(ctx, 'createTable' + table, table)
+        query = getSqlQuery(ctx, 'createTable' + table)
         statement.executeUpdate(query)
-        query = getSqlQuery(ctx, 'setTableSource', table)
-        statement.executeUpdate(query)
+    for table in tables:
+        statement.executeUpdate(getSqlQuery(ctx, 'setTableSource', table))
         if readonly:
-            query = getSqlQuery(ctx, 'setTableReadOnly', table)
-            statement.executeUpdate(query)
+            statement.executeUpdate(getSqlQuery(ctx, 'setTableReadOnly', table))
 
 def executeSqlQueries(statement, queries):
     for query in queries:
-        print("dbtool.executeSqlQueries(): %s" % query)
         statement.executeQuery(query)
 
 def getWarning(state, code, message, context=None, exception=None):
