@@ -42,6 +42,7 @@ from .oauth2lib import g_oauth2
 from .unotool import createService
 from .unotool import getResourceLocation
 from .unotool import getSimpleFile
+from .unotool import getUrlPresentation
 
 from .configuration import g_cache
 
@@ -200,6 +201,7 @@ class DataSource(unohelper.Base,
 
     def _getDataSource(self, dbname, plugin, register):
         location = getResourceLocation(self.ctx, plugin, g_folder)
+        location = getUrlPresentation(self.ctx, location)
         url = '%s/%s.odb' % (location, dbname)
         dbcontext = createService(self.ctx, 'com.sun.star.sdb.DatabaseContext')
         if getSimpleFile(self.ctx).exists(url):
