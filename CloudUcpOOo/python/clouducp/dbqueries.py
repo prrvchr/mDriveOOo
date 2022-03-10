@@ -251,8 +251,9 @@ def getSqlQuery(ctx, name, format=None):
         query = "SET SESSION AUTHORIZATION '%s'" % format
 
 # Select Queries
-    elif name == 'getTableName':
+    elif name == 'getTableNames':
         query = 'SELECT "Name" FROM "Tables" ORDER BY "Table";'
+
     elif name == 'getTables':
         s1 = '"T"."Table" AS "TableId"'
         s2 = '"C"."Column" AS "ColumnId"'
