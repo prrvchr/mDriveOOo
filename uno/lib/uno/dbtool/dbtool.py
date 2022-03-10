@@ -434,10 +434,12 @@ def getResultValue(result, index=1, default=None):
 def getRowValue(row, dbtype, index=1, default=None):
     if dbtype == 'VARCHAR':
         value = row.getString(index)
+    elif dbtype == 'CHARACTER':
+        value = row.getString(index)
     elif dbtype == 'BOOLEAN':
         value = row.getBoolean(index)
     elif dbtype == 'TINYINT':
-        value = row.getShort(index)
+        value = row.getByte(index)
     elif dbtype == 'SMALLINT':
         value = row.getShort(index)
     elif dbtype == 'INTEGER':
@@ -448,12 +450,16 @@ def getRowValue(row, dbtype, index=1, default=None):
         value = row.getFloat(index)
     elif dbtype == 'DOUBLE':
         value = row.getDouble(index)
-    elif dbtype == 'TIMESTAMP':
+    elif dbtype.startswith('TIMESTAMP'):
         value = row.getTimestamp(index)
     elif dbtype == 'TIME':
         value = row.getTime(index)
     elif dbtype == 'DATE':
         value = row.getDate(index)
+    elif dbtype == 'BINARY':
+        value = row.getBytes(index)
+        if not row.wasNull():
+            value = value.value
     elif dbtype.endswith('ARRAY'):
         value = row.getArray(index)
         if not row.wasNull():
