@@ -7,9 +7,6 @@
   oor:name="OptionsDialog">
     <node oor:name="Nodes">
         <node oor:name="com.gmail.prrvchr.extensions.oneDriveOOo" oor:op="fuse">
-            <prop oor:name="Id">
-                <value>com.gmail.prrvchr.extensions.oneDriveOOo</value>
-            </prop>
             <prop oor:name="Label">
                 <value xml:lang="en-US">Internet</value>
                 <value xml:lang="fr-FR">Internet</value>
