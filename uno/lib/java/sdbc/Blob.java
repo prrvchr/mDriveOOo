@@ -25,8 +25,6 @@
 */
 package io.github.prrvchr.uno.sdbc;
 
-import java.io.InputStream;
-
 import com.sun.star.io.XInputStream;
 import com.sun.star.lib.uno.adapter.InputStreamToXInputStreamAdapter;
 import com.sun.star.lib.uno.helper.WeakBase;
@@ -37,88 +35,83 @@ import io.github.prrvchr.uno.helper.UnoHelper;
 
 
 public class Blob
-extends WeakBase
-implements XBlob
+    extends WeakBase
+    implements XBlob
 {
-	private java.sql.Statement m_Statement;
-	private java.sql.Blob m_Blob;
 
-	
-	// The constructor method:
-	public Blob(java.sql.Statement statement,
-                java.sql.Blob blob)
-	{
-		m_Statement = statement;
-		m_Blob = blob;
-	}
+    private java.sql.Blob m_Blob;
 
+    // The constructor method:
+    public Blob(java.sql.Blob blob)
+    {
+        m_Blob = blob;
+    }
 
-	// com.sun.star.sdbc.XBlob:
-	@Override
-	public XInputStream getBinaryStream() throws SQLException {
-		try
-		{
-			InputStream input = m_Blob.getBinaryStream();
-			return new InputStreamToXInputStreamAdapter(input);
-		}
-		catch (java.sql.SQLException e)
-		{
-			throw UnoHelper.getSQLException(e, this);
-		}
-	}
+    // com.sun.star.sdbc.XBlob:
+    @Override
+    public XInputStream getBinaryStream()
+        throws SQLException
+    {
+        try
+        {
+            return new InputStreamToXInputStreamAdapter(m_Blob.getBinaryStream());
+        }
+        catch (java.sql.SQLException e)
+        {
+            throw UnoHelper.getSQLException(e, this);
+        }
+    }
 
+    @Override
+    public byte[] getBytes(long position, int length)
+        throws SQLException
+    {
+        try
+        {
+            return m_Blob.getBytes(position, length);
+        }
+        catch (java.sql.SQLException e)
+        {
+            throw UnoHelper.getSQLException(e, this);
+        }
+    }
 
-	@Override
-	public byte[] getBytes(long position, int length) throws SQLException {
-		try
-		{
-			return m_Blob.getBytes(position, length);
-		}
-		catch (java.sql.SQLException e)
-		{
-			throw UnoHelper.getSQLException(e, this);
-		}
-	}
+    @Override
+    public long length()
+        throws SQLException
+    {
+        try
+        {
+            return m_Blob.length();
+        }
+        catch (java.sql.SQLException e)
+        {
+            throw UnoHelper.getSQLException(e, this);
+        }
+    }
 
+    @Override
+    public long position(byte[] pattern, long start)
+        throws SQLException
+    {
+        try
+        {
+            return m_Blob.position(pattern, start);
+        }
+        catch (java.sql.SQLException e)
+        {
+            throw UnoHelper.getSQLException(e, this);
+        }
+    }
 
-	@Override
-	public long length() throws SQLException {
-		try
-		{
-			return m_Blob.length();
-		}
-		catch (java.sql.SQLException e)
-		{
-			throw UnoHelper.getSQLException(e, this);
-		}
-	}
-
-
-	@Override
-	public long position(byte[] pattern, long start) throws SQLException {
-		try
-		{
-			return m_Blob.position(pattern, start);
-		}
-		catch (java.sql.SQLException e)
-		{
-			throw UnoHelper.getSQLException(e, this);
-		}
-	}
-
-
-	@Override
-	public long positionOfBlob(XBlob blob, long start) throws SQLException {
-		try
-		{
-			java.sql.Blob b = UnoHelper.getSQLBlob(m_Statement, blob);
-			return m_Blob.position(b, start);
-		}
-		catch (java.sql.SQLException e)
-		{
-			throw UnoHelper.getSQLException(e, this);
-		}
-	}
+    @Override
+    public long positionOfBlob(XBlob blob, long start)
+        throws SQLException
+    {
+        long position = 0;
+        int lenght = (int) blob.length();
+        return position(blob.getBytes(position, lenght), start);
+    }
 
 
 }

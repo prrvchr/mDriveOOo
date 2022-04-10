@@ -30,39 +30,40 @@ import com.sun.star.lang.XServiceInfo;
 
 
 public abstract class ServiceWeak
-extends WeakBase
-implements XServiceInfo
+    extends WeakBase
+    implements XServiceInfo
 {
-	private final String m_name;
-	private final String[] m_services;
+    private final String m_name;
+    private final String[] m_services;
 
 
-	// The constructor method:
-	public ServiceWeak(String name,
-					   String[] services)
-	{
-		m_name = name;
-		m_services = services;
-	}
+    // The constructor method:
+    public ServiceWeak(String name,
+                       String[] services)
+    {
+        super();
+        m_name = name;
+        m_services = services;
+    }
 
-	// com.sun.star.lang.XServiceInfo:
-	@Override
-	public String getImplementationName()
-	{
-		return ServiceInfo.getImplementationName(m_name);
-	}
+    // com.sun.star.lang.XServiceInfo:
+    @Override
+    public String getImplementationName()
+    {
+        return ServiceInfo.getImplementationName(m_name);
+    }
 
-	@Override
-	public String[] getSupportedServiceNames()
-	{
-		return ServiceInfo.getSupportedServiceNames(m_services);
-	}
+    @Override
+    public String[] getSupportedServiceNames()
+    {
+        return ServiceInfo.getSupportedServiceNames(m_services);
+    }
 
-	@Override
-	public boolean supportsService(String service)
-	{
-		return ServiceInfo.supportsService(m_services, service);
-	}
+    @Override
+    public boolean supportsService(String service)
+    {
+        return ServiceInfo.supportsService(m_services, service);
+    }
 
 
 }
