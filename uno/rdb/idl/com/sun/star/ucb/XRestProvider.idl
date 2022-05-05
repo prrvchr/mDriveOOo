@@ -1,0 +1,134 @@
+#ifndef __com_sun_star_ucb_XRestProvider_idl__
+#define __com_sun_star_ucb_XRestProvider_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/auth/XRestKeyMap.idl>
+#include <com/sun/star/io/XInputStream.idl>
+#include <com/sun/star/container/XEnumeration.idl>
+#include <com/sun/star/auth/RestRequestParameter.idl>
+#include <com/sun/star/auth/XOAuth2Service.idl>
+#include <com/sun/star/sdbc/XResultSet.idl>
+#include <com/sun/star/sdbc/XConnection.idl>
+#include <com/sun/star/beans/Optional.idl>
+#include <com/sun/star/util/DateTime.idl>
+
+module com { module sun { module star { module ucb {
+
+interface XRestProvider: com::sun::star::uno::XInterface
+{
+
+    void initialize([in] string Scheme,
+                    [in] string Plugin,
+                    [in] string Link,
+                    [in] string Folder);
+    void initUser([in] ::com::sun::star::uno::XInterface Request,
+                  [in] ::com::sun::star::uno::XInterface DataBase,
+                  [in] ::com::sun::star::auth::XRestKeyMap User);
+    void updateDrive([in] ::com::sun::star::uno::XInterface DataBase,
+                     [in] ::com::sun::star::auth::XRestKeyMap User,
+                     [in] string Token);
+    void initFirstPull([in] string ItemId);
+    boolean hasFirstPull();
+    string getFirstPull();
+    void setFirstPull([in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean isOnLine();
+    boolean isOffLine();
+    boolean isLink([in] string ContentType);
+    boolean isFolder([in] string ContentType);
+    boolean isDocument([in] string ContentType);
+    any transform([in] string Name,
+                  [in] any Value);
+    ::com::sun::star::container::XEnumeration getIdentifier([in] ::com::sun::star::uno::XInterface Request,
+                                                            [in] ::com::sun::star::auth::XRestKeyMap User);
+    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> getUser([in] ::com::sun::star::uno::XInterface Request,
+                                                                                   [in] string Name);
+    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> getRoot([in] ::com::sun::star::uno::XInterface Request,
+                                                                                   [in] ::com::sun::star::auth::XRestKeyMap User);
+    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> getToken([in] ::com::sun::star::uno::XInterface Request,
+                                                                                    [in] ::com::sun::star::auth::XRestKeyMap User);
+    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> getItem([in] ::com::sun::star::uno::XInterface Request,
+                                                                                   [in] ::com::sun::star::auth::XRestKeyMap Identifier);
+    ::com::sun::star::container::XEnumeration getFolderContent([in] ::com::sun::star::uno::XInterface Request,
+                                                               [in] ::com::sun::star::auth::XRestKeyMap content);
+    ::com::sun::star::io::XInputStream getDocumentContent([in] ::com::sun::star::uno::XInterface Request,
+                                                          [in] ::com::sun::star::auth::XRestKeyMap content);
+    ::com::sun::star::auth::RestRequestParameter getRequestParameter([in] string Method,
+                                                                     [in] any Data);
+    boolean createFile([in] ::com::sun::star::uno::XInterface Request,
+                       [in] ::com::sun::star::uno::XInterface Uploader,
+                       [in] ::com::sun::star::auth::XRestKeyMap Item);
+    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> createFolder([in] ::com::sun::star::uno::XInterface Request,
+                                                                                        [in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean uploadFile([in] ::com::sun::star::uno::XInterface Uploader,
+                       [in] ::com::sun::star::uno::XInterface User,
+                       [in] ::com::sun::star::auth::XRestKeyMap Item,
+                       [in] boolean New);
+    boolean updateTitle([in] ::com::sun::star::uno::XInterface Request,
+                        [in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean updateTrashed([in] ::com::sun::star::uno::XInterface Request,
+                          [in] ::com::sun::star::auth::XRestKeyMap Item);
+
+    string getUserId([in] ::com::sun::star::auth::XRestKeyMap User);
+    string getUserName([in] ::com::sun::star::auth::XRestKeyMap User);
+    string getUserDisplayName([in] ::com::sun::star::auth::XRestKeyMap User);
+    string getUserToken([in] ::com::sun::star::auth::XRestKeyMap User);
+
+    string getRootId([in] ::com::sun::star::auth::XRestKeyMap Root);
+    string getRootTitle([in] ::com::sun::star::auth::XRestKeyMap Root);
+    ::com::sun::star::util::DateTime getRootCreated([in] ::com::sun::star::auth::XRestKeyMap Root,
+                                                    [in] ::com::sun::star::util::DateTime TimeStamp);
+    ::com::sun::star::util::DateTime getRootModified([in] ::com::sun::star::auth::XRestKeyMap Root,
+                                                     [in] ::com::sun::star::util::DateTime TimeStamp);
+    string getRootMediaType([in] ::com::sun::star::auth::XRestKeyMap Root);
+    hyper getRootSize([in] ::com::sun::star::auth::XRestKeyMap Root);
+    boolean getRootTrashed([in] ::com::sun::star::auth::XRestKeyMap Root);
+    boolean getRootCanAddChild([in] ::com::sun::star::auth::XRestKeyMap Root);
+    boolean getRootCanRename([in] ::com::sun::star::auth::XRestKeyMap Root);
+    boolean getRootIsReadOnly([in] ::com::sun::star::auth::XRestKeyMap Root);
+    boolean getRootIsVersionable([in] ::com::sun::star::auth::XRestKeyMap Root);
+
+    string getItemId([in] ::com::sun::star::auth::XRestKeyMap Item);
+    string getItemTitle([in] ::com::sun::star::auth::XRestKeyMap Item);
+    ::com::sun::star::util::DateTime getItemCreated([in] ::com::sun::star::auth::XRestKeyMap Item,
+                                                    [in] ::com::sun::star::util::DateTime TimeStamp);
+    ::com::sun::star::util::DateTime getItemModified([in] ::com::sun::star::auth::XRestKeyMap Item,
+                                                     [in] ::com::sun::star::util::DateTime TimeStamp);
+    string getItemMediaType([in] ::com::sun::star::auth::XRestKeyMap Item);
+    hyper getItemSize([in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean getItemTrashed([in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean getItemCanAddChild([in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean getItemCanRename([in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean getItemIsReadOnly([in] ::com::sun::star::auth::XRestKeyMap Item);
+    boolean getItemIsVersionable([in] ::com::sun::star::auth::XRestKeyMap Item);
+    sequence <string> getItemParent([in] ::com::sun::star::auth::XRestKeyMap Item,
+                                    [in] string RootId);
+
+    string getResponseId([in] ::com::sun::star::auth::XRestKeyMap Response,
+                         [in] string Default);
+    string getResponseTitle([in] ::com::sun::star::auth::XRestKeyMap Response,
+                            [in] string Default);
+
+    [attribute, readonly] string Name;
+    [attribute, readonly] string Scheme;
+    [attribute, readonly] string Plugin;
+    [attribute, readonly] short SessionMode;
+    [attribute, readonly] boolean GenerateIds;
+    [attribute, readonly] sequence < short > IdentifierRange;
+    [attribute, readonly] string Host;
+    [attribute, readonly] string BaseUrl;
+    [attribute, readonly] string UploadUrl;
+    [attribute, readonly] string SourceURL;
+    [attribute, readonly] string Folder;
+    [attribute, readonly] string Link;
+    [attribute, readonly] string Office;
+    [attribute, readonly] string Document;
+    [attribute, readonly] long Chunk;
+    [attribute, readonly] long Buffer;
+    [attribute, readonly] string Error;
+
+};
+
+
+}; }; }; };
+
+#endif

@@ -40,6 +40,7 @@ from .loghandler import WindowHandler
 from .loghandler import DialogHandler
 
 from ..unotool import getDialog
+from ..unotool import getFileSequence
 
 import traceback
 
@@ -49,14 +50,22 @@ class LogManager(unohelper.Base):
         self._ctx = ctx
         self._extention = extension
         self._logger = 'Logger'
+        self._loggers = loggers
         self._infos = infos
         self._model = None
         self._dialog = None
         handler = WindowHandler(self)
         self._view = LogWindow(ctx, handler, parent, extension)
-        self._view.initLogger(loggers)
+        self._view.initLogger(self._getLoggerNames())
 
 # LogManager setter methods
+    def updateLoggers(self, loggers):
+        self._loggers = loggers
+        logger = self._view.getLogger()
+        self._view.updateLoggers(self._getLoggerNames())
+        if logger in loggers:
+            self._view.setLogger(logger)
+
     def setLoggerSetting(self):
         settings = self._model.getLoggerSetting()
         self._view.setLoggerSetting(*settings)
@@ -79,8 +88,9 @@ class LogManager(unohelper.Base):
         handler = DialogHandler(self)
         parent = self._view.getParent()
         url = self._model.getLoggerUrl()
-        text = self._model.getLoggerText()
-        self._dialog = LogDialog(self._ctx, handler, parent, self._extention, url, text)
+        writable = self._loggers[self._view.getLogger()]
+        logger = self._getLoggerContent(url)
+        self._dialog = LogDialog(self._ctx, handler, parent, self._extention, url, writable, *logger)
         self._model.addListener(self)
         dialog = self._dialog.getDialog()
         dialog.execute()
@@ -99,5 +109,14 @@ class LogManager(unohelper.Base):
             self._model.logMessage(INFO, msg, "LogManager", "logInfo()")
 
     def refreshLog(self):
-        text = self._model.getLoggerText()
-        self._dialog.setLogger(text)
+        url = self._model.getLoggerUrl()
+        logger = self._getLoggerContent(url)
+        self._dialog.setLogger(*logger)
+
+# LogManager private methods
+    def _getLoggerNames(self):
+        return tuple(self._loggers.keys())
+
+    def _getLoggerContent(self, url):
+        length, sequence = getFileSequence(self._ctx, url)
+        return sequence.value.decode('utf-8'), length

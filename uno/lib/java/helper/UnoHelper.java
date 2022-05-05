@@ -10,7 +10,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Properties;
 
 import com.sun.star.beans.Property;
 import com.sun.star.beans.NamedValue;
@@ -22,9 +21,7 @@ import com.sun.star.lang.XMultiComponentFactory;
 import com.sun.star.lang.XMultiServiceFactory;
 import com.sun.star.sdbc.DriverPropertyInfo;
 import com.sun.star.sdbc.SQLException;
-import com.sun.star.sdbc.XArray;
-import com.sun.star.sdbc.XBlob;
-import com.sun.star.sdbc.XClob;
+import com.sun.star.uno.Any;
 import com.sun.star.uno.AnyConverter;
 import com.sun.star.uno.Type;
 import com.sun.star.uno.UnoRuntime;
@@ -164,7 +161,7 @@ public class UnoHelper
         return info;
     }
 
-    public static String getDefaultDriverInfo(PropertyValue[] properties, String name, String value)
+    public static String getDefaultPropertyValue(PropertyValue[] properties, String name, String value)
         throws IllegalArgumentException
     {
         for (PropertyValue property : properties) {
@@ -174,7 +171,7 @@ public class UnoHelper
         return value;
     }
 
-    public static boolean getDefaultDriverInfo(PropertyValue[] properties, String name, boolean value)
+    public static boolean getDefaultPropertyValue(PropertyValue[] properties, String name, boolean value)
         throws IllegalArgumentException
     {
         for (PropertyValue property : properties) {
@@ -194,38 +191,6 @@ public class UnoHelper
         return value;
     }
 
-    public static Properties getJavaProperties(PropertyValue[] infos)
-    {
-        System.out.println("UnoHelper.getProperties() 1 ");
-        Properties properties = new Properties();
-        int len = infos.length;
-        for (int i = 0; i < len; i++)
-        {
-            PropertyValue info = infos[i];
-            String value = String.valueOf(info.Value);
-            // FIXME: JDBC doesn't seem to like <Properties> with empty values!!!
-            if (!value.isEmpty()) properties.setProperty(info.Name, value);
-        }
-        System.out.println("UnoHelper.getProperties() 2 " + properties);
-        return properties;
-    }
-
-
-    public static Properties getMapProperties(PropertyValue[] infos)
-    {
-        System.out.println("UnoHelper.getProperties() 1 ");
-        Properties properties = new Properties();
-        int len = infos.length;
-        for (int i = 0; i < len; i++)
-        {
-            PropertyValue info = infos[i];
-            String value = String.valueOf(info.Value);
-            // FIXME: JDBC doesn't seem to like <Properties> with empty values!!!
-            if (!value.isEmpty()) properties.setProperty(info.Name, value);
-        }
-        System.out.println("UnoHelper.getProperties() 2 " + properties);
-        return properties;
-    }
 
     
     public static Property getProperty(String name, String type)
@@ -267,11 +232,20 @@ public class UnoHelper
             exception.Context = component;
             exception.SQLState = e.getSQLState();
             exception.ErrorCode = e.getErrorCode();
-            exception.NextException = getSQLException(e.getNextException(), component);
+            exception.NextException = _getNextSQLException(e.getNextException(), component);
         }
         return exception;
     }
 
+    private static Object _getNextSQLException(java.sql.SQLException e, XInterface component)
+    {
+        Object exception = Any.VOID;
+        if (e != null)
+        {
+            exception = getSQLException(e, component);
+        }
+        return exception;
+    }
 
     public static String getObjectString(Object object)
     {
@@ -413,42 +387,6 @@ public class UnoHelper
             e.getStackTrace();
         }
         return value;
-    }
-
-
-    public static java.sql.Array getSQLArray(java.sql.Statement statement, XArray array)
-    throws java.sql.SQLException, SQLException
-    {
-        String type = array.getBaseTypeName();
-        Object[] value = array.getArray(null);
-        return statement.getConnection().createArrayOf(type, value);
-    }
-
-
-    public static java.sql.Clob getSQLClob(java.sql.Statement statement, XClob clob)
-    throws java.sql.SQLException, SQLException
-    {
-        System.out.println("UnoHelper.getJavaClob() 1");
-        String value = clob.toString();
-        System.out.println("UnoHelper.getJavaClob() 2");
-        java.sql.Clob c = statement.getConnection().createClob();
-        c.setString(1, value);
-        System.out.println("UnoHelper.getJavaClob() 3");
-        return c;
-    }
-
-
-    public static java.sql.Blob getSQLBlob(java.sql.Statement statement, XBlob blob)
-    throws java.sql.SQLException, SQLException
-    {
-        System.out.println("UnoHelper.getJavaBlob() 1");
-        int len = (int) blob.length();
-        byte[] value = blob.getBytes(1, len);
-        System.out.println("UnoHelper.getJavaBlob() 2");
-        java.sql.Blob b = statement.getConnection().createBlob();
-        b.setBytes(1, value);
-        System.out.println("UnoHelper.getJavaBlob() 3");
-        return b;
     }
 
 

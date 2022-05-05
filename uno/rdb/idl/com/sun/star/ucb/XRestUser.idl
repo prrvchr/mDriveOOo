@@ -1,0 +1,35 @@
+#ifndef __com_sun_star_ucb_XRestUser_idl__
+#define __com_sun_star_ucb_XRestUser_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/ucb/XRestDataBase.idl>
+#include <com/sun/star/ucb/XRestProvider.idl>
+#include <com/sun/star/sdbc/XDataSource.idl>
+#include <com/sun/star/auth/XRestKeyMap.idl>
+
+module com { module sun { module star { module ucb {
+
+interface XRestUser: com::sun::star::uno::XInterface
+{
+
+    boolean isValid();
+    void setDataBase([in] ::com::sun::star::sdbc::XDataSource DataSource,
+                     [in] string Password,
+                     [in] ::com::sun::star::uno::XInterface Sync);
+    string getCredential([inout] string Password);
+
+    [attribute, readonly] ::com::sun::star::ucb::XRestProvider Provider;
+    [attribute, readonly] ::com::sun::star::uno::XInterface Request;
+    [attribute, readonly] ::com::sun::star::auth::XRestKeyMap MetaData;
+    [attribute, readonly] ::com::sun::star::ucb::XRestDataBase DataBase;
+    [attribute, readonly] string Id;
+    [attribute, readonly] string Name;
+    [attribute, readonly] string RootId;
+    [attribute, readonly] string RootName;
+    [attribute, readonly] string Token;
+
+};
+
+}; }; }; };
+
+#endif

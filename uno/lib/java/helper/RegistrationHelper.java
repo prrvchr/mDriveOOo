@@ -58,21 +58,22 @@ public class RegistrationHelper
     * @return the factory which can create the implementation.
     */
 
-    public static XSingleComponentFactory __getComponentFactory(InputStream in, String name)
+    public static XSingleComponentFactory __getComponentFactory(final InputStream in,
+                                                                final String name)
     {
         XSingleComponentFactory factory = null;
-        Class<?>[] classes = findServicesImplementationClasses(in);
+        final Class<?>[] classes = _findServicesImplementationClasses(in);
         int i = 0;
         while (i < classes.length && factory == null)
         {
-            Class<?> clazz = classes[i];
+            final Class<?> clazz = classes[i];
             if (name.equals(clazz.getCanonicalName()))
             {
                 try
                 {
-                    Class<?>[] types = new Class[]{String.class};
-                    Method method = clazz.getMethod("__getComponentFactory", types);
-                    Object object = method.invoke(null, name);
+                    final Class<?>[] types = new Class[]{String.class};
+                    final Method method = clazz.getMethod("__getComponentFactory", types);
+                    final Object object = method.invoke(null, name);
                     factory = (XSingleComponentFactory)object;
                 }
                 catch (Exception e)
@@ -100,19 +101,20 @@ public class RegistrationHelper
     * to the registry key, <code>false</code> otherwise.
     */
 
-    public static boolean __writeRegistryServiceInfo(InputStream in, XRegistryKey key)
+    public static boolean __writeRegistryServiceInfo(final InputStream in,
+                                                     final XRegistryKey key)
     {
-        Class<?>[] classes = findServicesImplementationClasses(in);
+        final Class<?>[] classes = _findServicesImplementationClasses(in);
         boolean success = true;
         int i = 0;
         while (i < classes.length && success)
         {
-            Class<?> clazz = classes[i];
+            final Class<?> clazz = classes[i];
             try
             {
-                Class<?>[] types = new Class[]{XRegistryKey.class};
-                Method method = clazz.getMethod("__writeRegistryServiceInfo", types);
-                Object object = method.invoke(null, key);
+                final Class<?>[] types = new Class[]{XRegistryKey.class};
+                final Method method = clazz.getMethod("__writeRegistryServiceInfo", types);
+                final Object object = method.invoke(null, key);
                 success = success && ((Boolean)object).booleanValue();
             } catch (Exception e)
             {
@@ -128,46 +130,37 @@ public class RegistrationHelper
      * @return all the UNO implementation classes. 
      */
 
-    private static Class<?>[] findServicesImplementationClasses(InputStream in)
+    private static Class<?>[] _findServicesImplementationClasses(final InputStream in)
     {
-        ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
-        LineNumberReader reader = new LineNumberReader(new InputStreamReader(in));
-        try
-        {
+        final ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
+        final LineNumberReader reader = new LineNumberReader(new InputStreamReader(in));
+        try {
             String line = reader.readLine();
-            while (line != null)
-            {
-                if (!line.equals(""))
-                {
+            while (line != null) {
+                if (!line.equals("")) {
                     line = line.trim();
-                    try
-                    {
-                        Class<?> clazz = Class.forName(line);
-                        Class<?>[] rtypes = new Class[]{XRegistryKey.class};
-                        Class<?>[] ftypes = new Class[]{String.class};
-                        Method registry = clazz.getMethod("__writeRegistryServiceInfo", rtypes);
-                        Method factory = clazz.getMethod("__getComponentFactory", ftypes);
-                        if (registry != null && factory != null)
-                        {
+                    try {
+                        final Class<?> clazz = Class.forName(line);
+                        final Class<?>[] rtypes = new Class[]{XRegistryKey.class};
+                        final Class<?>[] ftypes = new Class[]{String.class};
+                        final Method registry = clazz.getMethod("__writeRegistryServiceInfo", rtypes);
+                        final Method factory = clazz.getMethod("__getComponentFactory", ftypes);
+                        if (registry != null && factory != null) {
                             classes.add(clazz);
                         }
                     }
-                    catch (Exception e)
-                    {
+                    catch (LinkageError | ClassNotFoundException | NoSuchMethodException e) {
                         e.printStackTrace();
                     }
                 }
                 line = reader.readLine();
             }
         }
-        catch (IOException e)
-        {
+        catch (IOException e) {
             e.printStackTrace();
         }
-        finally
-        {
-            try
-            {
+        finally {
+            try {
                 reader.close();
                 in.close();
             }

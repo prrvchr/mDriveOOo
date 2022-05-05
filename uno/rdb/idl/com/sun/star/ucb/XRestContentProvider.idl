@@ -1,0 +1,19 @@
+#ifndef __com_sun_star_ucb_XRestContentProvider_idl__
+#define __com_sun_star_ucb_XRestContentProvider_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/ucb/XRestDataSource.idl>
+
+module com { module sun { module star { module ucb {
+
+interface XRestContentProvider: com::sun::star::uno::XInterface
+{
+
+    [attribute, readonly] ::com::sun::star::ucb::XRestDataSource DataSource;
+
+};
+
+
+}; }; }; };
+
+#endif

@@ -86,6 +86,9 @@ class DialogHandler(unohelper.Base,
             if method == 'ClearLog':
                 self._manager.clearLog()
                 handled = True
+            elif method == 'RefreshLog':
+                self._manager.refreshLog()
+                handled = True
             elif method == 'LogInfo':
                 self._manager.logInfo()
                 handled = True
@@ -96,4 +99,5 @@ class DialogHandler(unohelper.Base,
 
     def getSupportedMethodNames(self):
         return ('ClearLog',
+                'RefreshLog',
                 'LogInfo')

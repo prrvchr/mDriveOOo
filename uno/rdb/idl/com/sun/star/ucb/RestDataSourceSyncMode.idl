@@ -1,0 +1,21 @@
+#ifndef __com_sun_star_ucb_RestDataSourceSyncMode_idl__
+#define __com_sun_star_ucb_RestDataSourceSyncMode_idl__
+
+module com { module sun { module star { module ucb {
+
+constants RestDataSourceSyncMode
+{
+
+    const long SYNC_RETRIEVED = 0;
+    const long SYNC_CREATED = 1;
+    const long SYNC_FOLDER = 2;
+    const long SYNC_FILE = 4;
+    const long SYNC_RENAMED = 8;
+    const long SYNC_REWRITED = 16;
+    const long SYNC_TRASHED = 32;
+
+};
+
+}; }; }; };
+
+#endif

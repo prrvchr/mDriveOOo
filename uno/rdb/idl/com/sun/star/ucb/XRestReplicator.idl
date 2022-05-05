@@ -1,0 +1,27 @@
+#ifndef __com_sun_star_ucb_XRestReplicator_idl__
+#define __com_sun_star_ucb_XRestReplicator_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/ucb/XRestDataBase.idl>
+#include <com/sun/star/ucb/XRestProvider.idl>
+#include <com/sun/star/beans/Optional.idl>
+#include <com/sun/star/auth/XRestKeyMap.idl>
+
+module com { module sun { module star { module ucb {
+
+interface XRestReplicator: com::sun::star::uno::XInterface
+{
+
+    void cancel();
+    boolean callBack([in] string UserName,
+                     [in] string ItemId,
+                     [in] ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> Response);
+
+    [attribute, readonly] ::com::sun::star::ucb::XRestProvider Provider;
+    [attribute, readonly] ::com::sun::star::ucb::XRestDataBase DataBase;
+
+};
+
+}; }; }; };
+
+#endif
