@@ -1,1 +1,0 @@
-../../../python/wizard.py

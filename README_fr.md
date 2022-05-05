@@ -2,7 +2,7 @@
 
 **This [document](https://prrvchr.github.io/oneDriveOOo) in English.**
 
-**L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_fr) et à notre [Politique de protection des données](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_fr).**
+**L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation](https://prrvchr.github.io/oneDriveOOo/source/oneDriveOOo/registration/TermsOfUse_fr) et à notre [Politique de protection des données](https://prrvchr.github.io/oneDriveOOo/source/oneDriveOOo/registration/PrivacyPolicy_fr).**
 
 # version [0.0.5](https://prrvchr.github.io/oneDriveOOo/README_fr#historique)
 
@@ -42,11 +42,11 @@ Si nécessaire, renommez-le avant de l'installer.
 
 Vous devez d'abord installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![jdbcDriverOOo logo](https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.png) **[jdbcDriverOOo.oxt](https://github.com/prrvchr/jdbcDriverOOo/raw/master/jdbcDriverOOo.oxt)** version 0.0.4.
+- Installer l'extension ![jdbcDriverOOo logo](https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.png) **[jdbcDriverOOo.oxt](https://github.com/prrvchr/jdbcDriverOOo/raw/master/source/jdbcDriverOOo/dist/jdbcDriverOOo.oxt)** version 0.0.4.
 
 Vous devez installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![oneDriveOOo logo](img/oneDriveOOo.png) **[oneDriveOOo.oxt](https://github.com/prrvchr/oneDriveOOo/raw/master/oneDriveOOo.oxt)** version 0.0.5.
+- Installer l'extension ![oneDriveOOo logo](img/oneDriveOOo.png) **[oneDriveOOo.oxt](https://github.com/prrvchr/oneDriveOOo/raw/master/source/oneDriveOOo/dist/oneDriveOOo.oxt)** version 0.0.5.
 
 Redémarrez LibreOffice / OpenOffice après l'installation.
 
@@ -106,7 +106,7 @@ J'essaierai de la résoudre ;-)
 
 - Intégration et utilisation de la nouvelle version de Hsqldb 2.5.1.
 
-- Ecriture d'une nouvelle interface [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/replicator.py), lancé en arrière-plan (python Thread) responsable de:
+- Ecriture d'une nouvelle interface [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py), lancé en arrière-plan (python Thread) responsable de:
 
     - Effectuer les procédures nécessaires lors de la création d'un nouvel utilisateur (Pull initial).
 
@@ -114,18 +114,18 @@ J'essaierai de la résoudre ;-)
 
     - Répliquer à la demande toutes les modifications apportées à la base de données hsqldb 2.5.1 à l'aide du contrôle de version du système (Pousser toutes les modifications).
 
-- Ecriture d'une nouvelle interface [DataBase](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/database.py), responsable de tous les appels à la base de données.
+- Ecriture d'une nouvelle interface [DataBase](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/database.py), responsable de tous les appels à la base de données.
 
-- Mise en place d'un cache sur les identifiants, voir la méthode: [getIdentifier()](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/datasource.py), autorisant l'accès à un Contenu (fichier ou dossier) sans accès à la base de données pour les appels ultérieurs.
+- Mise en place d'un cache sur les identifiants, voir la méthode: [getIdentifier()](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py), autorisant l'accès à un Contenu (fichier ou dossier) sans accès à la base de données pour les appels ultérieurs.
 
-- Gestion des doublons des noms des fichiers / dossiers par [Vues SQL](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/dbqueries.py): Child, Twin, Uri, et Title générant des noms uniques s'il existe des doublons.  
+- Gestion des doublons des noms des fichiers / dossiers par [Vues SQL](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py): Child, Twin, Uri, et Title générant des noms uniques s'il existe des doublons.  
 Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est implémentée globalement...
 
 - Beaucoup d'autres correctifs...
 
 ### Que reste-t-il à faire pour la version 0.0.5:
 
-- Écrire l'implémentation Pull Change dans la nouvelle interface [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/replicator.py).
+- Écrire l'implémentation Pull Change dans la nouvelle interface [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py).
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 

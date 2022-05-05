@@ -2,7 +2,7 @@
 
 **Ce [document](https://prrvchr.github.io/oneDriveOOo/README_fr) en français.**
 
-**The use of this software subjects you to our [Terms Of Use](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/TermsOfUse_en) and [Data Protection Policy](https://prrvchr.github.io/oneDriveOOo/oneDriveOOo/registration/PrivacyPolicy_en).**
+**The use of this software subjects you to our [Terms Of Use](https://prrvchr.github.io/oneDriveOOo/source/oneDriveOOo/registration/TermsOfUse_en) and [Data Protection Policy](https://prrvchr.github.io/oneDriveOOo/source/oneDriveOOo/registration/PrivacyPolicy_en).**
 
 # version [0.0.5](https://prrvchr.github.io/oneDriveOOo#historical)
 
@@ -42,11 +42,11 @@ If necessary, rename it before installing it.
 
 You must first install this extension, if it is not already installed.
 
-- Install ![jdbcDriverOOo logo](https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.png) **[jdbcDriverOOo.oxt](https://github.com/prrvchr/jdbcDriverOOo/raw/master/jdbcDriverOOo.oxt)** extension version 0.0.4.
+- Install ![jdbcDriverOOo logo](https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.png) **[jdbcDriverOOo.oxt](https://github.com/prrvchr/jdbcDriverOOo/raw/master/source/jdbcDriverOOo/dist/jdbcDriverOOo.oxt)** extension version 0.0.4.
 
 You must install this extension, if it is not already installed.
 
-- Install ![oneDriveOOo logo](img/oneDriveOOo.png) **[oneDriveOOo.oxt](https://github.com/prrvchr/oneDriveOOo/raw/master/oneDriveOOo.oxt)** extension version 0.0.5.
+- Install ![oneDriveOOo logo](img/oneDriveOOo.png) **[oneDriveOOo.oxt](https://github.com/prrvchr/oneDriveOOo/raw/master/source/oneDriveOOo/dist/oneDriveOOo.oxt)** extension version 0.0.5.
 
 Restart LibreOffice / OpenOffice after installation.
 
@@ -106,7 +106,7 @@ I will try to solve it ;-)
 
 - Integration and use of the new Hsqldb v2.5.1 system versioning.
 
-- Writing of a new [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/replicator.py) interface, launched in the background (python Thread) responsible for:
+- Writing of a new [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py) interface, launched in the background (python Thread) responsible for:
 
     - Perform the necessary procedures when creating a new user (initial Pull).
 
@@ -114,18 +114,18 @@ I will try to solve it ;-)
 
     - Replicate on demand all changes to the hsqldb 2.5.1 database using system versioning (Push all changes).
 
-- Writing of a new [DataBase](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/database.py) interface, responsible for making all calls to the database.
+- Writing of a new [DataBase](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/database.py) interface, responsible for making all calls to the database.
 
-- Setting up a cache on the Identifiers, see method: [getIdentifier()](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/datasource.py), allowing access to a Content (file or folder) without access to the database for subsequent calls.
+- Setting up a cache on the Identifiers, see method: [getIdentifier()](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py), allowing access to a Content (file or folder) without access to the database for subsequent calls.
 
-- Management of duplicate file/folder names by [SQL Views](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/dbqueries.py): Child, Twin, Uri, and Title generating unique names if duplicates names exist.  
+- Management of duplicate file/folder names by [SQL Views](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py): Child, Twin, Uri, and Title generating unique names if duplicates names exist.  
 Although this functionality is only needed for gDriveOOo, it is implemented globally...
 
 - Many other fix...
 
 ### What remains to be done for version 0.0.5:
 
-- Write the implementation Pull Change in the new [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/CloudUcpOOo/python/clouducp/replicator.py) interface.
+- Write the implementation Pull Change in the new [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py) interface.
 
 - Add new language for internationalization...
 
