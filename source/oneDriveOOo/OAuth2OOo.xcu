@@ -29,19 +29,19 @@
                 <value>ccaf8c05-7245-41bb-b0ef-ee9f790080b4</value>
             </prop>
             <prop oor:name="ClientSecret">
-                <value>skeFFY$zdooVXHJ91917]?-</value>
+                <value></value>
             </prop>
             <prop oor:name="AuthorizationUrl">
                 <value>https://login.microsoftonline.com/common/oauth2/v2.0/authorize</value>
             </prop>
             <prop oor:name="AuthorizationParameters">
-                <value>{"prompt": "consent", "response_mode": "query", "client_secret": null, "scope": null, "login_hint": "current_user", "hl": "current_language"}</value>
+                <value>{"prompt": "consent", "response_mode": "query", "scope": null, "login_hint": "current_user", "hl": "current_language"}</value>
             </prop>
             <prop oor:name="TokenUrl">
                 <value>https://login.microsoftonline.com/common/oauth2/v2.0/token</value>
             </prop>
             <prop oor:name="TokenParameters">
-                <value>{"client_secret": null, "scope": null}</value>
+                <value>{"scope": null}</value>
             </prop>
             <prop oor:name="CodeChallenge">
                 <value>true</value>
