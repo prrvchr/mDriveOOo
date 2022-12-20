@@ -30,17 +30,18 @@ public final class ServiceInfo
 {
 
     // com.sun.star.lang.XServiceInfo:
-    public static String getImplementationName(String name)
+    public static String getImplementationName(final String name)
     {
         return name;
     }
 
-    public static String[] getSupportedServiceNames(String[] services)
+    public static String[] getSupportedServiceNames(final String[] services)
     {
         return services.clone();
     }
 
-    public static boolean supportsService(String[] services, String service)
+    public static boolean supportsService(final String[] services,
+                                          final String service)
     {
         for (int i = 0; i < services.length; i++)
         {

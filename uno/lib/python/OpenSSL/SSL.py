@@ -12,7 +12,6 @@ from OpenSSL._util import (
     UNSPECIFIED as _UNSPECIFIED,
     exception_from_error_queue as _exception_from_error_queue,
     ffi as _ffi,
-    from_buffer as _from_buffer,
     lib as _lib,
     make_assert as _make_assert,
     native as _native,
@@ -45,6 +44,14 @@ __all__ = [
     "TLSv1_METHOD",
     "TLSv1_1_METHOD",
     "TLSv1_2_METHOD",
+    "TLS_METHOD",
+    "TLS_SERVER_METHOD",
+    "TLS_CLIENT_METHOD",
+    "SSL3_VERSION",
+    "TLS1_VERSION",
+    "TLS1_1_VERSION",
+    "TLS1_2_VERSION",
+    "TLS1_3_VERSION",
     "OP_NO_SSLv2",
     "OP_NO_SSLv3",
     "OP_NO_TLSv1",
@@ -110,6 +117,7 @@ __all__ = [
     "WantX509LookupError",
     "ZeroReturnError",
     "SysCallError",
+    "NO_OVERLAPPING_PROTOCOLS",
     "SSLeay_version",
     "Session",
     "Context",
@@ -140,13 +148,34 @@ SSLv23_METHOD = 3
 TLSv1_METHOD = 4
 TLSv1_1_METHOD = 5
 TLSv1_2_METHOD = 6
+TLS_METHOD = 7
+TLS_SERVER_METHOD = 8
+TLS_CLIENT_METHOD = 9
+
+try:
+    SSL3_VERSION = _lib.SSL3_VERSION
+    TLS1_VERSION = _lib.TLS1_VERSION
+    TLS1_1_VERSION = _lib.TLS1_1_VERSION
+    TLS1_2_VERSION = _lib.TLS1_2_VERSION
+    TLS1_3_VERSION = _lib.TLS1_3_VERSION
+except AttributeError:
+    # Hardcode constants for cryptography < 3.4, see
+    # https://github.com/pyca/pyopenssl/pull/985#issuecomment-775186682
+    SSL3_VERSION = 768
+    TLS1_VERSION = 769
+    TLS1_1_VERSION = 770
+    TLS1_2_VERSION = 771
+    TLS1_3_VERSION = 772
 
 OP_NO_SSLv2 = _lib.SSL_OP_NO_SSLv2
 OP_NO_SSLv3 = _lib.SSL_OP_NO_SSLv3
 OP_NO_TLSv1 = _lib.SSL_OP_NO_TLSv1
 OP_NO_TLSv1_1 = _lib.SSL_OP_NO_TLSv1_1
 OP_NO_TLSv1_2 = _lib.SSL_OP_NO_TLSv1_2
-OP_NO_TLSv1_3 = _lib.SSL_OP_NO_TLSv1_3
+try:
+    OP_NO_TLSv1_3 = _lib.SSL_OP_NO_TLSv1_3
+except AttributeError:
+    pass
 
 MODE_RELEASE_BUFFERS = _lib.SSL_MODE_RELEASE_BUFFERS
 
@@ -601,8 +630,9 @@ class Context(object):
     :class:`OpenSSL.SSL.Context` instances define the parameters for setting
     up new SSL connections.
 
-    :param method: One of SSLv2_METHOD, SSLv3_METHOD, SSLv23_METHOD, or
-        TLSv1_METHOD.
+    :param method: One of TLS_METHOD, TLS_CLIENT_METHOD, or TLS_SERVER_METHOD.
+                   SSLv23_METHOD, TLSv1_METHOD, etc. are deprecated and should
+                   not be used.
     """
 
     _methods = {
@@ -612,6 +642,9 @@ class Context(object):
         TLSv1_METHOD: "TLSv1_method",
         TLSv1_1_METHOD: "TLSv1_1_method",
         TLSv1_2_METHOD: "TLSv1_2_method",
+        TLS_METHOD: "TLS_method",
+        TLS_SERVER_METHOD: "TLS_server_method",
+        TLS_CLIENT_METHOD: "TLS_client_method",
     }
     _methods = dict(
         (identifier, getattr(_lib, name))
@@ -658,6 +691,32 @@ class Context(object):
         self._ocsp_data = None
 
         self.set_mode(_lib.SSL_MODE_ENABLE_PARTIAL_WRITE)
+
+    def set_min_proto_version(self, version):
+        """
+        Set the minimum supported protocol version. Setting the minimum
+        version to 0 will enable protocol versions down to the lowest version
+        supported by the library.
+
+        If the underlying OpenSSL build is missing support for the selected
+        version, this method will raise an exception.
+        """
+        _openssl_assert(
+            _lib.SSL_CTX_set_min_proto_version(self._context, version) == 1
+        )
+
+    def set_max_proto_version(self, version):
+        """
+        Set the maximum supported protocol version. Setting the maximum
+        version to 0 will enable protocol versions up to the highest version
+        supported by the library.
+
+        If the underlying OpenSSL build is missing support for the selected
+        version, this method will raise an exception.
+        """
+        _openssl_assert(
+            _lib.SSL_CTX_set_max_proto_version(self._context, version) == 1
+        )
 
     def load_verify_locations(self, cafile, capath=None):
         """
@@ -1373,7 +1432,17 @@ class Context(object):
         # Build a C string from the list. We don't need to save this off
         # because OpenSSL immediately copies the data out.
         input_str = _ffi.new("unsigned char[]", protostr)
-        _lib.SSL_CTX_set_alpn_protos(self._context, input_str, len(protostr))
+
+        # https://www.openssl.org/docs/man1.1.0/man3/SSL_CTX_set_alpn_protos.html:
+        # SSL_CTX_set_alpn_protos() and SSL_set_alpn_protos()
+        # return 0 on success, and non-0 on failure.
+        # WARNING: these functions reverse the return value convention.
+        _openssl_assert(
+            _lib.SSL_CTX_set_alpn_protos(
+                self._context, input_str, len(protostr)
+            )
+            == 0
+        )
 
     @_requires_alpn
     def set_alpn_select_callback(self, callback):
@@ -1638,7 +1707,7 @@ class Connection(object):
         # Backward compatibility
         buf = _text_to_bytes_and_warn("buf", buf)
 
-        with _from_buffer(buf) as data:
+        with _ffi.from_buffer(buf) as data:
             # check len(buf) instead of len(data) for testability
             if len(buf) > 2147483647:
                 raise ValueError(
@@ -1665,7 +1734,7 @@ class Connection(object):
         """
         buf = _text_to_bytes_and_warn("buf", buf)
 
-        with _from_buffer(buf) as data:
+        with _ffi.from_buffer(buf) as data:
 
             left_to_send = len(buf)
             total_sent = 0
@@ -1795,7 +1864,7 @@ class Connection(object):
         if self._into_ssl is None:
             raise TypeError("Connection sock was not None")
 
-        with _from_buffer(buf) as data:
+        with _ffi.from_buffer(buf) as data:
             result = _lib.BIO_write(self._into_ssl, data, len(data))
             if result <= 0:
                 self._handle_bio_errors(self._into_ssl, result)
@@ -2391,7 +2460,14 @@ class Connection(object):
         # Build a C string from the list. We don't need to save this off
         # because OpenSSL immediately copies the data out.
         input_str = _ffi.new("unsigned char[]", protostr)
-        _lib.SSL_set_alpn_protos(self._ssl, input_str, len(protostr))
+
+        # https://www.openssl.org/docs/man1.1.0/man3/SSL_CTX_set_alpn_protos.html:
+        # SSL_CTX_set_alpn_protos() and SSL_set_alpn_protos()
+        # return 0 on success, and non-0 on failure.
+        # WARNING: these functions reverse the return value convention.
+        _openssl_assert(
+            _lib.SSL_set_alpn_protos(self._ssl, input_str, len(protostr)) == 0
+        )
 
     @_requires_alpn
     def get_alpn_proto_negotiated(self):

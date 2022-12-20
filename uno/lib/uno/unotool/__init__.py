@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -29,6 +29,7 @@
 
 from .unotool import createMessageBox
 from .unotool import createService
+from .unotool import createWindow
 from .unotool import executeDispatch
 from .unotool import executeFrameDispatch
 from .unotool import executeShell

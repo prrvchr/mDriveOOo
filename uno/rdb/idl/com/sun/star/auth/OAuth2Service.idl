@@ -9,6 +9,7 @@ module com { module sun { module star { module auth {
 service OAuth2Service
 {
 
+    interface ::com::sun::star::lang::XComponent;
     interface ::com::sun::star::lang::XServiceInfo;
     interface ::com::sun::star::auth::XOAuth2Service;
 

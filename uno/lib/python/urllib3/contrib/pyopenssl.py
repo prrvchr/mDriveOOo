@@ -73,9 +73,19 @@ except ImportError:  # Platform-specific: Python 3
 import logging
 import ssl
 import sys
+import warnings
 
 from .. import util
 from ..packages import six
+from ..util.ssl_ import PROTOCOL_TLS_CLIENT
+
+warnings.warn(
+    "'urllib3.contrib.pyopenssl' module is deprecated and will be removed "
+    "in a future release of urllib3 2.x. Read more in this issue: "
+    "https://github.com/urllib3/urllib3/issues/2680",
+    category=DeprecationWarning,
+    stacklevel=2,
+)
 
 __all__ = ["inject_into_urllib3", "extract_from_urllib3"]
 
@@ -85,6 +95,7 @@ HAS_SNI = True
 # Map from urllib3 to PyOpenSSL compatible parameter-values.
 _openssl_versions = {
     util.PROTOCOL_TLS: OpenSSL.SSL.SSLv23_METHOD,
+    PROTOCOL_TLS_CLIENT: OpenSSL.SSL.SSLv23_METHOD,
     ssl.PROTOCOL_TLSv1: OpenSSL.SSL.TLSv1_METHOD,
 }
 
@@ -404,7 +415,6 @@ if _fileobject:  # Platform-specific: Python 2
         self._makefile_refs += 1
         return _fileobject(self, mode, bufsize, close=True)
 
-
 else:  # Platform-specific: Python 3
     makefile = backport_makefile
 
@@ -450,9 +460,9 @@ class PyOpenSSLContext(object):
         self._ctx.set_cipher_list(ciphers)
 
     def load_verify_locations(self, cafile=None, capath=None, cadata=None):
-        if cafile is not None and isinstance(cafile, six.text_type):
+        if cafile is not None:
             cafile = cafile.encode("utf-8")
-        if capath is not None and isinstance(capath, six.text_type):
+        if capath is not None:
             capath = capath.encode("utf-8")
         try:
             self._ctx.load_verify_locations(cafile, capath)

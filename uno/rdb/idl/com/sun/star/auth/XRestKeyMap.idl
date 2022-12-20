@@ -37,7 +37,7 @@ interface XRestKeyMap: com::sun::star::container::XStringKeyMap
     string getType([in] string Key);
     sequence<string> getKeys();
     void setValue([in] string Key,
-                 [in] any Value);
+                  [in] any Value);
     any getDefaultValue([in] string Key,
                         [in] any Default);
     void update([in] ::com::sun::star::auth::XRestKeyMap Keymap);

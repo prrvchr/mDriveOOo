@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -42,20 +42,20 @@ from .loghandler import DialogHandler
 from ..unotool import getDialog
 from ..unotool import getFileSequence
 
+from ..configuration import g_extension
+
 import traceback
 
 
 class LogManager(unohelper.Base):
-    def __init__(self, ctx, parent, extension, loggers, infos):
+    def __init__(self, ctx, parent, loggers, infos):
         self._ctx = ctx
-        self._extention = extension
         self._logger = 'Logger'
         self._loggers = loggers
         self._infos = infos
         self._model = None
         self._dialog = None
-        handler = WindowHandler(self)
-        self._view = LogWindow(ctx, handler, parent, extension)
+        self._view = LogWindow(ctx, WindowHandler(self), parent)
         self._view.initLogger(self._getLoggerNames())
 
 # LogManager setter methods
@@ -66,17 +66,17 @@ class LogManager(unohelper.Base):
         if logger in loggers:
             self._view.setLogger(logger)
 
-    def setLoggerSetting(self):
-        settings = self._model.getLoggerSetting()
-        self._view.setLoggerSetting(*settings)
-
-    def saveLoggerSetting(self):
+    def saveSetting(self):
         settings = self._view.getLoggerSetting()
         self._model.setLoggerSetting(*settings)
 
+    def reloadSetting(self):
+        settings = self._model.getLoggerSetting()
+        self._view.setLoggerSetting(*settings)
+
     def changeLogger(self, logger):
         self._model = Pool(self._ctx).getLogger(logger)
-        self.setLoggerSetting()
+        self.reloadSetting()
 
     def toggleLogger(self, enabled):
         self._view.toggleLogger(enabled)
@@ -89,8 +89,9 @@ class LogManager(unohelper.Base):
         parent = self._view.getParent()
         url = self._model.getLoggerUrl()
         writable = self._loggers[self._view.getLogger()]
+        writable = True
         logger = self._getLoggerContent(url)
-        self._dialog = LogDialog(self._ctx, handler, parent, self._extention, url, writable, *logger)
+        self._dialog = LogDialog(self._ctx, handler, parent, g_extension, url, True, *logger)
         self._model.addListener(self)
         dialog = self._dialog.getDialog()
         dialog.execute()
@@ -103,10 +104,8 @@ class LogManager(unohelper.Base):
         self._model.clearLogger(msg, "LogManager", "clearLog()")
 
     def logInfo(self):
-        logger = Pool(self._ctx).getLogger(self._logger)
-        for code, info in self._infos.items():
-            msg = logger.getMessage(code, info)
-            self._model.logMessage(INFO, msg, "LogManager", "logInfo()")
+        for info in self._infos():
+            self._model.logMessage(INFO, info, "LogManager", "logInfo()")
 
     def refreshLog(self):
         url = self._model.getLoggerUrl()

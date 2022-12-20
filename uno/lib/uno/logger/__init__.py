@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -33,6 +33,7 @@ from .logger import Logger
 from .handler import LogHandler
 
 from .log import clearLogger
+from .log import disposeLogger
 from .log import getLoggerUrl
 from .log import getLoggerSetting
 from .log import getMessage

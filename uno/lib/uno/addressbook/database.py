@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -109,10 +109,7 @@ class DataBase(unohelper.Base,
             connection = getDataSourceConnection(ctx, self._url)
             error = self._createDataBase(connection)
             if error is None:
-                datasource = connection.getParent()
-                #datasource.SuppressVersionColumns = True
-                datasource.DatabaseDocument.storeAsURL(odb, ())
-                datasource.dispose()
+                connection.getParent().DatabaseDocument.storeAsURL(odb, ())
             connection.close()
         print("gContact.DataBase.init() end")
 

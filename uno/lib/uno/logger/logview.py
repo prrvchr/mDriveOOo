@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -33,10 +33,12 @@ import unohelper
 from ..unotool import getContainerWindow
 from ..unotool import getDialog
 
+from ..configuration import g_extension
+
 
 class LogWindow(unohelper.Base):
-    def __init__(self, ctx, handler, parent, extension):
-        self._window = getContainerWindow(ctx, parent, handler, extension, 'LogWindow')
+    def __init__(self, ctx, handler, parent):
+        self._window = getContainerWindow(ctx, parent, handler, g_extension, 'LogWindow')
         self._window.setVisible(True)
 
 # LogWindow getter methods

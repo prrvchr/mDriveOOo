@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -34,6 +34,8 @@ from com.sun.star.lang import WrappedTargetRuntimeException
 from com.sun.star.connection import NoConnectException
 
 from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
+
+from com.sun.star.awt import Rectangle
 
 from com.sun.star.ucb.ConnectionMode import ONLINE
 from com.sun.star.ucb.ConnectionMode import OFFLINE
@@ -339,6 +341,29 @@ def getPropertySetInfoChangeEvent(source, name, reason, handle=-1):
     event.Name = name
     event.Handle = handle
     event.Reason = reason
+
+def createWindow(ctx, extension, xdl, name):
+    dialog = getDialog(ctx, extension, xdl, None, None)
+    possize = Rectangle(dialog.Model.PositionX, dialog.Model.PositionY, dialog.Model.Width, dialog.Model.Height)
+    dialog.dispose()
+    desktop = getDesktop(ctx)
+    args = getNamedValueSet({'FrameName': name, 'PosSize': possize})
+    frame = createService(ctx, 'com.sun.star.frame.TaskCreator').createInstanceWithArguments(args)
+    frames = desktop.getFrames()
+    frame.setTitle(_getUniqueName(frames, name))
+    frame.setCreator(desktop)
+    frames.append(frame)
+    return frame.getContainerWindow()
+
+def _getUniqueName(frames, name):
+    count = 0
+    for i in range(frames.getCount()):
+        if frames.getByIndex(i).getName() == name:
+            count += 1
+    if count > 0:
+        name = '%s - %s' % (name, (count +1))
+    return name
+
 
 def getParentWindow(ctx):
     desktop = getDesktop(ctx)

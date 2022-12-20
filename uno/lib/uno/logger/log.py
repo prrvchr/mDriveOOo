@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -41,6 +41,7 @@ from ..unotool import getConfiguration
 from ..unotool import getStringResource
 
 from ..configuration import g_identifier
+from ..configuration import g_resource
 
 g_resources = {}
 g_logger = None
@@ -97,6 +98,10 @@ def clearLogger():
     global g_logger
     g_logger = None
 
+def disposeLogger():
+    global g_logger
+    g_logger = None
+
 def setLoggerSetting(ctx, enabled, index, state):
     handler = _getHandler(state)
     _setLoggerSetting(ctx, enabled, index, handler)
@@ -109,15 +114,12 @@ def _getLogger(ctx):
 
 def _getResource(ctx, fileresource):
     if fileresource not in g_resources:
-        resource = getStringResource(ctx, g_identifier, _getPathResource(), fileresource)
+        resource = getStringResource(ctx, g_identifier, g_resource, fileresource)
         g_resources[fileresource] = resource
     return g_resources[fileresource]
 
 def _getLogName():
     return '%s.Logger' % g_identifier
-
-def _getPathResource():
-    return 'resource'
 
 def _getLoggerSetting(ctx):
     configuration = _getLogConfig(ctx)

@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -36,6 +36,7 @@ from com.sun.star.ui.dialogs.WizardButton import FINISH
 from com.sun.star.ui.dialogs.WizardButton import CANCEL
 from com.sun.star.ui.dialogs.WizardButton import HELP
 
+from ..unotool import createWindow
 from ..unotool import getDialog
 
 from .wizardhandler import DialogHandler, ItemHandler
@@ -46,7 +47,9 @@ import traceback
 
 
 class WizardView(unohelper.Base):
-    def __init__(self, ctx, manager, parent, title):
+    def __init__(self, ctx, manager, parent, title, modal=True):
+        #if not modal and parent is None:
+        #    parent = createWindow(ctx, g_extension, 'Wizard', title).getPeer()
         handler = DialogHandler(manager)
         self._dialog = getDialog(ctx, g_extension, 'Wizard', handler, parent)
         rectangle = uno.createUnoStruct('com.sun.star.awt.Rectangle', 0, 0, 85, 180)

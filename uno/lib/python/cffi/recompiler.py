@@ -193,6 +193,17 @@ class Recompiler:
             assert isinstance(op, CffiOp)
         self.cffi_types = tuple(self.cffi_types)    # don't change any more
 
+    def _enum_fields(self, tp):
+        # When producing C, expand all anonymous struct/union fields.
+        # That's necessary to have C code checking the offsets of the
+        # individual fields contained in them.  When producing Python,
+        # don't do it and instead write it like it is, with the
+        # corresponding fields having an empty name.  Empty names are
+        # recognized at runtime when we import the generated Python
+        # file.
+        expand_anonymous_struct_union = not self.target_is_python
+        return tp.enumfields(expand_anonymous_struct_union)
+
     def _do_collect_type(self, tp):
         if not isinstance(tp, model.BaseTypeByIdentity):
             if isinstance(tp, tuple):
@@ -206,7 +217,7 @@ class Recompiler:
             elif isinstance(tp, model.StructOrUnion):
                 if tp.fldtypes is not None and (
                         tp not in self.ffi._parser._included_declarations):
-                    for name1, tp1, _, _ in tp.enumfields():
+                    for name1, tp1, _, _ in self._enum_fields(tp):
                         self._do_collect_type(self._field_type(tp, name1, tp1))
             else:
                 for _, x in tp._get_items():
@@ -396,7 +407,7 @@ class Recompiler:
             prnt('  NULL,  /* no includes */')
         prnt('  %d,  /* num_types */' % (len(self.cffi_types),))
         flags = 0
-        if self._num_externpy:
+        if self._num_externpy > 0 or self.ffi._embedding is not None:
             flags |= 1     # set to mean that we use extern "Python"
         prnt('  %d,  /* flags */' % flags)
         prnt('};')
@@ -411,7 +422,7 @@ class Recompiler:
         prnt('PyMODINIT_FUNC')
         prnt('_cffi_pypyinit_%s(const void *p[])' % (base_module_name,))
         prnt('{')
-        if self._num_externpy:
+        if flags & 1:
             prnt('    if (((intptr_t)p[0]) >= 0x0A03) {')
             prnt('        _cffi_call_python_org = '
                  '(void(*)(struct _cffi_externpy_s *, char *))p[1];')
@@ -864,7 +875,7 @@ class Recompiler:
         prnt('{')
         prnt('  /* only to generate compile-time warnings or errors */')
         prnt('  (void)p;')
-        for fname, ftype, fbitsize, fqual in tp.enumfields():
+        for fname, ftype, fbitsize, fqual in self._enum_fields(tp):
             try:
                 if ftype.is_integer_type() or fbitsize >= 0:
                     # accept all integers, but complain on float or double
@@ -920,8 +931,7 @@ class Recompiler:
         flags = '|'.join(flags) or '0'
         c_fields = []
         if reason_for_not_expanding is None:
-            expand_anonymous_struct_union = not self.target_is_python
-            enumfields = list(tp.enumfields(expand_anonymous_struct_union))
+            enumfields = list(self._enum_fields(tp))
             for fldname, fldtype, fbitsize, fqual in enumfields:
                 fldtype = self._field_type(tp, fldname, fldtype)
                 self._check_not_opaque(fldtype,

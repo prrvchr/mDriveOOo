@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -32,7 +32,7 @@ import unohelper
 
 from com.sun.star.beans import XPropertyContainer
 
-from ..unotools import getProperty
+from ..unotool import getProperty
 
 
 class PropertyContainer(unohelper.Base,
