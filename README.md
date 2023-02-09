@@ -71,7 +71,7 @@ You must first install this extension, if it is not already installed.
 
 You must install this extension, if it is not already installed.
 
-- Install ![oneDriveOOo logo][1] **[oneDriveOOo.oxt][20]** extension version 0.0.5.
+- Install ![oneDriveOOo logo][1] **[oneDriveOOo.oxt][20]** extension version 0.0.6.
 
 Restart LibreOffice / OpenOffice after installation.
 
