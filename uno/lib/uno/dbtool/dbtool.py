@@ -34,6 +34,36 @@ from com.sun.star.sdbc import SQLWarning
 
 from com.sun.star.sdb.CommandType import TABLE
 
+from com.sun.star.sdbc.DataType import BIT
+from com.sun.star.sdbc.DataType import TINYINT
+from com.sun.star.sdbc.DataType import SMALLINT
+from com.sun.star.sdbc.DataType import INTEGER
+from com.sun.star.sdbc.DataType import BIGINT
+from com.sun.star.sdbc.DataType import FLOAT
+from com.sun.star.sdbc.DataType import REAL
+from com.sun.star.sdbc.DataType import DOUBLE
+from com.sun.star.sdbc.DataType import NUMERIC
+from com.sun.star.sdbc.DataType import DECIMAL
+from com.sun.star.sdbc.DataType import CHAR
+from com.sun.star.sdbc.DataType import VARCHAR
+from com.sun.star.sdbc.DataType import LONGVARCHAR
+from com.sun.star.sdbc.DataType import DATE
+from com.sun.star.sdbc.DataType import TIME
+from com.sun.star.sdbc.DataType import TIMESTAMP
+from com.sun.star.sdbc.DataType import BINARY
+from com.sun.star.sdbc.DataType import VARBINARY
+from com.sun.star.sdbc.DataType import LONGVARBINARY
+from com.sun.star.sdbc.DataType import SQLNULL
+from com.sun.star.sdbc.DataType import OTHER
+from com.sun.star.sdbc.DataType import OBJECT
+from com.sun.star.sdbc.DataType import DISTINCT
+from com.sun.star.sdbc.DataType import STRUCT
+from com.sun.star.sdbc.DataType import ARRAY
+from com.sun.star.sdbc.DataType import BLOB
+from com.sun.star.sdbc.DataType import CLOB
+from com.sun.star.sdbc.DataType import REF
+from com.sun.star.sdbc.DataType import BOOLEAN
+
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
@@ -86,36 +116,6 @@ def getDataSource(ctx, url):
     dbcontext = createService(ctx, service)
     datasource = dbcontext.getByName(location)
     return datasource
-
-def getTablesInfos(connection):
-    tables = connection.getTables()
-    similar = _isSimilar(connection, tables)
-    return similar, tables.getElementNames()
-
-def isSimilar(connection):
-    return _isSimilar(connection, connection.getTables())
-
-def getTableColumns(connection, table):
-    # FIXME Needed for gContactOOo. We can't use:
-    # FIXME table = connection.getTables().getByName(table)
-    # FIXME colums = table.getColumns().getElementNames()
-    # FIXME It does not work with any schema other than PUBLIC in the database!!!
-    # FIXME It returns an empty list of columns...
-    composer = connection.getComposer(TABLE, table)
-    return composer.getColumns().getElementNames()
-
-def _isSimilar(connection, tables):
-    similar = True
-    count = tables.getCount()
-    if count > 1:
-        table = tables.getByIndex(0).Name
-        columns = getTableColumns(connection, table)
-        for index in range(1, count):
-            table = tables.getByIndex(index).Name
-            if columns != getTableColumns(connection, table):
-                similar = False
-                break
-    return similar
 
 def getDataBaseConnection(ctx, url, info):
     service = 'com.sun.star.sdbc.DriverManager'
@@ -424,14 +424,86 @@ def getRowResult(result, index=(0,), separator=' '):
     return tuple(sequence)
 
 def getValueFromResult(result, index=1, default=None):
-    dbtype = result.MetaData.getColumnTypeName(index)
+    dbtype = result.MetaData.getColumnType(index)
     return getRowValue(result, dbtype, index, default)
 
 def getResultValue(result, index=1, default=None):
-    dbtype = result.MetaData.getColumnTypeName(index)
+    dbtype = result.MetaData.getColumnType(index)
     return getRowValue(result, dbtype, index, default)
 
+def getUnoType(dbtype):
+    if dbtype == CHAR:
+        value = uno.getTypeByName('char')
+    elif dbtype == VARCHAR:
+        value = uno.getTypeByName('string')
+    elif dbtype == LONGVARCHAR:
+        value = uno.getTypeByName('string')
+    elif dbtype == BINARY:
+        value = uno.getTypeByName('byte')
+    elif dbtype == VARBINARY:
+        value = uno.getTypeByName('byte')
+    elif dbtype == LONGVARBINARY:
+        value = uno.getTypeByName('byte')
+    elif dbtype == BOOLEAN:
+        value = uno.getTypeByName('boolean')
+    elif dbtype == TINYINT:
+        value = uno.getTypeByName('short')
+    elif dbtype == SMALLINT:
+        value = uno.getTypeByName('short')
+    elif dbtype == INTEGER:
+        value = uno.getTypeByName('long')
+    elif dbtype == BIGINT:
+        value = uno.getTypeByName('hyper')
+    elif dbtype == FLOAT:
+        value = uno.getTypeByName('float')
+    elif dbtype == DOUBLE:
+        value = uno.getTypeByName('double')
+    else:
+        value = uno.getTypeByName('unknown')
+    return value
+
 def getRowValue(row, dbtype, index=1, default=None):
+    if dbtype == CHAR:
+        value = row.getString(index)
+    elif dbtype == VARCHAR:
+        value = row.getString(index)
+    elif dbtype == LONGVARCHAR:
+        value = row.getString(index)
+    elif dbtype == BOOLEAN:
+        value = row.getBoolean(index)
+    elif dbtype == TINYINT:
+        value = row.getByte(index)
+    elif dbtype == SMALLINT:
+        value = row.getShort(index)
+    elif dbtype == INTEGER:
+        value = row.getInt(index)
+    elif dbtype == BIGINT:
+        value = row.getLong(index)
+    elif dbtype == FLOAT:
+        value = row.getFloat(index)
+    elif dbtype == DOUBLE:
+        value = row.getDouble(index)
+    elif dbtype == TIMESTAMP:
+        value = row.getTimestamp(index)
+    elif dbtype == TIME:
+        value = row.getTime(index)
+    elif dbtype == DATE:
+        value = row.getDate(index)
+    elif dbtype == BINARY:
+        value = row.getBytes(index)
+        if not row.wasNull():
+            value = value.value
+    elif dbtype == ARRAY:
+        value = row.getArray(index)
+        if not row.wasNull():
+            value = value.getArray(None)
+    else:
+        value = default
+    if row.wasNull():
+        value = default
+    return value
+
+def getRowValue1(row, dbtype, index=1, default=None):
     if dbtype == 'VARCHAR':
         value = row.getString(index)
     elif dbtype == 'CHARACTER':

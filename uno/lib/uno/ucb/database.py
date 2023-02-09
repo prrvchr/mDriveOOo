@@ -60,8 +60,6 @@ from .dbinit import getStaticTables
 from .dbinit import getQueries
 from .dbinit import getTablesAndStatements
 
-from .contenttools import getUcb
-
 from .logger import logMessage
 from .logger import getMessage
 
@@ -73,7 +71,7 @@ class DataBase(unohelper.Base,
     def __init__(self, ctx, datasource, name='', password='', sync=None):
         self._ctx = ctx
         self._statement = datasource.getConnection(name, password).createStatement()
-        self.sync = sync
+        self._sync = sync
 
     @property
     def Connection(self):
@@ -113,8 +111,7 @@ class DataBase(unohelper.Base,
             query = getSqlQuery(self._ctx, 'shutdown')
         self._statement.execute(query)
 
-    def createUser(self, user, password):
-        name, password = user.getCredential(password)
+    def createUser(self, name, password):
         format = {'User': name, 'Password': password, 'Role': g_role, 'Admin': g_admin}
         sql = getSqlQuery(self._ctx, 'createUser', format)
         status = self._statement.executeUpdate(sql)
@@ -304,7 +301,7 @@ class DataBase(unohelper.Base,
             update.execute()
             update.close()
             # Start Replicator for pushing changes…
-            self.sync.set()
+            self._sync.set()
 
     def insertNewContent(self, userid, itemid, parentid, content, timestamp):
         call = self._getCall('insertItem')
@@ -327,7 +324,7 @@ class DataBase(unohelper.Base,
         call.close()
         if result:
             # Start Replicator for pushing changes…
-            self.sync.set()
+            self._sync.set()
         return result
 
     def countChildTitle(self, userid, parentid, title):
@@ -446,7 +443,7 @@ class DataBase(unohelper.Base,
         select.close()
         return items
 
-    def updateItemId(self, provider, username, itemid, response):
+    def updateItemId(self, provider, user, uri, itemid, response):
         newid = provider.getResponseId(response, itemid)
         if newid != itemid:
             update = self._getCall('updateItemId')
@@ -457,8 +454,7 @@ class DataBase(unohelper.Base,
             logMessage(self._ctx, INFO, msg, "DataBase", "updateItemId")
             update.close()
             # The Id of the item have been changed, we need to clear the Identifier from the cache
-            url = '%s://%s/#%s' % (provider.Scheme, username, itemid)
-            getUcb(self._ctx).createContentIdentifier(url)
+            user.clearIdentifier(uri)
 
 # Procedures called internally
     def _mergeItem(self, call, provider, item, id, parents, timestamp):

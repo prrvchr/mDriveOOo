@@ -33,9 +33,15 @@ import unohelper
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from com.sun.star.ucb import IllegalIdentifierException
+
 from com.sun.star.ucb import XRestUser
 
+from .identifier import Identifier
+
 from .unolib import KeyMap
+
+from .oauth2lib import g_oauth2
 
 from .oauth2tool import getRequest
 
@@ -50,24 +56,19 @@ import traceback
 
 class User(unohelper.Base,
            XRestUser):
-    def __init__(self, ctx, source=None, name=None, database=None):
-        self.ctx = ctx
+    def __init__(self, ctx, source, name, lock, database=None):
+        self._ctx = ctx
+        self._name = name
+        self._lock = lock
+        self._identifiers = {}
         self.DataBase = database
-        # Uri with Scheme but without a Path generate invalid user but we need
-        # to return an Identifier, and raise an 'IllegalIdentifierException'
-        # when ContentProvider try to get the Content...
-        # (ie: ContentProvider.queryContent() -> Identifier.getContent())
-        if source is None:
-            self.Provider = None
-            self.Request = None
-            self.MetaData = KeyMap()
-        else:
-            self.Provider = source.Provider
-            self.Request = getRequest(self.ctx, self.Provider.Scheme, name)
-            self.MetaData = source.DataBase.selectUser(name)
-            self.CanAddChild = not self.Provider.GenerateIds
-        msg = getMessage(self.ctx, g_message, 101)
-        logMessage(self.ctx, INFO, msg, "User", "__init__()")
+        self.Provider = source.Provider
+        self.Request = getRequest(self._ctx, self.Provider.Scheme, name)
+        self.MetaData = source.DataBase.selectUser(name)
+        self.CanAddChild = not self.Provider.GenerateIds
+        self._initialized = False
+        msg = getMessage(self._ctx, g_message, 101)
+        logMessage(self._ctx, INFO, msg, "User", "__init__()")
 
     @property
     def Id(self):
@@ -88,8 +89,46 @@ class User(unohelper.Base,
     # XRestUser
     def isValid(self):
         return self.Id is not None
-    def setDataBase(self, datasource, password, sync):
-        name, password = self.getCredential(password)
-        self.DataBase = DataBase(self.ctx, datasource, name, password, sync)
+    def setDataBase(self, datasource, sync, password=''):
+        self.DataBase = DataBase(self._ctx, datasource, self.Name, password, sync)
     def getCredential(self, password):
         return self.Name, password
+
+    def isInitialized(self):
+        return self._initialized
+
+    def initialize(self, database, password=''):
+        if self.Request is None:
+            msg = getMessage(self._ctx, g_message, 111, g_oauth2)
+            raise IllegalIdentifierException(msg, self)
+        if self.MetaData is None:
+            if not self.Provider.isOnLine():
+                msg = getMessage(self._ctx, g_message, 112, self._name)
+                raise IllegalIdentifierException(msg, self)
+            data = self.Provider.getUser(self.Request, self._name)
+            if not data.IsPresent:
+                msg = getMessage(self._ctx, g_message, 113, self._name)
+                raise IllegalIdentifierException(msg, self)
+            root = self.Provider.getRoot(self.Request, data.Value)
+            if not root.IsPresent:
+                msg = getMessage(self._ctx, g_message, 113, self._name)
+                raise IllegalIdentifierException(msg, self)
+            self.MetaData = database.insertUser(self.Provider, data.Value, root.Value)
+            if not database.createUser(self._name, password):
+                msg = getMessage(self._ctx, g_message, 114, self._name)
+                raise IllegalIdentifierException(msg, self)
+        self.DataBase = DataBase(self._ctx, database.getDataSource(), self._name, '', self._lock)
+        self._initialized = True
+        self._lock.set()
+
+    def getIdentifier(self, factory, url):
+        if url in self._identifiers:
+            identifier = self._identifiers[url]
+        else:
+            identifier = Identifier(self._ctx, factory, self, url)
+            self._identifiers[url] = identifier
+        return identifier
+    def clearIdentifier(self, url):
+        if url in self._identifiers:
+            del self._identifiers[url]
+

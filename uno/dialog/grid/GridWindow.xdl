@@ -30,14 +30,9 @@
     <dlg:button dlg:id="CommandButton1" dlg:tab-index="0" dlg:left="0" dlg:top="0" dlg:width="8" dlg:height="10" dlg:help-text="&amp;GridWindow.CommandButton1.HelpText" dlg:value="&amp;GridWindow.CommandButton1.Label" dlg:toggled="1">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:showControls" script:language="UNO"/>
     </dlg:button>
-    <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:page="2" dlg:left="15" dlg:top="0" dlg:width="60" dlg:height="14" dlg:help-text="&amp;GridWindow.Label1.HelpText" dlg:value="&amp;GridWindow.Label1.Label" dlg:valign="center"/>
-    <dlg:menulist dlg:id="ListBox1" dlg:tab-index="2" dlg:page="2" dlg:left="85" dlg:top="0" dlg:width="50" dlg:height="14" dlg:help-text="&amp;GridWindow.ListBox1.HelpText" dlg:value="&amp;GridWindow.ListBox1.Text" dlg:spin="true">
+    <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:page="2" dlg:left="30" dlg:top="0" dlg:width="60" dlg:height="14" dlg:help-text="&amp;GridWindow.Label1.HelpText" dlg:value="&amp;GridWindow.Label1.Label" dlg:valign="center"/>
+    <dlg:menulist dlg:id="ListBox1" dlg:tab-index="2" dlg:page="2" dlg:left="145" dlg:top="0" dlg:width="100" dlg:height="14" dlg:help-text="&amp;GridWindow.ListBox1.HelpText" dlg:value="&amp;GridWindow.ListBox1.Text" dlg:spin="true">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:ChangeColumn" script:language="UNO"/>
     </dlg:menulist>
-    <dlg:text dlg:id="Label2" dlg:tab-index="3" dlg:page="2" dlg:left="145" dlg:top="0" dlg:width="35" dlg:height="14" dlg:help-text="&amp;GridWindow.Label2.HelpText" dlg:value="&amp;GridWindow.Label2.Label" dlg:valign="center"/>
-    <dlg:menulist dlg:id="ListBox2" dlg:tab-index="4" dlg:page="2" dlg:left="185" dlg:top="0" dlg:width="50" dlg:height="14" dlg:help-text="&amp;GridWindow.ListBox2.HelpText" dlg:value="&amp;GridWindow.ListBox2.Text" dlg:spin="true">
-      <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:ChangeOrder" script:language="UNO"/>
-    </dlg:menulist>
-    <dlg:checkbox dlg:id="CheckBox1" dlg:tab-index="5" dlg:page="2" dlg:left="240" dlg:top="3" dlg:width="35" dlg:height="8" dlg:help-text="&amp;GridWindow.CheckBox1.HelpText" dlg:value="&amp;GridWindow.CheckBox1.Label" dlg:valign="center" dlg:checked="false"/>
   </dlg:bulletinboard>
 </dlg:window>

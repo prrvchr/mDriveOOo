@@ -47,7 +47,6 @@ from .unotool import getPropertyValueSet
 
 from .contenttools import getCommand
 from .contenttools import getContentEvent
-from .contenttools import getUcp
 from .contenttools import getInteractiveAugmentedIOException
 from .logger import logMessage
 
@@ -137,8 +136,8 @@ def _setTitle(source, context, title):
 
 def notifyContentListener(ctx, source, action, identifier=None):
     if action == INSERTED:
-        identifier = source.getIdentifier().getParent()
-        parent = getUcp(ctx, identifier.getContentProviderScheme()).queryContent(identifier)
+        identifier = source.getIdentifier()
+        parent = identifier.getParent()
         parent.notify(getContentEvent(action, source, identifier))
     elif action == DELETED:
         identifier = source.getIdentifier()

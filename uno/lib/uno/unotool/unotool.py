@@ -29,16 +29,18 @@
 
 import uno
 
-from com.sun.star.lang import WrappedTargetRuntimeException
+from com.sun.star.awt import Rectangle
 
 from com.sun.star.connection import NoConnectException
 
-from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
+from com.sun.star.document.MacroExecMode import ALWAYS_EXECUTE_NO_WARN
 
-from com.sun.star.awt import Rectangle
+from com.sun.star.lang import WrappedTargetRuntimeException
 
 from com.sun.star.ucb.ConnectionMode import ONLINE
 from com.sun.star.ucb.ConnectionMode import OFFLINE
+
+from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
 
 from six import binary_type, string_types
 import datetime
@@ -101,6 +103,14 @@ def parseUrl(transformer, location, protocol=None):
     else:
         success, url = transformer.parseSmart(url, protocol)
     return url if success else None
+
+def getDocument(ctx, url):
+    properties = {'Hidden': True,
+                  'OpenNewView': True,
+                  'MacroExecutionMode': ALWAYS_EXECUTE_NO_WARN}
+    descriptor = getPropertyValueSet(properties)
+    document = getDesktop(ctx).loadComponentFromURL(url, '_blank', 0, descriptor)
+    return document
 
 def getExceptionMessage(exception):
     messages = []

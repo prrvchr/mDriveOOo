@@ -49,7 +49,6 @@ from .unolib import PropertySet
 
 from .unotool import getProperty
 
-from .contenttools import getUcb
 from .contenttools import getParametersRequest
 
 import traceback
@@ -102,7 +101,7 @@ class InteractionAbort(unohelper.Base,
 class InteractionSupplyParameters(unohelper.Base,
                                   XInteractionSupplyParameters):
     def __init__(self, result):
-        self.result = result
+        self._result = result
         self.username = ''
     # XInteractionSupplyParameters
     def setParameters(self, properties):
@@ -110,8 +109,8 @@ class InteractionSupplyParameters(unohelper.Base,
             if property.Name == 'UserName':
                 self.username = property.Value
     def select(self):
-        self.result.Value = self.username
-        self.result.IsPresent = True
+        self._result.Value = self.username
+        self._result.IsPresent = True
 
 
 class InteractionRequestParameters(unohelper.Base,
@@ -222,12 +221,13 @@ class CommandInfoChangeNotifier(XCommandInfoChangeNotifier):
 
 class Row(unohelper.Base,
           XRow):
-    def __init__(self, namedvalues):
-        self.namedvalues = namedvalues
-        self.isNull = False
+    def __init__(self, values):
+        self._values = values
+        self._isNull = False
+
     # XRow
     def wasNull(self):
-        return self.isNull
+        return self._isNull
     def getString(self, index):
         return self._getValue(index -1)
     def getBoolean(self, index):
@@ -266,23 +266,25 @@ class Row(unohelper.Base,
         return self._getValue(index -1)
     def getArray(self, index):
         return self._getValue(index -1)
+
     def _getValue(self, index):
         value  = None
-        self.isNull = True
-        if 0 <= index < len(self.namedvalues):
-            value = self.namedvalues[index].Value
-            self.isNull = value is None
+        self._isNull = True
+        if 0 <= index < len(self._values):
+            value = self._values[index].Value
+            self._isNull = value is None
         return value
 
 
 class DynamicResultSet(unohelper.Base,
                        XDynamicResultSet):
-    def __init__(self, ctx, select):
-        self.ctx = ctx
-        self.select = select
+    def __init__(self, identifier, select):
+        self._identifier = identifier
+        self._select = select
+
     # XDynamicResultSet
     def getStaticResultSet(self):
-        return ContentResultSet(self.ctx, self.select)
+        return ContentResultSet(self._identifier, self._select)
     def setListener(self, listener):
         pass
     def connectToCache(self, cache):
@@ -297,112 +299,116 @@ class ContentResultSet(unohelper.Base,
                        XRow,
                        XResultSetMetaDataSupplier,
                        XContentAccess):
-    def __init__(self, ctx, select):
+    def __init__(self, identifier, select):
         try:
-            self.ctx = ctx
+            self._identifier = identifier
             result = select.executeQuery()
             result.last()
             self.RowCount = result.getRow()
             self.IsRowCountFinal = True
             result.beforeFirst()
-            self.result = result
+            self._result = result
             print("ContentResultSet.__init__() %s" % self.RowCount)
         except Exception as e:
             msg = "Error: %s" % traceback.print_exc()
             print(msg)
-    def __del__(self):
-        pass
+
+    # XResultSet
+    def next(self):
+        return self._result.next()
+    def isBeforeFirst(self):
+        return self._result.isBeforeFirst()
+    def isAfterLast(self):
+        return self._result.isAfterLast()
+    def isFirst(self):
+        return self._result.isFirst()
+    def isLast(self):
+        return self._result.isLast()
+    def beforeFirst(self):
+        self._result.beforeFirst()
+    def afterLast(self):
+        self._result.afterLast()
+    def first(self):
+        return self._result.first()
+    def last(self):
+        return self._result.last()
+    def getRow(self):
+        return self._result.getRow()
+    def absolute(self, row):
+        return self._result.absolute(row)
+    def relative(self, row):
+        return self._result.relative(row)
+    def previous(self):
+        return self._result.previous()
+    def refreshRow(self):
+        self._result.refreshRow()
+    def rowUpdated(self):
+        return self._result.rowUpdated()
+    def rowInserted(self):
+        return self._result.rowInserted()
+    def rowDeleted(self):
+        return self._result.rowDeleted()
+    def getStatement(self):
+        return self._result.getStatement()
+
+    # XRow
+    def wasNull(self):
+        return self._result.wasNull()
+    def getString(self, index):
+        return self._result.getString(index)
+    def getBoolean(self, index):
+        return self._result.getBoolean(index)
+    def getByte(self, index):
+        return self._result.getByte(index)
+    def getShort(self, index):
+        return self._result.getShort(index)
+    def getInt(self, index):
+        return self._result.getInt(index)
+    def getLong(self, index):
+        return self._result.getLong(index)
+    def getFloat(self, index):
+        return self._result.getFloat(index)
+    def getDouble(self, index):
+        return self._result.getDouble(index)
+    def getBytes(self, index):
+        return self._result.getBytes(index)
+    def getDate(self, index):
+        return self._result.getDate(index)
+    def getTime(self, index):
+        return self._result.getTime(index)
+    def getTimestamp(self, index):
+        return self._result.getTimestamp(index)
+    def getBinaryStream(self, index):
+        return self._result.getBinaryStream(index)
+    def getCharacterStream(self, index):
+        return self._result.getCharacterStream(index)
+    def getObject(self, index, map):
+        return self._result.getObject(index, map)
+    def getRef(self, index):
+        return self._result.getRef(index)
+    def getBlob(self, index):
+        return self._result.getBlob(index)
+    def getClob(self, index):
+        return self._result.getClob(index)
+    def getArray(self, index):
+        return self._result.getArray(index)
+
+    # XResultSetMetaDataSupplier
+    def getMetaData(self):
+        return self._result.getMetaData()
+
+    # XContentAccess
+    def queryContentIdentifierString(self):
+        return self._result.getString(self._result.findColumn('TargetURL'))
+    def queryContentIdentifier(self):
+        return self._identifier.queryContentIdentifier(self.queryContentIdentifierString())
+    def queryContent(self):
+        return self.queryContentIdentifier().getContent()
+
     def _getPropertySetInfo(self):
         properties = {}
         readonly = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.READONLY')
         properties['RowCount'] = getProperty('RowCount', 'long', readonly)
         properties['IsRowCountFinal'] = getProperty('IsRowCountFinal', 'boolean', readonly)
         return properties
-    # XResultSet
-    def next(self):
-        return self.result.next()
-    def isBeforeFirst(self):
-        return self.result.isBeforeFirst()
-    def isAfterLast(self):
-        return self.result.isAfterLast()
-    def isFirst(self):
-        return self.result.isFirst()
-    def isLast(self):
-        return self.result.isLast()
-    def beforeFirst(self):
-        self.result.beforeFirst()
-    def afterLast(self):
-        self.result.afterLast()
-    def first(self):
-        return self.result.first()
-    def last(self):
-        return self.result.last()
-    def getRow(self):
-        return self.result.getRow()
-    def absolute(self, row):
-        return self.result.absolute(row)
-    def relative(self, row):
-        return self.result.relative(row)
-    def previous(self):
-        return self.result.previous()
-    def refreshRow(self):
-        self.result.refreshRow()
-    def rowUpdated(self):
-        return self.result.rowUpdated()
-    def rowInserted(self):
-        return self.result.rowInserted()
-    def rowDeleted(self):
-        return self.result.rowDeleted()
-    def getStatement(self):
-        return self.result.getStatement()
-    # XRow
-    def wasNull(self):
-        return self.result.wasNull()
-    def getString(self, index):
-        return self.result.getString(index)
-    def getBoolean(self, index):
-        return self.result.getBoolean(index)
-    def getByte(self, index):
-        return self.result.getByte(index)
-    def getShort(self, index):
-        return self.result.getShort(index)
-    def getInt(self, index):
-        return self.result.getInt(index)
-    def getLong(self, index):
-        return self.result.getLong(index)
-    def getFloat(self, index):
-        return self.result.getFloat(index)
-    def getDouble(self, index):
-        return self.result.getDouble(index)
-    def getBytes(self, index):
-        return self.result.getBytes(index)
-    def getDate(self, index):
-        return self.result.getDate(index)
-    def getTime(self, index):
-        return self.result.getTime(index)
-    def getTimestamp(self, index):
-        return self.result.getTimestamp(index)
-    def getBinaryStream(self, index):
-        return self.result.getBinaryStream(index)
-    def getCharacterStream(self, index):
-        return self.result.getCharacterStream(index)
-    def getObject(self, index, map):
-        return self.result.getObject(index, map)
-    def getRef(self, index):
-        return self.result.getRef(index)
-    def getBlob(self, index):
-        return self.result.getBlob(index)
-    def getClob(self, index):
-        return self.result.getClob(index)
-    def getArray(self, index):
-        return self.result.getArray(index)
-    # XResultSetMetaDataSupplier
-    def getMetaData(self):
-        return self.result.getMetaData()
-    # XContentAccess
-    def queryContentIdentifierString(self):
-        return self.result.getString(self.result.findColumn('TargetURL'))
-    def queryContentIdentifier(self):
-        return getUcb(self.ctx).createContentIdentifier(self.queryContentIdentifierString())
-    def queryContent(self):
-        return getUcb(self.ctx).queryContent(self.queryContentIdentifier())
+

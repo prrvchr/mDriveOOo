@@ -58,9 +58,10 @@ from com.sun.star.ucb import XRestContent
 
 from .unolib import PropertySetInfo
 
+from .unotool import createService
 from .unotool import getSimpleFile
 from .unotool import getProperty
-from .unotool import getInterfaceTypes
+from .unotool import hasInterface
 
 from .contentlib import CommandInfo
 from .contentlib import Row
@@ -86,7 +87,7 @@ class Content(unohelper.Base,
               XPropertiesChangeNotifier,
               XRestContent):
     def __init__(self, ctx, identifier):
-        self.ctx = ctx
+        self._ctx = ctx
         msg = "Content loading ... "
         self.Identifier = identifier
         self.MetaData = identifier.MetaData
@@ -94,7 +95,7 @@ class Content(unohelper.Base,
         self._contentListeners = []
         self._propertiesListener = {}
         msg += "Done."
-        logMessage(self.ctx, INFO, msg, "Content", "__init__()")
+        logMessage(self._ctx, INFO, msg, "Content", "__init__()")
 
     @property
     def IsFolder(self):
@@ -156,16 +157,16 @@ class Content(unohelper.Base,
         url = self.getIdentifier().getContentIdentifier()
         print("Content.execute() %s - %s - %s" % (command.Name, url, self.getIdentifier().Id))
         msg = "command.Name: %s" % command.Name
-        logMessage(self.ctx, INFO, msg, "Content", "execute()")
+        logMessage(self._ctx, INFO, msg, "Content", "execute()")
         if command.Name == 'getCommandInfo':
             return CommandInfo(self._commandInfo)
         elif command.Name == 'getPropertySetInfo':
             return PropertySetInfo(self.Identifier._propertySetInfo)
         elif command.Name == 'getPropertyValues':
-            namedvalues = getPropertiesValues(self.ctx, self, command.Argument)
-            return Row(namedvalues)
+            values = getPropertiesValues(self._ctx, self, command.Argument)
+            return Row(values)
         elif command.Name == 'setPropertyValues':
-            return setPropertiesValues(self.ctx, self, environment, command.Argument)
+            return setPropertiesValues(self._ctx, self, environment, command.Argument)
         elif command.Name == 'delete':
             self.MetaData.insertValue('Trashed', True)
             user = self.Identifier.User
@@ -177,12 +178,12 @@ class Content(unohelper.Base,
                 select = self.Identifier.getFolderContent(self.MetaData)
                 print("Content.execute() open 2")
                 msg += " IsFolder: %s" % self.IsFolder
-                logMessage(self.ctx, INFO, msg, "Content", "execute()")
+                logMessage(self._ctx, INFO, msg, "Content", "execute()")
                 print("Content.execute() open 3")
-                return DynamicResultSet(self.ctx, select)
+                return DynamicResultSet(self.Identifier, select)
             elif self.IsDocument:
                 print("Content.execute() open 4")
-                sf = getSimpleFile(self.ctx)
+                sf = getSimpleFile(self._ctx)
                 url, size = self.Identifier.getDocumentContent(sf, self.MetaData, 0)
                 if not size:
                     title = self.MetaData.getValue('Title')
@@ -190,13 +191,10 @@ class Content(unohelper.Base,
                     print("Content.execute() %s" % msg)
                     raise CommandAbortedException(msg, self)
                 sink = command.Argument.Sink
-                interfaces = getInterfaceTypes(sink)
-                datasink = uno.getTypeByName('com.sun.star.io.XActiveDataSink')
-                datastream = uno.getTypeByName('com.sun.star.io.XActiveDataStreamer')
                 isreadonly = self.MetaData.getValue('IsReadOnly')
-                if datasink in interfaces:
+                if hasInterface(sink, 'com.sun.star.io.XActiveDataSink'):
                     sink.setInputStream(sf.openFileRead(url))
-                elif not isreadonly and datastream in interfaces:
+                elif not isreadonly and hasInterface(sink, 'com.sun.star.io.XActiveDataStreamer'):
                     sink.setStream(sf.openFileReadWrite(url))
         elif command.Name == 'insert':
             # The Insert command is only used to create a new folder or a new document
@@ -216,15 +214,14 @@ class Content(unohelper.Base,
             elif self.IsDocument:
                 stream = command.Argument.Data
                 replace = command.Argument.ReplaceExisting
-                sf = getSimpleFile(self.ctx)
+                sf = getSimpleFile(self._ctx)
                 url = self.Identifier.User.Provider.SourceURL
                 target = '%s/%s' % (url, self.Identifier.Id)
                 if sf.exists(target) and not replace:
                     return
-                inputstream = uno.getTypeByName('com.sun.star.io.XInputStream')
-                if inputstream in getInterfaceTypes(stream):
+                if hasInterface(stream, 'com.sun.star.io.XInputStream'):
                     sf.writeFile(target, stream)
-                    mediatype = getMimeType(self.ctx, stream)
+                    mediatype = getMimeType(self._ctx, stream)
                     self.MetaData.insertValue('MediaType', mediatype)
                     stream.closeInput()
                     print("Content.execute() insert 2 ************** %s" % mediatype)
@@ -258,7 +255,7 @@ class Content(unohelper.Base,
                 msg = "Couln't handle Url: %s" % source
                 raise InteractiveBadTransferURLException(msg, self)
             print("Content.execute() transfert 3 %s - %s" % (itemid, source))
-            sf = getSimpleFile(self.ctx)
+            sf = getSimpleFile(self._ctx)
             if not sf.exists(source):
                 raise CommandAbortedException("Error while saving file: %s" % source, self)
             inputstream = sf.openFileRead(source)

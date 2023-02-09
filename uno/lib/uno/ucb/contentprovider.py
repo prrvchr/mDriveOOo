@@ -40,13 +40,10 @@ from com.sun.star.ucb import IllegalIdentifierException
 
 from com.sun.star.ucb import XRestContentProvider
 
-from .oauth2lib import getOAuth2UserName
-
-from .contenttools import getUrl
-from .contenttools import getUri
+from .unotool import createService
+from .unotool import parseUrl
 
 from .datasource import DataSource
-from .user import User
 
 from .logger import logMessage
 from .logger import getMessage
@@ -62,103 +59,70 @@ class ContentProvider(unohelper.Base,
                       XParameterizedContentProvider,
                       XRestContentProvider):
     def __init__(self, ctx, plugin):
-        self.ctx = ctx
+        self._ctx = ctx
         self.Scheme = ''
         self.Plugin = plugin
         self.DataSource = None
         self.event = Event()
-        self._currentUserName = None
+        self._user = None
         self._error = ''
-        msg = getMessage(self.ctx, g_message, 101, self.Plugin)
-        logMessage(self.ctx, INFO, msg, 'ContentProvider', '__init__()')
+        self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
+        self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
+        msg = getMessage(self._ctx, g_message, 101, self.Plugin)
+        logMessage(self._ctx, INFO, msg, 'ContentProvider', '__init__()')
 
     def __del__(self):
-       msg = getMessage(self.ctx, g_message, 171, self.Plugin)
-       logMessage(self.ctx, INFO, msg, 'ContentProvider', '__del__()')
+       msg = getMessage(self._ctx, g_message, 171, self.Plugin)
+       logMessage(self._ctx, INFO, msg, 'ContentProvider', '__del__()')
 
     # XParameterizedContentProvider
     def registerInstance(self, scheme, plugin, replace):
-        msg = getMessage(self.ctx, g_message, 111, (scheme, plugin))
-        logMessage(self.ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
-        datasource = DataSource(self.ctx, self.event, scheme, plugin)
+        msg = getMessage(self._ctx, g_message, 111, (scheme, plugin))
+        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
+        datasource = DataSource(self._ctx, self.event, scheme, plugin)
         if not datasource.isValid():
-            logMessage(self.ctx, SEVERE, datasource.Error, 'ContentProvider', 'registerInstance()')
+            logMessage(self._ctx, SEVERE, datasource.Error, 'ContentProvider', 'registerInstance()')
             return None
         self.Scheme = scheme
         self.Plugin = plugin
         self.DataSource = datasource
-        msg = getMessage(self.ctx, g_message, 112, (scheme, plugin))
-        logMessage(self.ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
+        msg = getMessage(self._ctx, g_message, 112, (scheme, plugin))
+        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
         return self
     def deregisterInstance(self, scheme, argument):
-        msg = getMessage(self.ctx, g_message, 161, scheme)
-        logMessage(self.ctx, INFO, msg, 'ContentProvider', 'deregisterInstance()')
+        msg = getMessage(self._ctx, g_message, 161, scheme)
+        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'deregisterInstance()')
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, url):
-        try:
-            url = getUrl(self.ctx, url)
-            uri = getUri(self.ctx, url)
-            user = self._getUser(uri, url)
-            identifier = self.DataSource.getIdentifier(user, uri)
-            print("ContentProvider.createContentIdentifier() %s" % identifier.getContentIdentifier())
-            msg = getMessage(self.ctx, g_message, 131, url)
-            logMessage(self.ctx, INFO, msg, 'ContentProvider', 'createContentIdentifier()')
-            return identifier
-        except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
-            print(msg)
+        print("ContentProvider.createContentIdentifier() 1")
+        url = self._transformer.getPresentation(parseUrl(self._transformer, url), True)
+        identifier = self.DataSource.getIdentifier(self._factory, url, self._user)
+        msg = getMessage(self._ctx, g_message, 131, url)
+        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'createContentIdentifier()')
+        print("ContentProvider.createContentIdentifier() 2")
+        return identifier
 
     # XContentProvider
     def queryContent(self, identifier):
-        try:
-            url = identifier.getContentIdentifier()
-            if not identifier.isValid():
-                msg = getMessage(self.ctx, g_message, 141, (url, self._error))
-                logMessage(self.ctx, SEVERE, msg, 'ContentProvider', 'queryContent()')
-                raise IllegalIdentifierException(msg, identifier)
-            content = identifier.getContent()
-            self._currentUserName = identifier.User.Name
-            msg = getMessage(self.ctx, g_message, 142, url)
-            logMessage(self.ctx, INFO, msg, 'ContentProvider', 'queryContent()')
-            return content
-        except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
-            print(msg)
+        print("ContentProvider.queryContent() 1")
+        if not identifier.isInitialized():
+            identifier.initialize(self.DataSource.DataBase)
+        self._user = identifier.User.Name
+        content = identifier.getContent()
+        msg = getMessage(self._ctx, g_message, 142, identifier.getContentIdentifier())
+        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'queryContent()')
+        print("ContentProvider.queryContent() 2")
+        return content
 
     def compareContentIds(self, id1, id2):
         ids = (id1.getContentIdentifier(), id2.getContentIdentifier())
         if id1.Id == id2.Id and id1.User.Id == id2.User.Id:
-            msg = getMessage(self.ctx, g_message, 151, ids)
+            msg = getMessage(self._ctx, g_message, 151, ids)
             compare = 0
         else:
-            msg = getMessage(self.ctx, g_message, 152, ids)
+            msg = getMessage(self._ctx, g_message, 152, ids)
             compare = -1
-        logMessage(self.ctx, INFO, msg, 'ContentProvider', 'compareContentIds()')
+        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'compareContentIds()')
         return compare
 
-    def _getUser(self, uri, url):
-        if uri is None:
-            self._error = getMessage(self.ctx, g_message, 121, url)
-            return User(self.ctx)
-        if not uri.hasAuthority() or not uri.getPathSegmentCount():
-            self._error = getMessage(self.ctx, g_message, 122, url)
-            return User(self.ctx)
-        name = self._getUserName(uri, url)
-        if not name:
-            self._error = getMessage(self.ctx, g_message, 123, url)
-            return User(self.ctx)
-        user = self.DataSource.getUser(name)
-        if user is None:
-            self._error = self.DataSource.Error
-            return User(self.ctx)
-        return user
-
-    def _getUserName(self, uri, url):
-        if uri.hasAuthority() and uri.getAuthority() != '':
-            name = uri.getAuthority()
-        elif self._currentUserName is not None:
-            name = self._currentUserName
-        else:
-            name = getOAuth2UserName(self.ctx, self, uri.getScheme())
-        return name

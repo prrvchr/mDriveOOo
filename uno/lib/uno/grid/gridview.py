@@ -35,19 +35,15 @@ from ..unotool import getContainerWindow
 
 from ..configuration import g_extension
 
-from .gridhandler import WindowHandler
-
 
 class GridView(unohelper.Base):
-    def __init__(self, ctx, name, manager, parent, possize, step=1):
-        self._ctx = ctx
-        self._name = name
-        self._up = 20
-        handler = WindowHandler(ctx, manager)
-        self._window = getContainerWindow(ctx, parent, handler, g_extension, 'GridWindow')
-        self._setWindow(possize, step)
-        data, model = manager.getGridModels()
-        self._createGrid(data, model)
+    def __init__(self, ctx, window, handler, model, selection, step=1):
+        self._name = 'GridControl1'
+        self._gap = 20
+        self._margin = 10
+        self._window = getContainerWindow(ctx, window.getPeer(), handler, g_extension, 'GridWindow')
+        self._setWindowSize(window.Model, step)
+        self._createGrid(model, selection)
         self._window.setVisible(True)
 
 # GridView getter methods
@@ -57,12 +53,24 @@ class GridView(unohelper.Base):
     def getGrid(self):
         return self._getGrid()
 
+    def getGridDataModel(self):
+        return self._getGrid().Model.GridDataModel
+
+    def getGridColumnModel(self):
+        return self._getGrid().Model.ColumnModel
+
+    def hasSelectedRows(self):
+        return self._getGrid().hasSelectedRows()
+
+    def getSelectedRow(self):
+        index = -1
+        control = self._getGrid()
+        if control.hasSelectedRows():
+            index = control.getSelectedRows()[0]
+        return index
+
     def getSelectedRows(self):
         return self._getGrid().getSelectedRows()
-
-    def getSortDirection(self):
-        ascending = not bool(self._getSort().Model.State)
-        return ascending
 
     def getUnSelected(self):
         return 'column-0.png'
@@ -70,16 +78,19 @@ class GridView(unohelper.Base):
     def getSelected(self):
         return 'column-1.png'
 
-    def getDescending(self):
-        return 'sort-0.png'
-
-    def getAscending(self):
-        return 'sort-1.png'
-
 # GridView setter methods
-    def setWindowPosSize(self, state):
-        self._setGridPosSize(state)
+    def setGridVisible(self, enabled):
+        self._getGrid().setVisible(enabled)
+
+    def showControls(self, state):
+        control = self._getGrid()
+        control.setVisible(False)
+        self._setGridPosSize(control.Model, state)
         self._window.Model.Step = state +1
+        control.setVisible(True)
+
+    def addSelectionListener(self, listener):
+        self._getGrid().addSelectionListener(listener)
 
     def showGridColumnHeader(self, state):
         self._getGrid().Model.ShowColumnHeader = state
@@ -93,6 +104,9 @@ class GridView(unohelper.Base):
         for identifier in identifiers:
             index = indexes.index(identifier)
             control.Model.setItemImage(index, selected)
+
+    def deselectAllRows(self):
+        self._getGrid().deselectAllRows()
 
     def deselectColumn(self, index):
         self._getColumn().selectItemPos(index, False)
@@ -108,41 +122,11 @@ class GridView(unohelper.Base):
             else:
                 control.Model.setItemImage(index, unselected)
 
-    def initOrders(self, url, columns, orders):
-        control = self._getOrder()
-        unselected = self._getUnSelected(url)
-        self._initListBox(control, columns, unselected)
-        indexes = tuple(columns.keys())
-        ascending = self._getAscending(url)
-        descending = self._getDescending(url)
-        while orders.hasMoreElements():
-            order = orders.nextElement()
-            index = indexes.index(order.Name)
-            image = ascending if order.IsAscending else descending
-            control.Model.setItemImage(index, image)
-
-    def deselectOrder(self, index):
-        self._getOrder().selectItemPos(index, False)
-
-    def setOrders(self, url, orders):
-        control = self._getOrder()
-        ascending = self._getAscending(url)
-        descending = self._getDescending(url)
-        unselected = self._getUnSelected(url)
-        for index in range(control.Model.ItemCount):
-            identifier = control.Model.getItemData(index)
-            if identifier in orders:
-                image = ascending if orders[identifier] else descending
-                control.Model.setItemImage(index, image)
-            else:
-                control.Model.setItemImage(index, unselected)
-
 # GridView private setter methods
-    def _setGridPosSize(self, state):
-        diff = self._up if state else -self._up
-        model = self._getGrid().Model
-        model.PositionY = model.PositionY + diff
-        model.Height = model.Height - diff
+    def _setGridPosSize(self, model, state):
+        gap = self._gap if state else -self._gap
+        model.PositionY = model.PositionY + gap
+        model.Height = model.Height - gap
 
     def _initListBox(self, control, columns, image):
         control.Model.removeAllItems()
@@ -151,19 +135,20 @@ class GridView(unohelper.Base):
             control.Model.insertItem(index, title, image)
             control.Model.setItemData(index, identifier)
 
-    def _setWindow(self, possize, step):
+    def _setWindowSize(self, window, step):
         model = self._window.Model
-        model.PositionX = possize.X
-        model.PositionY = possize.Y
-        model.Height = possize.Height
-        model.Width = possize.Width
+        model.Height = window.Height
+        model.Width = window.Width
+        offset = self._setControlPosition(self._getColumn(), window.Width)
+        self._setControlPosition(self._getColumnLabel(), offset)
         model.Step = step
 
-    def _getMargin(self):
-        return self._getToggle().Model.Width
+    def _setControlPosition(self, control, offset):
+        control.Model.PositionX = offset - control.Model.Width
+        return control.Model.PositionX - self._margin
 
-    def _createGrid(self, data, column):
-        model = self._getGridModel(data, column)
+    def _createGrid(self, data, selection):
+        model = self._getGridModel(data, selection)
         self._window.Model.insertByName(self._name, model)
 
 # GridView private getter methods
@@ -173,13 +158,7 @@ class GridView(unohelper.Base):
     def _getSelected(self, url):
         return '%s/%s' % (url,  self.getSelected())
 
-    def _getDescending(self, url):
-        return '%s/%s' % (url, self.getDescending())
-
-    def _getAscending(self, url):
-        return '%s/%s' % (url, self.getAscending())
-
-    def _getGridModel(self, data, column):
+    def _getGridModel(self, data, selection):
         margin = self._getToggle().Model.Width
         service = 'com.sun.star.awt.grid.UnoControlGridModel'
         model = self._window.Model.createInstance(service)
@@ -189,8 +168,10 @@ class GridView(unohelper.Base):
         model.Height = self._window.Model.Height
         model.Width = self._window.Model.Width - margin
         model.GridDataModel = data
-        model.ColumnModel = column
-        model.SelectionModel = MULTI
+        #model.ColumnModel = column
+        model.SelectionModel = selection
+        model.HScroll = True
+        model.VScroll = True
         model.ShowColumnHeader = False
         model.BackgroundColor = 16777215
         return model
@@ -205,14 +186,6 @@ class GridView(unohelper.Base):
     def _getColumnLabel(self):
         return self._window.getControl('Label1')
 
-    def _getOrderLabel(self):
-        return self._window.getControl('Label2')
-
     def _getColumn(self):
         return self._window.getControl('ListBox1')
 
-    def _getOrder(self):
-        return self._window.getControl('ListBox2')
-
-    def _getSort(self):
-        return self._window.getControl('CheckBox1')

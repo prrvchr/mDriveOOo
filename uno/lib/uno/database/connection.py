@@ -30,55 +30,52 @@
 import uno
 import unohelper
 
-from com.sun.star.lang import XServiceInfo
-from com.sun.star.lang import XComponent
-from com.sun.star.sdbc import XConnection
-from com.sun.star.sdbc import XCloseable
-from com.sun.star.sdbc import XWarningsSupplier
-from com.sun.star.sdb import XCommandPreparation
-from com.sun.star.sdb import XQueriesSupplier
-from com.sun.star.sdb import XSQLQueryComposerFactory
-from com.sun.star.lang import XMultiServiceFactory
+from com.sun.star.beans.PropertyAttribute import READONLY
+
 from com.sun.star.container import XChild
-from com.sun.star.sdb.application import XTableUIProvider
-from com.sun.star.sdb.tools import XConnectionTools
+from com.sun.star.container import XElementAccess
+from com.sun.star.container import XEnumerationAccess
+from com.sun.star.container import XNameAccess
+from com.sun.star.container import XIndexAccess
+
+from com.sun.star.lang import XComponent
+from com.sun.star.lang import XMultiServiceFactory
+from com.sun.star.lang import XServiceInfo
+
 from com.sun.star.sdb.CommandType import TABLE
 from com.sun.star.sdb.CommandType import QUERY
 from com.sun.star.sdb.CommandType import COMMAND
-from com.sun.star.beans.PropertyAttribute import READONLY
+
+from com.sun.star.sdb import XCommandPreparation
+from com.sun.star.sdb import XQueriesSupplier
+from com.sun.star.sdb import XSQLQueryComposerFactory
+
+from com.sun.star.sdb.application import XTableUIProvider
+from com.sun.star.sdb.tools import XConnectionTools
+
+from com.sun.star.sdbc import XConnection
+from com.sun.star.sdbc import XCloseable
+from com.sun.star.sdbc import XWarningsSupplier
 
 from com.sun.star.sdbc import SQLException
-
-from com.sun.star.uno import XWeak
-from com.sun.star.uno import XAdapter
 
 from com.sun.star.sdbcx import XTablesSupplier
 from com.sun.star.sdbcx import XViewsSupplier
 from com.sun.star.sdbcx import XUsersSupplier
 from com.sun.star.sdbcx import XGroupsSupplier
-
 from com.sun.star.sdbcx import XUser
-from com.sun.star.container import XNameAccess
-from com.sun.star.container import XIndexAccess
-from com.sun.star.container import XEnumerationAccess
-from com.sun.star.container import XElementAccess
 
-from .unolib import PropertySet
+from com.sun.star.uno import XWeak
 
-from .unotool import createService
-from .unotool import getProperty
-
-from .dbtools import getSequenceFromResult
-from .dbtools import getKeyMapSequenceFromResult
-
-from .dbqueries import getSqlQuery
-
-from .documentdatasource import DocumentDataSource
 from .databasemetadata import DatabaseMetaData
+
+from .datasource import DataSource
 
 from .statement import Statement
 from .statement import PreparedStatement
 from .statement import CallableStatement
+
+from .unotool import createService
 
 import traceback
 
@@ -101,22 +98,20 @@ class Connection(unohelper.Base,
                  XTableUIProvider,
                  XConnectionTools,
                  XWeak):
-    def __init__(self, ctx, datasource, url, user, password, event=None, patched=False):
-        self.ctx = ctx
-        self._connection = datasource.getConnection(user, password)
+    def __init__(self, driver, datasource, location, url, infos, user, password):
+        self._connection = driver.connect(location, infos)
+        self._datasource = datasource
         self._url = url
+        self._infos = infos
         self._username = user
-        self._event = event
-        # TODO: sometime we cannot use: connection.prepareStatement(sql)
-        # TODO: it trow a: java.lang.IncompatibleClassChangeError
-        # TODO: if self._patched: fallback to connection.prepareCall(sql)
-        self._patched = patched
 
     # XComponent
     def dispose(self):
         self._connection.dispose()
+
     def addEventListener(self, listener):
         self._connection.addEventListener(listener)
+
     def removeEventListener(self, listener):
         self._connection.removeEventListener(listener)
 
@@ -147,28 +142,18 @@ class Connection(unohelper.Base,
 
     # XCloseable
     def close(self):
-        print("Connection.close()********* 1")
-        if not self._connection.isClosed():
-            self._connection.close()
-        if self._event is not None:
-            self._event.set()
-        print("Connection.close()********* 2")
+        self._connection.close()
 
     # XCommandPreparation
     def prepareCommand(self, command, commandtype):
-        query = None
-        if commandtype == TABLE:
-            query = getSqlQuery(self.ctx, 'prepareCommand', command)
-        elif commandtype == QUERY:
-            if self.getQueries().hasByName(command):
-                query = self.getQueries().getByName(command).Command
-        elif commandtype == COMMAND:
-            query = command
+        composer = self._connection.getComposer(commandtype, command)
+        query = composer.getQuery()
+        composer.dipose()
         # TODO: sometime we cannot use: connection.prepareStatement(sql)
         # TODO: it trow a: java.lang.IncompatibleClassChangeError
         # TODO: if self._patched: fallback to connection.prepareCall(sql)
         if query is not None:
-            return PreparedStatement(self, query, self._patched)
+            return CallableStatement(self, query)
         raise SQLException()
 
     # XQueriesSupplier
@@ -189,8 +174,7 @@ class Connection(unohelper.Base,
 
     # XChild
     def getParent(self):
-        datasource = self._connection.getParent()
-        return DocumentDataSource(datasource, self._url, self._username)
+        return DataSource(self._datasource, self._username, self._url)
     def setParent(self):
         pass
 
@@ -204,34 +188,17 @@ class Connection(unohelper.Base,
 
     # XUsersSupplier
     def getUsers(self):
-        try:
-            print("Connection.getUsers()1")
-            query = getSqlQuery(self.ctx, 'getUsers')
-            result = self._connection.createStatement().executeQuery(query)
-            users = getSequenceFromResult(result)
-            #query = getSqlQuery(self.ctx, 'getPrivileges')
-            #result = self._connection.createStatement().executeQuery(query)
-            #privileges = getKeyMapSequenceFromResult(result)
-            #mri = createService(self.ctx, 'mytools.Mri')
-            #mri.inspect(tuple(privileges))
-            print("Connection.getUsers()2 %s" % (users, ))
-            return DataContainer(self.ctx, self._connection, users, 'string')
-        except Exception as e:
-            print("Connection.getUsers(): %s - %s" % (e, traceback.print_exc()))
+        return self._connection.getUsers()
 
     # XGroupsSupplier
     def getGroups(self):
-        print("Connection.getGroups()")
         return self._connection.getGroups()
 
     # XWarningsSupplier
     def getWarnings(self):
-        print("Connection.getWarnings() 1")
-        warning = self._connection.getWarnings()
-        print("Connection.getWarnings() 2 %s" % warning)
-        return warning
+        return self._connection.getWarnings()
+
     def clearWarnings(self):
-        print("Connection.clearWarnings()")
         self._connection.clearWarnings()
 
     # XConnection
@@ -241,7 +208,7 @@ class Connection(unohelper.Base,
         # TODO: sometime we cannot use: connection.prepareStatement(sql)
         # TODO: it trow a: java.lang.IncompatibleClassChangeError
         # TODO: if self._patched: fallback to connection.prepareCall(sql)
-        return PreparedStatement(self, sql, self._patched)
+        return PreparedStatement(self, sql)
     def prepareCall(self, sql):
         return CallableStatement(self, sql)
     def nativeSQL(self, sql):
@@ -258,7 +225,7 @@ class Connection(unohelper.Base,
         return self._connection.isClosed()
     def getMetaData(self):
         metadata = self._connection.getMetaData()
-        return DatabaseMetaData(self, metadata, self._url, self._username)
+        return DatabaseMetaData(self, metadata, self._url, self._infos, self._username)
     def setReadOnly(self, readonly):
         self._connection.setReadOnly(readonly)
     def isReadOnly(self):
@@ -284,117 +251,3 @@ class Connection(unohelper.Base,
     def getSupportedServiceNames(self):
         return self._connection.getSupportedServiceNames()
 
-
-class DataContainer(unohelper.Base,
-                    XWeak,
-                    XAdapter,
-                    XNameAccess,
-                    XIndexAccess,
-                    XEnumerationAccess):
-    def __init__(self, ctx, connection, names, typename):
-        self._elements = {name: DataBaseUser(ctx, connection, name) for name in names}
-        self._typename = typename
-        print("DataContainer.__init__()")
-
-    # XWeak
-    def queryAdapter(self):
-        print("DataContainer.queryAdapter()")
-        return self
-    # XAdapter
-    def queryAdapted(self):
-        print("DataContainer.queryAdapter()")
-        return self
-    def addReference(self, reference):
-        pass
-    def removeReference(self, reference):
-        pass
-
-    # XNameAccess
-    def getByName(self, name):
-        print("DataContainer.getByName() %s" % name)
-        return self._elements[name]
-    def getElementNames(self):
-        elements = tuple(self._elements.keys())
-        print("DataContainer.getElementNames() %s" % (elements, ))
-        return elements
-    def hasByName(self, name):
-        print("DataContainer.hasByName() %s" % name)
-        return name in self._elements
-
-    # XIndexAccess
-    def getCount(self):
-        print("DataContainer.getCount()")
-        return len(self._elements)
-    def getByIndex(self, index):
-        print("DataContainer.getByIndex() %s" % index)
-        return None
-
-    # XEnumerationAccess
-    def createEnumeration(self):
-        print("DataContainer.createEnumeration()")
-
-    # XElementAccess
-    def getElementType(self):
-        print("DataContainer.getElementType()")
-        return uno.getTypeByName(self._typename)
-    def hasElements(self):
-        print("DataContainer.hasElements()")
-        return len(self._elements) != 0
-
-
-class DataBaseUser(unohelper.Base,
-                   XUser,
-                   XWeak,
-                   XAdapter,
-                   XGroupsSupplier,
-                   PropertySet):
-    def __init__(self, ctx, connection, username):
-        self.ctx = ctx
-        self._connection = connection
-        self.Name = username
-        print("DataBaseUser.__init__() %s" % username)
-
-    # XWeak
-    def queryAdapter(self):
-        print("DataBaseUser.queryAdapter()")
-        return self
-    # XAdapter
-    def queryAdapted(self):
-        print("DataBaseUser.queryAdapted()")
-        return self
-    def addReference(self, reference):
-        pass
-    def removeReference(self, reference):
-        pass
-
-    # XUser
-    def changePassword(self, oldpwd, newpwd):
-        print("DataBaseUser.changePassword()")
-        query = getSqlQuery(self.ctx, 'changePassword', newpwd)
-        print("DataBaseUser.changePassword() %s" % query)
-        result = self._connection.createStatement().executeUpdate(query)
-        print("DataBaseUser.changePassword() %s" % result)
-    # XAuthorizable
-    def getPrivileges(self, objname, objtype):
-        print("DataBaseUser.getPrivileges() %s - %s" % (objname, objtype))
-        pass
-    def getGrantablePrivileges(self, objname, objtype):
-        print("DataBaseUser.getGrantablePrivileges() %s - %s" % (objname, objtype))
-        pass
-    def grantPrivileges(self, objname, objtype, objprivilege):
-        print("DataBaseUser.grantPrivileges() %s - %s - %s" % (objname, objtype, objprivilege))
-        pass
-    def revokePrivileges(self, objname, objtype, objprivilege):
-        print("DataBaseUser.revokePrivileges() %s - %s - %s" % (objname, objtype, objprivilege))
-        pass
-
-    # XGroupsSupplier
-    def getGroups(self):
-        print("DataBaseUser.getGroups()")
-        return None
-
-    # XPropertySet
-    def _getPropertySetInfo(self):
-        properties = {}
-        properties['Name'] = getProperty('Name', 'string', READONLY)
-        return properties

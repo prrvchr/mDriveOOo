@@ -48,6 +48,8 @@ from com.sun.star.ui.dialogs.WizardTravelType import FINISH
 
 from .wizardmodel import WizardModel
 from .wizardview import WizardView
+from .wizardhandler import DialogHandler
+from .wizardhandler import ItemListener
 
 from ..unotool import hasInterface
 
@@ -72,7 +74,7 @@ class Wizard(unohelper.Base,
             self._controller = None
             self._model = WizardModel(ctx)
             title = self._model.getRoadmapTitle()
-            self._view = WizardView(ctx, self, parent, title)
+            self._view = WizardView(ctx, DialogHandler(self), ItemListener(self), parent, title)
             roadmap = self._view.getRoadmapModel()
             self._model.setRoadmapModel(roadmap)
             print("Wizard.__init__()")

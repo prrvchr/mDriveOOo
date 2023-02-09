@@ -74,9 +74,9 @@ class Replicator(unohelper.Base,
         self.canceled = True
         self.sync.set()
         self.join()
-    def callBack(self, username, itemid, response):
+    def callBack(self, user, uri, itemid, response):
         if response.IsPresent:
-            self.DataBase.updateItemId(self.Provider, username, itemid, response.Value)
+            self.DataBase.updateItemId(self.Provider, user, uri, itemid, response.Value)
             return True
         return False
 
@@ -180,7 +180,7 @@ class Replicator(unohelper.Base,
             for item in self.DataBase.getPushItems(start, end):
                 user = self.Users.get(item.getValue('UserName'), None)
                 if user is None:
-                    user = User(self.ctx, self, item.getValue('UserName'), self.DataBase)
+                    user = User(self.ctx, self, item.getValue('UserName'), self.sync, self.DataBase)
                 print("Replicator._pushData() 2 Insert/Update: %s Items: %s - %s - %s - %s - %s" % (item.getValue('Title'),
                                                                                                     item.getValue('TitleUpdated'),
                                                                                                     item.getValue('SizeUpdated'),
@@ -293,7 +293,7 @@ class Replicator(unohelper.Base,
                 mediatype = item.getValue('MediaType')
                 if user.Provider.isFolder(mediatype):
                     response = user.Provider.createFolder(user.Request, item)
-                    result = self.callBack(user.Name, itemid, response)
+                    result = self.callBack(user, item.getValue('BaseURI'), itemid, response)
                     format = (item.getValue('Title'), unparseDateTime(item.getValue('TimeStamp')))
                     msg = getMessage(self.ctx, g_message, 131, format)
                     logMessage(self.ctx, INFO, msg, "Replicator", "_pushItem()")

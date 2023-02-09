@@ -36,16 +36,17 @@ import traceback
 
 class DatabaseMetaData(unohelper.Base,
                        XDatabaseMetaData2):
-    def __init__(self, connection, metadata, url, username):
+    def __init__(self, connection, metadata, url, infos, username):
         self._connection = connection
         self._metadata = metadata
         self._url = url
+        self._infos = infos
         self._username = username
 
     # XDatabaseMetaData2
     def getConnectionInfo(self):
         print("Connection.MetaData.getConnectionInfo()")
-        return self._metadata.getConnectionInfo()
+        return self._infos
     def allProceduresAreCallable(self):
         print("Connection.MetaData.allProceduresAreCallable()")
         return self._metadata.allProceduresAreCallable()

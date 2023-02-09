@@ -42,6 +42,7 @@ from .unotool import getDateTime
 from .unotool import getDesktop
 from .unotool import getDialog
 from .unotool import getDialogUrl
+from .unotool import getDocument
 from .unotool import getExceptionMessage
 from .unotool import getFilePicker
 from .unotool import getFileSequence

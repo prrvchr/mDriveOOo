@@ -118,27 +118,6 @@ def getContentInfo(ctype, attributes=0, properties=()):
     info.Properties = properties
     return info
 
-def getUrl(ctx, identifier):
-    url = uno.createUnoStruct('com.sun.star.util.URL')
-    url.Complete = identifier
-    transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
-    success, url = transformer.parseStrict(url)
-    if success:
-        identifier = transformer.getPresentation(url, True)
-    return identifier
-
-def getUri(ctx, url):
-    factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
-    uri = factory.parse(url)
-    return uri
-
-def getUcb(ctx, arguments=('Local', 'Office')):
-    name = 'com.sun.star.ucb.UniversalContentBroker'
-    return ctx.ServiceManager.createInstanceWithArguments(name, (arguments, ))
-
-def getUcp(ctx, scheme):
-    return getUcb(ctx).queryContentProvider('%s://' % scheme)
-
 def getMimeType(ctx, stream):
     mimetype = 'application/octet-stream'
     detection = ctx.ServiceManager.createInstance('com.sun.star.document.TypeDetection')

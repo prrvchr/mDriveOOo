@@ -39,23 +39,20 @@ from com.sun.star.ui.dialogs.WizardButton import HELP
 from ..unotool import createWindow
 from ..unotool import getDialog
 
-from .wizardhandler import DialogHandler, ItemHandler
-
 from ..configuration import g_extension
 
 import traceback
 
 
 class WizardView(unohelper.Base):
-    def __init__(self, ctx, manager, parent, title, modal=True):
+    def __init__(self, ctx, handler, listener, parent, title, modal=True):
+        self._name = 'Roadmap1'
         #if not modal and parent is None:
         #    parent = createWindow(ctx, g_extension, 'Wizard', title).getPeer()
-        handler = DialogHandler(manager)
         self._dialog = getDialog(ctx, g_extension, 'Wizard', handler, parent)
         rectangle = uno.createUnoStruct('com.sun.star.awt.Rectangle', 0, 0, 85, 180)
-        roadmap = self._getRoadmap('Roadmap1', title, rectangle, 0)
-        handler = ItemHandler(manager)
-        roadmap.addItemListener(handler)
+        roadmap = self._getRoadmap(title, rectangle, 0)
+        roadmap.addItemListener(listener)
         self._button = {CANCEL: 1, FINISH: 2, NEXT: 3, PREVIOUS: 4, HELP: 5}
         self._spacer = 5
 
@@ -117,23 +114,16 @@ class WizardView(unohelper.Base):
         if enabled:
             button.DefaultButton = True
 
-# WizardView private control methods
-    def _getRoadmapControl(self):
-        return self._dialog.getControl('Roadmap1')
-
-    def _getButtonByIndex(self, index):
-        return self._dialog.getControl('CommandButton%s' % index)
-
 # WizardView private methods
-    def _getRoadmap(self, name, title, rectangle, tabindex):
-        roadmap = self._getRoadmapModel(name, title, rectangle, tabindex)
-        self._dialog.Model.insertByName(name, roadmap)
-        return self._dialog.getControl(name)
+    def _getRoadmap(self, title, rectangle, tabindex):
+        roadmap = self._getRoadmapModel(title, rectangle, tabindex)
+        self._dialog.Model.insertByName(self._name, roadmap)
+        return self._dialog.getControl(self._name)
 
-    def _getRoadmapModel(self, name, title, rectangle, tabindex):
+    def _getRoadmapModel(self, title, rectangle, tabindex):
         service = 'com.sun.star.awt.UnoControlRoadmapModel'
         model = self._dialog.Model.createInstance(service)
-        model.Name = name
+        model.Name = self._name
         model.Text = title
         model.PositionX = rectangle.X
         model.PositionY = rectangle.Y
@@ -151,3 +141,11 @@ class WizardView(unohelper.Base):
     def _getButton(self, button):
         index = self._button.get(button)
         return self._getButtonByIndex(index)
+
+# WizardView private control methods
+    def _getRoadmapControl(self):
+        return self._dialog.getControl(self._name)
+
+    def _getButtonByIndex(self, index):
+        return self._dialog.getControl('CommandButton%s' % index)
+
