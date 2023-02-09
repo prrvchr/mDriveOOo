@@ -7,4 +7,4 @@ project.idl=/idl
 project.implementation=oneDriveOOo
 project.build=build
 project.sdk=7.3.2.2
-project.srcdir=/source
+project.srcdir=/service

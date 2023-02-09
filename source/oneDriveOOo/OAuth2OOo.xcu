@@ -7,7 +7,7 @@
   oor:package="com.gmail.prrvchr.extensions"
   oor:name="OAuth2OOo">
     <node oor:name="Urls">
-        <node oor:name="vnd.microsoft-apps" oor:op="fuse">
+        <node oor:name="vnd-microsoft" oor:op="fuse">
             <prop oor:name="Scope">
                 <value>Microsoft OneDrive</value>
             </prop>

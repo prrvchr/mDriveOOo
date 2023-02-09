@@ -13,13 +13,13 @@
                     <node oor:name="ProviderData">
                         <node oor:name="Provider67" oor:op="fuse">
                             <prop oor:name="ServiceName">
-                                <value>com.gmail.prrvchr.extensions.oneDriveOOo.ContentProviderProxy</value>
+                                <value>io.github.prrvchr.oneDriveOOo.ContentProviderProxy</value>
                             </prop>
                             <prop oor:name="URLTemplate">
-                                <value>vnd.microsoft-apps</value>
+                                <value>vnd-microsoft</value>
                             </prop>
                             <prop oor:name="Arguments">
-                                <value>com.gmail.prrvchr.extensions.oneDriveOOo</value>
+                                <value>io.github.prrvchr.oneDriveOOo</value>
                             </prop>
                         </node>
                     </node>

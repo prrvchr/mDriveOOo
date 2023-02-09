@@ -1,6 +1,32 @@
 #!
 # -*- coding: utf-8 -*-
 
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
+
 import uno
 import unohelper
 
@@ -22,7 +48,6 @@ from onedrive import getProperty
 from onedrive import ContentProvider
 
 from onedrive import logMessage
-from onedrive import getUcp
 from onedrive import g_scheme
 from onedrive import g_identifier
 
@@ -40,6 +65,15 @@ class ContentProviderProxy(unohelper.Base,
                            XParameterizedContentProvider,
                            XContentProviderSupplier,
                            PropertySet):
+    def __init__(self, ctx):
+        msg = "ContentProviderProxy for plugin: %s loading ..." % g_identifier
+        self.ctx = ctx
+        self.scheme = ''
+        self.plugin = ''
+        self.replace = True
+        msg += " Done"
+        logMessage(self.ctx, INFO, msg, 'ContentProviderProxy', '__init__()')
+        print('ContentProviderProxy.__init__()')
 
     _Provider = None
 
@@ -51,16 +85,6 @@ class ContentProviderProxy(unohelper.Base,
         if not self.IsLoaded:
             ContentProviderProxy._Provider = self._getContentProvider()
         return ContentProviderProxy._Provider
-
-    def __init__(self, ctx):
-        msg = "ContentProviderProxy for plugin: %s loading ..." % g_identifier
-        self.ctx = ctx
-        self.scheme = ''
-        self.plugin = ''
-        self.replace = True
-        msg += " Done"
-        logMessage(self.ctx, INFO, msg, 'ContentProviderProxy', '__init__()')
-        print('ContentProviderProxy.__init__()')
 
     # XContentProviderFactory
     def createContentProvider(self, service):

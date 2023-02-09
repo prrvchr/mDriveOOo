@@ -1,36 +1,61 @@
-# ![oneDriveOOo logo](img/oneDriveOOo.png) oneDriveOOo
+# ![oneDriveOOo logo][1] oneDriveOOo
+<!--
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+-->
 
-**Ce [document](https://prrvchr.github.io/oneDriveOOo/README_fr) en français.**
+**Ce [document][2] en français.**
 
-**The use of this software subjects you to our [Terms Of Use](https://prrvchr.github.io/oneDriveOOo/source/oneDriveOOo/registration/TermsOfUse_en) and [Data Protection Policy](https://prrvchr.github.io/oneDriveOOo/source/oneDriveOOo/registration/PrivacyPolicy_en).**
+**The use of this software subjects you to our [Terms Of Use][3] and [Data Protection Policy][4].**
 
-# version [0.0.5](https://prrvchr.github.io/oneDriveOOo#historical)
+# version [0.0.6][5]
 
 ## Introduction:
 
-**oneDriveOOo** is part of a [Suite](https://prrvchr.github.io/) of [LibreOffice](https://www.libreoffice.org/download/download/) and/or [OpenOffice](https://www.openoffice.org/download/index.html) extensions allowing to offer you innovative services in these office suites.  
+**oneDriveOOo** is part of a [Suite][6] of [LibreOffice][7] and/or [OpenOffice][8] extensions allowing to offer you innovative services in these office suites.  
 This extension allows you to work in LibreOffice / OpenOffice on your Microsoft OneDrive files, even while offline.
 
 Being free software I encourage you:
-- To duplicate its [source code](https://github.com/prrvchr/oneDriveOOo).
+- To duplicate its [source code][9].
 - To make changes, corrections, improvements.
-- To open [issue](https://github.com/prrvchr/oneDriveOOo/issues/new) if needed.
+- To open [issue][10] if needed.
 
 In short, to participate in the development of this extension.
 Because it is together that we can make Free Software smarter.
 
 ## Requirement:
 
-oneDriveOOo uses a local [HsqlDB](http://hsqldb.org/) database version 2.5.1.  
-HsqlDB being a database written in Java, its use requires the [installation and configuration](https://wiki.documentfoundation.org/Documentation/HowTo/Install_the_correct_JRE_-_LibreOffice_on_Windows_10) in LibreOffice / OpenOffice of a **JRE version 11 or later**.  
-I recommend [Adoptium](https://adoptium.net/releases.html?variant=openjdk11) as your Java installation source.
+oneDriveOOo uses a local [HsqlDB][11] database version 2.5.1.  
+HsqlDB being a database written in Java, its use requires the [installation and configuration][12] in LibreOffice / OpenOffice of a **JRE version 11 or later**.  
+I recommend [Adoptium][13] as your Java installation source.
 
-If you are using **LibreOffice on Linux**, then you are subject to [bug 139538](https://bugs.documentfoundation.org/show_bug.cgi?id=139538).  
+If you are using **LibreOffice on Linux**, then you are subject to [bug 139538][14].  
 To work around the problem, please uninstall the packages:
 - libreoffice-sdbc-hsqldb
 - libhsqldb1.8.0-java
 
-If you still want to use the Embedded HsqlDB functionality provided by LibreOffice, then install the [HsqlDBembeddedOOo](https://prrvchr.github.io/HsqlDBembeddedOOo/) extension.  
+If you still want to use the Embedded HsqlDB functionality provided by LibreOffice, then install the [HsqlDBembeddedOOo][15] extension.  
 OpenOffice and LibreOffice on Windows are not subject to this malfunction.
 
 ## Installation:
@@ -38,15 +63,15 @@ OpenOffice and LibreOffice on Windows are not subject to this malfunction.
 It seems important that the file was not renamed when it was downloaded.
 If necessary, rename it before installing it.
 
-- Install ![OAuth2OOo logo](https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.png) **[OAuth2OOo.oxt](https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt)** extension version 0.0.6.
+- Install ![OAuth2OOo logo][16] **[OAuth2OOo.oxt][17]** extension version 0.0.6.
 
 You must first install this extension, if it is not already installed.
 
-- Install ![jdbcDriverOOo logo](https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.png) **[jdbcDriverOOo.oxt](https://github.com/prrvchr/jdbcDriverOOo/raw/master/source/jdbcDriverOOo/dist/jdbcDriverOOo.oxt)** extension version 0.0.4.
+- Install ![jdbcDriverOOo logo][18] **[jdbcDriverOOo.oxt][19]** extension version 0.0.4.
 
 You must install this extension, if it is not already installed.
 
-- Install ![oneDriveOOo logo](img/oneDriveOOo.png) **[oneDriveOOo.oxt](https://github.com/prrvchr/oneDriveOOo/raw/master/source/oneDriveOOo/dist/oneDriveOOo.oxt)** extension version 0.0.5.
+- Install ![oneDriveOOo logo][1] **[oneDriveOOo.oxt][20]** extension version 0.0.5.
 
 Restart LibreOffice / OpenOffice after installation.
 
@@ -72,15 +97,15 @@ Edit or change "true" to "false" (set it to "false")
 
 In File - Open - File name enter:
 
-- **vnd.microsoft-apps://your_account/**
+- **vnd-microsoft://your_account**
 
 or
 
-- **vnd.microsoft-apps:///**
+- **vnd-microsoft:///**
 
-If you don't give your_account, you will be asked for...
+If you don't give **your_account**, you will be asked for...
 
-After authorizing the [OAuth2OOo](https://prrvchr.github.io/OAuth2OOo) application to access your Microsoft OneDrive files, your OneDrive files should appear!!! normally  ;-)
+After authorizing the [OAuth2OOo][21] application to access your Microsoft OneDrive files, your OneDrive files should appear!!! normally  ;-)
 
 ## Has been tested with:
 
@@ -97,7 +122,7 @@ After authorizing the [OAuth2OOo](https://prrvchr.github.io/OAuth2OOo) applicati
 * LibreOffice 6.4.4.2 (x64) - Windows 7 SP1
 
 I encourage you in case of problem :-(  
-to create an [issue](https://github.com/prrvchr/oneDriveOOo/issues/new)  
+to create an [issue][10]  
 I will try to solve it ;-)
 
 ## Historical:
@@ -106,7 +131,7 @@ I will try to solve it ;-)
 
 - Integration and use of the new Hsqldb v2.5.1 system versioning.
 
-- Writing of a new [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py) interface, launched in the background (python Thread) responsible for:
+- Writing of a new [Replicator][22] interface, launched in the background (python Thread) responsible for:
 
     - Perform the necessary procedures when creating a new user (initial Pull).
 
@@ -114,19 +139,54 @@ I will try to solve it ;-)
 
     - Replicate on demand all changes to the hsqldb 2.5.1 database using system versioning (Push all changes).
 
-- Writing of a new [DataBase](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/database.py) interface, responsible for making all calls to the database.
+- Writing of a new [DataBase][23] interface, responsible for making all calls to the database.
 
-- Setting up a cache on the Identifiers, see method: [getIdentifier()](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py), allowing access to a Content (file or folder) without access to the database for subsequent calls.
+- Setting up a cache on the Identifiers, see method: [getIdentifier()][24], allowing access to a Content (file or folder) without access to the database for subsequent calls.
 
-- Management of duplicate file/folder names by [SQL Views](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py): Child, Twin, Uri, and Title generating unique names if duplicates names exist.  
+- Management of duplicate file/folder names by [SQL Views][25]: Child, Twin, Uri, and Title generating unique names if duplicates names exist.  
 Although this functionality is only needed for gDriveOOo, it is implemented globally...
 
 - Many other fix...
 
-### What remains to be done for version 0.0.5:
+### What has been done for version 0.0.6:
 
-- Write the implementation Pull Change in the new [Replicator](https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py) interface.
+- Using new scheme: **vnd-microsoft://** as claimed by [draft-king-vnd-urlscheme-03.txt][26]
+
+- The trailing slash in the Uri is no longer needed.
+
+- Many other fix...
+
+### What remains to be done for version 0.0.6:
+
+- Write the implementation Pull Change in the new [Replicator][22] interface.
 
 - Add new language for internationalization...
 
 - Anything welcome...
+
+[1]: <img/oneDriveOOo.png>
+[2]: <https://prrvchr.github.io/oneDriveOOo/README_fr>
+[3]: <https://prrvchr.github.io/oneDriveOOo/source/oneDriveOOo/registration/TermsOfUse_en>
+[4]: <https://prrvchr.github.io/oneDriveOOo/source/oneDriveOOo/registration/PrivacyPolicy_en>
+[5]: <https://prrvchr.github.io/oneDriveOOo#historical>
+[6]: <https://prrvchr.github.io/>
+[7]: <https://www.libreoffice.org/download/download/>
+[8]: <https://www.openoffice.org/download/index.html>
+[9]: <https://github.com/prrvchr/oneDriveOOo>
+[10]: <https://github.com/prrvchr/oneDriveOOo/issues/new>
+[11]: <http://hsqldb.org/>
+[12]: <https://wiki.documentfoundation.org/Documentation/HowTo/Install_the_correct_JRE_-_LibreOffice_on_Windows_10>
+[13]: <https://adoptium.net/releases.html?variant=openjdk11>
+[14]: <https://bugs.documentfoundation.org/show_bug.cgi?id=139538>
+[15]: <https://prrvchr.github.io/HsqlDBembeddedOOo/>
+[16]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.png>
+[17]: <https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt>
+[18]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.png>
+[19]: <https://github.com/prrvchr/jdbcDriverOOo/raw/master/source/jdbcDriverOOo/dist/jdbcDriverOOo.oxt>
+[20]: <https://github.com/prrvchr/oneDriveOOo/raw/master/source/oneDriveOOo/dist/oneDriveOOo.oxt>
+[21]: <https://prrvchr.github.io/OAuth2OOo>
+[22]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
+[23]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
+[24]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py>
+[25]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py>
+[26]: <https://datatracker.ietf.org/doc/html/draft-king-vnd-urlscheme-00>
