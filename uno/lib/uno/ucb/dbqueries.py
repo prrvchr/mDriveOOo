@@ -286,11 +286,10 @@ def getSqlQuery(ctx, name, format=None):
         query = 'SELECT "TimeStamp" FROM "Users" WHERE "UserId"=?;'
     elif name == 'getUser':
         c1 = '"U"."UserId"'
-        c2 = '"U"."UserName"'
-        c3 = '"U"."RootId"'
-        c4 = '"U"."Token"'
-        c5 = '"I"."Title" "RootName"'
-        c = (c1, c2, c3, c4, c5)
+        c2 = '"U"."RootId"'
+        c3 = '"U"."Token"'
+        c4 = '"I"."Title" "RootName"'
+        c = (c1, c2, c3, c4)
         f = '"Users" "U" JOIN "Items" "I" ON "U"."RootId" = "I"."ItemId"'
         p = (','.join(c), f)
         query = 'SELECT %s FROM %s WHERE "U"."UserName" = ?;' % p

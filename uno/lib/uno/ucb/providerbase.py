@@ -154,10 +154,10 @@ class ProviderBase(ProviderObject,
     def parseDateTime(self, timestamp, format='%Y-%m-%dT%H:%M:%S.%fZ'):
         return parseDateTime(timestamp, format)
     def isOnLine(self):
-        self.SessionMode = getConnectionMode(self.ctx, self.Host)
+        self.SessionMode = getConnectionMode(self._ctx, self.Host)
         return  self.SessionMode != OFFLINE
     def isOffLine(self):
-        self.SessionMode = getConnectionMode(self.ctx, self.Host)
+        self.SessionMode = getConnectionMode(self._ctx, self.Host)
         return  self.SessionMode != ONLINE
 
     def initialize(self, scheme, plugin, folder, link):
@@ -165,8 +165,8 @@ class ProviderBase(ProviderObject,
         self.Plugin = plugin
         self.Folder = folder
         self.Link = link
-        self.SourceURL = getResourceLocation(self.ctx, plugin, scheme)
-        self.SessionMode = getConnectionMode(self.ctx, self.Host)
+        self.SourceURL = getResourceLocation(self._ctx, plugin, scheme)
+        self.SessionMode = getConnectionMode(self._ctx, self.Host)
 
     def initializeUser(self, user, name):
         if self.isOnLine():

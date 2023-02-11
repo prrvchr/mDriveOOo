@@ -80,6 +80,7 @@ class Identifier(unohelper.Base,
         self._type = contenttype
         self._propertySetInfo = {}
         self.User = user
+        self._content = None
         self.IsNew = contenttype != ''
         if init:
             self.MetaData = self._getMetaData()
@@ -144,8 +145,9 @@ class Identifier(unohelper.Base,
         if not self.isValid():
             msg = getMessage(self._ctx, g_message, 121, self.getContentIdentifier())
             raise IllegalIdentifierException(msg, self)
-        content = Content(self._ctx, self)
-        return content
+        if self._content is None:
+            self._content = Content(self._ctx, self)
+        return self._content
 
     def getFolderContent(self, content):
         try:

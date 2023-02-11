@@ -66,16 +66,16 @@ class User(unohelper.Base,
         self.Request = getRequest(self._ctx, self.Provider.Scheme, name)
         self.MetaData = source.DataBase.selectUser(name)
         self.CanAddChild = not self.Provider.GenerateIds
-        self._initialized = False
+        self._initialized = database is not None
         msg = getMessage(self._ctx, g_message, 101)
         logMessage(self._ctx, INFO, msg, "User", "__init__()")
 
     @property
+    def Name(self):
+        return self._name
+    @property
     def Id(self):
         return self.MetaData.getDefaultValue('UserId', None)
-    @property
-    def Name(self):
-        return self.MetaData.getDefaultValue('UserName', None)
     @property
     def RootId(self):
         return self.MetaData.getDefaultValue('RootId', None)

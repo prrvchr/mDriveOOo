@@ -102,14 +102,14 @@ class InteractionSupplyParameters(unohelper.Base,
                                   XInteractionSupplyParameters):
     def __init__(self, result):
         self._result = result
-        self.username = ''
+        self._username = ''
     # XInteractionSupplyParameters
     def setParameters(self, properties):
         for property in properties:
             if property.Name == 'UserName':
-                self.username = property.Value
+                self._username = property.Value
     def select(self):
-        self._result.Value = self.username
+        self._result.Value = self._username
         self._result.IsPresent = True
 
 
@@ -223,11 +223,11 @@ class Row(unohelper.Base,
           XRow):
     def __init__(self, values):
         self._values = values
-        self._isNull = False
+        self._isnull = False
 
     # XRow
     def wasNull(self):
-        return self._isNull
+        return self._isnull
     def getString(self, index):
         return self._getValue(index -1)
     def getBoolean(self, index):
@@ -269,10 +269,10 @@ class Row(unohelper.Base,
 
     def _getValue(self, index):
         value  = None
-        self._isNull = True
+        self._isnull = True
         if 0 <= index < len(self._values):
             value = self._values[index].Value
-            self._isNull = value is None
+            self._isnull = value is None
         return value
 
 

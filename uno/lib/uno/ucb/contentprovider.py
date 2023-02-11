@@ -96,8 +96,9 @@ class ContentProvider(unohelper.Base,
     # XContentIdentifierFactory
     def createContentIdentifier(self, url):
         print("ContentProvider.createContentIdentifier() 1")
-        url = self._transformer.getPresentation(parseUrl(self._transformer, url), True)
-        identifier = self.DataSource.getIdentifier(self._factory, url, self._user)
+        # FIXME: We are forced to perform lazy loading on Identifier (and User) in order to be able
+        # FIXME: to trigger an exception when delivering the content ie: XContentProvider.queryContent().
+        identifier = self.DataSource.getIdentifier(self._factory, self._getContentIdentifier(url), self._user)
         msg = getMessage(self._ctx, g_message, 131, url)
         logMessage(self._ctx, INFO, msg, 'ContentProvider', 'createContentIdentifier()')
         print("ContentProvider.createContentIdentifier() 2")
@@ -105,15 +106,22 @@ class ContentProvider(unohelper.Base,
 
     # XContentProvider
     def queryContent(self, identifier):
-        print("ContentProvider.queryContent() 1")
-        if not identifier.isInitialized():
-            identifier.initialize(self.DataSource.DataBase)
-        self._user = identifier.User.Name
-        content = identifier.getContent()
-        msg = getMessage(self._ctx, g_message, 142, identifier.getContentIdentifier())
-        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'queryContent()')
-        print("ContentProvider.queryContent() 2")
-        return content
+        try:
+            print("ContentProvider.queryContent() 1")
+            # FIXME: We are forced to perform lazy loading on Identifier (and User) in order to be able
+            # FIXME: to trigger an exception when delivering the content ie: XContentProvider.queryContent().
+            if not identifier.isInitialized():
+                identifier.initialize(self.DataSource.DataBase)
+            self._user = identifier.User.Name
+            content = identifier.getContent()
+            msg = getMessage(self._ctx, g_message, 141, identifier.getContentIdentifier())
+            logMessage(self._ctx, INFO, msg, 'ContentProvider', 'queryContent()')
+            print("ContentProvider.queryContent() 2")
+            return content
+        except IllegalIdentifierException as e:
+            msg = getMessage(self._ctx, g_message, 142, e.Message)
+            logMessage(self._ctx, SEVERE, msg, 'ContentProvider', 'queryContent()')
+            raise e
 
     def compareContentIds(self, id1, id2):
         ids = (id1.getContentIdentifier(), id2.getContentIdentifier())
@@ -125,4 +133,11 @@ class ContentProvider(unohelper.Base,
             compare = -1
         logMessage(self._ctx, INFO, msg, 'ContentProvider', 'compareContentIds()')
         return compare
+
+    # Private methods
+    def _getContentIdentifier(self, identifier):
+        url = parseUrl(self._transformer, identifier)
+        if url is not None:
+            url = self._transformer.getPresentation(url, True)
+        return url if url else identifier
 

@@ -73,8 +73,7 @@ class DataSource(unohelper.Base,
         msg = "DataSource for Scheme: %s loading ... " % scheme
         print("DataSource.__init__() 1")
         self._ctx = ctx
-        self._Users = {}
-        self._Uris = {}
+        self._users = {}
         self.Error = None
         self._sync = event
         self.Provider = createService(self._ctx, '%s.Provider' % plugin)
@@ -89,7 +88,7 @@ class DataSource(unohelper.Base,
         self.DataBase.addCloseListener(self)
         folder, link = self.DataBase.getContentType()
         self.Provider.initialize(scheme, plugin, folder, link)
-        self.Replicator = Replicator(ctx, datasource, self.Provider, self._Users, self._sync)
+        self.Replicator = Replicator(ctx, datasource, self.Provider, self._users, self._sync)
         msg += "Done"
         logMessage(self._ctx, INFO, msg, 'DataSource', '__init__()')
         print("DataSource.__init__() 4")
@@ -100,7 +99,7 @@ class DataSource(unohelper.Base,
             self.Replicator.cancel()
             self.Replicator.join()
         #self.deregisterInstance(self.Scheme, self.Plugin)
-        self.DataBase.shutdownDataBase(self.Replicator.fullPull)
+        self.DataBase.shutdownDataBase(self.Replicator.fullPull())
         msg = "DataSource queryClosing: Scheme: %s ... Done" % self.Provider.Scheme
         logMessage(self._ctx, INFO, msg, 'DataSource', 'queryClosing()')
         print(msg)
@@ -125,7 +124,9 @@ class DataSource(unohelper.Base,
     # Private methods
     def _getIdentifiers(self, factory, url, default):
         uri = factory.parse(url)
-        if uri.hasAuthority() and uri.getAuthority() != '':
+        if uri is None:
+            name = None
+        elif uri.hasAuthority() and uri.getAuthority() != '':
             name = uri.getAuthority()
         elif default is not None:
             name = default
@@ -134,11 +135,11 @@ class DataSource(unohelper.Base,
         # User never change... we can cache it...
         if name is None:
             user = None
-        elif name in self._Users:
-            user = self._Users[name]
+        elif name in self._users:
+            user = self._users[name]
         else:
             user = User(self._ctx, self, name, self._sync)
-            self._Users[name] = user
+            self._users[name] = user
         return user, name, uri
 
     def _getDataSource(self, dbname, plugin, register):
