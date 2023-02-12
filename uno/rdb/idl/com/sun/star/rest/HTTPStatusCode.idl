@@ -24,15 +24,37 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_auth_URLException_idl__
-#define __com_sun_star_auth_URLException_idl__
+#ifndef __com_sun_star_rest_HTTPStatusCode_idl__
+#define __com_sun_star_rest_HTTPStatusCode_idl__
 
-#include <com/sun/star/auth/RequestException.idl>
 
-module com {  module sun {  module star {  module auth {
+module com {  module sun {  module star {  module rest {
 
-exception URLException: com::sun::star::auth::RequestException
+constants HTTPStatusCode
 {
+
+    /** The server cannot or will not process the request due to something that is perceived to be a client error
+        (e.g., malformed request syntax, invalid request message framing, or deceptive request routing).
+    */
+    const long BAD_REQUEST = 400;
+
+
+    /** Although the HTTP standard specifies "unauthorized", semantically this response means "unauthenticated".
+        That is, the client must authenticate itself to get the requested response.
+    */
+    const long UNAUTHORIZED = 401;
+
+
+    /** This response code is reserved for future use. The initial aim for creating this code was using it for digital 
+        payment systems, however this status code is used very rarely and no standard convention exists. 
+    */
+    const long PAYMENT_REQUIRED = 402;
+
+
+    /** The client does not have access rights to the content; that is, it is unauthorized, so the server is refusing
+        to give the requested resource. Unlike 401 Unauthorized, the client's identity is known to the server.
+    */
+    const long FORBIDDEN = 403;
 
 };
 

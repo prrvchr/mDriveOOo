@@ -58,10 +58,10 @@ def isLoggerEnabled(ctx):
     enabled = _isLogEnabled(level)
     return enabled
 
-def getMessage(ctx, fileresource, resource, format=()):
+def getMessage(ctx, fileresource, resource, *args):
     msg = _getResource(ctx, fileresource).resolveString(resource)
-    if format:
-        msg = msg % format
+    if args:
+        msg = msg % args
     return msg
 
 def getLoggerSetting(ctx):

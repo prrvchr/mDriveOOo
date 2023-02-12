@@ -24,17 +24,15 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_auth_TimeoutException_idl__
-#define __com_sun_star_auth_TimeoutException_idl__
+#ifndef __com_sun_star_rest_TimeoutException_idl__
+#define __com_sun_star_rest_TimeoutException_idl__
 
-#include <com/sun/star/auth/RequestException.idl>
+#include <com/sun/star/rest/RequestException.idl>
 
-module com {  module sun {  module star {  module auth {
+module com {  module sun {  module star {  module rest {
 
-exception TimeoutException: com::sun::star::auth::RequestException
+exception TimeoutException: com::sun::star::rest::RequestException
 {
-
-    long Timeout;
 
 };
 

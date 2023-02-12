@@ -171,7 +171,7 @@ class Identifier(unohelper.Base,
             try:
                 sf.writeFile(url, stream)
             except Exception as e:
-                msg = getMessage(self._ctx, g_message, 131, (e, traceback.print_exc()))
+                msg = getMessage(self._ctx, g_message, 131, e, traceback.print_exc())
                 logMessage(self._ctx, SEVERE, msg, "Identifier", "getDocumentContent()")
             else:
                 size = sf.getSize(url)

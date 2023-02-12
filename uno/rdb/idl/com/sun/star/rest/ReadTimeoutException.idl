@@ -24,18 +24,17 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_rest_HTTPException_idl__
-#define __com_sun_star_rest_HTTPException_idl__
+#ifndef __com_sun_star_rest_ReadTimeoutException_idl__
+#define __com_sun_star_rest_ReadTimeoutException_idl__
 
-#include <com/sun/star/rest/RequestException.idl>
+#include <com/sun/star/rest/TimeoutException.idl>
 
 module com {  module sun {  module star {  module rest {
 
-exception HTTPException: com::sun::star::rest::RequestException
+exception ReadTimeoutException: com::sun::star::rest::TimeoutException
 {
 
-    long StatusCode;
-    string Content;
+    long ReadTimeout;
 
 };
 

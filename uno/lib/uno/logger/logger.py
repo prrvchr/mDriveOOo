@@ -80,11 +80,11 @@ class Logger(unohelper.Base):
         enabled = self._isLogEnabled(level)
         return enabled
 
-    def getMessage(self, resource, format=None):
+    def getMessage(self, resource, *args):
         if self._resolver is not None:
             msg = self._resolver.resolveString(resource)
-            if format is not None:
-                msg = msg % format
+            if args:
+                msg = msg % args
         else:
             msg = 'Logger must be initialized with a string resource file'
         return msg
@@ -123,9 +123,9 @@ class Logger(unohelper.Base):
         else:
             self._setDebugModeOff()
 
-    def logResource(self, level, resource, format=None, clazz=None, method=None):
+    def logResource(self, level, resource, clazz=None, method=None, *args):
         if self._logger.isLoggable(level):
-            msg = self.getMessage(resource, format)
+            msg = self.getMessage(resource, args)
             self._logMessage(level, msg, clazz, method)
             print("Logger.logResource() %s - %s - %s - %s" % (level, msg, clazz, method))
 

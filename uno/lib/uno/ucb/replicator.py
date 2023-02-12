@@ -35,6 +35,9 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb import XRestReplicator
 
+from com.sun.star.rest import HTTPException
+from com.sun.star.rest.HTTPStatusCode import BAD_REQUEST
+
 from .unotool import parseDateTime
 from .unotool import unparseDateTime
 
@@ -115,7 +118,7 @@ class Replicator(unohelper.Base,
                 print("Replicator.synchronize() 2")
                 if self._canceled:
                     break
-                msg = getMessage(self._ctx, g_message, 111, (user.Name, unparseDateTime(timestamp)))
+                msg = getMessage(self._ctx, g_message, 111, user.Name, unparseDateTime(timestamp))
                 logMessage(self._ctx, INFO, msg, 'Replicator', '_syncData()')
                 # In order to make the creation of files or directories possible quickly,
                 # it is necessary to run the verification of the identifiers first.
@@ -129,13 +132,15 @@ class Replicator(unohelper.Base,
                     print("Replicator.synchronize() 4")
                     start = self.DataBase.getUserTimeStamp(user.Id)
                 if user.Token:
+                    print("Replicator.synchronize() 5")
                     results += self._pullData(user)
-                msg = getMessage(self._ctx, g_message, 112, (user.Name, unparseDateTime()))
+                msg = getMessage(self._ctx, g_message, 112, user.Name, unparseDateTime())
                 logMessage(self._ctx, INFO, msg, 'Replicator', '_syncData()')
             if all(results):
                 results += self._pushData(start)
+            print("Replicator.synchronize() 6 %s" % (results, ))
             result = all(results)
-            print("Replicator.synchronize() 5 %s" % result)
+            print("Replicator.synchronize() 7 %s" % result)
         except Exception as e:
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
 
@@ -144,7 +149,7 @@ class Replicator(unohelper.Base,
         # This procedure corresponds to the initial pull for a new User (ie: without Token)
         rejected, pages, rows, count, start = self._firstPull(user)
         print("Replicator._initUser() 1 count: %s - %s pages - %s rows" % (count, pages, rows))
-        msg = getMessage(self._ctx, g_message, 121, (pages, rows, count))
+        msg = getMessage(self._ctx, g_message, 121, pages, rows, count)
         logMessage(self._ctx, INFO, msg, 'Replicator', '_syncData()')
         if len(rejected):
             msg = getMessage(self._ctx, g_message, 122, len(rejected))
@@ -162,11 +167,20 @@ class Replicator(unohelper.Base,
         results = []
         print("Replicator._pullData() 1")
         parameter = user.Provider.getRequestParameter('getPull', user.MetaData)
-        enumerator = user.Request.getIterator(parameter, None)
-        print("Replicator._pullData() 2 %s - %s" % (enumerator.PageCount, enumerator.SyncToken))
-        while enumerator.hasMoreElements():
-            response = enumerator.nextElement()
-            print("Replicator._pullData() 3 %s" % response)
+        try:
+            enumerator = user.Request.getIterator(parameter, None)
+            print("Replicator._pullData() 2 %s - %s" % (enumerator.PageCount, enumerator.SyncToken))
+            while enumerator.hasMoreElements():
+                response = enumerator.nextElement()
+                print("Replicator._pullData() 3 %s" % response)
+        except HTTPException as e:
+            if e.StatusCode == BAD_REQUEST:
+                parameter = user.Provider.getRequestParameter('getToken')
+                response = user.Request.execute(parameter)
+                if response.IsPresent:
+                    token = response.Value.getDefaultValue('startPageToken', None)
+                    if token is not None:
+                        user.MetaData.setValue('Token', token)
         print("Replicator._pullData() 4 %s - %s" % (enumerator.PageCount, enumerator.SyncToken))
         return results
 
@@ -298,8 +312,8 @@ class Replicator(unohelper.Base,
                 if user.Provider.isFolder(mediatype):
                     response = user.Provider.createFolder(user.Request, item)
                     result = self.callBack(user, item.getValue('BaseURI'), itemid, response)
-                    format = (item.getValue('Title'), unparseDateTime(item.getValue('TimeStamp')))
-                    msg = getMessage(self._ctx, g_message, 131, format)
+                    timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                    msg = getMessage(self._ctx, g_message, 131, item.getValue('Title'), timestamp)
                     logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
                     print(msg)
                 elif user.Provider.isLink(mediatype):
@@ -308,28 +322,27 @@ class Replicator(unohelper.Base,
                     if user.Provider.createFile(user.Request, uploader, item):
                         if self._needPush('SizeUpdated', itemid, operations):
                             result = user.Provider.uploadFile(uploader, user, item, True)
-                        format = (item.getValue('Title'), unparseDateTime(item.getValue('TimeStamp')))
-                        msg = getMessage(self._ctx, g_message, 132, format)
+                        timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                        msg = getMessage(self._ctx, g_message, 132, item.getValue('Title'), timestamp)
                         logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
                         print(msg)
             # UPDATE procedures, only a few properties are synchronized: (Size, Title, Trashed)
             elif self._needPush('TitleUpdated', itemid, operations, item):
                 result = user.Provider.updateTitle(user.Request, item)
-                format = (item.getValue('Title'), unparseDateTime(item.getValue('TimeStamp')))
-                msg = getMessage(self._ctx, g_message, 133, format)
+                timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                msg = getMessage(self._ctx, g_message, 133, item.getValue('Title'), timestamp)
                 logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
                 print(msg)
             elif self._needPush('SizeUpdated', itemid, operations, item):
                 result = user.Provider.uploadFile(uploader, user, item, False)
                 timestamp = unparseDateTime(item.getValue('TimeStamp'))
-                format = (item.getValue('Title'), timestamp, item.getValue('Size'))
-                msg = getMessage(self._ctx, g_message, 134, format)
+                msg = getMessage(self._ctx, g_message, 134, item.getValue('Title'), timestamp, item.getValue('Size'))
                 logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
                 print(msg)
             elif self._needPush('TrashedUpdated', itemid, operations, item):
                 result = user.Provider.updateTrashed(user.Request, item)
-                format = (item.getValue('Title'), unparseDateTime(item.getValue('TimeStamp')))
-                msg = getMessage(self._ctx, g_message, 135, format)
+                timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                msg = getMessage(self._ctx, g_message, 135, item.getValue('Title'), timestamp)
                 logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
                 print(msg)
             else:
@@ -338,8 +351,7 @@ class Replicator(unohelper.Base,
             #logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
             if not result:
                 timestamp = unparseDateTime(item.getValue('TimeStamp'))
-                format = (item.getValue('Title'), timestamp, item.getValue('Id'))
-                msg = getMessage(self._ctx, g_message, 136, format)
+                msg = getMessage(self._ctx, g_message, 136, item.getValue('Title'), timestamp, item.getValue('Id'))
                 logMessage(self._ctx, SEVERE, msg, "Replicator", "_pushItem()")
                 print(msg)
             return result

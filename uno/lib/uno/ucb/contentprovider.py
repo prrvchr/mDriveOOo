@@ -77,7 +77,7 @@ class ContentProvider(unohelper.Base,
 
     # XParameterizedContentProvider
     def registerInstance(self, scheme, plugin, replace):
-        msg = getMessage(self._ctx, g_message, 111, (scheme, plugin))
+        msg = getMessage(self._ctx, g_message, 111, scheme, plugin)
         logMessage(self._ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
         datasource = DataSource(self._ctx, self.event, scheme, plugin)
         if not datasource.isValid():
@@ -86,7 +86,7 @@ class ContentProvider(unohelper.Base,
         self.Scheme = scheme
         self.Plugin = plugin
         self.DataSource = datasource
-        msg = getMessage(self._ctx, g_message, 112, (scheme, plugin))
+        msg = getMessage(self._ctx, g_message, 112, scheme, plugin)
         logMessage(self._ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
         return self
     def deregisterInstance(self, scheme, argument):
