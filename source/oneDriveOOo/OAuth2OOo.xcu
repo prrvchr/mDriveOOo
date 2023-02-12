@@ -4,7 +4,7 @@
   xmlns:oor="http://openoffice.org/2001/registry"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  oor:package="com.gmail.prrvchr.extensions"
+  oor:package="io.github.prrvchr"
   oor:name="OAuth2OOo">
     <node oor:name="Urls">
         <node oor:name="vnd-microsoft" oor:op="fuse">
