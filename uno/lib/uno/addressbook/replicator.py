@@ -164,7 +164,7 @@ class Replicator(unohelper.Base):
                 return result
             result += self._syncGroup(user, timestamp)
         except Exception as e:
-            msg = getMessage(self._ctx, g_message, 121, (e, traceback.print_exc()))
+            msg = getMessage(self._ctx, g_message, 121, e, traceback.print_exc())
             logMessage(self._ctx, SEVERE, msg, 'Replicator', '_synchronize()')
         return result
 
@@ -189,8 +189,7 @@ class Replicator(unohelper.Base):
                 update += u
                 delete += d
                 token = t
-        format = (pages, update, delete)
-        msg = getMessage(self._ctx, g_message, 131, format)
+        msg = getMessage(self._ctx, g_message, 131, pages, update, delete)
         logMessage(self._ctx, INFO, msg, 'Replicator', '_syncPeople()')
         self._count += update + delete
         print("replicator._syncPeople() 1 %s" % method['PrimaryKey'])
@@ -215,8 +214,7 @@ class Replicator(unohelper.Base):
                 update += u
                 delete += d
                 token = t
-        format = (pages, update, delete)
-        msg = getMessage(self._ctx, g_message, 141, format)
+        msg = getMessage(self._ctx, g_message, 141, pages, update, delete)
         logMessage(self._ctx, INFO, msg, 'Replicator', '_syncGroup()')
         self._count += update + delete
         return token
@@ -245,8 +243,7 @@ class Replicator(unohelper.Base):
                 update += u
         else:
             print("replicator._syncConnection(): nothing to sync")
-        format = (pages, len(groups), update)
-        msg = getMessage(self._ctx, g_message, 151, format)
+        msg = getMessage(self._ctx, g_message, 151, pages, len(groups), update)
         logMessage(self._ctx, INFO, msg, 'Replicator', '_syncConnection()')
         self._count += update
         return token

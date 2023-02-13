@@ -112,8 +112,8 @@ class User(unohelper.Base,
     def _getCredential(self, password):
         return self.Account, password
 
-    def _getSqlException(self, state, code, format):
+    def _getSqlException(self, state, code, *args):
         state = getMessage(self._ctx, g_message, state)
-        msg = getMessage(self._ctx, g_message, code, format)
+        msg = getMessage(self._ctx, g_message, code, args)
         error = getSqlException(state, code, msg, self)
         return error
