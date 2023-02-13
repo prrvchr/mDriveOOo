@@ -41,9 +41,8 @@ from .identifier import Identifier
 
 from .unolib import KeyMap
 
+from .oauth2lib import getRequest
 from .oauth2lib import g_oauth2
-
-from .oauth2tool import getRequest
 
 from .database import DataBase
 
