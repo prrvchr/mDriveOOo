@@ -32,9 +32,11 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from .dbconfig import g_csv
 
-from .logger import logMessage
-from .logger import getMessage
-g_message = 'dbqueries'
+from .logger import getLogger
+
+from .configuration import g_errorlog
+
+g_basename = 'dbqueries'
 
 
 def getSqlQuery(ctx, name, format=None):
@@ -639,7 +641,7 @@ CREATE PROCEDURE "InsertItem"(IN "UserId" VARCHAR(100),
 
 # Queries don't exist!!!
     else:
+        logger = getLogger(ctx, g_errorlog, g_basename)
+        logger.logp(SEVERE, g_basename, 'getSqlQuery()', 101, name)
         query = None
-        msg = getMessage(ctx, g_message, 101, name)
-        logMessage(ctx, SEVERE, msg, 'dbqueries', 'getSqlQuery()')
     return query

@@ -45,8 +45,10 @@ from .unotool import executeDispatch
 
 from .dbtool import getSqlException
 
-from .logger import getMessage
-g_message = 'datasource'
+from .configuration import g_errorlog
+
+from .logger import getLogger
+g_basename = 'User'
 
 import traceback
 
@@ -91,19 +93,19 @@ class User(unohelper.Base,
 
     def _getMetaData(self, database, provider, name):
         if self.Request is None:
-            raise self._getSqlException(1003, 1105, g_oauth2)
+            raise self._getSqlException(1003, 1105, '_getMetaData', g_oauth2)
         if provider.isOffLine():
-            raise self._getSqlException(1004, 1108, name)
+            raise self._getSqlException(1004, 1108, '_getMetaData', name)
         data = provider.getUser(self.Request, self.Fields)
         if not data.IsPresent:
-            raise self._getSqlException(1006, 1107, name)
+            raise self._getSqlException(1006, 1107, '_getMetaData', name)
         userid = provider.getUserId(data.Value)
         return database.insertUser(userid, name)
 
     def _initUser(self, database, password):
         credential = self._getCredential(password)
         if not database.createUser(*credential):
-            raise self._getSqlException(1005, 1106, name)
+            raise self._getSqlException(1005, 1106, '_initUser', name)
         format = {'Schema': self.Resource,
                     'User': self.Account,
                     'GroupId': self.Group}
@@ -112,8 +114,10 @@ class User(unohelper.Base,
     def _getCredential(self, password):
         return self.Account, password
 
-    def _getSqlException(self, state, code, *args):
-        state = getMessage(self._ctx, g_message, state)
-        msg = getMessage(self._ctx, g_message, code, args)
+    def _getSqlException(self, state, code, method, *args):
+        logger = getLogger(self._ctx, g_errorlog, g_basename)
+        state = logger.resolveString(state)
+        msg = logger.resolveString(code, *args)
+        logger.logp(SEVERE, g_basename, method, msg)
         error = getSqlException(state, code, msg, self)
         return error

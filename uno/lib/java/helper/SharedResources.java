@@ -55,16 +55,17 @@ import com.sun.star.uno.XComponentContext;
 public class SharedResources
 {
     private static SharedResources m_instance;
-    private OfficeResourceBundle m_bundle;
+    private static OfficeResourceBundle m_bundle;
     private static int m_refcount = 0;
 
     // The private constructor method:
     private SharedResources(XComponentContext context,
                             String identifier,
+                            String path,
                             String basename)
     {
         try {
-            m_bundle = new OfficeResourceBundle(context, identifier, basename);
+            m_bundle = new OfficeResourceBundle(context, identifier, path, basename);
         }
         catch (NullPointerException nullPointerException) {
         }
@@ -73,10 +74,11 @@ public class SharedResources
     // FIXME: the C++ implementation gets the XComponentContext using ::comphelper::getProcessServiceFactory(), we don't.
     public synchronized static void registerClient(XComponentContext context,
                                                    String identifier,
+                                                   String path,
                                                    String basename)
     {
         if (m_instance == null) {
-            m_instance = new SharedResources(context, identifier, basename);
+            m_instance = new SharedResources(context, identifier, path, basename);
         }
         ++m_refcount;
     }
@@ -84,7 +86,7 @@ public class SharedResources
     public synchronized static void revokeClient()
     {
         if (--m_refcount == 0) {
-            UnoHelper.disposeComponent(m_instance);
+            m_bundle.close();
             m_instance = null;
         }
     }

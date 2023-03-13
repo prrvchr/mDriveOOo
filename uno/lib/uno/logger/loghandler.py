@@ -32,6 +32,8 @@ import unohelper
 from com.sun.star.awt import XContainerWindowEventHandler
 from com.sun.star.awt import XDialogEventHandler
 
+from com.sun.star.util import XModifyListener
+
 import traceback
 
 
@@ -44,22 +46,26 @@ class WindowHandler(unohelper.Base,
     def callHandlerMethod(self, dialog, event, method):
         try:
             handled = False
-            if method == 'ChangeLogger':
+            if method == 'SetLogger':
                 logger = event.Source.getSelectedItem()
-                self._manager.changeLogger(logger)
+                self._manager.setLogger(logger)
                 handled = True
-            elif method == 'ToggleLogger':
+            elif method == 'EnableLogger':
                 enabled = event.Source.State == 1
-                self._manager.toggleLogger(enabled)
+                self._manager.enableLogger(enabled)
                 handled = True
-            elif method == 'EnableViewer':
-                self._manager.toggleViewer(True)
+            elif method == 'ConsoleHandler':
+                self._manager.toggleHandler(False)
                 handled = True
-            elif method == 'DisableViewer':
-                self._manager.toggleViewer(False)
+            elif method == 'FileHandler':
+                self._manager.toggleHandler(True)
                 handled = True
             elif method == 'ViewLog':
                 self._manager.viewLog()
+                handled = True
+            elif method == 'SetLevel':
+                if self._manager.isHandlerEnabled():
+                    self._manager.setLevel()
                 handled = True
             return handled
         except Exception as e:
@@ -67,11 +73,12 @@ class WindowHandler(unohelper.Base,
             print(msg)
 
     def getSupportedMethodNames(self):
-        return ('ChangeLogger',
-                'ToggleLogger',
-                'EnableViewer',
-                'DisableViewer',
-                'ViewLog')
+        return ('SetLogger',
+                'EnableLogger',
+                'ConsoleHandler',
+                'FileHandler',
+                'ViewLog',
+                'SetLevel')
 
 
 class DialogHandler(unohelper.Base,
@@ -83,14 +90,11 @@ class DialogHandler(unohelper.Base,
     def callHandlerMethod(self, dialog, event, method):
         try:
             handled = False
-            if method == 'ClearLog':
-                self._manager.clearLog()
-                handled = True
-            elif method == 'RefreshLog':
-                self._manager.refreshLog()
+            if method == 'RefreshLog':
+                self._manager.updateLogger()
                 handled = True
             elif method == 'LogInfo':
-                self._manager.logInfo()
+                self._manager.logInfos()
                 handled = True
             return handled
         except Exception as e:
@@ -98,6 +102,42 @@ class DialogHandler(unohelper.Base,
             print(msg)
 
     def getSupportedMethodNames(self):
-        return ('ClearLog',
-                'RefreshLog',
+        return ('RefreshLog',
                 'LogInfo')
+
+
+class PoolListener(unohelper.Base,
+                   XModifyListener):
+    def __init__(self, manager):
+        self._manager = manager
+
+    # XModifyListener
+    def modified(self, event):
+        try:
+            print("PoolListener.modified()")
+            self._manager.updateLoggers()
+        except Exception as e:
+            msg = "Error: %s" % traceback.print_exc()
+            print(msg)
+
+    def disposing(self, event):
+        pass
+
+
+class LoggerListener(unohelper.Base,
+                     XModifyListener):
+    def __init__(self, manager):
+        self._manager = manager
+
+    # XModifyListener
+    def modified(self, event):
+        try:
+            print("LoggerListener.modified()")
+            self._manager.updateLogger()
+        except Exception as e:
+            msg = "Error: %s" % traceback.print_exc()
+            print(msg)
+
+    def disposing(self, event):
+        pass
+

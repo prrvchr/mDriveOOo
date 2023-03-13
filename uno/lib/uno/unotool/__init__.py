@@ -59,6 +59,7 @@ from .unotool import getPropertyValueSet
 from .unotool import getResourceLocation
 from .unotool import getSimpleFile
 from .unotool import getStringResource
+from .unotool import getStringResourceWithLocation
 from .unotool import getTempFile
 from .unotool import getTypeDetection
 from .unotool import getUriFactory

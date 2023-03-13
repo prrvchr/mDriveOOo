@@ -396,7 +396,8 @@ public class PropertySetAdapter
         else {
             isvoid = value == null;
         }
-        if (isvoid && (data.property.Attributes & PropertyAttribute.MAYBEVOID) == 0) { 
+        if (isvoid && (data.property.Attributes & PropertyAttribute.MAYBEVOID) == 0) {
+            System.out.println("beans.PropertySetAdapter.setPropertyValue() ERROR: Property Name: " + data.property.Name);
             throw new IllegalArgumentException("The property must have a value; the MAYBEVOID attribute is not set!");
         }
 

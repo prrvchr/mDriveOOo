@@ -59,39 +59,34 @@ public class ResourceBasedEventLogger
 {
     private String m_basename;
     private String m_identifier;
+    private String m_path;
     private OfficeResourceBundle m_Bundle;
 
+    // The constructor method:
+    public ResourceBasedEventLogger(ResourceBasedEventLogger logger)
+    {
+        this(logger.m_xContext, logger.m_identifier, logger.m_path, logger.m_basename, logger.getName());
+    }
     public ResourceBasedEventLogger(XComponentContext context,
                                     String identifier,
+                                    String path,
                                     String basename,
                                     String logger)
     {
         super(context, logger);
         m_identifier = identifier;
+        m_path = path;
         m_basename = basename;
         try {
-            m_Bundle = new OfficeResourceBundle(context, identifier, basename);
+            m_Bundle = new OfficeResourceBundle(context, identifier, path, basename);
         }
         catch (NullPointerException e) {
             throw new RuntimeException(e);
         }
     }
     
-    public ResourceBasedEventLogger(ResourceBasedEventLogger logger)
-    {
-        super(logger.m_xContext, logger.getName());
-        m_identifier = logger.m_identifier;
-        m_basename = logger.m_basename;
-        try {
-            m_Bundle = new OfficeResourceBundle(logger.m_xContext, logger.m_identifier, logger.m_basename);
-        }
-        catch (NullPointerException nullPointerException) {
-            throw new RuntimeException(nullPointerException);
-        }
-    }
-    
     /**
-     * Logs a given message with its arguments, without the caller's class and method.
+     * Logs a given resource id with its arguments, without the caller's class and method.
      * @param level the log level
      * @param id the resource ID of the message to log
      * @param arguments the arguments to log, which are converted to strings and replace $1$, $2$, up to $n$ in the message
@@ -102,12 +97,26 @@ public class ResourceBasedEventLogger
                        Object... arguments)
     {
         if (isLoggable(level))
-            return impl_log(level, null, null, loadStringMessage(id), arguments);
+            return _log(level, null, null, loadStringMessage(id), arguments);
         return false;
     }
 
     /**
-     * Logs a given message with its arguments, with the caller's class and method
+     * Logs a given message, without the caller's class and method.
+     * @param level the log level
+     * @param message the message to log
+     * @return whether logging succeeded
+     */
+    public boolean log(int level,
+                       String message)
+    {
+        if (isLoggable(level))
+            return _log(level, null, null, message);
+        return false;
+    }
+
+    /**
+     * Logs a given resource id with its arguments, with the caller's class and method
      * taken from a (relatively costly!) stack trace.
      * @param level the log level
      * @param id the resource ID of the message to log
@@ -120,7 +129,7 @@ public class ResourceBasedEventLogger
     {
         if (isLoggable(level)) {
             StackTraceElement caller = Thread.currentThread().getStackTrace()[2];
-            return impl_log(level, caller.getClassName(), caller.getMethodName(), loadStringMessage(id), arguments);
+            return _log(level, caller.getClassName(), caller.getMethodName(), loadStringMessage(id), arguments);
         }
         return false;
     }
@@ -131,7 +140,7 @@ public class ResourceBasedEventLogger
                            Object... arguments)
     {
         if (isLoggable(level)) {
-            return impl_log(level, caller.getClassName(), caller.getMethodName(), loadStringMessage(id), arguments);
+            return _log(level, caller.getClassName(), caller.getMethodName(), loadStringMessage(id), arguments);
         }
         return false;
     }

@@ -60,6 +60,7 @@ import com.sun.star.uno.XComponentContext;
 public class EventLogger
 {
     protected XComponentContext m_xContext;
+    private static String m_service = "io.github.prrvchr.jdbcDriverOOo.LoggerPool";
     private String m_name;
     private XLogger m_xLogger;
     
@@ -97,12 +98,11 @@ public class EventLogger
 
     public static XLoggerPool getLoggerPool(XComponentContext context)
     {
-        Object object = context.getValueByName("/singletons/com.sun.star.logging.LoggerPool");
+        Object object = UnoHelper.createService(context, m_service);
         XLoggerPool pool = UnoRuntime.queryInterface(XLoggerPool.class, object);
         if (pool == null) {
-            throw new DeploymentException(
-                    "component context fails to supply singleton com.sun.star.logging.LoggerPool of type com.sun.star.logging.XLoggerPool",
-                    context);
+            throw new DeploymentException("component context fails to supply singleton com.sun.star.logging.LoggerPool of type com.sun.star.logging.XLoggerPool",
+                                          context);
         }
         return pool;
     }
@@ -209,7 +209,7 @@ public class EventLogger
                        Object... arguments)
     {
         if (isLoggable(level))
-            return impl_log(level, null, null, message, arguments);
+            return _log(level, null, null, message, arguments);
         return false;
     }
 
@@ -241,7 +241,7 @@ public class EventLogger
             PrintWriter printerWriter = new PrintWriter(stringWriter);
             exception.printStackTrace(printerWriter);
             message += "\n" + stringWriter.getBuffer().toString();
-            return impl_log(level, null, null, message);
+            return _log(level, null, null, message);
         }
         return true;
     }
@@ -262,7 +262,7 @@ public class EventLogger
             System.out.println("EventLogger.logp() 1");
             StackTraceElement caller = Thread.currentThread().getStackTrace()[2];
             System.out.println("EventLogger.logp() 2 Class: " + caller.getClassName() + " - Method: " + caller.getMethodName());
-            return impl_log(level, caller.getClassName(), caller.getMethodName(), message, arguments);
+            return _log(level, caller.getClassName(), caller.getMethodName(), message, arguments);
         }
         return false;
     }
@@ -296,12 +296,12 @@ public class EventLogger
             exception.printStackTrace(printerWriter);
             message += "\n" + stringWriter.getBuffer().toString();
             StackTraceElement caller = Thread.currentThread().getStackTrace()[2];
-            return impl_log(level, caller.getClassName(), caller.getMethodName(), message);
+            return _log(level, caller.getClassName(), caller.getMethodName(), message);
         }
         return true;
     }
 
-    protected boolean impl_log(int level,
+    protected boolean _log(int level,
                                String clazz,
                                String method,
                                String message,
@@ -313,8 +313,7 @@ public class EventLogger
         try {
             message = String.format(message, arguments);
         }
-        catch (Exception e) {
-        }
+        catch (Exception e) { }
         if (clazz != null && method != null) {
             m_xLogger.logp(level, clazz, method, message);
         }

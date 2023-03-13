@@ -38,13 +38,14 @@ from com.sun.star.ucb import XRestReplicator
 from com.sun.star.rest import HTTPException
 from com.sun.star.rest.HTTPStatusCode import BAD_REQUEST
 
+from .unotool import getConfiguration
 from .unotool import parseDateTime
 from .unotool import unparseDateTime
 
 from .database import DataBase
 from .user import User
 
-from .configuration import g_sync
+from .configuration import g_identifier
 
 from .logger import logMessage
 from .logger import getMessage
@@ -92,7 +93,7 @@ class Replicator(unohelper.Base,
             logMessage(self._ctx, INFO, "stage 1", 'Replicator', 'run()')
             print("Replicator run() 2")
             while not self._canceled:
-                self._sync.wait(g_sync)
+                self._sync.wait(self._getReplicateTimeout())
                 self._synchronize()
                 self._sync.clear()
                 print("replicator.run() 3")
@@ -365,3 +366,8 @@ class Replicator(unohelper.Base,
                 operations.get(method).append(itemid)
                 return True
         return False
+
+    def _getReplicateTimeout(self):
+        configuration = getConfiguration(self._ctx, g_identifier, False)
+        timeout = configuration.getByName('ReplicateTimeout')
+        return timeout

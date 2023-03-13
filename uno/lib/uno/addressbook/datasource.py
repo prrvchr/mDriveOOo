@@ -51,10 +51,6 @@ from .listener import TerminateListener
 
 from .unotool import getDesktop
 
-from .logger import logMessage
-from .logger import getMessage
-g_message = 'datasource'
-
 import traceback
 
 

@@ -30,6 +30,8 @@
 import uno
 import unohelper
 
+from com.sun.star.logging.LogLevel import SEVERE
+
 from com.sun.star.ui.dialogs import XWizard
 
 from com.sun.star.lang import XInitialization
@@ -51,10 +53,11 @@ from .wizardview import WizardView
 from .wizardhandler import DialogHandler
 from .wizardhandler import ItemListener
 
+from ..logger import getLogger
+
 from ..unotool import hasInterface
 
-from ..logger import getMessage
-g_message = 'wizard'
+from ..configuration import g_extension
 
 import traceback
 
@@ -121,12 +124,12 @@ class Wizard(unohelper.Base,
 
     def enablePage(self, pageid, enabled):
         if not self._isPathInitialized():
-            raise self._getInvalidStateException(111)
+            raise self._getInvalidStateException(111, 'enablePage()')
         path = self._getCurrentPath()
         if pageid not in path:
-            raise self._getNoSuchElementException(112)
+            raise self._getNoSuchElementException(112, 'enablePage()')
         if pageid == self._model.getCurrentPageId():
-            raise self._getInvalidStateException(113)
+            raise self._getInvalidStateException(113, 'enablePage()')
         if self._model.enablePage(pageid, enabled):
             self._model.updateRoadmap(self._getFirstPageId())
 
@@ -146,13 +149,13 @@ class Wizard(unohelper.Base,
 
     def activatePath(self, index, final):
         if not self._isMultiPaths():
-            raise self._getInvalidStateException(121)
+            raise self._getInvalidStateException(121, 'activatePath()')
         if index not in self._getMultiPathsIndex():
-            raise self._getNoSuchElementException(122)
+            raise self._getNoSuchElementException(122, 'activatePath()')
         path = self._paths[index]
         pageid = self._model.getCurrentPageId()
         if pageid != -1 and pageid not in path:
-            raise self._getInvalidStateException(123)
+            raise self._getInvalidStateException(123, 'activatePath()')
         if self._currentPath != index or self._isComplete() != final:
             self._initPath(index, final)
             self._model.updateRoadmap(self._getFirstPageId())
@@ -170,13 +173,13 @@ class Wizard(unohelper.Base,
 # XInitialization
     def initialize(self, arguments):
         if not isinstance(arguments, tuple) or len(arguments) != 2:
-            raise self._getIllegalArgumentException(0, 101)
+            raise self._getIllegalArgumentException(0, 101, 'initialize()')
         paths, controller = arguments
         if not isinstance(paths, tuple) or len(paths) < 1:
-            raise self._getIllegalArgumentException(0, 102)
+            raise self._getIllegalArgumentException(0, 102, 'initialize()')
         interface = 'com.sun.star.ui.dialogs.XWizardController'
         if not hasInterface(controller, interface):
-            raise self._getIllegalArgumentException(0, 103)
+            raise self._getIllegalArgumentException(0, 103, 'initialize()')
         self._paths = paths
         self._multiPaths = isinstance(paths[0], tuple)
         self._controller = controller
@@ -383,21 +386,27 @@ class Wizard(unohelper.Base,
         self._view.updateButtonFinish(enabled)
 
 # Private Exception getter methods
-    def _getIllegalArgumentException(self, position, code):
+    def _getIllegalArgumentException(self, position, code, method):
         e = IllegalArgumentException()
         e.ArgumentPosition = position
-        e.Message = getMessage(self._ctx, g_message, code)
+        e.Message = self._getMessage(code, method)
         e.Context = self
         return e
 
-    def _getInvalidStateException(self, code):
+    def _getInvalidStateException(self, code, method):
         e = InvalidStateException()
-        e.Message = getMessage(self._ctx, g_message, code)
+        e.Message = self._getMessage(code, method)
         e.Context = self
         return e
 
-    def _getNoSuchElementException(self, code):
+    def _getNoSuchElementException(self, code, method):
         e = NoSuchElementException()
-        e.Message = getMessage(self._ctx, g_message, code)
+        e.Message = self._getMessage(code, method)
         e.Context = self
         return e
+
+    def _getMessage(self, code, method):
+        logger = getLogger(self._ctx, g_extension, 'Wizard')
+        msg = logger.resolveString(code)
+        logger.logp(SEVERE, 'Wizard', method, msg)
+        return msg

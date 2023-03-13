@@ -29,7 +29,9 @@ Path=$(dirname "${0}")
 
 rm -f ${Path}/types.rdb
 
-${Path}/merge_rdb.sh ${OOoPath} com/sun/star/auth/XRestKeyMap
+${Path}/merge_rdb.sh ${OOoPath} com/sun/star/logging/XLogger2
+${Path}/merge_rdb.sh ${OOoPath} com/sun/star/logging/XLoggerPool2
+${Path}/merge_rdb.sh ${OOoPath} com/sun/star/logging/LoggerPool2
 
 read -p "Press enter to continue"
 

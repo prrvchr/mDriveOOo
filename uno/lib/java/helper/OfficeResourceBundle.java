@@ -59,6 +59,7 @@ public class OfficeResourceBundle
 
     private XComponentContext m_xContext;
     private String m_identifier;
+    private String m_path;
     private String m_basename;
     private boolean m_attempted;
     private XStringResourceResolver m_xResolver;
@@ -73,6 +74,7 @@ public class OfficeResourceBundle
      */
     public OfficeResourceBundle(XComponentContext context,
                                 String identifier,
+                                String path,
                                 String basename)
         throws NullPointerException
     {
@@ -81,6 +83,7 @@ public class OfficeResourceBundle
         }
         m_xContext = context;
         m_identifier = identifier;
+        m_path = path;
         m_basename = basename;
         m_attempted = false;
     }
@@ -163,7 +166,7 @@ public class OfficeResourceBundle
             return m_xResolver != null;
         }
         m_attempted = true;
-        XStringResourceResolver resolver = UnoHelper.getResourceResolver(m_xContext, m_identifier, m_basename);
+        XStringResourceResolver resolver = UnoHelper.getResourceResolver(m_xContext, m_identifier, m_path, m_basename);
         if (resolver != null) {
             m_xResolver = resolver;
             return true;

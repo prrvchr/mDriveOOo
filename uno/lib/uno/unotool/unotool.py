@@ -215,12 +215,15 @@ def getCurrentLocale(ctx):
     return locale
 
 def getStringResource(ctx, identifier, path=None, filename='DialogStrings', locale=None):
+    url = getResourceLocation(ctx, identifier, path)
+    return getStringResourceWithLocation(ctx, url, filename, locale)
+
+def getStringResourceWithLocation(ctx, url, filename, locale=None):
     service = 'com.sun.star.resource.StringResourceWithLocation'
-    location = getResourceLocation(ctx, identifier, path)
     if locale is None:
         locale = getCurrentLocale(ctx)
     handler = getInteractionHandler(ctx)
-    args = (location, True, locale, filename, '', handler)
+    args = (url, True, locale, filename, '', handler)
     return createService(ctx, service, *args)
 
 def generateUuid():

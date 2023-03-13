@@ -1,0 +1,119 @@
+/*
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+#ifndef __com_sun_star_logging_XLogger2_idl__
+#define __com_sun_star_logging_XLogger2_idl__
+
+#include <com/sun/star/logging/XLogger.idl>
+#include <com/sun/star/util/XModifyListener.idl>
+
+
+module com { module sun { module star { module logging {
+
+interface XLogger2 : com::sun::star::logging::XLogger
+{
+
+    /** logs a given resource string
+    
+        @param Level
+            the log level of this message. If this level is smaller than the logger's #Level
+            attribute, then the call will be ignored.
+        
+        @param ResourceID
+            ID to specify the string inside the resource
+        
+        @param Arguments
+            the optional arguments
+    */
+    void logrb([in] long Level,
+               [in] string ResourceID,
+               [in] sequence<string> Arguments);
+
+    /** logs a given resource string
+    
+        @param Level
+            the log level of this message. If this level is smaller than the logger's #Level
+            attribute, then the call will be ignored.
+        
+        @param Clazz
+            the source class at which the logged event occurred.
+        
+        @param Method
+            the source class at which the logged event occurred.
+        
+        @param ResourceID
+            ID to specify the string inside the resource
+        
+        @param Arguments
+            the optional arguments
+    */
+    void logprb([in] long Level,
+                [in] string Clazz,
+                [in] string Method,
+                [in] string ResourceID,
+                [in] sequence<string> Arguments);
+
+    /** get resource string from the given ResourceID and current locale, and optionaly some arguments
+    
+        @param ResourceID
+            ID to specify the string inside the resource
+        
+        @param Arguments
+            the optional arguments
+    */
+    string resolveString([in] string ResourceID,
+                         [in] sequence<string> Arguments);
+
+
+    /** Checks if the resource contains an entry for the given ResourceID and current locale. 
+    
+        @param ResourceID
+            ID to specify the string inside the resource
+*    */
+    boolean hasEntryForId([in] string ResourceID);
+
+     /** add a modify listener to the logger.
+    
+        @param Listener
+            the listener which will be notified when the logger log message
+    */
+    void addModifyListener([in] com::sun::star::util::XModifyListener Listener);
+
+    /** remove a modify listener from the logger.
+    
+        @param Listener
+            the listener which will be removed from the logger
+    */
+    void removeModifyListener([in] com::sun::star::util::XModifyListener Listener);
+
+};
+
+
+}; }; }; };
+
+
+#endif
+

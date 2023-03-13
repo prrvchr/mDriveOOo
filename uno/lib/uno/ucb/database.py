@@ -70,7 +70,7 @@ class DataBase(unohelper.Base,
                XRestDataBase):
     def __init__(self, ctx, datasource, name='', password='', sync=None):
         self._ctx = ctx
-        self._statement = datasource.getConnection(name, password).createStatement()
+        self._statement = datasource.getIsolatedConnection(name, password).createStatement()
         self._sync = sync
 
     @property
