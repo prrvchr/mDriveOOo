@@ -27,45 +27,65 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-# Provider configuration
-g_scheme = 'vnd-microsoft'
-g_extension = 'oneDriveOOo'
-g_identifier = 'io.github.prrvchr.%s' % g_extension
+import uno
+import unohelper
 
-g_provider = 'Microsoft'
-g_host = 'graph.microsoft.com'
-g_version = 'v1.0' # v1.0 or beta
-g_url = 'https://%s/%s' % (g_host, g_version)
-g_upload = '%s/me/drive/items/%%s:/%%s:/createUploadSession' % g_url
+from com.sun.star.lang import XServiceInfo
+from com.sun.star.awt import XContainerWindowEventHandler
 
-g_userkeys = ('id','userPrincipalName','displayName')
-g_userfields = ','.join(g_userkeys)
-g_drivekeys = ('id','createdDateTime','lastModifiedDateTime','name')
-g_drivefields = ','.join(g_drivekeys)
-g_itemkeys = ('file','size','parentReference')
-g_itemfields = '%s,%s' % (g_drivefields, ','.join(g_itemkeys))
-g_pages = 100
+from onedrive import OptionsManager
 
-# If your app splits a file into multiple byte ranges, the size of each byte range MUST be
-# a multiple of 320 KiB (327,680 bytes). Using a fragment size that does not divide evenly
-# by 320 KiB will result in errors committing some files
-g_chunk = 327680  # Http request maximum data size, must be a multiple of 'g_buffer'
-g_buffer = 32768  # InputStream (Downloader) maximum 'Buffers' size
+from onedrive import g_identifier
 
-g_office = 'application/vnd.oasis.opendocument'
-g_folder = 'application/vnd.microsoft-apps.folder'
-g_link = 'application/vnd.microsoft-apps.link'
-g_doc_map = {'application/vnd.microsoft-apps.document':     'application/vnd.oasis.opendocument.text',
-             'application/vnd.microsoft-apps.spreadsheet':  'application/x-vnd.oasis.opendocument.spreadsheet',
-             'application/vnd.microsoft-apps.presentation': 'application/vnd.oasis.opendocument.presentation',
-             'application/vnd.microsoft-apps.drawing':      'application/pdf'}
+import traceback
 
-g_cache = 20
-g_admin = False
+# pythonloader looks for a static g_ImplementationHelper variable
+g_ImplementationHelper = unohelper.ImplementationHelper()
+g_ImplementationName = '%s.OptionsHandler' % g_identifier
 
-# Resource strings files folder
-g_resource = 'resource'
-g_basename = 'contentprovider'
-g_driverlog = 'DriverLogger'
-g_synclog = 'SyncLogger'
-g_errorlog = 'gDriveError'
+
+class OptionsHandler(unohelper.Base,
+                     XServiceInfo,
+                     XContainerWindowEventHandler):
+    def __init__(self, ctx):
+        self._ctx = ctx
+        self._manager = None
+
+    # XContainerWindowEventHandler
+    def callHandlerMethod(self, window, event, method):
+        try:
+            handled = False
+            if method == 'external_event':
+                if event == 'initialize':
+                    self._manager = OptionsManager(self._ctx, window)
+                    handled = True
+                elif event == 'ok':
+                    self._manager.saveSetting()
+                    handled = True
+                elif event == 'back':
+                    self._manager.loadSetting()
+                    handled = True
+            elif method == 'ViewData':
+                self._manager.viewData()
+                handled = True
+            return handled
+        except Exception as e:
+            msg = "OptionsHandler.callHandlerMethod() Error: %s" % traceback.print_exc()
+            print(msg)
+
+    def getSupportedMethodNames(self):
+        return ('external_event',
+                'ViewData')
+
+    # XServiceInfo
+    def supportsService(self, service):
+        return g_ImplementationHelper.supportsService(g_ImplementationName, service)
+    def getImplementationName(self):
+        return g_ImplementationName
+    def getSupportedServiceNames(self):
+        return g_ImplementationHelper.getSupportedServiceNames(g_ImplementationName)
+
+
+g_ImplementationHelper.addImplementation(OptionsHandler,                            # UNO object class
+                                         g_ImplementationName,                      # Implementation name
+                                        (g_ImplementationName,))                    # List of implemented services

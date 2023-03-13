@@ -37,8 +37,10 @@ from com.sun.star.ucb import XContentProvider
 from com.sun.star.ucb import XContentProviderFactory
 from com.sun.star.ucb import XContentProviderSupplier
 from com.sun.star.ucb import XParameterizedContentProvider
+
 from com.sun.star.beans.PropertyAttribute import BOUND
 from com.sun.star.beans.PropertyAttribute import READONLY
+
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
@@ -47,9 +49,12 @@ from onedrive import getProperty
 
 from onedrive import ContentProvider
 
-from onedrive import logMessage
+from onedrive import getLogger
+
 from onedrive import g_scheme
 from onedrive import g_identifier
+from onedrive import g_basename
+from onedrive import g_driverlog
 
 g_proxy = 'com.sun.star.ucb.ContentProviderProxy'
 
@@ -72,7 +77,8 @@ class ContentProviderProxy(unohelper.Base,
         self.plugin = ''
         self.replace = True
         msg += " Done"
-        logMessage(self.ctx, INFO, msg, 'ContentProviderProxy', '__init__()')
+        self._logger = getLogger(ctx, g_driverlog, g_basename)
+        self._logger.logp(INFO, 'ContentProviderProxy', '__init__()', msg)
         print('ContentProviderProxy.__init__()')
 
     _Provider = None
@@ -99,7 +105,7 @@ class ContentProviderProxy(unohelper.Base,
         else:
             msg += " Done"
             provider = ucp.registerInstance(g_scheme, g_identifier, True)
-        logMessage(self.ctx, level, msg, 'ContentProviderProxy', 'createContentProvider()')
+        self._logger.logp(level, 'ContentProviderProxy', 'createContentProvider()', msg)
         return provider
 
     # XInterface
@@ -132,7 +138,7 @@ class ContentProviderProxy(unohelper.Base,
                msg += " Done"
         else:
             msg += " Done"
-        logMessage(self.ctx, level, msg, 'ContentProviderProxy', 'getContentProvider()')
+        self._logger.logp(level, 'ContentProviderProxy', 'getContentProvider()', msg)
         return ContentProviderProxy._Provider
 
     def _getContentProvider(self):
@@ -149,13 +155,13 @@ class ContentProviderProxy(unohelper.Base,
         self.plugin = plugin
         self.replace = replace
         msg += " Done"
-        logMessage(self.ctx, INFO, msg, 'ContentProviderProxy', 'registerInstance()')
+        self._logger.logp(INFO, 'ContentProviderProxy', 'registerInstance()', msg)
         return self
     def deregisterInstance(self, scheme, plugin):
         print('ContentProviderProxy.deregisterInstance()')
         #self.Provider.deregisterInstance(scheme, plugin)
         msg = "ContentProviderProxy.deregisterInstance(): %s - %s ... Done" % (scheme, plugin)
-        logMessage(self.ctx, INFO, msg, 'ContentProviderProxy', 'deregisterInstance()')
+        self._logger.logp(INFO, 'ContentProviderProxy', 'deregisterInstance()', msg)
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, identifier):

@@ -27,7 +27,7 @@
                         <value>%origin%/oneDriveOOo/OptionsDialog.xdl</value>
                     </prop>
                     <prop oor:name="EventHandlerService">
-                        <value>io.github.prrvchr.oneDriveOOo.OptionsDialog</value>
+                        <value>io.github.prrvchr.oneDriveOOo.OptionsHandler</value>
                     </prop>
                 </node>
             </node>

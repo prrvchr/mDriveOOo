@@ -5,8 +5,10 @@
     <manifest:file-entry manifest:media-type="application/vnd.sun.star.basic-library" manifest:full-path="oneDriveOOo/"/>
     <manifest:file-entry manifest:media-type="application/vnd.sun.star.uno-component;type=Python" manifest:full-path="service/ContentProviderProxy.py"/>
     <manifest:file-entry manifest:media-type="application/vnd.sun.star.uno-component;type=Python" manifest:full-path="service/Provider.py"/>
-    <manifest:file-entry manifest:media-type="application/vnd.sun.star.uno-component;type=Python" manifest:full-path="service/OptionsDialog.py"/>
+    <manifest:file-entry manifest:media-type="application/vnd.sun.star.uno-component;type=Python" manifest:full-path="service/OptionsHandler.py"/>
     <manifest:file-entry manifest:media-type="application/vnd.sun.star.configuration-data" manifest:full-path="OptionsDialog.xcu"/>
     <manifest:file-entry manifest:media-type="application/vnd.sun.star.configuration-data" manifest:full-path="OAuth2OOo.xcu"/>
     <manifest:file-entry manifest:media-type="application/vnd.sun.star.configuration-data" manifest:full-path="oneDriveOOo.xcu"/>
+    <manifest:file-entry manifest:media-type="application/vnd.sun.star.configuration-schema" manifest:full-path="Options.xcs"/>
+    <manifest:file-entry manifest:media-type="application/vnd.sun.star.configuration-data" manifest:full-path="Options.xcu"/>
 </manifest:manifest>

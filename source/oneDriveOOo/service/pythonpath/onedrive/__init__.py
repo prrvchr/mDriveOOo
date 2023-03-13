@@ -42,12 +42,10 @@ from .unotool import getProperty
 from .unotool import getResourceLocation
 from .unotool import getStringResource
 
-from .logger import getLoggerSetting
-from .logger import getLoggerUrl
-from .logger import setLoggerSetting
-from .logger import clearLogger
-from .logger import logMessage
-from .logger import getMessage
+from .options import OptionsManager
+
+from .logger import getLogger
+
 
 from .configuration import g_provider
 from .configuration import g_scheme
@@ -72,4 +70,7 @@ from .configuration import g_office
 from .configuration import g_folder
 from .configuration import g_link
 from .configuration import g_doc_map
+
+from .configuration import g_basename
+from .configuration import g_driverlog
 
