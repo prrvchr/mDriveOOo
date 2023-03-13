@@ -36,12 +36,13 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from .unolib import KeyMap
 
+from .unotool import getConfiguration
 from .unotool import getDateTime
 
 from .database import DataBase
 from .dataparser import DataParser
 
-from .configuration import g_sync
+from .configuration import g_identifier
 from .configuration import g_filter
 from .configuration import g_synclog
 
@@ -111,7 +112,7 @@ class Replicator(unohelper.Base):
                     if self._started.is_set():
                         print("replicator.run()5 start waitting *******************************************")
                         self._paused.clear()
-                        self._paused.wait(g_sync)
+                        self._paused.wait(self._getReplicateTimeout())
                         print("replicator.run()5 end waitting *******************************************")
             print("replicator.run()6 canceled *******************************************")
         except Exception as e:
@@ -325,3 +326,8 @@ class Replicator(unohelper.Base):
                     value = data.getValue(label)
                     update += self.DataBase.mergePeopleData(key, resource, typename, label, value, timestamp)
         return update
+
+    def _getReplicateTimeout(self):
+        configuration = getConfiguration(self._ctx, g_identifier, False)
+        timeout = configuration.getByName('ReplicateTimeout')
+        return timeout
