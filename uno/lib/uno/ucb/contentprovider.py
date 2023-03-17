@@ -45,9 +45,9 @@ from .unotool import parseUrl
 
 from .datasource import DataSource
 
-from .logger import logMessage
-from .logger import getMessage
-g_message = 'contentprovider'
+from .logger import getLogger
+
+from .configuration import g_defaultlog
 
 import traceback
 from threading import Event
@@ -68,30 +68,26 @@ class ContentProvider(unohelper.Base,
         self._error = ''
         self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
         self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
-        msg = getMessage(self._ctx, g_message, 101, self.Plugin)
-        logMessage(self._ctx, INFO, msg, 'ContentProvider', '__init__()')
+        self._logger = getLogger(ctx)
+        self._logger.logprb(INFO, 'ContentProvider', '__init__()', 101, self.Plugin)
 
     def __del__(self):
-       msg = getMessage(self._ctx, g_message, 171, self.Plugin)
-       logMessage(self._ctx, INFO, msg, 'ContentProvider', '__del__()')
+        self._logger.logprb(INFO, 'ContentProvider', '__del__()', 171, self.Plugin)
 
     # XParameterizedContentProvider
     def registerInstance(self, scheme, plugin, replace):
-        msg = getMessage(self._ctx, g_message, 111, scheme, plugin)
-        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
+        self._logger.logprb(INFO, 'ContentProvider', 'registerInstance()', 111, scheme, plugin)
         datasource = DataSource(self._ctx, self.event, scheme, plugin)
         if not datasource.isValid():
-            logMessage(self._ctx, SEVERE, datasource.Error, 'ContentProvider', 'registerInstance()')
+            self._logger.logp(SEVERE, 'ContentProvider', 'registerInstance()', datasource.Error)
             return None
         self.Scheme = scheme
         self.Plugin = plugin
         self.DataSource = datasource
-        msg = getMessage(self._ctx, g_message, 112, scheme, plugin)
-        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'registerInstance()')
+        self._logger.logprb(INFO, 'ContentProvider', 'registerInstance()', 112, scheme, plugin)
         return self
     def deregisterInstance(self, scheme, argument):
-        msg = getMessage(self._ctx, g_message, 161, scheme)
-        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'deregisterInstance()')
+        self._logger.logprb(INFO, 'ContentProvider', 'deregisterInstance()', 161, scheme)
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, url):
@@ -99,8 +95,7 @@ class ContentProvider(unohelper.Base,
         # FIXME: We are forced to perform lazy loading on Identifier (and User) in order to be able
         # FIXME: to trigger an exception when delivering the content ie: XContentProvider.queryContent().
         identifier = self.DataSource.getIdentifier(self._factory, self._getContentIdentifier(url), self._user)
-        msg = getMessage(self._ctx, g_message, 131, url)
-        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'createContentIdentifier()')
+        self._logger.logprb(INFO, 'ContentProvider', 'createContentIdentifier()', 131, url)
         print("ContentProvider.createContentIdentifier() 2")
         return identifier
 
@@ -114,24 +109,22 @@ class ContentProvider(unohelper.Base,
                 identifier.initialize(self.DataSource.DataBase)
             self._user = identifier.User.Name
             content = identifier.getContent()
-            msg = getMessage(self._ctx, g_message, 141, identifier.getContentIdentifier())
-            logMessage(self._ctx, INFO, msg, 'ContentProvider', 'queryContent()')
+            self._logger.logprb(INFO, 'ContentProvider', 'queryContent()', 141, identifier.getContentIdentifier())
             print("ContentProvider.queryContent() 2")
             return content
         except IllegalIdentifierException as e:
-            msg = getMessage(self._ctx, g_message, 142, e.Message)
-            logMessage(self._ctx, SEVERE, msg, 'ContentProvider', 'queryContent()')
+            self._logger.logprb(SEVERE, 'ContentProvider', 'queryContent()', 142, e.Message)
             raise e
 
     def compareContentIds(self, id1, id2):
         ids = (id1.getContentIdentifier(), id2.getContentIdentifier())
         if id1.Id == id2.Id and id1.User.Id == id2.User.Id:
-            msg = getMessage(self._ctx, g_message, 151, ids)
+            msg = self._logger.resolveString(151, ids)
             compare = 0
         else:
-            msg = getMessage(self._ctx, g_message, 152, ids)
+            msg = self._logger.resolveString(152, ids)
             compare = -1
-        logMessage(self._ctx, INFO, msg, 'ContentProvider', 'compareContentIds()')
+        self._logger.logp(INFO, 'ContentProvider', 'compareContentIds()', msg)
         return compare
 
     # Private methods

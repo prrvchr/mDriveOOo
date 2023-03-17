@@ -45,11 +45,12 @@ from .unotool import unparseDateTime
 from .database import DataBase
 from .user import User
 
-from .configuration import g_identifier
+from .logger import getLogger
 
-from .logger import logMessage
-from .logger import getMessage
-g_message = 'replicator'
+from .configuration import g_identifier
+from .configuration import g_defaultlog
+
+g_basename = 'replicator'
 
 from collections import OrderedDict
 from threading import Thread
@@ -69,6 +70,7 @@ class Replicator(unohelper.Base,
         self._fullPull = False
         self.DataBase = DataBase(ctx, datasource)
         self.Provider = provider
+        self._logger = getLogger(ctx, g_defaultlog, g_basename)
         sync.clear()
         self.start()
 
@@ -90,7 +92,7 @@ class Replicator(unohelper.Base,
         try:
             msg = "Replicator for Scheme: %s loading ... " % self.Provider.Scheme
             print("Replicator.run() 1 *************************************************************")
-            logMessage(self._ctx, INFO, "stage 1", 'Replicator', 'run()')
+            self._logger.log(INFO, 'Replicator', 'run()', 'stage 1')
             print("Replicator run() 2")
             while not self._canceled:
                 self._sync.wait(self._getReplicateTimeout())
@@ -104,8 +106,7 @@ class Replicator(unohelper.Base,
 
     def _synchronize(self):
         if self.Provider.isOffLine():
-            msg = getMessage(self._ctx, g_message, 101)
-            logMessage(self._ctx, INFO, msg, 'Replicator', '_synchronize()')
+            self._logger.logprb(INFO, 'Replicator', '_synchronize()', 101)
         elif not self._canceled:
             timestamp = parseDateTime()
             self._syncData(timestamp)
@@ -119,8 +120,7 @@ class Replicator(unohelper.Base,
                 print("Replicator.synchronize() 2")
                 if self._canceled:
                     break
-                msg = getMessage(self._ctx, g_message, 111, user.Name, unparseDateTime(timestamp))
-                logMessage(self._ctx, INFO, msg, 'Replicator', '_syncData()')
+                self._logger.logprb(INFO, 'Replicator', '_syncData()', 111, user.Name, unparseDateTime(timestamp))
                 # In order to make the creation of files or directories possible quickly,
                 # it is necessary to run the verification of the identifiers first.
                 self._checkNewIdentifier(user)
@@ -135,8 +135,7 @@ class Replicator(unohelper.Base,
                 if user.Token:
                     print("Replicator.synchronize() 5")
                     results += self._pullData(user)
-                msg = getMessage(self._ctx, g_message, 112, user.Name, unparseDateTime())
-                logMessage(self._ctx, INFO, msg, 'Replicator', '_syncData()')
+                self._logger.logprb(INFO, 'Replicator', '_syncData()', 112, user.Name, unparseDateTime())
             if all(results):
                 results += self._pushData(start)
             print("Replicator.synchronize() 6 %s" % (results, ))
@@ -150,14 +149,11 @@ class Replicator(unohelper.Base,
         # This procedure corresponds to the initial pull for a new User (ie: without Token)
         rejected, pages, rows, count, start = self._firstPull(user)
         print("Replicator._initUser() 1 count: %s - %s pages - %s rows" % (count, pages, rows))
-        msg = getMessage(self._ctx, g_message, 121, pages, rows, count)
-        logMessage(self._ctx, INFO, msg, 'Replicator', '_syncData()')
+        self._logger.logprb(INFO, 'Replicator', '_syncData()', 121, pages, rows, count)
         if len(rejected):
-            msg = getMessage(self._ctx, g_message, 122, len(rejected))
-            logMessage(self._ctx, SEVERE, msg, 'Replicator', '_syncData()')
+            self._logger.logprb(SEVERE, 'Replicator', '_syncData()', 122, len(rejected))
         for item in rejected:
-            msg = getMessage(self._ctx, g_message, 123, item)
-            logMessage(self._ctx, SEVERE, msg, 'Replicator', '_syncData()')
+            self._logger.logprb(SEVERE, 'Replicator', '_syncData()', 123, item)
         print("Replicator._initUser() 2 %s" % count)
         self._fullPull = True
         return start
@@ -314,9 +310,7 @@ class Replicator(unohelper.Base,
                     response = user.Provider.createFolder(user.Request, item)
                     result = self.callBack(user, item.getValue('BaseURI'), itemid, response)
                     timestamp = unparseDateTime(item.getValue('TimeStamp'))
-                    msg = getMessage(self._ctx, g_message, 131, item.getValue('Title'), timestamp)
-                    logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
-                    print(msg)
+                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 131, item.getValue('Title'), timestamp)
                 elif user.Provider.isLink(mediatype):
                     pass
                 elif user.Provider.isDocument(mediatype):
@@ -324,41 +318,30 @@ class Replicator(unohelper.Base,
                         if self._needPush('SizeUpdated', itemid, operations):
                             result = user.Provider.uploadFile(uploader, user, item, True)
                         timestamp = unparseDateTime(item.getValue('TimeStamp'))
-                        msg = getMessage(self._ctx, g_message, 132, item.getValue('Title'), timestamp)
-                        logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
-                        print(msg)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 132, item.getValue('Title'), timestamp)
             # UPDATE procedures, only a few properties are synchronized: (Size, Title, Trashed)
             elif self._needPush('TitleUpdated', itemid, operations, item):
                 result = user.Provider.updateTitle(user.Request, item)
                 timestamp = unparseDateTime(item.getValue('TimeStamp'))
-                msg = getMessage(self._ctx, g_message, 133, item.getValue('Title'), timestamp)
-                logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
-                print(msg)
+                self._logger.logprb(INFO, 'Replicator', '_pushItem()', 133, item.getValue('Title'), timestamp)
             elif self._needPush('SizeUpdated', itemid, operations, item):
                 result = user.Provider.uploadFile(uploader, user, item, False)
                 timestamp = unparseDateTime(item.getValue('TimeStamp'))
-                msg = getMessage(self._ctx, g_message, 134, item.getValue('Title'), timestamp, item.getValue('Size'))
-                logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
-                print(msg)
+                self._logger.logprb(INFO, 'Replicator', '_pushItem()', 134, item.getValue('Title'), timestamp, item.getValue('Size'))
             elif self._needPush('TrashedUpdated', itemid, operations, item):
                 result = user.Provider.updateTrashed(user.Request, item)
                 timestamp = unparseDateTime(item.getValue('TimeStamp'))
-                msg = getMessage(self._ctx, g_message, 135, item.getValue('Title'), timestamp)
-                logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
-                print(msg)
+                self._logger.logprb(INFO, 'Replicator', '_pushItem()', 135, item.getValue('Title'), timestamp)
             else:
                 # UPDATE of other properties (TimeStamp...)
                 print("Replicator._pushItem() Update None")
-            #logMessage(self._ctx, INFO, msg, "Replicator", "_pushItem()")
             if not result:
                 timestamp = unparseDateTime(item.getValue('TimeStamp'))
-                msg = getMessage(self._ctx, g_message, 136, item.getValue('Title'), timestamp, item.getValue('Id'))
-                logMessage(self._ctx, SEVERE, msg, "Replicator", "_pushItem()")
-                print(msg)
+                self._logger.logprb(SEVERE, 'Replicator', '_pushItem()', 136, item.getValue('Title'), timestamp, item.getValue('Id'))
             return result
         except Exception as e:
             msg = "ERROR: %s - %s" % (e, traceback.print_exc())
-            logMessage(self._ctx, SEVERE, msg, "Replicator", "_pushItem()")
+            self._logger.logp(SEVERE, 'Replicator', '_pushItem()', msg)
 
     def _needPush(self, method, itemid, operations, item=None):
         if (True if item is None else item.getValue(method)):

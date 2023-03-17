@@ -86,7 +86,6 @@ from time import sleep
 class DataBase(unohelper.Base,
                XRestDataBase):
     def __init__(self, ctx):
-        print("gContact.DataBase.init() start")
         self._ctx = ctx
         self._statement = None
         self._embedded = False
@@ -108,7 +107,6 @@ class DataBase(unohelper.Base,
             if error is None:
                 connection.getParent().DatabaseDocument.storeAsURL(odb, ())
             connection.close()
-        print("gContact.DataBase.init() end")
 
     @property
     def Connection(self):

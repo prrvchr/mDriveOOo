@@ -320,7 +320,8 @@ def registerDataSource(dbcontext, dbname, url):
 def getKeyMapFromResult(result, keymap=None, provider=None):
     keymap = KeyMap() if keymap is None else keymap
     for i in range(1, result.MetaData.ColumnCount +1):
-        name = result.MetaData.getColumnName(i)
+        #name = result.MetaData.getColumnName(i)
+        name = result.MetaData.getColumnLabel(i)
         value = getResultValue(result, i)
         if provider:
             value = provider.transform(name, value)
@@ -330,7 +331,8 @@ def getKeyMapFromResult(result, keymap=None, provider=None):
 def getDataFromResult(result, provider=None):
     data = {}
     for i in range(1, result.MetaData.ColumnCount +1):
-        name = result.MetaData.getColumnName(i)
+        #name = result.MetaData.getColumnName(i)
+        name = result.MetaData.getColumnLabel(i)
         value = getResultValue(result, i)
         if provider:
             value = provider.transform(name, value)
@@ -371,7 +373,8 @@ def getKeyMapSequenceFromResult(result, provider=None):
     while result.next():
         keymap = KeyMap()
         for i in range(1, count):
-            name = result.MetaData.getColumnName(i)
+            #name = result.MetaData.getColumnName(i)
+            name = result.MetaData.getColumnLabel(i)
             value = getResultValue(result, i)
             if provider:
                 value = provider.transform(name, value)
@@ -387,14 +390,16 @@ def getKeyMapKeyMapFromResult(result):
         name = getResultValue(result, 1)
         for i in range(2, count):
             v = getResultValue(result, i)
-            n = result.MetaData.getColumnName(i)
+            #n = result.MetaData.getColumnName(i)
+            n = result.MetaData.getColumnLabel(i)
             keymap.insertValue(n, v)
         sequence.insertValue(name, keymap)
     return sequence
 
 def getSequenceFromResult(result, index=1, default=None, transformer=None):
     sequence = []
-    name = result.MetaData.getColumnName(index)
+    #name = result.MetaData.getColumnName(index)
+    name = result.MetaData.getColumnLabel(index)
     while result.next():
         value = getResultValue(result, index, default)
         if transformer is not None:

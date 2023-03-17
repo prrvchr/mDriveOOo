@@ -46,9 +46,11 @@ from .oauth2lib import g_oauth2
 
 from .database import DataBase
 
-from .logger import logMessage
-from .logger import getMessage
-g_message = 'user'
+from .logger import getLogger
+
+from .configuration import g_defaultlog
+
+g_basename = 'user'
 
 import traceback
 
@@ -66,8 +68,8 @@ class User(unohelper.Base,
         self.MetaData = source.DataBase.selectUser(name)
         self.CanAddChild = not self.Provider.GenerateIds
         self._initialized = database is not None
-        msg = getMessage(self._ctx, g_message, 101)
-        logMessage(self._ctx, INFO, msg, "User", "__init__()")
+        self._logger = getLogger(ctx, g_defaultlog, g_basename)
+        self._logger.logprb(INFO, 'User', '__init__()', 101)
 
     @property
     def Name(self):
@@ -98,23 +100,23 @@ class User(unohelper.Base,
 
     def initialize(self, database, password=''):
         if self.Request is None:
-            msg = getMessage(self._ctx, g_message, 111, g_oauth2)
+            msg = self._logger.resolveString(111, g_oauth2)
             raise IllegalIdentifierException(msg, self)
         if self.MetaData is None:
             if not self.Provider.isOnLine():
-                msg = getMessage(self._ctx, g_message, 112, self._name)
+                msg = self._logger.resolveString(112, self._name)
                 raise IllegalIdentifierException(msg, self)
             data = self.Provider.getUser(self.Request, self._name)
             if not data.IsPresent:
-                msg = getMessage(self._ctx, g_message, 113, self._name)
+                msg = self._logger.resolveString(113, self._name)
                 raise IllegalIdentifierException(msg, self)
             root = self.Provider.getRoot(self.Request, data.Value)
             if not root.IsPresent:
-                msg = getMessage(self._ctx, g_message, 113, self._name)
+                msg = self._logger.resolveString(113, self._name)
                 raise IllegalIdentifierException(msg, self)
             self.MetaData = database.insertUser(self.Provider, data.Value, root.Value)
             if not database.createUser(self._name, password):
-                msg = getMessage(self._ctx, g_message, 114, self._name)
+                msg = self._logger.resolveString(114, self._name)
                 raise IllegalIdentifierException(msg, self)
         self.DataBase = DataBase(self._ctx, database.getDataSource(), self._name, '', self._lock)
         self._initialized = True

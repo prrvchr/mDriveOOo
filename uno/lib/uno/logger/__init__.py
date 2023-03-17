@@ -28,10 +28,15 @@
 """
 
 from .logger import Logger
+
 from .logmanager import LogManager
+
 from .logmodel import LogModel
-from .handler import LogHandler
+
+from .handler import RollerHandler
+
 from .loghandler import LoggerListener
+
 from .loghelper import getLogger
 from .loghelper import LogController
 

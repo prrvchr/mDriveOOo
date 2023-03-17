@@ -96,16 +96,11 @@ class LogModel(LogController):
             self._pool.removeModifyListener(self._listener)
 
     def setLogSetting(self, setting):
-        with LogWrapper._lock:
-            if self._isDebugMode():
-                config = LogWrapper._debug.get(self.Name)
-            else:
-                config = self._getLogConfig()
+        config = self._getLogConfig()
         config.LogLevel = setting.LogLevel
         config.DefaultHandler = setting.DefaultHandler
 
     def saveSetting(self):
         if self._config.hasPendingChanges():
             self._config.commitChanges()
-
 

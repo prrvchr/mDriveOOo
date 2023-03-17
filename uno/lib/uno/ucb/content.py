@@ -74,7 +74,9 @@ from .contenttools import getCommandInfo
 from .contenttools import getContentInfo
 from .contenttools import getMimeType
 
-from .logger import logMessage
+from .logger import getLogger
+
+from .configuration import g_defaultlog
 
 import traceback
 
@@ -95,7 +97,8 @@ class Content(unohelper.Base,
         self._contentListeners = []
         self._propertiesListener = {}
         msg += "Done."
-        logMessage(self._ctx, INFO, msg, "Content", "__init__()")
+        self._logger = getLogger(ctx, g_defaultlog)
+        self._logger.logp(INFO, 'Content', '__init__()', msg)
 
     @property
     def IsFolder(self):
@@ -157,7 +160,7 @@ class Content(unohelper.Base,
         url = self.getIdentifier().getContentIdentifier()
         print("Content.execute() %s - %s - %s" % (command.Name, url, self.getIdentifier().Id))
         msg = "command.Name: %s" % command.Name
-        logMessage(self._ctx, INFO, msg, "Content", "execute()")
+        self._logger.logp(INFO, 'Content', 'execute()', msg)
         if command.Name == 'getCommandInfo':
             return CommandInfo(self._commandInfo)
         elif command.Name == 'getPropertySetInfo':
@@ -178,7 +181,7 @@ class Content(unohelper.Base,
                 select = self.Identifier.getFolderContent(self.MetaData)
                 print("Content.execute() open 2")
                 msg += " IsFolder: %s" % self.IsFolder
-                logMessage(self._ctx, INFO, msg, "Content", "execute()")
+                self._logger.logp(INFO, 'Content', 'execute()', msg)
                 print("Content.execute() open 3")
                 return DynamicResultSet(self.Identifier, select)
             elif self.IsDocument:

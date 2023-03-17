@@ -60,8 +60,7 @@ from .dbinit import getStaticTables
 from .dbinit import getQueries
 from .dbinit import getTablesAndStatements
 
-from .logger import logMessage
-from .logger import getMessage
+from .logger import getLogger
 
 import traceback
 
@@ -451,7 +450,7 @@ class DataBase(unohelper.Base,
             update.setString(2, itemid)
             row = update.executeUpdate()
             msg = "execute UPDATE Items - Old ItemId: %s - New ItemId: %s - RowCount: %s" % (itemid, newid, row)
-            logMessage(self._ctx, INFO, msg, "DataBase", "updateItemId")
+            getLogger(self._ctx).logp(INFO, "DataBase", "updateItemId", msg)
             update.close()
             # The Id of the item have been changed, we need to clear the Identifier from the cache
             user.clearIdentifier(uri)

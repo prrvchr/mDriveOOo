@@ -6,9 +6,6 @@
     <dlg:button dlg:id="CommandButton1" dlg:tab-index="1" dlg:disabled="false" dlg:left="5" dlg:top="280" dlg:width="45" dlg:height="14" dlg:help-text="&amp;LogDialog.CommandButton1.HelpText" dlg:value="&amp;LogDialog.CommandButton1.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:LogInfo" script:language="UNO"/>
     </dlg:button>
-    <dlg:button dlg:id="CommandButton2" dlg:tab-index="2" dlg:disabled="false" dlg:left="280" dlg:top="280" dlg:width="45" dlg:height="14" dlg:help-text="&amp;LogDialog.CommandButton2.HelpText" dlg:value="&amp;LogDialog.CommandButton2.Label">
-      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:RefreshLog" script:language="UNO"/>
-    </dlg:button>
-    <dlg:button dlg:id="CommandButton3" dlg:tab-index="3" dlg:left="350" dlg:top="280" dlg:width="45" dlg:height="14" dlg:help-text="&amp;LogDialog.CommandButton3.HelpText" dlg:default="true" dlg:value="&amp;LogDialog.CommandButton3.Label" dlg:button-type="ok"/>
+    <dlg:button dlg:id="CommandButton2" dlg:tab-index="2" dlg:left="350" dlg:top="280" dlg:width="45" dlg:height="14" dlg:help-text="&amp;LogDialog.CommandButton2.HelpText" dlg:default="true" dlg:value="&amp;LogDialog.CommandButton2.Label" dlg:button-type="ok"/>
   </dlg:bulletinboard>
 </dlg:window>

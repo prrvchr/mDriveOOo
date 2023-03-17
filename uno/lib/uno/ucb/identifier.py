@@ -61,9 +61,11 @@ from .unotool import parseDateTime
 from .content import Content
 from .contenttools import getContentInfo
 
-from .logger import logMessage
-from .logger import getMessage
-g_message = 'identifier'
+from .logger import getLogger
+
+from .configuration import g_defaultlog
+
+g_basename = 'identifier'
 
 import binascii
 import traceback
@@ -87,8 +89,8 @@ class Identifier(unohelper.Base,
         else:
             self.MetaData = KeyMap()
             self._initialized = False
-        msg = getMessage(self._ctx, g_message, 101)
-        logMessage(self._ctx, INFO, msg, "Identifier", "__init__()")
+        self._logger = getLogger(ctx, g_defaultlog, g_basename)
+        self._logger.logprb(INFO, 'Identifier', '__init__()', 101)
 
     @property
     def Id(self):
@@ -122,7 +124,7 @@ class Identifier(unohelper.Base,
             parent = Identifier(self._ctx, self._factory, self.User, self.ParentURI, True)
         return parent
     def setParent(self, parent):
-        msg = getMessage(self._ctx, g_message, 111)
+        msg = self._logger.resolveString(111)
         raise NoSupportException(msg, self)
 
     # XRestIdentifier
@@ -131,7 +133,7 @@ class Identifier(unohelper.Base,
 
     def initialize(self, database):
         if self.User is None:
-            msg = getMessage(self._ctx, g_message, 121, self.getContentIdentifier())
+            msg = self._logger.resolveString(121, self.getContentIdentifier())
             raise IllegalIdentifierException(msg, self)
         if not self.User.isInitialized():
             self.User.initialize(database)
@@ -143,7 +145,7 @@ class Identifier(unohelper.Base,
 
     def getContent(self):
         if not self.isValid():
-            msg = getMessage(self._ctx, g_message, 121, self.getContentIdentifier())
+            msg = self._logger.resolveString(121, self.getContentIdentifier())
             raise IllegalIdentifierException(msg, self)
         if self._content is None:
             self._content = Content(self._ctx, self)
@@ -171,8 +173,7 @@ class Identifier(unohelper.Base,
             try:
                 sf.writeFile(url, stream)
             except Exception as e:
-                msg = getMessage(self._ctx, g_message, 131, e, traceback.print_exc())
-                logMessage(self._ctx, SEVERE, msg, "Identifier", "getDocumentContent()")
+                self._logger.logprb(SEVERE, 'Identifier', 'getDocumentContent()', 131, e, traceback.print_exc())
             else:
                 size = sf.getSize(url)
                 loaded = self.User.DataBase.updateLoaded(self.User.Id, self.Id, OFFLINE, ONLINE)
@@ -226,7 +227,7 @@ class Identifier(unohelper.Base,
         uripath = self._uri.getPath().strip('/.')
         itemid, parentid, path = self.User.DataBase.getIdentifier(self.User.Id, self.User.RootId, uripath)
         if itemid is None:
-            msg = getMessage(self._ctx, g_message, 151, self.getContentIdentifier())
+            msg = self._logger.resolveString(151, self.getContentIdentifier())
             raise IllegalIdentifierException(msg, self)
         metadata = KeyMap()
         if self.IsNew:
@@ -283,8 +284,7 @@ class Identifier(unohelper.Base,
 
     def _getFolderContent(self, content, updated):
         if ONLINE == content.getValue('Loaded') == self.User.Provider.SessionMode:
-            msg = getMessage(self._ctx, g_message, 141, self.getContentIdentifier())
-            logMessage(self._ctx, INFO, msg, "Identifier", "_getFolderContent()")
+            self._logger.logprb(INFO, 'Identifier', '_getFolderContent()', 141, self.getContentIdentifier())
             updated = self.User.DataBase.updateFolderContent(self.User, content)
         url = self.getContentIdentifier()
         if not url.endswith('/'):

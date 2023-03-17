@@ -90,10 +90,7 @@ class DialogHandler(unohelper.Base,
     def callHandlerMethod(self, dialog, event, method):
         try:
             handled = False
-            if method == 'RefreshLog':
-                self._manager.updateLogger()
-                handled = True
-            elif method == 'LogInfo':
+            if method == 'LogInfo':
                 self._manager.logInfos()
                 handled = True
             return handled
@@ -102,8 +99,7 @@ class DialogHandler(unohelper.Base,
             print(msg)
 
     def getSupportedMethodNames(self):
-        return ('RefreshLog',
-                'LogInfo')
+        return ('LogInfo', )
 
 
 class PoolListener(unohelper.Base,

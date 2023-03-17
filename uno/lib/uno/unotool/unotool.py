@@ -31,6 +31,8 @@ import uno
 
 from com.sun.star.awt import Rectangle
 
+from com.sun.star.beans.PropertyState import DIRECT_VALUE
+
 from com.sun.star.connection import NoConnectException
 
 from com.sun.star.document.MacroExecMode import ALWAYS_EXECUTE_NO_WARN
@@ -328,7 +330,7 @@ def getPropertyValueSet(kwargs):
         properties.append(getPropertyValue(key, value))
     return tuple(properties)
 
-def getPropertyValue(name, value, state=0, handle=-1):
+def getPropertyValue(name, value, state=DIRECT_VALUE, handle=-1):
     property = uno.createUnoStruct('com.sun.star.beans.PropertyValue')
     property.Name = name
     property.Handle = handle

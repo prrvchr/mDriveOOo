@@ -48,7 +48,8 @@ from .unotool import getPropertyValueSet
 from .contenttools import getCommand
 from .contenttools import getContentEvent
 from .contenttools import getInteractiveAugmentedIOException
-from .logger import logMessage
+
+from .logger import getLogger
 
 
 def getPropertiesValues(ctx, source, properties):
@@ -65,7 +66,7 @@ def getPropertiesValues(ctx, source, properties):
         else:
             msg = "ERROR: Requested property: %s is not available" % property.Name
             level = SEVERE
-        logMessage(ctx, level, msg, source.__class__.__name__, 'getPropertiesValues()')
+        getLogger(ctx).logp(level, source.__class__.__name__, 'getPropertiesValues()', msg)
         namedvalues.append(getNamedValue(property.Name, value))
     return tuple(namedvalues)
 
@@ -81,7 +82,7 @@ def setPropertiesValues(ctx, source, context, properties):
             level = SEVERE
             error = UnknownPropertyException(msg, source)
             result = uno.Any('com.sun.star.beans.UnknownPropertyException', error)
-        logMessage(ctx, level, msg, source.__class__.__name__, 'setPropertiesValues()')
+        getLogger(ctx).logp(level, source.__class__.__name__, 'setPropertiesValues()', msg)
         results.append(result)
     return tuple(results)
 

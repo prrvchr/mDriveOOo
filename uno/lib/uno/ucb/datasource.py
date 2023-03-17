@@ -59,8 +59,8 @@ from .identifier import Identifier
 from .replicator import Replicator
 from .database import DataBase
 
-from .logger import logMessage
-from .logger import getMessage
+from .logger import getLogger
+
 g_message = 'datasource'
 
 import traceback
@@ -90,7 +90,8 @@ class DataSource(unohelper.Base,
         self.Provider.initialize(scheme, plugin, folder, link)
         self.Replicator = Replicator(ctx, datasource, self.Provider, self._users, self._sync)
         msg += "Done"
-        logMessage(self._ctx, INFO, msg, 'DataSource', '__init__()')
+        self._logger = getLogger(ctx)
+        self._logger.logp(INFO, 'DataSource', '__init__()', msg)
         print("DataSource.__init__() 4")
 
     # XCloseListener
@@ -101,7 +102,7 @@ class DataSource(unohelper.Base,
         #self.deregisterInstance(self.Scheme, self.Plugin)
         self.DataBase.shutdownDataBase(self.Replicator.fullPull())
         msg = "DataSource queryClosing: Scheme: %s ... Done" % self.Provider.Scheme
-        logMessage(self._ctx, INFO, msg, 'DataSource', 'queryClosing()')
+        self._logger.logp(INFO, 'DataSource', 'queryClosing()', msg)
         print(msg)
     def notifyClosing(self, source):
         pass
