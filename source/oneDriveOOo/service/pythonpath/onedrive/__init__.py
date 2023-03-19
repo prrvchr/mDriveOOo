@@ -72,5 +72,5 @@ from .configuration import g_link
 from .configuration import g_doc_map
 
 from .configuration import g_basename
-from .configuration import g_driverlog
+from .configuration import g_defaultlog
 

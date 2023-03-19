@@ -53,8 +53,8 @@ from onedrive import getLogger
 
 from onedrive import g_scheme
 from onedrive import g_identifier
+from onedrive import g_defaultlog
 from onedrive import g_basename
-from onedrive import g_driverlog
 
 g_proxy = 'com.sun.star.ucb.ContentProviderProxy'
 
@@ -77,7 +77,7 @@ class ContentProviderProxy(unohelper.Base,
         self.plugin = ''
         self.replace = True
         msg += " Done"
-        self._logger = getLogger(ctx, g_driverlog, g_basename)
+        self._logger = getLogger(ctx, g_defaultlog, g_basename)
         self._logger.logp(INFO, 'ContentProviderProxy', '__init__()', msg)
         print('ContentProviderProxy.__init__()')
 

@@ -65,7 +65,10 @@ g_admin = False
 
 # Resource strings files folder
 g_resource = 'resource'
+# Logging required global variable
 g_basename = 'contentprovider'
-g_driverlog = 'DriverLogger'
+g_defaultlog = 'oneDriveLogger'
+g_errorlog = 'oneDriveError'
+# Logging global variable
 g_synclog = 'SyncLogger'
-g_errorlog = 'gDriveError'
+
