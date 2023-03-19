@@ -69,6 +69,7 @@ class LogModel(LogController):
             if self._default not in names:
                 names = list(names)
                 names.insert(0, self._default)
+                names = tuple(names)
         else:
             names = (self._default, )
         return names

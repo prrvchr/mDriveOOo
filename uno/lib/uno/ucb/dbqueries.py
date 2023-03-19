@@ -379,88 +379,9 @@ def getSqlQuery(ctx, name, format=None):
     elif name == 'getToken':
         query = 'SELECT "Token" FROM "Users" WHERE "UserId" = ?;'
 
-# System Time Period Select Queries
-    elif name == 'getSyncItems':
-        c0 = '"ParentId"'
-        c1 = '"UserName"'
-        c2 = '"Id"'
-        c3 = '"Title"'
-        c4 = '"DateCreated"'
-        c5 = '"DateModified"'
-        c6 = '"MediaType"'
-        c7 = '"Size"'
-        c8 = '"Trashed"'
-        c9 = 'GROUP_CONCAT(%s SEPARATOR \'","\') %s' % (c0, c0)
-        c10 = '"TimeStamp"'
-        c11 = '"TitleUpdated"'
-        c12 = '"SizeUpdated"'
-        c13 = '"TrashedUpdated"'
-        c14 = 'EVERY("AtRoot") "AtRoot"'
-        c15 = '"Users"."RootId" = "Parents"."ItemId" "AtRoot"'
-        c101 = '"Users".%s %s' % (c1, c1)
-        c102 = '"Items"."ItemId" %s' % c2
-        c103 = '"Items".%s' % c3
-        c104 = '"Items".%s' % c4
-        c105 = '"Items".%s' % c5
-        c106 = '"Items".%s' % c6
-        c107 = '"Items".%s' % c7
-        c108 = '"Items".%s' % c8
-        c109 = '"Parents"."ItemId" %s' % c0
-        c110 = '"Before".%s %s' % (c10, c10)
-        c111 = '"Items".%s <> "Before".%s %s' % (c3, c3, c11)
-        c112 = '"Items".%s <>  "Before".%s AND "Before".%s = 0 %s' % (c7, c7, c7, c12)
-        c113 = '"Items".%s <>  "Before".%s %s' % (c8,c8, c13)
-        c210 = '"Previous".%s %s' % (c10, c10)
-        c211 = 'TRUE %s' % c11
-        c212 = 'TRUE %s' % c12
-        c213 = 'TRUE %s' % c13
-        columns0 = ','.join((c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14))
-        columns1 = ','.join((c101,c102,c103,c104,c105,c106,c107,c108,c109,c110,c111,c112,c113,c15))
-        columns2 = ','.join((c101,c102,c103,c104,c105,c106,c107,c108,c109,c210,c211,c212,c213,c15))
-        groups = ','.join((c1,c2,c3,c4,c5,c6,c7,c8,c10,c11,c12,c13))
-        query = '''\
-SELECT %s FROM
-((SELECT %s FROM "Items"
-INNER JOIN
-"Capabilities" FOR SYSTEM_TIME AS OF ? + SESSION_TIMEZONE() AS "Current"
-ON "Items"."ItemId" = "Current"."ItemId"
-INNER JOIN
-"Parents"
-ON "Current"."UserId" = "Parents"."UserId" AND "Current"."ItemId" = "Parents"."ChildId"
-INNER JOIN 
-"Users" 
-ON "Parents"."UserId" = "Users"."UserId" 
-INNER JOIN
-"Capabilities" FOR SYSTEM_TIME FROM ? + SESSION_TIMEZONE() TO ? + SESSION_TIMEZONE() AS "Previous"
-ON "Current"."UserId" = "Previous"."UserId" AND "Current"."ItemId" = "Previous"."ItemId"
-AND "Current"."RowStart" = "Previous"."RowEnd"
-LEFT JOIN
-"Items" FOR SYSTEM_TIME FROM ? + SESSION_TIMEZONE() TO ? + SESSION_TIMEZONE() AS "After"
-ON "Previous"."ItemId" = "After"."ItemId"
-LEFT JOIN
-"Items" FOR SYSTEM_TIME FROM ? + SESSION_TIMEZONE() TO ? + SESSION_TIMEZONE() AS "Before"
-ON "After"."ItemId" = "Before"."ItemId" AND "After"."RowStart" = "Before"."RowEnd")
-UNION 
-(SELECT %s FROM "Items"
-INNER JOIN
-"Capabilities" FOR SYSTEM_TIME AS OF ? + SESSION_TIMEZONE() AS "Current"
-ON "Items"."ItemId" = "Current"."ItemId"
-INNER JOIN
-"Parents"
-ON "Current"."UserId" = "Parents"."UserId" AND "Current"."ItemId" = "Parents"."ChildId"
-INNER JOIN 
-"Users" 
-ON "Parents"."UserId" = "Users"."UserId" 
-LEFT JOIN
-"Capabilities" FOR SYSTEM_TIME AS OF ? + SESSION_TIMEZONE() AS "Previous"
-ON "Current"."UserId" = "Previous"."UserId" AND "Current"."ItemId" = "Previous"."ItemId"
-WHERE "Previous"."UserId" IS NULL AND "Previous"."ItemId" IS NULL))
-GROUP BY %s
-ORDER BY "TimeStamp";''' % (columns0, columns1, columns2, groups)
-
 # Insert Queries
     elif name == 'insertUser':
-        c = '"UserName","DisplayName","RootId","TimeStamp","UserId"'
+        c = '"UserName", "DisplayName", "RootId", "TimeStamp", "UserId"'
         query = 'INSERT INTO "Users" (%s) VALUES (?,?,?,?,?);' % c
     elif name == 'insertNewIdentifier':
         query = 'INSERT INTO "Identifiers"("UserId","ItemId")VALUES(?,?);'
@@ -541,17 +462,63 @@ CREATE PROCEDURE "GetIdentifier"(IN "UserId" VARCHAR(100),
     SET "ItemId" = "Item";
     SET "BaseUri" = "Uri";
   END;
-  GRANT EXECUTE ON SPECIFIC ROUTINE "GetIdentifier_1" TO "%(Role)s";''' % format
+GRANT EXECUTE ON SPECIFIC ROUTINE "GetIdentifier_1" TO "%(Role)s";''' % format
+
+# System Time Period Procedure Queries
+    elif name == 'createGetSyncItems':
+        query = '''\
+CREATE PROCEDURE "GetSyncItems"(IN "Start" TIMESTAMP(9) WITH TIME ZONE,
+                                IN "Stop" TIMESTAMP(9) WITH TIME ZONE)
+  SPECIFIC "GetSyncItems_1"
+  READS SQL DATA
+  DYNAMIC RESULT SETS 1
+  BEGIN ATOMIC
+    DECLARE "Result" CURSOR WITH RETURN FOR
+    SELECT "UserName", "Id", "Title", "DateCreated", "DateModified", "MediaType", "Size", "Trashed",
+        GROUP_CONCAT("ParentId" SEPARATOR '","') "ParentId", "TimeStamp", "TitleUpdated", "SizeUpdated",
+        "TrashedUpdated", EVERY("AtRoot") "AtRoot" FROM
+    ((SELECT  "Users"."UserName" "UserName", "Items"."ItemId" "Id", "Items"."Title",
+        "Items"."DateCreated", "Items"."DateModified", "Items"."MediaType", "Items"."Size",
+        "Items"."Trashed", "Parents"."ItemId" "ParentId",
+        "Before"."TimeStamp" "TimeStamp",
+        "Items"."Title" <> "Before"."Title" "TitleUpdated",
+        "Items"."Size" <> "Before"."Size" AND "Before"."Size" = 0 "SizeUpdated",
+        "Items"."Trashed" <> "Before"."Trashed" "TrashedUpdated",
+        "Users"."RootId" = "Parents"."ItemId" "AtRoot"FROM "Items"
+    INNER JOIN "Capabilities" FOR SYSTEM_TIME AS OF "Stop" AS "Current" ON "Items"."ItemId" = "Current"."ItemId"
+    INNER JOIN "Parents" ON "Current"."UserId" = "Parents"."UserId" AND "Current"."ItemId" = "Parents"."ChildId"
+    INNER JOIN "Users" ON "Parents"."UserId" = "Users"."UserId" 
+    INNER JOIN "Capabilities" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS "Previous" ON "Current"."UserId" = "Previous"."UserId"
+     AND "Current"."ItemId" = "Previous"."ItemId" AND "Current"."RowStart" = "Previous"."RowEnd"
+    LEFT JOIN "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS "After" ON "Previous"."ItemId" = "After"."ItemId"
+    LEFT JOIN "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS "Before" ON "After"."ItemId" = "Before"."ItemId" AND "After"."RowStart" = "Before"."RowEnd")
+    UNION 
+    (SELECT "Users"."UserName" "UserName", "Items"."ItemId" "Id", "Items"."Title",
+        "Items"."DateCreated", "Items"."DateModified", "Items"."MediaType", "Items"."Size",
+        "Items"."Trashed", "Parents"."ItemId" "ParentId",
+        "Previous"."TimeStamp" "TimeStamp", TRUE "TitleUpdated", TRUE "SizeUpdated", TRUE "TrashedUpdated",
+        "Users"."RootId" = "Parents"."ItemId" "AtRoot" FROM "Items"
+    INNER JOIN "Capabilities" FOR SYSTEM_TIME AS OF "Stop" AS "Current" ON "Items"."ItemId" = "Current"."ItemId"
+    INNER JOIN "Parents" ON "Current"."UserId" = "Parents"."UserId" AND "Current"."ItemId" = "Parents"."ChildId"
+    INNER JOIN "Users" ON "Parents"."UserId" = "Users"."UserId" 
+    LEFT JOIN "Capabilities" FOR SYSTEM_TIME AS OF "Start" AS "Previous" ON "Current"."UserId" = "Previous"."UserId" AND "Current"."ItemId" = "Previous"."ItemId"
+    WHERE "Previous"."UserId" IS NULL AND "Previous"."ItemId" IS NULL))
+    GROUP BY "UserName", "Id", "Title", "DateCreated", "DateModified", "MediaType",
+        "Size", "Trashed", "TimeStamp", "TitleUpdated", "SizeUpdated", "TrashedUpdated"
+    ORDER BY "TimeStamp" FOR READ ONLY;
+    OPEN "Result";
+  END;
+GRANT EXECUTE ON SPECIFIC ROUTINE "GetSyncItems_1" TO "%(Role)s";''' % format
 
     elif name == 'createMergeItem':
         query = '''\
 CREATE PROCEDURE "MergeItem"(IN "UserId" VARCHAR(100),
                              IN "Loaded" SMALLINT,
-                             IN "TimeStamp" TIMESTAMP(6),
+                             IN "TimeStamp" TIMESTAMP(9) WITH TIME ZONE,
                              IN "ItemId" VARCHAR(100),
                              IN "Title" VARCHAR(100),
-                             IN "DateCreated" TIMESTAMP(6),
-                             IN "DateModified" TIMESTAMP(6),
+                             IN "DateCreated" TIMESTAMP(9),
+                             IN "DateModified" TIMESTAMP(9),
                              IN "MediaType" VARCHAR(100),
                              IN "Size" BIGINT,
                              IN "Trashed" BOOLEAN,
@@ -588,17 +555,17 @@ CREATE PROCEDURE "MergeItem"(IN "UserId" VARCHAR(100),
       SET "Index" = "Index" + 1;
     END WHILE;
   END;
-  GRANT EXECUTE ON SPECIFIC ROUTINE "MergeItem_1" TO "%(Role)s";''' % format
+GRANT EXECUTE ON SPECIFIC ROUTINE "MergeItem_1" TO "%(Role)s";''' % format
 
     elif name == 'createInsertItem':
         query = '''\
 CREATE PROCEDURE "InsertItem"(IN "UserId" VARCHAR(100),
                               IN "Loaded" SMALLINT,
-                              IN "TimeStamp" TIMESTAMP(6),
+                              IN "TimeStamp" TIMESTAMP(9) WITH TIME ZONE,
                               IN "ItemId" VARCHAR(100),
                               IN "Title" VARCHAR(100),
-                              IN "DateCreated" TIMESTAMP(6),
-                              IN "DateModified" TIMESTAMP(6),
+                              IN "DateCreated" TIMESTAMP(9),
+                              IN "DateModified" TIMESTAMP(9),
                               IN "MediaType" VARCHAR(100),
                               IN "Size" BIGINT,
                               IN "Trashed" BOOLEAN,
@@ -619,11 +586,13 @@ CREATE PROCEDURE "InsertItem"(IN "UserId" VARCHAR(100),
     INSERT INTO "Parents" ("UserId","ChildId","ItemId","TimeStamp") VALUES ("UserId","ItemId",
       "Parents","TimeStamp");
   END;
-  GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
+GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
 
 # Get Procedure Query
     elif name == 'getIdentifier':
         query = 'CALL "GetIdentifier"(?,?,?,?,?,?,?)'
+    elif name == 'getSyncItems':
+        query = 'CALL "GetSyncItems"(?,?)'
     elif name == 'mergeItem':
         query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'insertItem':

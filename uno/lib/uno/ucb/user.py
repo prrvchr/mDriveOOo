@@ -127,7 +127,7 @@ class User(unohelper.Base,
             identifier = self._identifiers[url]
         else:
             identifier = Identifier(self._ctx, factory, self, url)
-            self._identifiers[url] = identifier
+            #self._identifiers[url] = identifier
         return identifier
     def clearIdentifier(self, url):
         if url in self._identifiers:

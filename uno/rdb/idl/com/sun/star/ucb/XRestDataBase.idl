@@ -34,8 +34,8 @@
 #include <com/sun/star/sdbc/XConnection.idl>
 #include <com/sun/star/sdbc/XPreparedStatement.idl>
 #include <com/sun/star/ucb/XRestProvider.idl>
-#include <com/sun/star/util/DateTime.idl>
 #include <com/sun/star/beans/Optional.idl>
+#include <io/github/prrvchr/css/util/DateTimeWithTimezone.idl>
 
 module com { module sun { module star { module ucb {
 
@@ -68,15 +68,15 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     ::com::sun::star::auth::XRestKeyMap getIdentifier([in] ::com::sun::star::uno::XInterface User,
                                                       [in] ::com::sun::star::uri::XUriReference Uri,
                                                       [in] boolean New);
-    sequence<::com::sun::star::auth::XRestKeyMap> getPushItems([in] ::com::sun::star::util::DateTime Start,
-                                                               [in] ::com::sun::star::util::DateTime End);
+    sequence<::com::sun::star::auth::XRestKeyMap> getPushItems([in] ::io::github::prrvchr::css::util::DateTimeWithTimezone Start,
+                                                               [in] ::io::github::prrvchr::css::util::DateTimeWithTimezone End);
 
     boolean updateToken([in] string UserId,
                         [in] string Token);
     void updateContent([in] string ItemId,
                        [in] string Property,
                        [in] any Value);
-    void updateUserTimeStamp([in] ::com::sun::star::util::DateTime TimeStamp,
+    void updateUserTimeStamp([in] ::io::github::prrvchr::css::util::DateTimeWithTimezone TimeStamp,
                              [in] any UserId);
 
 
@@ -100,14 +100,14 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     ::com::sun::star::sdbc::XPreparedStatement getFirstPullCall([in] string UserId,
                                                                 [in] string Separator,
                                                                 [in] boolean Loaded,
-                                                                [in] ::com::sun::star::util::DateTime TimeStamp);
+                                                                [in] ::io::github::prrvchr::css::util::DateTimeWithTimezone TimeStamp);
     short setFirstPullCall([in] ::com::sun::star::sdbc::XPreparedStatement Call,
                            [in] ::com::sun::star::ucb::XRestProvider Provider,
                            [in] ::com::sun::star::auth::XRestKeyMap Item,
                            [in] string ItemId,
                            [in] sequence<string> Parents,
                            [in] string Separator,
-                           [in] ::com::sun::star::util::DateTime TimeStamp);
+                           [in] ::io::github::prrvchr::css::util::DateTimeWithTimezone TimeStamp);
 
     [attribute, readonly] ::com::sun::star::sdbc::XConnection Connection;
 

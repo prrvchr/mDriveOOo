@@ -425,7 +425,7 @@ public class UnoHelper
             value.Hours = (short) time.getHour();
             value.Minutes = (short) time.getMinute();
             value.Seconds = (short) time.getSecond();
-            value.NanoSeconds = time.getNano();
+            //value.NanoSeconds = time.getNano();
             //value.HundredthSeconds = 0;
         }
         return value;
@@ -441,7 +441,7 @@ public class UnoHelper
             value.Hours = (short) datetime.getHour();
             value.Minutes = (short) datetime.getMinute();
             value.Seconds = (short) datetime.getSecond();
-            value.NanoSeconds = datetime.getNano();
+            //value.NanoSeconds = datetime.getNano();
             //value.HundredthSeconds = 0;
         }
         return value;
@@ -484,7 +484,8 @@ public class UnoHelper
 
     public static java.time.LocalTime getJavaLocalTime(com.sun.star.util.Time time)
     {
-        return java.time.LocalTime.of(time.Hours, time.Minutes, time.Seconds, time.NanoSeconds);
+        //return java.time.LocalTime.of(time.Hours, time.Minutes, time.Seconds, time.NanoSeconds);
+        return java.time.LocalTime.of(time.Hours, time.Minutes, time.Seconds);
     }
 
     public static java.time.LocalTime getJavaLocalTime(Time time)
@@ -494,7 +495,8 @@ public class UnoHelper
 
     public static java.time.LocalDateTime getJavaLocalDateTime(com.sun.star.util.DateTime timestamp)
     {
-        return java.time.LocalDateTime.of(timestamp.Year, timestamp.Month, timestamp.Day, timestamp.Hours, timestamp.Minutes, timestamp.Seconds, timestamp.NanoSeconds);
+        //return java.time.LocalDateTime.of(timestamp.Year, timestamp.Month, timestamp.Day, timestamp.Hours, timestamp.Minutes, timestamp.Seconds, timestamp.NanoSeconds);
+        return java.time.LocalDateTime.of(timestamp.Year, timestamp.Month, timestamp.Day, timestamp.Hours, timestamp.Minutes, timestamp.Seconds);
     }
 
     public static java.time.LocalDateTime getJavaLocalDateTime(DateTime timestamp)

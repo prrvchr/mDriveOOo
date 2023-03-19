@@ -53,7 +53,7 @@ from .logger import getLogger
 
 
 def getPropertiesValues(ctx, source, properties):
-    namedvalues = []
+    values = []
     for property in properties:
         value = None
         if all((hasattr(property, 'Name'),
@@ -67,8 +67,8 @@ def getPropertiesValues(ctx, source, properties):
             msg = "ERROR: Requested property: %s is not available" % property.Name
             level = SEVERE
         getLogger(ctx).logp(level, source.__class__.__name__, 'getPropertiesValues()', msg)
-        namedvalues.append(getNamedValue(property.Name, value))
-    return tuple(namedvalues)
+        values.append(getNamedValue(property.Name, value))
+    return tuple(values)
 
 def setPropertiesValues(ctx, source, context, properties):
     results = []

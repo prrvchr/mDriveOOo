@@ -39,8 +39,9 @@ from com.sun.star.rest import HTTPException
 from com.sun.star.rest.HTTPStatusCode import BAD_REQUEST
 
 from .unotool import getConfiguration
-from .unotool import parseDateTime
-from .unotool import unparseDateTime
+
+from .dbtool import currentDateTimeInTZ
+from .dbtool import getDateTimeInTZToString
 
 from .database import DataBase
 from .user import User
@@ -92,7 +93,7 @@ class Replicator(unohelper.Base,
         try:
             msg = "Replicator for Scheme: %s loading ... " % self.Provider.Scheme
             print("Replicator.run() 1 *************************************************************")
-            self._logger.log(INFO, 'Replicator', 'run()', 'stage 1')
+            self._logger.logp(INFO, 'Replicator', 'run()', 'stage 1')
             print("Replicator run() 2")
             while not self._canceled:
                 self._sync.wait(self._getReplicateTimeout())
@@ -108,7 +109,7 @@ class Replicator(unohelper.Base,
         if self.Provider.isOffLine():
             self._logger.logprb(INFO, 'Replicator', '_synchronize()', 101)
         elif not self._canceled:
-            timestamp = parseDateTime()
+            timestamp = currentDateTimeInTZ()
             self._syncData(timestamp)
 
     def _syncData(self, timestamp):
@@ -120,7 +121,7 @@ class Replicator(unohelper.Base,
                 print("Replicator.synchronize() 2")
                 if self._canceled:
                     break
-                self._logger.logprb(INFO, 'Replicator', '_syncData()', 111, user.Name, unparseDateTime(timestamp))
+                self._logger.logprb(INFO, 'Replicator', '_syncData()', 111, user.Name, getDateTimeInTZToString(timestamp))
                 # In order to make the creation of files or directories possible quickly,
                 # it is necessary to run the verification of the identifiers first.
                 self._checkNewIdentifier(user)
@@ -135,7 +136,7 @@ class Replicator(unohelper.Base,
                 if user.Token:
                     print("Replicator.synchronize() 5")
                     results += self._pullData(user)
-                self._logger.logprb(INFO, 'Replicator', '_syncData()', 112, user.Name, unparseDateTime())
+                self._logger.logprb(INFO, 'Replicator', '_syncData()', 112, user.Name, getDateTimeInTZToString())
             if all(results):
                 results += self._pushData(start)
             print("Replicator.synchronize() 6 %s" % (results, ))
@@ -189,7 +190,7 @@ class Replicator(unohelper.Base,
             print("Replicator._pushData() 1")
             results = []
             operations = {'TitleUpdated': [], 'SizeUpdated': [], 'TrashedUpdated': []}
-            end = parseDateTime()
+            end = currentDateTimeInTZ()
             for item in self.DataBase.getPushItems(start, end):
                 user = self._users.get(item.getValue('UserName'), None)
                 if user is None:
@@ -229,7 +230,7 @@ class Replicator(unohelper.Base,
         user.CanAddChild = True
 
     def _firstPull(self, user):
-        start = parseDateTime()
+        start = currentDateTimeInTZ()
         rootid = user.RootId
         call = self.DataBase.getFirstPullCall(user.Id, 1, start)
         orphans, pages, rows, count, token = self._getFirstPull(call, user.Provider, user.Request, rootid, start)
@@ -239,7 +240,7 @@ class Replicator(unohelper.Base,
             call.executeBatch()
         call.close()
         user.Provider.updateDrive(self.DataBase, user.MetaData, token)
-        end = parseDateTime()
+        end = currentDateTimeInTZ()
         self.DataBase.updateUserTimeStamp(end, user.Id)
         return rejected, pages, rows, count, end
 
@@ -309,7 +310,7 @@ class Replicator(unohelper.Base,
                 if user.Provider.isFolder(mediatype):
                     response = user.Provider.createFolder(user.Request, item)
                     result = self.callBack(user, item.getValue('BaseURI'), itemid, response)
-                    timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                    timestamp = getDateTimeInTZToString(item.getValue('TimeStamp'))
                     self._logger.logprb(INFO, 'Replicator', '_pushItem()', 131, item.getValue('Title'), timestamp)
                 elif user.Provider.isLink(mediatype):
                     pass
@@ -317,26 +318,26 @@ class Replicator(unohelper.Base,
                     if user.Provider.createFile(user.Request, uploader, item):
                         if self._needPush('SizeUpdated', itemid, operations):
                             result = user.Provider.uploadFile(uploader, user, item, True)
-                        timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                        timestamp = getDateTimeInTZToString(item.getValue('TimeStamp'))
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 132, item.getValue('Title'), timestamp)
             # UPDATE procedures, only a few properties are synchronized: (Size, Title, Trashed)
             elif self._needPush('TitleUpdated', itemid, operations, item):
                 result = user.Provider.updateTitle(user.Request, item)
-                timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                timestamp = getDateTimeInTZToString(item.getValue('TimeStamp'))
                 self._logger.logprb(INFO, 'Replicator', '_pushItem()', 133, item.getValue('Title'), timestamp)
             elif self._needPush('SizeUpdated', itemid, operations, item):
                 result = user.Provider.uploadFile(uploader, user, item, False)
-                timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                timestamp = getDateTimeInTZToString(item.getValue('TimeStamp'))
                 self._logger.logprb(INFO, 'Replicator', '_pushItem()', 134, item.getValue('Title'), timestamp, item.getValue('Size'))
             elif self._needPush('TrashedUpdated', itemid, operations, item):
                 result = user.Provider.updateTrashed(user.Request, item)
-                timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                timestamp = getDateTimeInTZToString(item.getValue('TimeStamp'))
                 self._logger.logprb(INFO, 'Replicator', '_pushItem()', 135, item.getValue('Title'), timestamp)
             else:
                 # UPDATE of other properties (TimeStamp...)
                 print("Replicator._pushItem() Update None")
             if not result:
-                timestamp = unparseDateTime(item.getValue('TimeStamp'))
+                timestamp = getDateTimeInTZToString(item.getValue('TimeStamp'))
                 self._logger.logprb(SEVERE, 'Replicator', '_pushItem()', 136, item.getValue('Title'), timestamp, item.getValue('Id'))
             return result
         except Exception as e:

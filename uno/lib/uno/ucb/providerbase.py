@@ -49,9 +49,10 @@ from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
 from .unolib import KeyMap
 
-from .unotool import parseDateTime
 from .unotool import getResourceLocation
 from .unotool import getConnectionMode
+
+from .dbtool import getDateTimeFromString
 
 import datetime
 import traceback
@@ -152,7 +153,7 @@ class ProviderBase(ProviderObject,
 
     # Base method
     def parseDateTime(self, timestamp, format='%Y-%m-%dT%H:%M:%S.%fZ'):
-        return parseDateTime(timestamp, format)
+        return getDateTimeFromString(timestamp, format)
     def isOnLine(self):
         self.SessionMode = getConnectionMode(self._ctx, self.Host)
         return  self.SessionMode != OFFLINE

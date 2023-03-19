@@ -135,6 +135,7 @@ class DataSource(unohelper.Base,
             name = getOAuth2UserName(self._ctx, self, uri.getScheme())
         # User never change... we can cache it...
         if name is None:
+            print("DataSource._getIdentifiers() Error **************************************************")
             user = None
         elif name in self._users:
             user = self._users[name]

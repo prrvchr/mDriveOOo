@@ -37,6 +37,8 @@
 #include <com/sun/star/sdbc/XConnection.idl>
 #include <com/sun/star/beans/Optional.idl>
 #include <com/sun/star/util/DateTime.idl>
+#include <io/github/prrvchr/css/util/DateTimeWithTimezone.idl>
+
 
 module com { module sun { module star { module ucb {
 
@@ -102,9 +104,9 @@ interface XRestProvider: com::sun::star::uno::XInterface
     string getRootId([in] ::com::sun::star::auth::XRestKeyMap Root);
     string getRootTitle([in] ::com::sun::star::auth::XRestKeyMap Root);
     ::com::sun::star::util::DateTime getRootCreated([in] ::com::sun::star::auth::XRestKeyMap Root,
-                                                    [in] ::com::sun::star::util::DateTime TimeStamp);
+                                                    [in] ::io::github::prrvchr::css::util::DateTimeWithTimezone TimeStamp);
     ::com::sun::star::util::DateTime getRootModified([in] ::com::sun::star::auth::XRestKeyMap Root,
-                                                     [in] ::com::sun::star::util::DateTime TimeStamp);
+                                                     [in] ::io::github::prrvchr::css::util::DateTimeWithTimezone TimeStamp);
     string getRootMediaType([in] ::com::sun::star::auth::XRestKeyMap Root);
     hyper getRootSize([in] ::com::sun::star::auth::XRestKeyMap Root);
     boolean getRootTrashed([in] ::com::sun::star::auth::XRestKeyMap Root);
@@ -116,9 +118,9 @@ interface XRestProvider: com::sun::star::uno::XInterface
     string getItemId([in] ::com::sun::star::auth::XRestKeyMap Item);
     string getItemTitle([in] ::com::sun::star::auth::XRestKeyMap Item);
     ::com::sun::star::util::DateTime getItemCreated([in] ::com::sun::star::auth::XRestKeyMap Item,
-                                                    [in] ::com::sun::star::util::DateTime TimeStamp);
+                                                    [in] ::io::github::prrvchr::css::util::DateTimeWithTimezone TimeStamp);
     ::com::sun::star::util::DateTime getItemModified([in] ::com::sun::star::auth::XRestKeyMap Item,
-                                                     [in] ::com::sun::star::util::DateTime TimeStamp);
+                                                     [in] ::io::github::prrvchr::css::util::DateTimeWithTimezone TimeStamp);
     string getItemMediaType([in] ::com::sun::star::auth::XRestKeyMap Item);
     hyper getItemSize([in] ::com::sun::star::auth::XRestKeyMap Item);
     boolean getItemTrashed([in] ::com::sun::star::auth::XRestKeyMap Item);

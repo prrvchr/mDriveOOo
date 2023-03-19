@@ -34,35 +34,37 @@ from com.sun.star.sdbc import SQLWarning
 
 from com.sun.star.sdb.CommandType import TABLE
 
-from com.sun.star.sdbc.DataType import BIT
-from com.sun.star.sdbc.DataType import TINYINT
-from com.sun.star.sdbc.DataType import SMALLINT
-from com.sun.star.sdbc.DataType import INTEGER
-from com.sun.star.sdbc.DataType import BIGINT
-from com.sun.star.sdbc.DataType import FLOAT
-from com.sun.star.sdbc.DataType import REAL
-from com.sun.star.sdbc.DataType import DOUBLE
-from com.sun.star.sdbc.DataType import NUMERIC
-from com.sun.star.sdbc.DataType import DECIMAL
-from com.sun.star.sdbc.DataType import CHAR
-from com.sun.star.sdbc.DataType import VARCHAR
-from com.sun.star.sdbc.DataType import LONGVARCHAR
-from com.sun.star.sdbc.DataType import DATE
-from com.sun.star.sdbc.DataType import TIME
-from com.sun.star.sdbc.DataType import TIMESTAMP
-from com.sun.star.sdbc.DataType import BINARY
-from com.sun.star.sdbc.DataType import VARBINARY
-from com.sun.star.sdbc.DataType import LONGVARBINARY
-from com.sun.star.sdbc.DataType import SQLNULL
-from com.sun.star.sdbc.DataType import OTHER
-from com.sun.star.sdbc.DataType import OBJECT
-from com.sun.star.sdbc.DataType import DISTINCT
-from com.sun.star.sdbc.DataType import STRUCT
-from com.sun.star.sdbc.DataType import ARRAY
-from com.sun.star.sdbc.DataType import BLOB
-from com.sun.star.sdbc.DataType import CLOB
-from com.sun.star.sdbc.DataType import REF
-from com.sun.star.sdbc.DataType import BOOLEAN
+from com.sun.star.sdbc.DataType2 import BIT
+from com.sun.star.sdbc.DataType2 import TINYINT
+from com.sun.star.sdbc.DataType2 import SMALLINT
+from com.sun.star.sdbc.DataType2 import INTEGER
+from com.sun.star.sdbc.DataType2 import BIGINT
+from com.sun.star.sdbc.DataType2 import FLOAT
+from com.sun.star.sdbc.DataType2 import REAL
+from com.sun.star.sdbc.DataType2 import DOUBLE
+from com.sun.star.sdbc.DataType2 import NUMERIC
+from com.sun.star.sdbc.DataType2 import DECIMAL
+from com.sun.star.sdbc.DataType2 import CHAR
+from com.sun.star.sdbc.DataType2 import VARCHAR
+from com.sun.star.sdbc.DataType2 import LONGVARCHAR
+from com.sun.star.sdbc.DataType2 import DATE
+from com.sun.star.sdbc.DataType2 import TIME
+from com.sun.star.sdbc.DataType2 import TIME_WITH_TIMEZONE
+from com.sun.star.sdbc.DataType2 import TIMESTAMP
+from com.sun.star.sdbc.DataType2 import TIMESTAMP_WITH_TIMEZONE
+from com.sun.star.sdbc.DataType2 import BINARY
+from com.sun.star.sdbc.DataType2 import VARBINARY
+from com.sun.star.sdbc.DataType2 import LONGVARBINARY
+from com.sun.star.sdbc.DataType2 import SQLNULL
+from com.sun.star.sdbc.DataType2 import OTHER
+from com.sun.star.sdbc.DataType2 import OBJECT
+from com.sun.star.sdbc.DataType2 import DISTINCT
+from com.sun.star.sdbc.DataType2 import STRUCT
+from com.sun.star.sdbc.DataType2 import ARRAY
+from com.sun.star.sdbc.DataType2 import BLOB
+from com.sun.star.sdbc.DataType2 import CLOB
+from com.sun.star.sdbc.DataType2 import REF
+from com.sun.star.sdbc.DataType2 import BOOLEAN
 
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
@@ -91,6 +93,8 @@ from ..logger import getLogger
 from ..configuration import g_errorlog
 g_basename = 'dbtool'
 
+import time
+from datetime import datetime
 import traceback
 
 
@@ -493,8 +497,12 @@ def getRowValue(row, dbtype, index=1, default=None):
         value = row.getDouble(index)
     elif dbtype == TIMESTAMP:
         value = row.getTimestamp(index)
+    elif dbtype == TIMESTAMP_WITH_TIMEZONE:
+        value = row.getObject(index, None)
     elif dbtype == TIME:
         value = row.getTime(index)
+    elif dbtype == TIME_WITH_TIMEZONE:
+        value = row.getObject(index, None)
     elif dbtype == DATE:
         value = row.getDate(index)
     elif dbtype == BINARY:
@@ -583,3 +591,70 @@ def getSqlException(state, code, message, context=None, exception=None):
     error.Message = message
     error.Context = context
     return error
+
+def currentDateTimeInTZ():
+    dtz = uno.createUnoStruct('io.github.prrvchr.css.util.DateTimeWithTimezone')
+    dtz.DateTimeInTZ = currentDateTime(False)
+    dtz.Timezone = _getTimeZone()
+    return dtz
+
+def currentDateTime(utc=True):
+    now = datetime.utcnow() if utc else datetime.now()
+    return _currentDateTime(now, utc)
+
+def getDateTimeInTZToString(dtz=None, decimal=6):
+    dt = currentDateTime(False) if dtz is None else dtz.DateTimeInTZ
+    fraction = dt.NanoSeconds // (10 ** (9 - decimal))
+    format = '%04d-%02d-%02dT%02d:%02d:%02d.%'
+    format += '0%sdZ' % decimal
+    return format % (dt.Year, dt.Month, dt.Day, dt.Hours, dt.Minutes, dt.Seconds, fraction)
+
+def toUnoDateTime(dtz):
+    dt = dtz.DateTimeInTZ
+    udt = uno.createUnoStruct('com.sun.star.util.DateTime')
+    udt.Year = dt.Year
+    udt.Month = dt.Month
+    udt.Day = dt.Day
+    udt.Hours = dt.Hours
+    udt.Minutes = dt.Minutes
+    udt.Seconds = dt.Seconds
+    if hasattr(udt, 'HundredthSeconds'):
+        udt.HundredthSeconds = dt.NanoSeconds // 10000000
+    elif hasattr(udt, 'NanoSeconds'):
+        udt.NanoSeconds = dt.NanoSeconds
+    if hasattr(udt, 'IsUTC'):
+        udt.IsUTC = dt.IsUTC
+    return udt
+
+def getDateTimeFromString(dtstr, format, utc=False):
+    now = datetime.strptime(dtstr, format)
+    dt = uno.createUnoStruct('com.sun.star.util.DateTime')
+    dt.Year = now.year
+    dt.Month = now.month
+    dt.Day = now.day
+    dt.Hours = now.hour
+    dt.Minutes = now.minute
+    dt.Seconds = now.second
+    if hasattr(dt, 'HundredthSeconds'):
+        dt.HundredthSeconds = now.microsecond // 10000
+    elif hasattr(dt, 'NanoSeconds'):
+        dt.NanoSeconds = now.microsecond * 1000
+    if hasattr(dt, 'IsUTC'):
+        dt.IsUTC = utc
+    return dt
+
+def _currentDateTime(now, utc=True):
+    dt = uno.createUnoStruct('io.github.prrvchr.css.util.DateTime')
+    dt.Year = now.year
+    dt.Month = now.month
+    dt.Day = now.day
+    dt.Hours = now.hour
+    dt.Minutes = now.minute
+    dt.Seconds = now.second
+    dt.NanoSeconds = now.microsecond * 1000
+    dt.IsUTC = utc
+    return dt
+
+def _getTimeZone():
+    offset = time.timezone if time.localtime().tm_isdst else time.altzone
+    return offset / 60 * -1

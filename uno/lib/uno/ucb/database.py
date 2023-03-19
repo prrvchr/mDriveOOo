@@ -38,7 +38,6 @@ from com.sun.star.ucb import XRestDataBase
 
 from .unolib import KeyMap
 
-from .unotool import parseDateTime
 from .unotool import createService
 
 from .configuration import g_admin
@@ -51,6 +50,7 @@ from .dbtool import Array
 
 from .dbtool import checkDataBase
 from .dbtool import createStaticTable
+from .dbtool import currentDateTimeInTZ
 from .dbtool import executeSqlQueries
 from .dbtool import getDataSourceCall
 from .dbtool import getKeyMapFromResult
@@ -134,12 +134,12 @@ class DataBase(unohelper.Base,
         displayname = provider.getUserDisplayName(user)
         rootid = provider.getRootId(root)
         rootname = provider.getRootTitle(root)
-        timestamp = parseDateTime()
+        timestamp = currentDateTimeInTZ()
         insert = self._getCall('insertUser')
         insert.setString(1, username)
         insert.setString(2, displayname)
         insert.setString(3, rootid)
-        insert.setTimestamp(4, timestamp)
+        insert.setObject(4, timestamp)
         insert.setString(5, userid)
         insert.execute()
         insert.close()
@@ -181,11 +181,11 @@ class DataBase(unohelper.Base,
 
     def updateFolderContent(self, user, content):
         rows = []
-        timestamp = parseDateTime()
+        timestamp = currentDateTimeInTZ()
         call = self._getCall('mergeItem')
         call.setString(1, user.Id)
         call.setLong(2, 0)
-        call.setTimestamp(3, timestamp)
+        call.setObject(3, timestamp)
         enumerator = user.Provider.getFolderContent(user.Request, content)
         while enumerator.hasMoreElements():
             item = enumerator.nextElement()
@@ -259,10 +259,10 @@ class DataBase(unohelper.Base,
 
     def updateContent(self, userid, itemid, property, value):
         updated = False
-        timestamp = parseDateTime()
+        timestamp = currentDateTimeInTZ()
         if property == 'Title':
             update = self._getCall('updateTitle')
-            update.setTimestamp(1, timestamp)
+            update.setObject(1, timestamp)
             update.setString(2, value)
             update.setString(3, itemid)
             updated = update.execute() == 0
@@ -272,7 +272,7 @@ class DataBase(unohelper.Base,
             # The Size of the file is not sufficient to detect a 'Save' of the file,
             # It can be modified and have the same Size...
             # For this we temporarily update the Size to 0
-            update.setTimestamp(1, timestamp)
+            update.setObject(1, timestamp)
             update.setLong(2, 0)
             update.setString(3, itemid)
             update.execute()
@@ -282,7 +282,7 @@ class DataBase(unohelper.Base,
             update.close()
         elif property == 'Trashed':
             update = self._getCall('updateTrashed')
-            update.setTimestamp(1, timestamp)
+            update.setObject(1, timestamp)
             update.setBoolean(2, value)
             update.setString(3, itemid)
             updated = update.execute() == 0
@@ -294,7 +294,7 @@ class DataBase(unohelper.Base,
             # TODO: without the system versioning malfunctioning...
             # TODO: As a workaround I use two successive UPDATE queries
             update = self._getCall('updateCapabilities')
-            update.setTimestamp(1, timestamp)
+            update.setObject(1, timestamp)
             update.setString(2, userid)
             update.setString(3, itemid)
             update.execute()
@@ -306,7 +306,7 @@ class DataBase(unohelper.Base,
         call = self._getCall('insertItem')
         call.setString(1, userid)
         call.setLong(2, 1)
-        call.setTimestamp(3, timestamp)
+        call.setObject(3, timestamp)
         call.setString(4, itemid)
         call.setString(5, content.getValue("Title"))
         call.setTimestamp(6, content.getValue('DateCreated'))
@@ -392,7 +392,7 @@ class DataBase(unohelper.Base,
         call = self._getCall('mergeItem')
         call.setString(1, userid)
         call.setInt(2, loaded)
-        call.setTimestamp(3, timestamp)
+        call.setObject(3, timestamp)
         return call
 
     # First pull procedure: body of merge request
@@ -404,7 +404,7 @@ class DataBase(unohelper.Base,
     def updateUserTimeStamp(self, timestamp, userid=None):
         call = 'updateUsersTimeStamp' if userid is None else 'updateUserTimeStamp'
         update = self._getCall(call)
-        update.setTimestamp(1, timestamp)
+        update.setObject(1, timestamp)
         if userid is not None:
             update.setString(2, userid)
         update.executeUpdate()
@@ -415,7 +415,7 @@ class DataBase(unohelper.Base,
         select.setString(1, userid)
         result = select.executeQuery()
         if result.next():
-            timestamp = result.getTimestamp(1)
+            timestamp = result.getObject(1, None)
         select.close()
         return timestamp
 
@@ -427,15 +427,8 @@ class DataBase(unohelper.Base,
     def getPushItems(self, start, end):
         items = []
         select = self._getCall('getSyncItems')
-        select.setTimestamp(1, end)
-        select.setTimestamp(2, start)
-        select.setTimestamp(3, end)
-        select.setTimestamp(4, start)
-        select.setTimestamp(5, end)
-        select.setTimestamp(6, start)
-        select.setTimestamp(7, end)
-        select.setTimestamp(8, end)
-        select.setTimestamp(9, start)
+        select.setObject(1, start)
+        select.setObject(2, end)
         result = select.executeQuery()
         while result.next():
             items.append(getKeyMapFromResult(result))
@@ -475,7 +468,7 @@ class DataBase(unohelper.Base,
         call = self._getCall('mergeItem')
         call.setString(1, userid)
         call.setLong(2, 0)
-        call.setTimestamp(3, timestamp)
+        call.setObject(3, timestamp)
         call.setString(4, rootid)
         call.setString(5, rootname)
         call.setTimestamp(6, provider.getRootCreated(root, timestamp))

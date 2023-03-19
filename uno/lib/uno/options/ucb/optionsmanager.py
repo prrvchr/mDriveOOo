@@ -32,6 +32,7 @@ import unohelper
 from .optionsmodel import OptionsModel
 from .optionsview import OptionsView
 
+from ..unotool import executeDispatch
 from ..unotool import getDesktop
 
 from ..logger import LogManager
@@ -67,3 +68,10 @@ class OptionsManager(unohelper.Base):
     def viewData(self):
         url = self._model.getDatasourceUrl()
         getDesktop(self._ctx).loadComponentFromURL(url, '_default', 0, ())
+
+    def saveFile(self):
+        try:
+            executeDispatch(self._ctx, '.uno:Save')
+        except Exception as e:
+            msg = "OptionsManager.saveFile() Error: %s" % traceback.print_exc()
+            print(msg)

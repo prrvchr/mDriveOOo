@@ -172,5 +172,6 @@ def getQueries():
             ('createChildrenView',{'Role': g_role}),
 
             ('createGetIdentifier',{'Role': g_role}),
+            ('createGetSyncItems',{'Role': g_role}),
             ('createMergeItem',{'Role': g_role}),
             ('createInsertItem',{'Role': g_role}))

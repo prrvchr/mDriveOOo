@@ -129,5 +129,6 @@ class LogManager(unohelper.Base):
 
     # LogManager setter methods called by LoggerListener
     def updateLogger(self):
-        self._dialog.updateLogger(*self._model.getLogContent())
+        text, length = self._model.getLogContent()
+        self._dialog.updateLogger(text, length)
 
