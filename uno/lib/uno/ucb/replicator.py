@@ -154,7 +154,8 @@ class Replicator(unohelper.Base,
         if len(rejected):
             self._logger.logprb(SEVERE, 'Replicator', '_syncData()', 122, len(rejected))
         for item in rejected:
-            self._logger.logprb(SEVERE, 'Replicator', '_syncData()', 123, item)
+            title, itemid, parents = item
+            self._logger.logprb(SEVERE, 'Replicator', '_syncData()', 123, title, itemid, parents)
         print("Replicator._initUser() 2 %s" % count)
         self._fullPull = True
         return start

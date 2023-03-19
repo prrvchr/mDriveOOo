@@ -42,6 +42,8 @@ from com.sun.star.auth.RestRequestTokenType import TOKEN_SYNC
 from onedrive import KeyMap
 from onedrive import ProviderBase
 
+from onedrive import toUnoDateTime
+
 from onedrive import g_identifier
 from onedrive import g_provider
 from onedrive import g_host
@@ -206,12 +208,12 @@ class Provider(ProviderBase):
         created = item.getDefaultValue('createdDateTime', None)
         if created:
             return self.parseDateTime(created)
-        return timestamp
+        return toUnoDateTime(timestamp)
     def getItemModified(self, item, timestamp=None):
         modified = item.getDefaultValue('lastModifiedDateTime', None)
         if modified:
             return self.parseDateTime(modified)
-        return timestamp
+        return toUnoDateTime(timestamp)
     def getItemMediaType(self, item):
         return item.getDefaultValue('file', KeyMap()).getDefaultValue('mimeType', self.Folder)
     def getItemSize(self, item):
