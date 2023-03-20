@@ -136,7 +136,7 @@ class Replicator(unohelper.Base,
                 if user.Token:
                     print("Replicator.synchronize() 5")
                     results += self._pullData(user)
-                self._logger.logprb(INFO, 'Replicator', '_syncData()', 112, user.Name, getDateTimeInTZToString())
+                self._logger.logprb(INFO, 'Replicator', '_syncData()', 112, user.Name, getDateTimeInTZToString(timestamp))
             if all(results):
                 results += self._pushData(start)
             print("Replicator.synchronize() 6 %s" % (results, ))
@@ -195,7 +195,7 @@ class Replicator(unohelper.Base,
             for item in self.DataBase.getPushItems(start, end):
                 user = self._users.get(item.getValue('UserName'), None)
                 if user is None:
-                    user = User(self._ctx, self, item.getValue('UserName'), self._sync, self.DataBase)
+                    user = User(self._ctx, self, item.getValue('UserName'), self._sync, True)
                 print("Replicator._pushData() 2 Insert/Update: %s Items: %s - %s - %s - %s - %s" % (item.getValue('Title'),
                                                                                                     item.getValue('TitleUpdated'),
                                                                                                     item.getValue('SizeUpdated'),

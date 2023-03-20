@@ -54,6 +54,8 @@ from com.sun.star.ucb.ConnectionMode import ONLINE
 
 from .unolib import KeyMap
 
+from .oauth2lib import getOAuth2UserName
+
 from .unotool import getProperty
 from .unotool import getUriFactory
 from .unotool import parseDateTime
@@ -75,23 +77,23 @@ class Identifier(unohelper.Base,
                  XContentIdentifier,
                  XRestIdentifier,
                  XChild):
-    def __init__(self, ctx, factory, user, url, init=False, contenttype=''):
+    def __init__(self, ctx, factory, user, uri, url, contenttype=''):
         self._ctx = ctx
         self._factory = factory
-        self._uri = factory.parse(url)
+        self._uri = uri
+        self._url = url
         self._type = contenttype
         self._propertySetInfo = {}
-        self.User = user
         self._content = None
+        self.User = user
         self.IsNew = contenttype != ''
-        if init:
-            self.MetaData = self._getMetaData()
-        else:
-            self.MetaData = KeyMap()
-            self._initialized = False
+        self.MetaData = None
         self._logger = getLogger(ctx, g_defaultlog, g_basename)
         self._logger.logprb(INFO, 'Identifier', '__init__()', 101)
 
+    @property
+    def Url(self):
+        return self._url
     @property
     def Id(self):
         return self.MetaData.getDefaultValue('Id', None)
@@ -121,7 +123,8 @@ class Identifier(unohelper.Base,
     def getParent(self):
         parent = None
         if not self.isRoot():
-            parent = Identifier(self._ctx, self._factory, self.User, self.ParentURI, True)
+            uri = self._factory.parse(self.ParentURI)
+            parent = self.User.getIdentifier(self._factory, uri, self.ParentURI)
         return parent
     def setParent(self, parent):
         msg = self._logger.resolveString(111)
@@ -141,15 +144,29 @@ class Identifier(unohelper.Base,
         self._initialized = True
 
     def createNewIdentifier(self, contenttype):
-        return Identifier(self._ctx, self._factory, self.User, self.getContentIdentifier(), True, contenttype)
+        url = self.getContentIdentifier()
+        uri = self._factory.parse(url)
+        return Identifier(self._ctx, self._factory, self.User, uri, url, contenttype)
 
-    def getContent(self):
-        if not self.isValid():
-            msg = self._logger.resolveString(121, self.getContentIdentifier())
-            raise IllegalIdentifierException(msg, self)
-        if self._content is None:
+    def getContent(self, datasource):
+        try:
+            print("Identifier.getContent() 1")
+            if self._content is not None:
+                return self._content
+            if self._uri is None:
+                msg = self._logger.resolveString(121, self._url)
+                raise IllegalIdentifierException(msg, self)
+            print("Identifier.getContent() 2")
+            if not self.User.isInitialized():
+                self.User.initialize(datasource, self._url)
+            self.MetaData = self._getMetaData()
+            print("Identifier.getContent() 3")
             self._content = Content(self._ctx, self)
-        return self._content
+            return self._content
+        except Exception as e:
+            msg = "Identifier.getContent() Error: %s" % traceback.print_exc()
+            print(msg)
+
 
     def getFolderContent(self, content):
         try:
@@ -225,6 +242,7 @@ class Identifier(unohelper.Base,
     # Private methods
     def _getMetaData(self):
         uripath = self._uri.getPath().strip('/.')
+        #paths = (self._uri.getPathSegment(i) for i in range(self._uri.getPathSegmentCount()))
         itemid, parentid, path = self.User.DataBase.getIdentifier(self.User.Id, self.User.RootId, uripath)
         if itemid is None:
             msg = self._logger.resolveString(151, self.getContentIdentifier())
@@ -238,7 +256,7 @@ class Identifier(unohelper.Base,
             data = self._getNewContent(itemid, self._type)
         else:
             metadata.setValue('ParentId', parentid)
-            parenturi = '%s://%s/%s' % (self._uri.getScheme(), self._uri.getAuthority(), path)
+            parenturi = self._getContentIdentifier(path)
             data = self.User.DataBase.getItem(self.User.Id, itemid, parentid)
         metadata.setValue('Id', itemid)
         metadata.setValue('ParentURI', parenturi)
@@ -320,4 +338,9 @@ class Identifier(unohelper.Base,
         properties['IsFloppy'] = getProperty('IsFloppy', 'boolean', BOUND | RO)
         properties['IsCompactDisc'] = getProperty('IsCompactDisc', 'boolean', BOUND | RO)
         return properties
+
+    def _getContentIdentifier(self, path):
+        identifier = '%s://%s/%s' % (self._uri.getScheme(), self.User.Name, path)
+        print("Identifier._getContentIdentifier() : %s" % identifier)
+        return identifier
 

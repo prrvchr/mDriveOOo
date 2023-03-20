@@ -465,6 +465,11 @@ class DataBase(unohelper.Base,
         return 1
 
     def _mergeRoot(self, provider, userid, rootid, rootname, root, timestamp):
+        print("DataBase._mergeRoot() 1: %s " % ((userid, rootid, rootname, root), ))
+        created = provider.getRootCreated(root, timestamp)
+        modified = provider.getRootModified(root, timestamp)
+        print("DataBase._mergeRoot() 2")
+        print("DataBase._mergeRoot() 3: %s " % ((userid, rootid, rootname, root), ))
         call = self._getCall('mergeItem')
         call.setString(1, userid)
         call.setLong(2, 0)

@@ -41,6 +41,7 @@ from .identifier import Identifier
 
 from .unolib import KeyMap
 
+from .oauth2lib import getOAuth2UserName
 from .oauth2lib import getRequest
 from .oauth2lib import g_oauth2
 
@@ -57,17 +58,19 @@ import traceback
 
 class User(unohelper.Base,
            XRestUser):
-    def __init__(self, ctx, source, name, lock, database=None):
+    def __init__(self, ctx, source, name, lock, init=False):
         self._ctx = ctx
         self._name = name
         self._lock = lock
-        self._identifiers = {}
-        self.DataBase = database
+        self.DataBase = source.DataBase if init else None
         self.Provider = source.Provider
-        self.Request = getRequest(self._ctx, self.Provider.Scheme, name)
-        self.MetaData = source.DataBase.selectUser(name)
         self.CanAddChild = not self.Provider.GenerateIds
-        self._initialized = database is not None
+        if name is not None:
+            self.Request = getRequest(ctx, self.Provider.Scheme, name)
+        if init:
+            self.MetaData = source.DataBase.selectUser(name)
+        self._initialized = init
+        self._identifiers = {}
         self._logger = getLogger(ctx, g_defaultlog, g_basename)
         self._logger.logprb(INFO, 'User', '__init__()', 101)
 
@@ -98,10 +101,16 @@ class User(unohelper.Base,
     def isInitialized(self):
         return self._initialized
 
-    def initialize(self, database, password=''):
+    def initialize(self, datasource, url, password=''):
+        print("User.initialize() 1")
+        if self.Name is None:
+            self._setUserName(datasource, url)
         if self.Request is None:
             msg = self._logger.resolveString(111, g_oauth2)
             raise IllegalIdentifierException(msg, self)
+        print("User.initialize() 2")
+        self.MetaData = datasource.DataBase.selectUser(self._name)
+        print("User.initialize() 3")
         if self.MetaData is None:
             if not self.Provider.isOnLine():
                 msg = self._logger.resolveString(112, self._name)
@@ -114,22 +123,32 @@ class User(unohelper.Base,
             if not root.IsPresent:
                 msg = self._logger.resolveString(113, self._name)
                 raise IllegalIdentifierException(msg, self)
-            self.MetaData = database.insertUser(self.Provider, data.Value, root.Value)
-            if not database.createUser(self._name, password):
+            self.MetaData = datasource.DataBase.insertUser(self.Provider, data.Value, root.Value)
+            if not datasource.DataBase.createUser(self._name, password):
                 msg = self._logger.resolveString(114, self._name)
                 raise IllegalIdentifierException(msg, self)
-        self.DataBase = DataBase(self._ctx, database.getDataSource(), self._name, '', self._lock)
+        self.DataBase = DataBase(self._ctx, datasource.DataBase.getDataSource(), self._name, password, self._lock)
+        print("User.initialize() 4")
+        datasource.addUser(self)
+        print("User.initialize() 5")
         self._initialized = True
         self._lock.set()
+        print("User.initialize() 6")
 
-    def getIdentifier(self, factory, url):
-        if url in self._identifiers:
-            identifier = self._identifiers[url]
+    def getIdentifier(self, factory, uri, url):
+        key = None if uri is None else uri.getPath()
+        if key in self._identifiers:
+            identifier = self._identifiers[key]
         else:
-            identifier = Identifier(self._ctx, factory, self, url)
-            #self._identifiers[url] = identifier
+            identifier = Identifier(self._ctx, factory, self, uri, url)
         return identifier
-    def clearIdentifier(self, url):
-        if url in self._identifiers:
-            del self._identifiers[url]
+
+# Internal use of method
+    def _setUserName(self, datasource, url):
+        name = getOAuth2UserName(self._ctx, self, self.Provider.Scheme)
+        if not name:
+            msg = self._logger.resolveString(121, url)
+            raise IllegalIdentifierException(msg, self)
+        self.Request = getRequest(self._ctx, self.Provider.Scheme, name)
+        self._name = name
 

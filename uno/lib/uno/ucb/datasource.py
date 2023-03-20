@@ -38,7 +38,6 @@ from com.sun.star.logging.LogLevel import SEVERE
 from com.sun.star.ucb import XRestDataSource
 
 from .oauth2lib import g_oauth2
-from .oauth2lib import getOAuth2UserName
 
 from .unotool import createService
 from .unotool import getResourceLocation
@@ -73,6 +72,7 @@ class DataSource(unohelper.Base,
         msg = "DataSource for Scheme: %s loading ... " % scheme
         print("DataSource.__init__() 1")
         self._ctx = ctx
+        self._default = None
         self._users = {}
         self.Error = None
         self._sync = event
@@ -111,39 +111,41 @@ class DataSource(unohelper.Base,
     def isValid(self):
         return self.Error is None
 
-    def getIdentifier(self, factory, url, default=None):
-        print("DataSource.getIdentifier() 1 Url: %s" % url)
-        user, name, uri = self._getIdentifiers(factory, url, default)
-        if user is not None:
-            url = '%s://%s%s' % (uri.getScheme(), name, uri.getPath())
-            print("DataSource.getIdentifier() 2 Url: %s" % url)
-            identifier = user.getIdentifier(factory, url)
-        else:
-            identifier = Identifier(self._ctx, factory, user, url)
-        return identifier
+    def getIdentifier(self, factory, url):
+        try:
+            print("DataSource.getIdentifier() 1 Url: %s" % url)
+            #if user is not None:
+            #    url = '%s://%s%s' % (uri.getScheme(), name, uri.getPath())
+            #    print("DataSource.getIdentifier() 2 Url: %s" % url)
+            #    identifier = user.getIdentifier(factory, url)
+            #else:
+            #    identifier = Identifier(self._ctx, factory, user, url)
+            uri = factory.parse(url)
+            if uri is None:
+                name = None
+            elif uri.hasAuthority() and uri.getAuthority() != '':
+                name = uri.getAuthority()
+            elif self._default is not None:
+                name = self._default
+            else:
+                name = None
+                #name = getOAuth2UserName(self._ctx, self, uri.getScheme())
+            # User never change... we can cache it...
+            if name in self._users:
+                user = self._users[name]
+            else:
+                user = User(self._ctx, self, name, self._sync)
+            return user.getIdentifier(factory, uri, url)
+        except Exception as e:
+            msg = "DataSource.getIdentifier() Error: %s" % traceback.print_exc()
+            print(msg)
+
+
+    def addUser(self, user):
+        self._users[user.Name] = user
+        self._default = user.Name
 
     # Private methods
-    def _getIdentifiers(self, factory, url, default):
-        uri = factory.parse(url)
-        if uri is None:
-            name = None
-        elif uri.hasAuthority() and uri.getAuthority() != '':
-            name = uri.getAuthority()
-        elif default is not None:
-            name = default
-        else:
-            name = getOAuth2UserName(self._ctx, self, uri.getScheme())
-        # User never change... we can cache it...
-        if name is None:
-            print("DataSource._getIdentifiers() Error **************************************************")
-            user = None
-        elif name in self._users:
-            user = self._users[name]
-        else:
-            user = User(self._ctx, self, name, self._sync)
-            self._users[name] = user
-        return user, name, uri
-
     def _getDataSource(self, dbname, plugin, register):
         location = getResourceLocation(self._ctx, plugin, g_folder)
         location = getUrlPresentation(self._ctx, location)

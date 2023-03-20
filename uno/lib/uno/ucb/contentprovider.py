@@ -64,7 +64,6 @@ class ContentProvider(unohelper.Base,
         self.Plugin = plugin
         self.DataSource = None
         self.event = Event()
-        self._user = None
         self._error = ''
         self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
         self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
@@ -94,7 +93,7 @@ class ContentProvider(unohelper.Base,
         print("ContentProvider.createContentIdentifier() 1")
         # FIXME: We are forced to perform lazy loading on Identifier (and User) in order to be able
         # FIXME: to trigger an exception when delivering the content ie: XContentProvider.queryContent().
-        identifier = self.DataSource.getIdentifier(self._factory, self._getContentIdentifier(url), self._user)
+        identifier = self.DataSource.getIdentifier(self._factory, self._getContentIdentifier(url))
         self._logger.logprb(INFO, 'ContentProvider', 'createContentIdentifier()', 131, url)
         print("ContentProvider.createContentIdentifier() 2")
         return identifier
@@ -105,10 +104,10 @@ class ContentProvider(unohelper.Base,
             print("ContentProvider.queryContent() 1")
             # FIXME: We are forced to perform lazy loading on Identifier (and User) in order to be able
             # FIXME: to trigger an exception when delivering the content ie: XContentProvider.queryContent().
-            if not identifier.isInitialized():
-                identifier.initialize(self.DataSource.DataBase)
-            self._user = identifier.User.Name
-            content = identifier.getContent()
+            #if not identifier.isInitialized():
+            #    identifier.initialize(self.DataSource.DataBase)
+            #self._user = identifier.User.Name
+            content = identifier.getContent(self.DataSource)
             self._logger.logprb(INFO, 'ContentProvider', 'queryContent()', 141, identifier.getContentIdentifier())
             print("ContentProvider.queryContent() 2")
             return content
@@ -129,7 +128,7 @@ class ContentProvider(unohelper.Base,
 
     # Private methods
     def _getContentIdentifier(self, identifier):
-        url = parseUrl(self._transformer, identifier)
+        url = parseUrl(self._transformer, identifier.strip('/.'))
         if url is not None:
             url = self._transformer.getPresentation(url, True)
         return url if url else identifier

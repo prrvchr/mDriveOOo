@@ -115,6 +115,16 @@ def getSqlQuery(ctx, name, format=None):
     elif name == 'getSystemVersioning':
         query = ' WITH SYSTEM VERSIONING'
 
+
+    elif name == 'createPathView':
+        query = '''\
+WITH RECURSIVE tree (name, child) AS (
+   VALUES('Test', '5222933712')
+   UNION ALL
+   SELECT name + '/' + "Items"."Title", "Parents"."ChildId" FROM PUBLIC."Parents", PUBLIC."Items", tree WHERE "Parents"."ChildId" =  "Items"."ItemId" AND "Parents"."ItemId" = child
+   ) SELECT name FROM tree;
+'''
+
 # Create Cached View Queries
     elif name == 'createChildView':
         c1 = '"UserId"'

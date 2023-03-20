@@ -48,7 +48,7 @@ interface XRestIdentifier: com::sun::star::uno::XInterface
     boolean isValid();
     ::com::sun::star::uri::XUriReference getUri();
     ::com::sun::star::ucb::XRestIdentifier createNewIdentifier([in] string ContentType);
-    ::com::sun::star::uno::XInterface getContent();
+    ::com::sun::star::uno::XInterface getContent([in] ::com::sun::star::uno::XInterface DataSource);
     ::com::sun::star::sdbc::XPreparedStatement getFolderContent([in] ::com::sun::star::auth::XRestKeyMap Content);
     string getDocumentContent([in] ::com::sun::star::ucb::XSimpleFileAccess Sf,
                               [in] ::com::sun::star::auth::XRestKeyMap Content,

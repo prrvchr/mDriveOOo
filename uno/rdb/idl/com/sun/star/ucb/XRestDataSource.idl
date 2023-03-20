@@ -41,8 +41,12 @@ interface XRestDataSource: com::sun::star::uno::XInterface
 {
 
     boolean isValid();
+
+    void addUser([in] ::com::sun::star::ucb::XRestUser User);
+
     ::com::sun::star::ucb::XRestUser getUser([in] string Name,
                                              [in] string Password);
+
     ::com::sun::star::ucb::XRestIdentifier getIdentifier([in] ::com::sun::star::ucb::XRestUser User,
                                                          [in] ::com::sun::star::uri::XUriReference Uri);
 
