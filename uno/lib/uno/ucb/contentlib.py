@@ -278,13 +278,13 @@ class Row(unohelper.Base,
 
 class DynamicResultSet(unohelper.Base,
                        XDynamicResultSet):
-    def __init__(self, identifier, select):
-        self._identifier = identifier
+    def __init__(self, user, select):
+        self._user = user
         self._select = select
 
     # XDynamicResultSet
     def getStaticResultSet(self):
-        return ContentResultSet(self._identifier, self._select)
+        return ContentResultSet(self._user, self._select)
     def setListener(self, listener):
         pass
     def connectToCache(self, cache):
@@ -299,9 +299,9 @@ class ContentResultSet(unohelper.Base,
                        XRow,
                        XResultSetMetaDataSupplier,
                        XContentAccess):
-    def __init__(self, identifier, select):
+    def __init__(self, user, select):
         try:
-            self._identifier = identifier
+            self._user = user
             result = select.executeQuery()
             result.last()
             self.RowCount = result.getRow()
@@ -401,7 +401,7 @@ class ContentResultSet(unohelper.Base,
     def queryContentIdentifierString(self):
         return self._result.getString(self._result.findColumn('TargetURL'))
     def queryContentIdentifier(self):
-        return self._identifier.queryContentIdentifier(self.queryContentIdentifierString())
+        return self._user.getIdentifier(self.queryContentIdentifierString())
     def queryContent(self):
         return self.queryContentIdentifier().getContent()
 

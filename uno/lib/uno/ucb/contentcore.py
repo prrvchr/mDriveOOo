@@ -52,7 +52,7 @@ from .contenttools import getInteractiveAugmentedIOException
 from .logger import getLogger
 
 
-def getPropertiesValues(ctx, source, properties):
+def getPropertiesValues(logger, source, properties):
     values = []
     for property in properties:
         value = None
@@ -66,11 +66,11 @@ def getPropertiesValues(ctx, source, properties):
         else:
             msg = "ERROR: Requested property: %s is not available" % property.Name
             level = SEVERE
-        getLogger(ctx).logp(level, source.__class__.__name__, 'getPropertiesValues()', msg)
+        logger.logp(level, 'Content', 'getPropertiesValues()', msg)
         values.append(getNamedValue(property.Name, value))
     return tuple(values)
 
-def setPropertiesValues(ctx, source, context, properties):
+def setPropertiesValues(logger, source, context, properties):
     results = []
     for property in properties:
         if all((hasattr(property, 'Name'),
@@ -82,7 +82,7 @@ def setPropertiesValues(ctx, source, context, properties):
             level = SEVERE
             error = UnknownPropertyException(msg, source)
             result = uno.Any('com.sun.star.beans.UnknownPropertyException', error)
-        getLogger(ctx).logp(level, source.__class__.__name__, 'setPropertiesValues()', msg)
+        logger.logp(level, 'Content', 'setPropertiesValues()', msg)
         results.append(result)
     return tuple(results)
 
@@ -117,15 +117,15 @@ def _setTitle(source, context, title):
         data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
         error = getInteractiveAugmentedIOException(msg, context, 'ERROR', 'INVALID_CHARACTER', data)
         result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
-    elif user.DataBase.countChildTitle(user.Id, identifier.ParentId, title) > 0:
-        msg = "Can't set property: %s value: %s - Name Clash Error" % ('Title', title)
-        level = SEVERE
-        data = getPropertyValueSet({'TargetFolderURL': identifier.getContentIdentifier(),
-                                    'ClashingName': title,
-                                    'ProposedNewName': '%s(1)' % title})
-        #data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
-        error = getInteractiveAugmentedIOException(msg, context, 'ERROR', 'ALREADY_EXISTING', data)
-        result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
+    elif not user.Provider.SupportDuplicate and user.DataBase.hasTitle(user.Id, identifier.ParentId, title):
+            msg = "Can't set property: %s value: %s - Name Clash Error" % ('Title', title)
+            level = SEVERE
+            data = getPropertyValueSet({'TargetFolderURL': identifier.getContentIdentifier(),
+                                        'ClashingName': title,
+                                        'ProposedNewName': '%s(1)' % title})
+            #data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
+            error = getInteractiveAugmentedIOException(msg, context, 'ERROR', 'ALREADY_EXISTING', data)
+            result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
     else:
         # When you change Title you must change also the Identifier.getContentIdentifier()
         # It's done by Identifier.setTitle()

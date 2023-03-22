@@ -30,13 +30,6 @@
 import uno
 import unohelper
 
-from com.sun.star.container import XChild
-from com.sun.star.lang import NoSupportException
-from com.sun.star.ucb import XContent
-from com.sun.star.ucb import XCommandProcessor2
-from com.sun.star.ucb import XContentCreator
-from com.sun.star.ucb import InteractiveBadTransferURLException
-from com.sun.star.ucb import CommandAbortedException
 from com.sun.star.beans import XPropertiesChangeNotifier
 
 from com.sun.star.beans.PropertyAttribute import BOUND
@@ -44,12 +37,23 @@ from com.sun.star.beans.PropertyAttribute import CONSTRAINED
 from com.sun.star.beans.PropertyAttribute import READONLY
 from com.sun.star.beans.PropertyAttribute import TRANSIENT
 
-from com.sun.star.ucb.ContentInfoAttribute import KIND_DOCUMENT
-from com.sun.star.ucb.ContentInfoAttribute import KIND_FOLDER
-from com.sun.star.ucb.ContentInfoAttribute import KIND_LINK
+from com.sun.star.container import XChild
+
+from com.sun.star.lang import NoSupportException
+from com.sun.star.lang import XComponent
+
+from com.sun.star.ucb import XContent
+from com.sun.star.ucb import XCommandProcessor2
+from com.sun.star.ucb import XContentCreator
+from com.sun.star.ucb import InteractiveBadTransferURLException
+from com.sun.star.ucb import CommandAbortedException
 
 from com.sun.star.ucb.ContentAction import INSERTED
 from com.sun.star.ucb.ContentAction import EXCHANGED
+
+from com.sun.star.ucb.ContentInfoAttribute import KIND_DOCUMENT
+from com.sun.star.ucb.ContentInfoAttribute import KIND_FOLDER
+from com.sun.star.ucb.ContentInfoAttribute import KIND_LINK
 
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
@@ -83,6 +87,7 @@ import traceback
 
 class Content(unohelper.Base,
               XContent,
+              XComponent,
               XCommandProcessor2,
               XContentCreator,
               XChild,
@@ -96,6 +101,7 @@ class Content(unohelper.Base,
         self._commandInfo = self._getCommandInfo()
         self._contentListeners = []
         self._propertiesListener = {}
+        self._listeners = []
         msg += "Done."
         self._logger = getLogger(ctx, g_defaultlog)
         self._logger.logp(INFO, 'Content', '__init__()', msg)
@@ -110,12 +116,33 @@ class Content(unohelper.Base,
     def CanAddChild(self):
         return self.MetaData.getValue('CanAddChild')
 
+
+    # XComponent
+    def dispose(self):
+        event = uno.createUnoStruct('com.sun.star.lang.EventObject')
+        event.Source = self
+        for listener in self._listeners:
+            print("Content.dispose() ***************************************************************")
+            listener.disposing(event)
+
+    def addEventListener(self, listener):
+        print("Content.addEventListener() ***************************************************************")
+        self._listeners.append(listener)
+
+    def removeEventListener(self, listener):
+        if listener in self._listeners:
+            self._listeners.remove(listener)
+
     # XChild
     def getParent(self):
         content = None
+        print("Content.getParent() 1")
         if not self.Identifier.isRoot():
+            print("Content.getParent() 1")
             content = self.Identifier.getParent().getContent()
+        print("Content.getParent() 1")
         return content
+
     def setParent(self, parent):
         raise NoSupportException('Parent can not be set', self)
 
@@ -136,10 +163,11 @@ class Content(unohelper.Base,
     def queryCreatableContentsInfo(self):
         return self.getIdentifier().getCreatableContentsInfo()
     def createNewContent(self, info):
-        # To avoid circular imports, the creation of new identifiers is delegated to
-        # Identifier.createNewIdentifier() since the identifier also creates Content
-        # with Identifier.getContent()
-        return self.getIdentifier().createNewIdentifier(info.Type).getContent()
+        # To avoid circular imports, the creation of new content is delegated to
+        # Identifier.createNewContent() since the identifier also creates Content
+        # with Identifier.createContent()
+        print("Content.createNewContent() 1")
+        return self.Identifier.createNewContent(info.Type)
 
     # XContent
     def getIdentifier(self):
@@ -157,6 +185,7 @@ class Content(unohelper.Base,
     def createCommandIdentifier(self):
         return 1
     def execute(self, command, id, environment):
+        print("Content.execute() 1  Commande Name: %s ****************************************************************" % command.Name)
         url = self.getIdentifier().getContentIdentifier()
         print("Content.execute() %s - %s - %s" % (command.Name, url, self.getIdentifier().Id))
         msg = "command.Name: %s" % command.Name
@@ -166,10 +195,10 @@ class Content(unohelper.Base,
         elif command.Name == 'getPropertySetInfo':
             return PropertySetInfo(self.Identifier._propertySetInfo)
         elif command.Name == 'getPropertyValues':
-            values = getPropertiesValues(self._ctx, self, command.Argument)
+            values = getPropertiesValues(self._logger, self, command.Argument)
             return Row(values)
         elif command.Name == 'setPropertyValues':
-            return setPropertiesValues(self._ctx, self, environment, command.Argument)
+            return setPropertiesValues(self._logger, self, environment, command.Argument)
         elif command.Name == 'delete':
             self.MetaData.insertValue('Trashed', True)
             user = self.Identifier.User
@@ -183,7 +212,7 @@ class Content(unohelper.Base,
                 msg += " IsFolder: %s" % self.IsFolder
                 self._logger.logp(INFO, 'Content', 'execute()', msg)
                 print("Content.execute() open 3")
-                return DynamicResultSet(self.Identifier, select)
+                return DynamicResultSet(self.Identifier.User, select)
             elif self.IsDocument:
                 print("Content.execute() open 4")
                 sf = getSimpleFile(self._ctx)
@@ -203,17 +232,25 @@ class Content(unohelper.Base,
             # The Insert command is only used to create a new folder or a new document
             # (ie: File Save As).
             # It saves the content created by 'createNewContent' from the parent folder
+            # right after the Title property is initialized
             print("Content.execute() insert 1 - %s - %s - %s" % (self.IsFolder,
-                                                                    self.Identifier.Id,
-                                                                    self.MetaData.getValue('Title')))
+                                                                 self.Identifier.Id,
+                                                                 self.MetaData.getValue('Title')))
             if self.IsFolder:
-                mediatype = self.Identifier.User.Provider.Folder
-                self.MetaData.insertValue('MediaType', mediatype)
-                print("Content.execute() insert 2 ************** %s" % mediatype)
-                if self.Identifier.insertNewContent(self.MetaData):
-                    # Need to consum the new Identifier if needed...
-                    self.Identifier.deleteNewIdentifier()
-                print("Content.execute() insert 3")
+                #mediatype = self.Identifier.User.Provider.Folder
+                #self.MetaData.insertValue('MediaType', mediatype)
+                print("Content.execute() insert 2 ************** %s" % self.MetaData.getValue('MediaType'))
+                try:
+                    if self.Identifier.insertNewContent(self.MetaData):
+                        print("Content.execute() insert 3")
+                        # Need to consum the new Identifier if needed...
+                        self.Identifier.deleteNewIdentifier()
+                        print("Content.execute() insert 4")
+                except Exception as e:
+                    msg = "Content.Insert() Error: %s" % traceback.print_exc()
+                    print(msg)
+                    raise e
+                        
             elif self.IsDocument:
                 stream = command.Argument.Data
                 replace = command.Argument.ReplaceExisting
@@ -224,8 +261,9 @@ class Content(unohelper.Base,
                     return
                 if hasInterface(stream, 'com.sun.star.io.XInputStream'):
                     sf.writeFile(target, stream)
+                    # For document type resources, the media type is always unknown...
                     mediatype = getMimeType(self._ctx, stream)
-                    self.MetaData.insertValue('MediaType', mediatype)
+                    self.MetaData.setValue('MediaType', mediatype)
                     stream.closeInput()
                     print("Content.execute() insert 2 ************** %s" % mediatype)
                     if self.Identifier.insertNewContent(self.MetaData):

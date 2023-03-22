@@ -40,16 +40,21 @@ interface XRestUser: com::sun::star::uno::XInterface
 {
 
     boolean isInitialized();
+
     void initialize([in] ::com::sun::star::sdbc::XDataSource DataSource,
                     [in] string Url);
 
     boolean isValid();
-    ::com::sun::star::uno::XInterface getIdentifier([in] ::com::sun::star::uno::XInterface UriFactory,
-                                                    [in] ::com::sun::star::uri::XUriReference Uri,
-                                                    [in] string Url);
+
+    void addIdentifier([in] ::com::sun::star::uno::XInterface Identifier);
+    void removeIdentifiers([in] string Url);
+
+    ::com::sun::star::uno::XInterface getIdentifier([in] string Url);
+
     void setDataBase([in] ::com::sun::star::sdbc::XDataSource DataSource,
                      [in] string Password,
                      [in] ::com::sun::star::uno::XInterface Sync);
+
     string getCredential([inout] string Password);
 
     [attribute, readonly] ::com::sun::star::ucb::XRestProvider Provider;

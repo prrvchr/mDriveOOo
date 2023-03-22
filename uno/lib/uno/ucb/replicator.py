@@ -191,6 +191,7 @@ class Replicator(unohelper.Base,
             print("Replicator._pushData() 1")
             results = []
             operations = {'TitleUpdated': [], 'SizeUpdated': [], 'TrashedUpdated': []}
+            start = currentDateTimeInTZ()
             end = currentDateTimeInTZ()
             for item in self.DataBase.getPushItems(start, end):
                 user = self._users.get(item.getValue('UserName'), None)

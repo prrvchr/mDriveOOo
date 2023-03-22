@@ -57,8 +57,9 @@ from .unolib import KeyMap
 from .oauth2lib import getOAuth2UserName
 
 from .unotool import getProperty
-from .unotool import getUriFactory
-from .unotool import parseDateTime
+
+from .dbtool import currentUnoDateTime
+from .dbtool import currentDateTimeInTZ
 
 from .content import Content
 from .contenttools import getContentInfo
@@ -77,17 +78,15 @@ class Identifier(unohelper.Base,
                  XContentIdentifier,
                  XRestIdentifier,
                  XChild):
-    def __init__(self, ctx, factory, user, uri, url, contenttype=''):
+    def __init__(self, ctx, user, url, data=None):
         self._ctx = ctx
-        self._factory = factory
-        self._uri = uri
         self._url = url
-        self._type = contenttype
         self._propertySetInfo = {}
-        self._content = None
         self.User = user
-        self.IsNew = contenttype != ''
-        self.MetaData = None
+        self.IsNew = data is not None
+        self.MetaData = KeyMap() if data is None else data
+        self._propertySetInfo = self._getPropertySetInfo()
+        self._content = Content(ctx, self) if self.IsNew else None
         self._logger = getLogger(ctx, g_defaultlog, g_basename)
         self._logger.logprb(INFO, 'Identifier', '__init__()', 101)
 
@@ -107,66 +106,91 @@ class Identifier(unohelper.Base,
     def isRoot(self):
         return self.Id == self.User.RootId
     def isFolder(self):
-        return self.MetaData.getValue('IsFolder')
+        return self.MetaData.getDefaultValue('IsFolder', True)
     def isValid(self):
         return all((self.User.isValid(), self.Id, self.MetaData.hasValue('ObjectId')))
-    def getUri(self):
-        return self._uri
 
     # XContentIdentifier
     def getContentIdentifier(self):
-        return self._uri.getUriReference()
+        return self._url
     def getContentProviderScheme(self):
-        return self._uri.getScheme()
+        return self.User.Provider.Scheme
 
     # XChild
     def getParent(self):
+        print("Identifier.getParent() 1")
         parent = None
         if not self.isRoot():
-            uri = self._factory.parse(self.ParentURI)
-            parent = self.User.getIdentifier(self._factory, uri, self.ParentURI)
+            print("Identifier.getParent() 2")
+            parent = self.User.getIdentifier(self.ParentURI)
+        print("Identifier.getParent() 3")
         return parent
     def setParent(self, parent):
         msg = self._logger.resolveString(111)
         raise NoSupportException(msg, self)
 
     # XRestIdentifier
-    def isInitialized(self):
-        return self._initialized
+    def createNewContent(self, contentype):
+        print("Identifier.createNewContent() 1")
+        data = self._getNewContent(contentype)
+        print("Identifier.createNewContent() 2")
+        content = Identifier(self._ctx, self.User, self._url, data).getInnerContent()
+        print("Identifier.createNewContent() 3")
+        return content
 
-    def initialize(self, database):
-        if self.User is None:
-            msg = self._logger.resolveString(121, self.getContentIdentifier())
-            raise IllegalIdentifierException(msg, self)
-        if not self.User.isInitialized():
-            self.User.initialize(database)
-        self.MetaData = self._getMetaData()
-        self._initialized = True
+    # FIXME: Get called from Content.createNewContent() -> Identifier.createNewContent()
+    def getInnerContent(self):
+        return self._content
 
-    def createNewIdentifier(self, contenttype):
-        url = self.getContentIdentifier()
-        uri = self._factory.parse(url)
-        return Identifier(self._ctx, self._factory, self.User, uri, url, contenttype)
-
-    def getContent(self, datasource):
+    # FIXME: Get called from Content.getParent(), ContentResultSet.queryContent() and User.removeIdentifiers()
+    def getContent(self):
         try:
             print("Identifier.getContent() 1")
-            if self._content is not None:
-                return self._content
-            if self._uri is None:
-                msg = self._logger.resolveString(121, self._url)
-                raise IllegalIdentifierException(msg, self)
+            if self._content is None:
+                # When getContent is called, the user must already exist
+                self._content = self._getContent()
             print("Identifier.getContent() 2")
-            if not self.User.isInitialized():
-                self.User.initialize(datasource, self._url)
-            self.MetaData = self._getMetaData()
-            print("Identifier.getContent() 3")
-            self._content = Content(self._ctx, self)
             return self._content
         except Exception as e:
             msg = "Identifier.getContent() Error: %s" % traceback.print_exc()
             print(msg)
+            raise e
 
+    # FIXME: Get called from ContentProvider.queryContent()
+    def queryContent(self, datasource):
+        try:
+            print("Identifier.queryContent() 1")
+            if self._content is not None:
+                return self._content
+            if self._url is None:
+                msg = self._logger.resolveString(121)
+                raise IllegalIdentifierException(msg, self)
+            if not self._isUrlValid():
+                msg = self._logger.resolveString(122, self.getContentIdentifier())
+                raise IllegalIdentifierException(msg, self)
+            print("Identifier.queryContent() 2")
+            if not self.User.isInitialized():
+                self.User.initialize(datasource, self._url)
+            print("Identifier.queryContent() 3")
+            self._content = self._getContent()
+            return self._content
+        except Exception as e:
+            msg = "Identifier.queryContent() Error: %s" % traceback.print_exc()
+            print(msg)
+            raise e
+
+    def _getContent(self):
+        try:
+            print("Identifier._getContent() 1")
+            self.MetaData = self._getMetaData()
+            print("Identifier._getContent() 2")
+            content = Content(self._ctx, self)
+            self.User.addIdentifier(self)
+            return content
+        except Exception as e:
+            msg = "Identifier._getContent() Error: %s" % traceback.print_exc()
+            print(msg)
+            raise e
 
     def getFolderContent(self, content):
         try:
@@ -178,6 +202,7 @@ class Identifier(unohelper.Base,
         except Exception as e:
             msg = "Error: %s" % traceback.print_exc()
             print(msg)
+            raise e
 
     def getDocumentContent(self, sf, content, size):
         size = 0
@@ -200,26 +225,36 @@ class Identifier(unohelper.Base,
         return url, size
 
     def insertNewContent(self, content):
-        timestamp = parseDateTime()
-        return self.User.DataBase.insertNewContent(self.User.Id, self.Id, self.ParentId, content, timestamp)
+        timestamp = currentDateTimeInTZ()
+        print("Identifier.insertNewContent() 1")
+        path, basename = self.User.DataBase.insertNewContent(self.User.Id, self.Id, self.ParentId, content, timestamp)
+        print("Identifier.insertNewContent() 2 Path: %s - BaseName: %s" % (path, basename))
+        return self._setNewTitle(path, basename)
 
     def setTitle(self, title):
-        # If Title change we need to change Identifier.getContentIdentifier()
-        if not self.IsNew:
-            # And as the uri changes we also have to clear this Identifier from the cache.
-            # New Identifier bypass the cache: they are created by the folder's Identifier
-            # (ie: createNewIdentifier()) and have same uri as this folder.
-            self.User.clearIdentifier(self.getContentIdentifier())
-        url = self.ParentURI
-        if not url.endswith('/'):
-            url += '/'
-        url += title
-        self._uri = getUriFactory(self._ctx).parse(url)
-        self.MetaData.setValue('Title', title)
-        # If the identifier is new then the content is not yet in the database.
-        # It will be inserted by the insert command of the XCommandProcessor2.execute()
-        if not self.IsNew:
-            self.User.DataBase.updateContent(self.User.Id, self.Id, 'Title', title)
+        try:
+            # If Title change we need to change Identifier.getContentIdentifier()
+            print("Identifier.setTitle() 1 New Title: %s - IsNew: %s" % (title, self.IsNew))
+            if not self.IsNew:
+                # And as the uri changes we also have to clear this Identifier from the cache.
+                # New Identifier bypass the cache: they are created by the folder's Identifier
+                # (ie: createNewIdentifier()) and have same uri as this folder.
+                self.User.removeIdentifiers(self._url)
+            if self.User.Provider.SupportDuplicate:
+                newtitle = self.User.DataBase.getNewTitle(title, self.ParentId, self.isFolder())
+            else:
+                newtitle = title
+            print("Identifier.setTitle() 1 Title: %s - New Title: %s" % (title, newtitle))
+            self._url = '%s/%s' % (self.ParentURI, newtitle)
+            self.MetaData.setValue('Title', title)
+            self.MetaData.setValue('TitleOnServer', title)
+            # If the identifier is new then the content is not yet in the database.
+            # It will be inserted by the insert command of the XCommandProcessor2.execute()
+            if not self.IsNew:
+                self.User.DataBase.updateTitle(self.User.Id, self.Id, 'Title', title)
+        except Exception as e:
+            msg = "Identifier.setTitle() Error: %s" % traceback.print_exc()
+            print(msg)
 
     def deleteNewIdentifier(self):
         if self.User.Provider.GenerateIds:
@@ -236,33 +271,20 @@ class Identifier(unohelper.Base,
             #    content.append(getContentInfo(provider.ProprietaryFormat, KIND_DOCUMENT, properties))
         return tuple(content)
 
-    def queryContentIdentifier(self, url):
-        return self.User.getIdentifier(self._factory, url)
-
     # Private methods
     def _getMetaData(self):
-        uripath = self._uri.getPath().strip('/.')
-        #paths = (self._uri.getPathSegment(i) for i in range(self._uri.getPathSegmentCount()))
-        itemid, parentid, path = self.User.DataBase.getIdentifier(self.User.Id, self.User.RootId, uripath)
-        if itemid is None:
-            msg = self._logger.resolveString(151, self.getContentIdentifier())
-            raise IllegalIdentifierException(msg, self)
         metadata = KeyMap()
         if self.IsNew:
             # FIXME: New Identifier are created by the parent folder...
-            metadata.setValue('ParentId', itemid)
-            itemid = self._getNewIdentifier()
-            parenturi = self._uri.getUriReference()
-            data = self._getNewContent(itemid, self._type)
+            data = self._getNewContent()
         else:
-            metadata.setValue('ParentId', parentid)
-            parenturi = self._getContentIdentifier(path)
-            data = self.User.DataBase.getItem(self.User.Id, itemid, parentid)
-        metadata.setValue('Id', itemid)
-        metadata.setValue('ParentURI', parenturi)
+            itemid, isroot = self.User.DataBase.getIdentifier(self._url, self.User.RootId)
+            if itemid is None:
+                msg = self._logger.resolveString(151, self.getContentIdentifier())
+                raise IllegalIdentifierException(msg, self)
+            data = self.User.DataBase.getItem(self.User.Id, itemid, isroot)
         if data is not None:
             metadata += data
-            self._propertySetInfo = self._getPropertySetInfo()
         return metadata
 
     def _getNewIdentifier(self):
@@ -272,20 +294,24 @@ class Identifier(unohelper.Base,
             identifier = binascii.hexlify(uno.generateUuid().value).decode('utf-8')
         return identifier
 
-    def _getNewContent(self, itemid, contenttype):
-        timestamp = parseDateTime()
-        isfolder = self.User.Provider.isFolder(contenttype)
-        isdocument = self.User.Provider.isDocument(contenttype)
+    def _getNewContent(self, contentype):
+        timestamp = currentUnoDateTime()
+        isfolder = self.User.Provider.isFolder(contentype)
+        isdocument = self.User.Provider.isDocument(contentype)
+        itemid = self._getNewIdentifier()
+        print("Identifier._getNewContent() New Uri: %s - NewID: %s" % (self._url, itemid))
         isroot = itemid == self.User.RootId
         data = KeyMap()
         data.insertValue('Id', itemid)
+        data.insertValue('ParentId', self.Id)
+        data.insertValue('ParentURI', self._url)
         data.insertValue('ObjectId', itemid)
         data.insertValue('Title', '')
         data.insertValue('TitleOnServer', '')
         data.insertValue('DateCreated', timestamp)
         data.insertValue('DateModified', timestamp)
-        data.insertValue('ContentType', contenttype)
-        mediatype = '' if isdocument else contenttype
+        data.insertValue('ContentType', contentype)
+        mediatype = '' if isdocument else contentype
         data.insertValue('MediaType', mediatype)
         data.insertValue('Size', 0)
         data.insertValue('Trashed', False)
@@ -297,18 +323,22 @@ class Identifier(unohelper.Base,
         data.insertValue('IsReadOnly', False)
         data.insertValue('IsVersionable', isdocument)
         data.insertValue('Loaded', True)
-        data.insertValue('BaseURI', self.getContentIdentifier())
+        data.insertValue('BaseURI', self._url)
         return data
+
+    def _setNewTitle(self, url, title):
+        self.MetaData.setValue('Title', title)
+        self.MetaData.setValue('TitleOnServer', title)
+        self.MetaData.setValue('BaseURI', url)
+        self._url = url
+        return True
 
     def _getFolderContent(self, content, updated):
         if ONLINE == content.getValue('Loaded') == self.User.Provider.SessionMode:
             self._logger.logprb(INFO, 'Identifier', '_getFolderContent()', 141, self.getContentIdentifier())
             updated = self.User.DataBase.updateFolderContent(self.User, content)
-        url = self.getContentIdentifier()
-        if not url.endswith('/'):
-            url += '/'
         mode = self.User.Provider.SessionMode
-        select = self.User.DataBase.getChildren(self.User.Id, self.Id, url, mode)
+        select = self.User.DataBase.getChildren(self.Id, mode)
         print("Identifier._getFolderContent()")
         return select, updated
 
@@ -339,8 +369,12 @@ class Identifier(unohelper.Base,
         properties['IsCompactDisc'] = getProperty('IsCompactDisc', 'boolean', BOUND | RO)
         return properties
 
-    def _getContentIdentifier(self, path):
-        identifier = '%s://%s/%s' % (self._uri.getScheme(), self.User.Name, path)
-        print("Identifier._getContentIdentifier() : %s" % identifier)
-        return identifier
+    def _getContentScheme(self):
+        scheme = '%s://%s' % (self.User.Provider.Scheme, self.User.Name)
+        print("Identifier._getContentScheme() : %s" % scheme)
+        return scheme
 
+    def _isUrlValid(self):
+        # FIXME: LibreOffice seems to do a lot of UCB calls with an incomplete identifier like: 'vnd-google:' 
+        # FIXME: for performance reasons we should not process these calls
+        return self._url.startswith(self.User.Provider.Scheme + '://')

@@ -32,6 +32,7 @@ from .dbtool import createDataSource
 from .dbtool import createStaticTable
 from .dbtool import currentDateTime
 from .dbtool import currentDateTimeInTZ
+from .dbtool import currentUnoDateTime
 from .dbtool import executeQueries
 from .dbtool import executeSqlQueries
 from .dbtool import getConnectionInfo

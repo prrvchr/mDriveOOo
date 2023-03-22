@@ -150,6 +150,7 @@ interface XRestProvider: com::sun::star::uno::XInterface
     [attribute, readonly] string Link;
     [attribute, readonly] string Office;
     [attribute, readonly] string Document;
+    [attribute, readonly] boolean SupportDuplicate;
     [attribute, readonly] long Chunk;
     [attribute, readonly] long Buffer;
     [attribute, readonly] string Error;

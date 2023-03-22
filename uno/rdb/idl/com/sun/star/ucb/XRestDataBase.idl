@@ -83,13 +83,9 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     ::com::sun::star::auth::XRestKeyMap getItem([in] string UserId,
                                                 [in] string ItemId,
                                                 [in] any ParentId);
-    void insertNewContent([in] string UserId,
-                          [in] string ItemId,
-                          [in] string ParentId,
-                          [in] ::com::sun::star::auth::XRestKeyMap Content);
-    long countChildTitle([in] string UserId,
-                         [in] string ParentId,
-                         [in] string Title);
+    boolean hasTitle([in] string UserId,
+                     [in] string ParentId,
+                     [in] string Title);
     string getChildId([in] string UserId,
                       [in] string ParentId,
                       [in] string Title);

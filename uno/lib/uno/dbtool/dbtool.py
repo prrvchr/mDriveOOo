@@ -602,6 +602,10 @@ def currentDateTime(utc=True):
     now = datetime.utcnow() if utc else datetime.now()
     return _currentDateTime(now, utc)
 
+def currentUnoDateTime(utc=True):
+    now = datetime.utcnow() if utc else datetime.now()
+    return _getUnoDateTime(now, utc)
+
 def getDateTimeInTZToString(dtz=None, decimal=6):
     dt = currentDateTime(False) if dtz is None else dtz.DateTimeInTZ
     fraction = dt.NanoSeconds // (10 ** (9 - decimal))
@@ -628,6 +632,9 @@ def toUnoDateTime(dtz):
 
 def getDateTimeFromString(dtstr, format, utc=False):
     now = datetime.strptime(dtstr, format)
+    return _getUnoDateTime(now, utc)
+
+def _getUnoDateTime(now, utc):
     dt = uno.createUnoStruct('com.sun.star.util.DateTime')
     dt.Year = now.year
     dt.Month = now.month

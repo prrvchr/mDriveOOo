@@ -111,6 +111,9 @@ class ProviderBase(ProviderObject,
     @property
     def FolderSyncModes(self):
         return (SYNC_FOLDER, )
+    @property
+    def SupportDuplicate(self):
+        return False
 
     # Must be implemented method
     def getRequestParameter(self, method, data):

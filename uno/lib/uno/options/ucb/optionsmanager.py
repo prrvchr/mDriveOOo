@@ -67,7 +67,7 @@ class OptionsManager(unohelper.Base):
 
     def viewData(self):
         url = self._model.getDatasourceUrl()
-        getDesktop(self._ctx).loadComponentFromURL(url, '_default', 0, ())
+        getDesktop(self._ctx).loadComponentFromURL(url, '_blank', 0, ())
 
     def saveFile(self):
         try:

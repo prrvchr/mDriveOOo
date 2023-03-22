@@ -50,6 +50,7 @@ class PropertySetInfo(unohelper.Base,
     def getProperties(self):
         return tuple(self.properties.values())
     def getPropertyByName(self, name):
+        print("PropertySetInfo.getPropertyByName() %s" % name)
         if name in self.properties:
             return self.properties[name]
         raise UnknownPropertyException("UnknownPropertyException", None)

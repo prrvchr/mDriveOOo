@@ -45,6 +45,8 @@ from .oauth2lib import getOAuth2UserName
 from .oauth2lib import getRequest
 from .oauth2lib import g_oauth2
 
+from .unotool import createService
+
 from .database import DataBase
 
 from .logger import getLogger
@@ -135,13 +137,26 @@ class User(unohelper.Base,
         self._lock.set()
         print("User.initialize() 6")
 
-    def getIdentifier(self, factory, uri, url):
-        key = None if uri is None else uri.getPath()
-        if key in self._identifiers:
-            identifier = self._identifiers[key]
+    def getIdentifier(self, url):
+        if url in self._identifiers:
+            identifier = self._identifiers[url]
         else:
-            identifier = Identifier(self._ctx, factory, self, uri, url)
+            identifier = Identifier(self._ctx, self, url)
         return identifier
+
+    def addIdentifier(self, identifier):
+        key = identifier.getContentIdentifier()
+        print("User.addIdentifier() Uri: %s - Id: %s" % (key, identifier.Id))
+        if key not in self._identifiers:
+            self._identifiers[key] = identifier
+
+    def removeIdentifiers(self, parent):
+        # FIXME: We need to remove all the child of a resource (if it's a folder)
+        for url in self._identifiers:
+            if url.startswith(parent):
+                identifier = self._identifiers[url]
+                identifier.getContent().dispose()
+                del self._identifiers[url]
 
 # Internal use of method
     def _setUserName(self, datasource, url):

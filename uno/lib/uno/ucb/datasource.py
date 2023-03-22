@@ -76,6 +76,7 @@ class DataSource(unohelper.Base,
         self._users = {}
         self.Error = None
         self._sync = event
+        self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
         self.Provider = createService(self._ctx, '%s.Provider' % plugin)
         datasource, url, created = self._getDataSource(scheme, plugin, True)
         self.DataBase = DataBase(self._ctx, datasource)
@@ -111,18 +112,14 @@ class DataSource(unohelper.Base,
     def isValid(self):
         return self.Error is None
 
-    def getIdentifier(self, factory, url):
+    def getIdentifier(self, url):
         try:
             print("DataSource.getIdentifier() 1 Url: %s" % url)
-            #if user is not None:
-            #    url = '%s://%s%s' % (uri.getScheme(), name, uri.getPath())
-            #    print("DataSource.getIdentifier() 2 Url: %s" % url)
-            #    identifier = user.getIdentifier(factory, url)
-            #else:
-            #    identifier = Identifier(self._ctx, factory, user, url)
-            uri = factory.parse(url)
+            uri = self._factory.parse(url)
+            msg = None
             if uri is None:
                 name = None
+                url = None
             elif uri.hasAuthority() and uri.getAuthority() != '':
                 name = uri.getAuthority()
             elif self._default is not None:
@@ -135,7 +132,7 @@ class DataSource(unohelper.Base,
                 user = self._users[name]
             else:
                 user = User(self._ctx, self, name, self._sync)
-            return user.getIdentifier(factory, uri, url)
+            return user.getIdentifier(url)
         except Exception as e:
             msg = "DataSource.getIdentifier() Error: %s" % traceback.print_exc()
             print(msg)
