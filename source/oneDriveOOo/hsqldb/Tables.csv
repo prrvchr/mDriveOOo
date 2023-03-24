@@ -1,6 +1,1 @@
-Table|Name|Identity|View|Versioned
-0|Users|0||false
-1|Items|4||true
-2|Parents|||true
-3|Capabilities|||true
-4|Identifiers|||false
+../../../uno/lib/uno/ucb/hsqldb/Tables.csv
