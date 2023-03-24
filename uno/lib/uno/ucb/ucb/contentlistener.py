@@ -1,4 +1,7 @@
-/*
+#!
+# -*- coding: utf-8 -*-
+
+"""
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
 ║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
@@ -22,31 +25,29 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
- */
+"""
 
-#ifndef __com_sun_star_ucb_XRestReplicator_idl__
-#define __com_sun_star_ucb_XRestReplicator_idl__
+import unohelper
 
-#include <com/sun/star/uno/XInterface.idl>
-#include <com/sun/star/ucb/XRestDataBase.idl>
-#include <com/sun/star/ucb/XRestProvider.idl>
-#include <com/sun/star/beans/Optional.idl>
-#include <com/sun/star/auth/XRestKeyMap.idl>
+from com.sun.star.ucb import XContentEventListener
 
-module com { module sun { module star { module ucb {
+import traceback
 
-interface XRestReplicator: com::sun::star::uno::XInterface
-{
 
-    void cancel();
-    boolean callBack([in] string ItemId,
-                     [in] ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> Response);
+class ContentListener(unohelper.Base,
+                      XContentEventListener):
+    def __init__(self, user):
+        self._user = user
 
-    [attribute, readonly] ::com::sun::star::ucb::XRestProvider Provider;
-    [attribute, readonly] ::com::sun::star::ucb::XRestDataBase DataBase;
+    # XContentEventListener
+    def contentEvent(self, event):
+        try:
+            print("ContentListener.contentEvent()")
+            self._user.updateIdentifier(event)
+        except Exception as e:
+            msg = "Error: %s" % traceback.print_exc()
+            print(msg)
 
-};
+    def disposing(self, event):
+        pass
 
-}; }; }; };
-
-#endif

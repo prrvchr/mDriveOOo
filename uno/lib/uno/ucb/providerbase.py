@@ -285,3 +285,8 @@ class ProviderBase(ProviderObject,
         parameter = self.getRequestParameter('updateTrashed', item)
         response = request.execute(parameter)
         return response.IsPresent
+
+    def updateParents(self, request, item):
+        parameter = self.getRequestParameter('updateParents', item)
+        response = request.execute(parameter)
+        return response.IsPresent

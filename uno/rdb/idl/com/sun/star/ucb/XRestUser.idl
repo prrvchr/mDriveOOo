@@ -47,7 +47,7 @@ interface XRestUser: com::sun::star::uno::XInterface
     boolean isValid();
 
     void addIdentifier([in] ::com::sun::star::uno::XInterface Identifier);
-    void removeIdentifiers([in] string Url);
+    void expireIdentifier([in] string Url);
 
     ::com::sun::star::uno::XInterface getIdentifier([in] string Url);
 

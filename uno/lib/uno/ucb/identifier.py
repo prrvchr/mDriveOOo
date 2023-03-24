@@ -81,8 +81,8 @@ class Identifier(unohelper.Base,
     def __init__(self, ctx, user, url, data=None):
         self._ctx = ctx
         self._url = url
-        self._propertySetInfo = {}
         self.User = user
+        self._oldtitle = None
         self.IsNew = data is not None
         self.MetaData = KeyMap() if data is None else data
         self._propertySetInfo = self._getPropertySetInfo()
@@ -239,19 +239,23 @@ class Identifier(unohelper.Base,
                 # And as the uri changes we also have to clear this Identifier from the cache.
                 # New Identifier bypass the cache: they are created by the folder's Identifier
                 # (ie: createNewIdentifier()) and have same uri as this folder.
-                self.User.removeIdentifiers(self._url)
+                self.User.expireIdentifier(self._url)
             if self.User.Provider.SupportDuplicate:
                 newtitle = self.User.DataBase.getNewTitle(title, self.ParentId, self.isFolder())
             else:
                 newtitle = title
-            print("Identifier.setTitle() 1 Title: %s - New Title: %s" % (title, newtitle))
+            print("Identifier.setTitle() 2 Title: %s - New Title: %s" % (title, newtitle))
             self._url = '%s/%s' % (self.ParentURI, newtitle)
-            self.MetaData.setValue('Title', title)
-            self.MetaData.setValue('TitleOnServer', title)
+            self.MetaData.setValue('Title', newtitle)
+            self.MetaData.setValue('TitleOnServer', newtitle)
             # If the identifier is new then the content is not yet in the database.
             # It will be inserted by the insert command of the XCommandProcessor2.execute()
             if not self.IsNew:
-                self.User.DataBase.updateTitle(self.User.Id, self.Id, 'Title', title)
+                self.User.DataBase.updateContent(self.User.Id, self.Id, 'Title', title)
+            #if newtitle != title:
+            #    action = uno.Enum('com.sun.star.ucb.ContentAction', 'EXCHANGED')
+            #    self._content.notifyContentListener(action, self)
+            print("Identifier.setTitle() 3 Title")
         except Exception as e:
             msg = "Identifier.setTitle() Error: %s" % traceback.print_exc()
             print(msg)

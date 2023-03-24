@@ -164,7 +164,16 @@ class DataBase(unohelper.Base,
         return folder, link
 
 # Procedures called by the Identifier
-    def getItem(self, userid, itemid, isroot):
+    def getMetaData(self, user, item):
+        rootid = user.RootId
+        itemid = item.getValue('ItemId')
+        metadata = self.getItem(user.Id, itemid, rootid == itemid, False)
+        atroot = metadata.getValue('ParentId') == rootid
+        metadata.insertValue('AtRoot', atroot)
+        return metadata
+    
+        #TODO: Can't have a simple SELECT ResultSet with a Procedure,
+    def getItem(self, userid, itemid, isroot, rewite=True):
         #TODO: Can't have a simple SELECT ResultSet with a Procedure,
         #TODO: the malfunction is rather bizard: it always returns the same result
         #TODO: as a workaround we use a simple query...
@@ -172,6 +181,8 @@ class DataBase(unohelper.Base,
         call = 'getRoot' if isroot else 'getItem'
         select = self._getCall(call)
         select.setString(1, userid if isroot else itemid)
+        if not isroot:
+             select.setBoolean(2, rewite)
         result = select.executeQuery()
         if result.next():
             item = getKeyMapFromResult(result)
@@ -359,6 +370,14 @@ class DataBase(unohelper.Base,
         return id
 
 # Procedures called by the Replicator
+    # Get the datetime of the oldest replication
+    def getUserTimeStamp(self, userid):
+        call = self._getCall('getUserTimeStamp')
+        call.execute()
+        timestamp = call.getObject(1, None)
+        call.close()
+        return timestamp
+
     # Synchronization pull token update procedure
     def updateToken(self, userid, token):
         update = self._getCall('updateToken')
@@ -419,26 +438,17 @@ class DataBase(unohelper.Base,
         update.executeUpdate()
         update.close()
 
-    def getUserTimeStamp(self, userid):
-        select = self._getCall('getUserTimeStamp')
-        select.setString(1, userid)
-        result = select.executeQuery()
-        if result.next():
-            timestamp = result.getObject(1, None)
-        result.close()
-        select.close()
-        return timestamp
-
     def setSession(self, user=g_dba):
         query = getSqlQuery(self._ctx, 'setSession', user)
         self._statement.execute(query)
 
     # Procedure to retrieve all the UPDATE AND INSERT in the 'Capabilities' table
-    def getPushItems(self, start, end):
+    def getPushItems(self, userid, start, end):
         items = []
-        select = self._getCall('getSyncItems')
-        select.setObject(1, start)
-        select.setObject(2, end)
+        select = self._getCall('getPushItems')
+        select.setString(1, userid)
+        select.setObject(2, start)
+        select.setObject(3, end)
         result = select.executeQuery()
         while result.next():
             items.append(getKeyMapFromResult(result))
@@ -446,7 +456,33 @@ class DataBase(unohelper.Base,
         select.close()
         return items
 
-    def updateItemId(self, provider, user, uri, itemid, response):
+    def getPushProperties(self, userid, itemid, start, end):
+        properties = None
+        select = self._getCall('getPushProperties')
+        select.setString(1, userid)
+        select.setString(2, itemid)
+        select.setObject(3, start)
+        select.setObject(4, end)
+        result = select.executeQuery()
+        if result.next():
+            properties = getKeyMapFromResult(result)
+        result.close()
+        select.close()
+        return properties
+
+    def getItemParentIds(self, itemid, metadata, start, end):
+        call = self._getCall('getItemParentIds')
+        call.setString(1, itemid)
+        call.setObject(2, start)
+        call.setObject(3, end)
+        call.execute()
+        old = call.getArray(4)
+        new = call.getArray(5)
+        call.close()
+        metadata.insertValue('ParentToAdd', set(new) - set(old))
+        metadata.insertValue('ParentToRemove', set(old) - set(new))
+
+    def updateItemId(self, provider, itemid, response):
         newid = provider.getResponseId(response, itemid)
         if newid != itemid:
             update = self._getCall('updateItemId')
@@ -456,8 +492,6 @@ class DataBase(unohelper.Base,
             msg = "execute UPDATE Items - Old ItemId: %s - New ItemId: %s - RowCount: %s" % (itemid, newid, row)
             getLogger(self._ctx).logp(INFO, "DataBase", "updateItemId", msg)
             update.close()
-            # The Id of the item have been changed, we need to clear the Identifier from the cache
-            user.clearIdentifier(uri)
 
 # Procedures called internally
     def _mergeItem(self, call, provider, item, id, parents, timestamp):

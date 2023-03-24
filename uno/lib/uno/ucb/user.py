@@ -33,6 +33,9 @@ import unohelper
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from com.sun.star.ucb.ContentAction import EXCHANGED
+from com.sun.star.ucb.ContentAction import REMOVED
+
 from com.sun.star.ucb import IllegalIdentifierException
 
 from com.sun.star.ucb import XRestUser
@@ -60,10 +63,12 @@ import traceback
 
 class User(unohelper.Base,
            XRestUser):
-    def __init__(self, ctx, source, name, lock, init=False):
+    def __init__(self, ctx, source, name, sync, lock, init=False):
         self._ctx = ctx
         self._name = name
+        self._sync = sync
         self._lock = lock
+        self._expired = None
         self.DataBase = source.DataBase if init else None
         self.Provider = source.Provider
         self.CanAddChild = not self.Provider.GenerateIds
@@ -129,34 +134,45 @@ class User(unohelper.Base,
             if not datasource.DataBase.createUser(self._name, password):
                 msg = self._logger.resolveString(114, self._name)
                 raise IllegalIdentifierException(msg, self)
-        self.DataBase = DataBase(self._ctx, datasource.DataBase.getDataSource(), self._name, password, self._lock)
+        self.DataBase = DataBase(self._ctx, datasource.DataBase.getDataSource(), self._name, password, self._sync)
         print("User.initialize() 4")
         datasource.addUser(self)
         print("User.initialize() 5")
         self._initialized = True
-        self._lock.set()
+        self._sync.set()
         print("User.initialize() 6")
 
     def getIdentifier(self, url):
-        if url in self._identifiers:
-            identifier = self._identifiers[url]
+        identifier = None
+        if self._expired is not None and url.startswith(self._expired):
+            self._removeIdentifiers()
         else:
+            identifier = self._identifiers.get(url)
+        if identifier is None:
             identifier = Identifier(self._ctx, self, url)
         return identifier
+
+    def updateIdentifier(self, event):
+        pass
 
     def addIdentifier(self, identifier):
         key = identifier.getContentIdentifier()
         print("User.addIdentifier() Uri: %s - Id: %s" % (key, identifier.Id))
         if key not in self._identifiers:
-            self._identifiers[key] = identifier
+            with self._lock:
+                self._identifiers[key] = identifier
 
-    def removeIdentifiers(self, parent):
+    def expireIdentifier(self, url):
         # FIXME: We need to remove all the child of a resource (if it's a folder)
-        for url in self._identifiers:
-            if url.startswith(parent):
-                identifier = self._identifiers[url]
-                identifier.getContent().dispose()
-                del self._identifiers[url]
+        self._expired = url
+
+    def _removeIdentifiers(self):
+        for url in tuple(self._identifiers.keys()):
+            if url.startswith(self._expired):
+                with self._lock:
+                    if url in self._identifiers:
+                        del self._identifiers[url]
+        self._expired = None
 
 # Internal use of method
     def _setUserName(self, datasource, url):

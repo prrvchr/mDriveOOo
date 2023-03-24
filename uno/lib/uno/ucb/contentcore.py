@@ -115,16 +115,17 @@ def _setTitle(source, context, title):
         msg = "Can't set property: Title value: %s contains invalid character: '~'." % title
         level = SEVERE
         data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
-        error = getInteractiveAugmentedIOException(msg, context, 'ERROR', 'INVALID_CHARACTER', data)
+        error = getInteractiveAugmentedIOException(msg, context, 'QUERY', 'INVALID_CHARACTER', data)
         result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
     elif not user.Provider.SupportDuplicate and user.DataBase.hasTitle(user.Id, identifier.ParentId, title):
+    #elif user.DataBase.hasTitle(user.Id, identifier.ParentId, title):
             msg = "Can't set property: %s value: %s - Name Clash Error" % ('Title', title)
             level = SEVERE
             data = getPropertyValueSet({'TargetFolderURL': identifier.getContentIdentifier(),
                                         'ClashingName': title,
                                         'ProposedNewName': '%s(1)' % title})
             #data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
-            error = getInteractiveAugmentedIOException(msg, context, 'ERROR', 'ALREADY_EXISTING', data)
+            error = getInteractiveAugmentedIOException(msg, context, 'QUERY', 'ALREADY_EXISTING', data)
             result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
     else:
         # When you change Title you must change also the Identifier.getContentIdentifier()

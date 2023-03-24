@@ -75,6 +75,7 @@ from .contentcore import getPropertiesValues
 from .contentcore import setPropertiesValues
 
 from .contenttools import getCommandInfo
+from .contenttools import getContentEvent
 from .contenttools import getContentInfo
 from .contenttools import getMimeType
 
@@ -126,7 +127,6 @@ class Content(unohelper.Base,
             listener.disposing(event)
 
     def addEventListener(self, listener):
-        print("Content.addEventListener() ***************************************************************")
         self._listeners.append(listener)
 
     def removeEventListener(self, listener):
@@ -175,8 +175,8 @@ class Content(unohelper.Base,
     def getContentType(self):
         return self.MetaData.getValue('ContentType')
     def addContentEventListener(self, listener):
-        if listener not in self._contentListeners:
-            self._contentListeners.append(listener)
+        print("Content.addContentEventListener() ***************************************************************")
+        self._contentListeners.append(listener)
     def removeContentEventListener(self, listener):
         if listener in self._contentListeners:
             self._contentListeners.remove(listener)
@@ -270,6 +270,11 @@ class Content(unohelper.Base,
                         # Need to consum the new Identifier if needed...
                         self.Identifier.deleteNewIdentifier()
                         print("Content.execute() insert 3")
+            if self.Identifier._oldtitle is not None:
+                print("Content.execute() insert 4 ******************************************")
+                action = uno.Enum('com.sun.star.ucb.ContentAction', 'EXCHANGED')
+                self.notifyContentListener(action, self.Identifier)
+
         elif command.Name == 'createNewContent' and self.IsFolder:
             return self.createNewContent(command.Argument)
         elif command.Name == 'transfer' and self.IsFolder:
@@ -284,7 +289,6 @@ class Content(unohelper.Base,
             clash = command.Argument.NameClash
             print("Content.execute() transfert 1 %s - %s -%s - %s" % (title, source, move, clash))
             # We check if 'NewTitle' is a child of this folder by recovering its ItemId
-            user = self.Identifier.User
             itemid = user.DataBase.getChildId(user.Id, self.Identifier.Id, title)
             if itemid is None:
                 print("Content.execute() transfert 2 %s" % itemid)
@@ -314,6 +318,11 @@ class Content(unohelper.Base,
         pass
     def releaseCommandIdentifier(self, id):
         pass
+
+    def notifyContentListener(self, action, id):
+        event = getContentEvent(self, action, self, id)
+        for listener in self._contentListeners:
+            listener.contentEvent(event)
 
     def _getCommandInfo(self):
         commands = {}

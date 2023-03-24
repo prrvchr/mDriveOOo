@@ -166,6 +166,7 @@ def getQueries():
             ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Parents', 'Role': g_role}),
             ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Capabilities', 'Role': g_role}),
 
+            ('createGetTitle',{'Role': g_role}),
             ('createGetUniqueName',{'Role': g_role, 'Prefix': ' ~', 'Suffix': ''}),
 
             ('createChildView',{'Role': g_role}),
@@ -176,8 +177,13 @@ def getQueries():
             ('createChildrenView',{'Role': g_role}),
             ('createPathView',{'Role': g_role, 'Scheme': g_scheme, 'Separator': '/'}),
 
-            ('createGetNewTitle',{'Role': g_role}),
             ('createGetIdentifier',{'Role': g_role}),
-            ('createGetSyncItems',{'Role': g_role}),
+            ('createGetRoot',{'Role': g_role}),
+            ('createGetItem',{'Role': g_role}),
+            ('createGetNewTitle',{'Role': g_role}),
+            ('createGetUserTimeStamp',{'Role': g_role}),
+            ('createGetPushItems',{'Role': g_role}),
+            ('createGetPushProperties',{'Role': g_role}),
+            ('createGetItemParentIds',{'Role': g_role}),
             ('createMergeItem',{'Role': g_role}),
             ('createInsertItem',{'Role': g_role}))

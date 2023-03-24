@@ -592,10 +592,10 @@ def getSqlException(state, code, message, context=None, exception=None):
     error.Context = context
     return error
 
-def currentDateTimeInTZ():
+def currentDateTimeInTZ(utc=True):
     dtz = uno.createUnoStruct('io.github.prrvchr.css.util.DateTimeWithTimezone')
-    dtz.DateTimeInTZ = currentDateTime(False)
-    dtz.Timezone = _getTimeZone()
+    dtz.DateTimeInTZ = currentDateTime(utc)
+    dtz.Timezone = 0 if utc else _getTimeZone()
     return dtz
 
 def currentDateTime(utc=True):
@@ -606,12 +606,17 @@ def currentUnoDateTime(utc=True):
     now = datetime.utcnow() if utc else datetime.now()
     return _getUnoDateTime(now, utc)
 
-def getDateTimeInTZToString(dtz=None, decimal=6):
-    dt = currentDateTime(False) if dtz is None else dtz.DateTimeInTZ
+def getDateTimeInTZToString(dtz, decimal=6):
+    dt = dtz.DateTimeInTZ
     fraction = dt.NanoSeconds // (10 ** (9 - decimal))
     format = '%04d-%02d-%02dT%02d:%02d:%02d.%'
     format += '0%sdZ' % decimal
-    return format % (dt.Year, dt.Month, dt.Day, dt.Hours, dt.Minutes, dt.Seconds, fraction)
+    format += '%s'
+    return format % (dt.Year, dt.Month, dt.Day, dt.Hours, dt.Minutes, dt.Seconds, fraction, dtz.Timezone)
+
+def getDateTimeToString(dt, decimal=6):
+    format = '%04d-%02d-%02dT%02d:%02d:%02d.000Z'
+    return format % (dt.Year, dt.Month, dt.Day, dt.Hours, dt.Minutes, dt.Seconds)
 
 def toUnoDateTime(dtz):
     dt = dtz.DateTimeInTZ

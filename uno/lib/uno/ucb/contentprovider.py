@@ -51,6 +51,7 @@ from .configuration import g_defaultlog
 
 import traceback
 from threading import Event
+from threading import Lock
 
 
 class ContentProvider(unohelper.Base,
@@ -63,7 +64,8 @@ class ContentProvider(unohelper.Base,
         self.Scheme = ''
         self.Plugin = plugin
         self.DataSource = None
-        self.event = Event()
+        self._sync = Event()
+        self._lock = Lock()
         self._error = ''
         self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
         self._logger = getLogger(ctx)
@@ -75,7 +77,7 @@ class ContentProvider(unohelper.Base,
     # XParameterizedContentProvider
     def registerInstance(self, scheme, plugin, replace):
         self._logger.logprb(INFO, 'ContentProvider', 'registerInstance()', 111, scheme, plugin)
-        datasource = DataSource(self._ctx, self.event, scheme, plugin)
+        datasource = DataSource(self._ctx, self._sync, self._lock, scheme, plugin)
         if not datasource.isValid():
             self._logger.logp(SEVERE, 'ContentProvider', 'registerInstance()', datasource.Error)
             return None

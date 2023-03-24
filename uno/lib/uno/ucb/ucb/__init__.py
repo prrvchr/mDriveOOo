@@ -1,4 +1,7 @@
-/*
+#!
+# -*- coding: utf-8 -*-
+
+"""
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
 ║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
@@ -22,31 +25,7 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
- */
+"""
 
-#ifndef __com_sun_star_ucb_XRestReplicator_idl__
-#define __com_sun_star_ucb_XRestReplicator_idl__
+from .contentlistener import ContentListener
 
-#include <com/sun/star/uno/XInterface.idl>
-#include <com/sun/star/ucb/XRestDataBase.idl>
-#include <com/sun/star/ucb/XRestProvider.idl>
-#include <com/sun/star/beans/Optional.idl>
-#include <com/sun/star/auth/XRestKeyMap.idl>
-
-module com { module sun { module star { module ucb {
-
-interface XRestReplicator: com::sun::star::uno::XInterface
-{
-
-    void cancel();
-    boolean callBack([in] string ItemId,
-                     [in] ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> Response);
-
-    [attribute, readonly] ::com::sun::star::ucb::XRestProvider Provider;
-    [attribute, readonly] ::com::sun::star::ucb::XRestDataBase DataBase;
-
-};
-
-}; }; }; };
-
-#endif
