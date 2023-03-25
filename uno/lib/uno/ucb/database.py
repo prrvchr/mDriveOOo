@@ -356,12 +356,11 @@ class DataBase(unohelper.Base,
         call.close()
         return has
 
-    def getChildId(self, userid, parentid, title):
+    def getChildId(self, parentid, title):
         id = None
         call = self._getCall('getChildId')
-        call.setString(1, userid)
-        call.setString(2, parentid)
-        call.setString(3, title)
+        call.setString(1, parentid)
+        call.setString(2, title)
         result = call.executeQuery()
         if result.next():
             id = result.getString(1)

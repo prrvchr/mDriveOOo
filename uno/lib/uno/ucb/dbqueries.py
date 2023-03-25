@@ -320,7 +320,7 @@ WHERE C."ParentId" = ? AND (C."IsFolder" = TRUE OR C."Loaded" >= ?);'''
 
     elif name == 'getChildId':
         query = '''\
-SELECT "ItemId" FROM "Children" WHERE "UserId" = ? AND "ParentId" = ? AND "Uri" = ?;'''
+SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Uri" = ?;'''
 
     elif name == 'getNewIdentifier':
         query = 'SELECT "ItemId" FROM "Identifiers" WHERE "UserId" = ? ORDER BY "TimeStamp","ItemId" LIMIT 1;'

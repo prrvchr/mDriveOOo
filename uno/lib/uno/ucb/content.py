@@ -97,7 +97,7 @@ class Content(unohelper.Base,
     def __init__(self, ctx, identifier):
         self._ctx = ctx
         msg = "Content loading ... "
-        self.Identifier = identifier
+        self._identifier = identifier
         self.MetaData = identifier.MetaData
         self._commandInfo = self._getCommandInfo()
         self._contentListeners = []
@@ -137,9 +137,9 @@ class Content(unohelper.Base,
     def getParent(self):
         content = None
         print("Content.getParent() 1")
-        if not self.Identifier.isRoot():
+        if not self._identifier.isRoot():
             print("Content.getParent() 1")
-            content = self.Identifier.getParent().getContent()
+            content = self._identifier.getParent().getContent()
         print("Content.getParent() 1")
         return content
 
@@ -167,11 +167,11 @@ class Content(unohelper.Base,
         # Identifier.createNewContent() since the identifier also creates Content
         # with Identifier.createContent()
         print("Content.createNewContent() 1")
-        return self.Identifier.createNewContent(info.Type)
+        return self._identifier.createNewContent(info.Type)
 
     # XContent
     def getIdentifier(self):
-        return self.Identifier
+        return self._identifier
     def getContentType(self):
         return self.MetaData.getValue('ContentType')
     def addContentEventListener(self, listener):
@@ -183,17 +183,19 @@ class Content(unohelper.Base,
 
     # XCommandProcessor2
     def createCommandIdentifier(self):
+        print("Content.createCommandIdentifier() 1")
         return 1
     def execute(self, command, id, environment):
         print("Content.execute() 1  Commande Name: %s ****************************************************************" % command.Name)
         url = self.getIdentifier().getContentIdentifier()
+        user = self.getIdentifier().User
         print("Content.execute() %s - %s - %s" % (command.Name, url, self.getIdentifier().Id))
         msg = "command.Name: %s" % command.Name
         self._logger.logp(INFO, 'Content', 'execute()', msg)
         if command.Name == 'getCommandInfo':
-            return CommandInfo(self._commandInfo)
+            return CommandInfo(self._getCommandInfo())
         elif command.Name == 'getPropertySetInfo':
-            return PropertySetInfo(self.Identifier._propertySetInfo)
+            return PropertySetInfo(self._identifier._propertySetInfo)
         elif command.Name == 'getPropertyValues':
             values = getPropertiesValues(self._logger, self, command.Argument)
             return Row(values)
@@ -201,22 +203,21 @@ class Content(unohelper.Base,
             return setPropertiesValues(self._logger, self, environment, command.Argument)
         elif command.Name == 'delete':
             self.MetaData.insertValue('Trashed', True)
-            user = self.Identifier.User
-            user.DataBase.updateContent(user.Id, self.Identifier.Id, 'Trashed', True)
+            user.DataBase.updateContent(user.Id, self._identifier.Id, 'Trashed', True)
         elif command.Name == 'open':
             if self.IsFolder:
                 print("Content.execute() open 1")
                 # Not Used: command.Argument.Properties - Implement me ;-)
-                select = self.Identifier.getFolderContent(self.MetaData)
+                select = self._identifier.getFolderContent(self.MetaData)
                 print("Content.execute() open 2")
                 msg += " IsFolder: %s" % self.IsFolder
                 self._logger.logp(INFO, 'Content', 'execute()', msg)
                 print("Content.execute() open 3")
-                return DynamicResultSet(self.Identifier.User, select)
+                return DynamicResultSet(self._identifier.User, select)
             elif self.IsDocument:
                 print("Content.execute() open 4")
                 sf = getSimpleFile(self._ctx)
-                url, size = self.Identifier.getDocumentContent(sf, self.MetaData, 0)
+                url, size = self._identifier.getDocumentContent(sf, self.MetaData, 0)
                 if not size:
                     title = self.MetaData.getValue('Title')
                     msg = "Error while downloading file: %s" % title
@@ -234,17 +235,17 @@ class Content(unohelper.Base,
             # It saves the content created by 'createNewContent' from the parent folder
             # right after the Title property is initialized
             print("Content.execute() insert 1 - %s - %s - %s" % (self.IsFolder,
-                                                                 self.Identifier.Id,
+                                                                 self._identifier.Id,
                                                                  self.MetaData.getValue('Title')))
             if self.IsFolder:
-                #mediatype = self.Identifier.User.Provider.Folder
+                #mediatype = self._identifier.User.Provider.Folder
                 #self.MetaData.insertValue('MediaType', mediatype)
                 print("Content.execute() insert 2 ************** %s" % self.MetaData.getValue('MediaType'))
                 try:
-                    if self.Identifier.insertNewContent(self.MetaData):
+                    if self._identifier.insertNewContent(self.MetaData):
                         print("Content.execute() insert 3")
                         # Need to consum the new Identifier if needed...
-                        self.Identifier.deleteNewIdentifier()
+                        self._identifier.deleteNewIdentifier()
                         print("Content.execute() insert 4")
                 except Exception as e:
                     msg = "Content.Insert() Error: %s" % traceback.print_exc()
@@ -255,8 +256,8 @@ class Content(unohelper.Base,
                 stream = command.Argument.Data
                 replace = command.Argument.ReplaceExisting
                 sf = getSimpleFile(self._ctx)
-                url = self.Identifier.User.Provider.SourceURL
-                target = '%s/%s' % (url, self.Identifier.Id)
+                url = self._identifier.User.Provider.SourceURL
+                target = '%s/%s' % (url, self._identifier.Id)
                 if sf.exists(target) and not replace:
                     return
                 if hasInterface(stream, 'com.sun.star.io.XInputStream'):
@@ -266,14 +267,10 @@ class Content(unohelper.Base,
                     self.MetaData.setValue('MediaType', mediatype)
                     stream.closeInput()
                     print("Content.execute() insert 2 ************** %s" % mediatype)
-                    if self.Identifier.insertNewContent(self.MetaData):
+                    if self._identifier.insertNewContent(self.MetaData):
                         # Need to consum the new Identifier if needed...
-                        self.Identifier.deleteNewIdentifier()
+                        self._identifier.deleteNewIdentifier()
                         print("Content.execute() insert 3")
-            if self.Identifier._oldtitle is not None:
-                print("Content.execute() insert 4 ******************************************")
-                action = uno.Enum('com.sun.star.ucb.ContentAction', 'EXCHANGED')
-                self.notifyContentListener(action, self.Identifier)
 
         elif command.Name == 'createNewContent' and self.IsFolder:
             return self.createNewContent(command.Argument)
@@ -289,7 +286,7 @@ class Content(unohelper.Base,
             clash = command.Argument.NameClash
             print("Content.execute() transfert 1 %s - %s -%s - %s" % (title, source, move, clash))
             # We check if 'NewTitle' is a child of this folder by recovering its ItemId
-            itemid = user.DataBase.getChildId(user.Id, self.Identifier.Id, title)
+            itemid = user.DataBase.getChildId(self._identifier.Id, title)
             if itemid is None:
                 print("Content.execute() transfert 2 %s" % itemid)
                 # ItemId could not be found: 'NewTitle' does not exist in the folder...
@@ -319,38 +316,36 @@ class Content(unohelper.Base,
     def releaseCommandIdentifier(self, id):
         pass
 
-    def notifyContentListener(self, action, id):
-        event = getContentEvent(self, action, self, id)
-        for listener in self._contentListeners:
-            listener.contentEvent(event)
-
     def _getCommandInfo(self):
         commands = {}
-        commands['getCommandInfo'] = getCommandInfo('getCommandInfo')
-        commands['getPropertySetInfo'] = getCommandInfo('getPropertySetInfo')
-        t1 = uno.getTypeByName('[]com.sun.star.beans.Property')
-        commands['getPropertyValues'] = getCommandInfo('getPropertyValues', t1)
-        t2 = uno.getTypeByName('[]com.sun.star.beans.PropertyValue')
-        commands['setPropertyValues'] = getCommandInfo('setPropertyValues', t2)
+        t1 = uno.getTypeByName('com.sun.star.ucb.XCommandInfo')
+        commands['getCommandInfo'] = getCommandInfo('getCommandInfo', t1)
+        t2 = uno.getTypeByName('com.sun.star.beans.XPropertySetInfo')
+        commands['getPropertySetInfo'] = getCommandInfo('getPropertySetInfo', t2)
+        t3 = uno.getTypeByName('[]com.sun.star.beans.Property')
+        commands['getPropertyValues'] = getCommandInfo('getPropertyValues', t3)
+        t4 = uno.getTypeByName('[]com.sun.star.beans.PropertyValue')
+        commands['setPropertyValues'] = getCommandInfo('setPropertyValues', t4)
         try:
-            t3 = uno.getTypeByName('com.sun.star.ucb.OpenCommandArgument3')
+            t5 = uno.getTypeByName('com.sun.star.ucb.OpenCommandArgument3')
         except RuntimeError as e:
-            t3 = uno.getTypeByName('com.sun.star.ucb.OpenCommandArgument2')
-        commands['open'] = getCommandInfo('open', t3)
+            t5 = uno.getTypeByName('com.sun.star.ucb.OpenCommandArgument2')
+        commands['open'] = getCommandInfo('open', t5)
         try:
-            t4 = uno.getTypeByName('com.sun.star.ucb.InsertCommandArgument2')
+            t6 = uno.getTypeByName('com.sun.star.ucb.InsertCommandArgument2')
         except RuntimeError as e:
-            t4 = uno.getTypeByName('com.sun.star.ucb.InsertCommandArgument')
-        commands['insert'] = getCommandInfo('insert', t4)
-        if not self.Identifier.isRoot():
+            t6 = uno.getTypeByName('com.sun.star.ucb.InsertCommandArgument')
+        commands['insert'] = getCommandInfo('insert', t6)
+        if not self._identifier.isRoot():
             commands['delete'] = getCommandInfo('delete', uno.getTypeByName('boolean'))
+        try:
+            t7 = uno.getTypeByName('com.sun.star.ucb.TransferInfo2')
+        except RuntimeError as e:
+            t7 = uno.getTypeByName('com.sun.star.ucb.TransferInfo')
+        commands['transfer'] = getCommandInfo('transfer', t7)
+        commands['flush'] = getCommandInfo('flush')
+        print("Content._getCommandInfo() CanAddChild: %s   **********************************************" % self.CanAddChild)
         if self.CanAddChild:
-            t5 = uno.getTypeByName('com.sun.star.ucb.ContentInfo')
-            commands['createNewContent'] = getCommandInfo('createNewContent', t5)
-            try:
-                t6 = uno.getTypeByName('com.sun.star.ucb.TransferInfo2')
-            except RuntimeError as e:
-                t6 = uno.getTypeByName('com.sun.star.ucb.TransferInfo')
-            commands['transfer'] = getCommandInfo('transfer', t6)
-            commands['flush'] = getCommandInfo('flush')
+            t8 = uno.getTypeByName('com.sun.star.ucb.ContentInfo')
+            commands['createNewContent'] = getCommandInfo('createNewContent', t8)
         return commands

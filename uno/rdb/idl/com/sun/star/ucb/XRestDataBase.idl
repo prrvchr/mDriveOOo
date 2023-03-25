@@ -85,8 +85,7 @@ interface XRestDataBase: com::sun::star::uno::XInterface
     boolean hasTitle([in] string UserId,
                      [in] string ParentId,
                      [in] string Title);
-    string getChildId([in] string UserId,
-                      [in] string ParentId,
+    string getChildId([in] string ParentId,
                       [in] string Title);
     void updateItemId([in] ::com::sun::star::uno::XInterface Provider,
                       [in] string ItemId,

@@ -82,7 +82,6 @@ class Identifier(unohelper.Base,
         self._ctx = ctx
         self._url = url
         self.User = user
-        self._oldtitle = None
         self.IsNew = data is not None
         self.MetaData = KeyMap() if data is None else data
         self._propertySetInfo = self._getPropertySetInfo()
@@ -252,9 +251,6 @@ class Identifier(unohelper.Base,
             # It will be inserted by the insert command of the XCommandProcessor2.execute()
             if not self.IsNew:
                 self.User.DataBase.updateContent(self.User.Id, self.Id, 'Title', title)
-            #if newtitle != title:
-            #    action = uno.Enum('com.sun.star.ucb.ContentAction', 'EXCHANGED')
-            #    self._content.notifyContentListener(action, self)
             print("Identifier.setTitle() 3 Title")
         except Exception as e:
             msg = "Identifier.setTitle() Error: %s" % traceback.print_exc()

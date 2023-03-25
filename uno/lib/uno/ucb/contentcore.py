@@ -57,7 +57,7 @@ def getPropertiesValues(logger, source, properties):
     for property in properties:
         value = None
         if all((hasattr(property, 'Name'),
-                property.Name in source.Identifier._propertySetInfo,
+                property.Name in source.getIdentifier()._propertySetInfo,
                 source.MetaData.hasValue(property.Name))):
             value = source.MetaData.getValue(property.Name)
             msg = "Name: %s - Value: %s" % (property.Name, value)
@@ -75,7 +75,7 @@ def setPropertiesValues(logger, source, context, properties):
     for property in properties:
         if all((hasattr(property, 'Name'),
                 hasattr(property, 'Value'),
-                property.Name in source.Identifier._propertySetInfo)):
+                property.Name in source.getIdentifier()._propertySetInfo)):
             result, level, msg = _setPropertyValue(source, context, property)
         else:
             msg = "ERROR: Requested property: %s is not available" % property.Name
@@ -89,7 +89,7 @@ def setPropertiesValues(logger, source, context, properties):
 def _setPropertyValue(source, context, property):
     name, value = property.Name, property.Value
     print("Content._setPropertyValue() 1 %s - %s" % (name, value))
-    if source.Identifier._propertySetInfo.get(name).Attributes & READONLY:
+    if source.getIdentifier()._propertySetInfo.get(name).Attributes & READONLY:
         msg = "ERROR: Requested property: %s is READONLY" % name
         level = SEVERE
         error = IllegalAccessException(msg, source)
@@ -109,7 +109,7 @@ def _setProperty(source, context, name, value):
     return result, level, msg
 
 def _setTitle(source, context, title):
-    identifier = source.Identifier
+    identifier = source.getIdentifier()
     user = identifier.User
     if u'~' in title:
         msg = "Can't set property: Title value: %s contains invalid character: '~'." % title
