@@ -169,6 +169,17 @@ class Provider(ProviderBase):
         elif method == 'updateTrashed':
             parameter.Method = 'DELETE'
             parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
+
+        elif method == 'updateParents':
+            parameter.Method = 'PATCH'
+            parameter.Url = '%s/files/%s' % (self.BaseUrl, data.getValue('Id'))
+            toadd = data.getValue('ParentToAdd')
+            toremove = data.getValue('ParentToRemove')
+            if len(toadd) > 0:
+                parameter.Json = '{"addParents": %s}' % ','.join(toadd)
+            if len(toremove) > 0:
+                parameter.Json = '{"removeParents": %s}' % ','.join(toremove)
+
         elif method == 'createNewFolder':
             parameter.Method = 'POST'
             url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.getValue('ParentId'))
