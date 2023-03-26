@@ -38,11 +38,13 @@ from com.sun.star.logging.LogLevel import SEVERE
 from com.sun.star.ucb import XRestDataSource
 
 from .oauth2lib import g_oauth2
+from .oauth2lib import getOAuth2UserName
 
 from .unotool import createService
 from .unotool import getResourceLocation
 from .unotool import getSimpleFile
 from .unotool import getUrlPresentation
+from .unotool import parseUrl
 
 from .configuration import g_cache
 
@@ -53,8 +55,8 @@ from .dbtool import getDataSourceInfo
 from .dbtool import getDataSourceJavaInfo
 from .dbtool import registerDataSource
 
-from .user import User
-from .identifier import Identifier
+from .ucb import ContentUser
+
 from .replicator import Replicator
 from .database import DataBase
 
@@ -66,19 +68,18 @@ import traceback
 
 
 class DataSource(unohelper.Base,
-                 XRestDataSource,
                  XCloseListener):
     def __init__(self, ctx, sync, lock, scheme, plugin):
         msg = "DataSource for Scheme: %s loading ... " % scheme
         print("DataSource.__init__() 1")
         self._ctx = ctx
-        self._default = None
+        self._default = ''
         self._users = {}
         self.Error = None
         self._sync = sync
         self._lock = lock
         self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
-        self.Provider = createService(self._ctx, '%s.Provider' % plugin)
+        self._provider = createService(self._ctx, '%s.Provider' % plugin)
         datasource, url, created = self._getDataSource(scheme, plugin, True)
         self.DataBase = DataBase(self._ctx, datasource)
         if created:
@@ -89,8 +90,8 @@ class DataSource(unohelper.Base,
                 print("DataSource.__init__() 3")
         self.DataBase.addCloseListener(self)
         folder, link = self.DataBase.getContentType()
-        self.Provider.initialize(scheme, plugin, folder, link)
-        self.Replicator = Replicator(ctx, datasource, self.Provider, self._users, self._sync, self._lock)
+        self._provider.initialize(scheme, plugin, folder, link)
+        self.Replicator = Replicator(ctx, datasource, self._provider, self._users, self._sync, self._lock)
         msg += "Done"
         self._logger = getLogger(ctx)
         self._logger.logp(INFO, 'DataSource', '__init__()', msg)
@@ -103,11 +104,99 @@ class DataSource(unohelper.Base,
             self.Replicator.join()
         #self.deregisterInstance(self.Scheme, self.Plugin)
         self.DataBase.shutdownDataBase(self.Replicator.fullPull())
-        msg = "DataSource queryClosing: Scheme: %s ... Done" % self.Provider.Scheme
+        msg = "DataSource queryClosing: Scheme: %s ... Done" % self._provider.Scheme
         self._logger.logp(INFO, 'DataSource', 'queryClosing()', msg)
         print(msg)
     def notifyClosing(self, source):
         pass
+
+    # DataSource
+    def getDefaultUser(self):
+        return self._default
+
+    # FIXME: Get called from ContentProvider.queryContent()
+    def queryContent(self, provider, identifier):
+        try:
+            print("DataSource.queryContent() 1")
+            user, uri, authority = self._getUser(provider, identifier.getContentIdentifier())
+            print("DataSource.queryContent() 2")
+            return user.getContent(identifier, uri, authority)
+        except Exception as e:
+            msg = "DataSource.queryContent() Error: %s" % traceback.print_exc()
+            print(msg)
+            raise e
+
+    def _getUser(self, source, url):
+        try:
+            print("DataSource._getUser() 1 Url: %s" % url)
+            authority = False
+            uri = self._factory.parse(url)
+            print("DataSource._getUser() 2 Path: '%s'" % uri.getPath())
+            if uri is None:
+                msg = self._logger.resolveString(121, url)
+                raise IllegalIdentifierException(msg, source)
+            elif uri.hasAuthority() and uri.getAuthority() != '':
+                name = uri.getAuthority()
+                authority = True
+            elif self._default:
+                name = self._default
+                #url = self._rewriteContentIdentifierUrl(uri, name)
+            else:
+                name = self._getUserName(source, url)
+                #url = self._rewriteContentIdentifierUrl(uri, name)
+            # User never change... we can cache it...
+            if name in self._users:
+                user = self._users[name]
+            else:
+                user = ContentUser(self._ctx, source, self.DataBase, self._provider, name, self._sync, self._lock)
+                self._users[name] = user
+            self._default = name
+            return user, uri.getPath(), authority
+        except Exception as e:
+            msg = "DataSource._getUser() Error: %s" % traceback.print_exc()
+            print(msg)
+            raise e
+
+    def _getUserName(self, source, url):
+        name = getOAuth2UserName(self._ctx, self, self._provider.Scheme)
+        if not name:
+            msg = self._logger.resolveString(121, url)
+            raise IllegalIdentifierException(msg, source)
+        return name
+
+    def _rewriteContentIdentifierUrl(self, uri, name):
+        url = '%s://%s' % (uri.getScheme(), name)
+        if uri.getPathSegmentCount() > 0:
+            url += uri.getPath()
+        print("DataSource._rewriteContentIdentifierUrl() Url: %s" % url)
+        return url
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # XRestDataSource
     def isValid(self):

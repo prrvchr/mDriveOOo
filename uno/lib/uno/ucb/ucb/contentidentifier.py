@@ -27,7 +27,23 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .contentuser import ContentUser
-from .contentidentifier import ContentIdentifier
-from .contentprovider import ContentProvider
+import unohelper
+
+from com.sun.star.ucb import XContentIdentifier
+
+from ..configuration import g_scheme
+
+import traceback
+
+
+class ContentIdentifier(unohelper.Base,
+                        XContentIdentifier):
+    def __init__(self, url):
+        self._url = url
+
+    # XContentIdentifier
+    def getContentIdentifier(self):
+        return self._url
+    def getContentProviderScheme(self):
+        return g_scheme
 

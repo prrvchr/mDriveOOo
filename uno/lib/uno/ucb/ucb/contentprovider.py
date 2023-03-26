@@ -40,14 +40,16 @@ from com.sun.star.ucb import IllegalIdentifierException
 
 from com.sun.star.ucb import XRestContentProvider
 
-from .unotool import createService
-from .unotool import parseUrl
+from .contentidentifier import ContentIdentifier
 
-from .datasource import DataSource
+from ..unotool import createService
+from ..unotool import parseUrl
 
-from .logger import getLogger
+from ..datasource import DataSource
 
-from .configuration import g_defaultlog
+from ..logger import getLogger
+
+from ..configuration import g_defaultlog
 
 import traceback
 from threading import Event
@@ -57,22 +59,17 @@ from threading import Lock
 class ContentProvider(unohelper.Base,
                       XContentIdentifierFactory,
                       XContentProvider,
-                      XParameterizedContentProvider,
-                      XRestContentProvider):
+                      XParameterizedContentProvider):
     def __init__(self, ctx, plugin):
         self._ctx = ctx
         self.Scheme = ''
         self.Plugin = plugin
-        self.DataSource = None
+        self._datasource = None
         self._sync = Event()
         self._lock = Lock()
-        self._error = ''
         self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
         self._logger = getLogger(ctx)
         self._logger.logprb(INFO, 'ContentProvider', '__init__()', 101, self.Plugin)
-
-    def __del__(self):
-        self._logger.logprb(INFO, 'ContentProvider', '__del__()', 171, self.Plugin)
 
     # XParameterizedContentProvider
     def registerInstance(self, scheme, plugin, replace):
@@ -83,7 +80,7 @@ class ContentProvider(unohelper.Base,
             return None
         self.Scheme = scheme
         self.Plugin = plugin
-        self.DataSource = datasource
+        self._datasource = datasource
         self._logger.logprb(INFO, 'ContentProvider', 'registerInstance()', 112, scheme, plugin)
         return self
     def deregisterInstance(self, scheme, argument):
@@ -91,22 +88,19 @@ class ContentProvider(unohelper.Base,
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, url):
-        print("ContentProvider.createContentIdentifier() 1: Url: %s" % url)
-        # FIXME: We are forced to perform lazy loading on Identifier (and User) in order to be able
-        # FIXME: to trigger an exception when delivering the content ie: XContentProvider.queryContent().
-        uri = self._getContentIdentifier(url)
-        identifier = self.DataSource.getIdentifier(uri)
+        print("ContentProvider.createContentIdentifier() 1")
+        identifier = ContentIdentifier(self._getContentIdentifierUrl(url))
         self._logger.logprb(INFO, 'ContentProvider', 'createContentIdentifier()', 131, url)
-        print("ContentProvider.createContentIdentifier() 2: Uri: %s" % uri)
+        print("ContentProvider.createContentIdentifier() 2")
         return identifier
 
     # XContentProvider
     def queryContent(self, identifier):
         try:
-            print("ContentProvider.queryContent() 1")
+            print("ContentProvider.queryContent() 1 Url: %s" % identifier.getContentIdentifier())
             # FIXME: We are forced to perform lazy loading on Identifier (and User) in order to be able
             # FIXME: to trigger an exception when delivering the content ie: XContentProvider.queryContent().
-            content = identifier.queryContent(self.DataSource)
+            content = self._datasource.queryContent(self, identifier)
             self._logger.logprb(INFO, 'ContentProvider', 'queryContent()', 141, identifier.getContentIdentifier())
             print("ContentProvider.queryContent() 2")
             return content
@@ -126,9 +120,13 @@ class ContentProvider(unohelper.Base,
         return compare
 
     # Private methods
-    def _getContentIdentifier(self, identifier):
-        url = parseUrl(self._transformer, identifier.strip('/.'))
-        if url is not None:
-            url = self._transformer.getPresentation(url, True)
-        return url if url else identifier
-
+    def _getContentIdentifierUrl(self, url):
+        print("ContentProvider._getContentIdentifierUrl() Url: %s" % url)
+        if not url.endswith('//'):
+            url = url.rstrip('/.')
+        print("ContentProvider._getContentIdentifierUrl() Url: %s" % url)
+        uri = parseUrl(self._transformer, url)
+        if uri is not None:
+            uri = self._transformer.getPresentation(uri, True)
+        print("ContentProvider._getContentIdentifierUrl() Url: %s" % uri)
+        return uri if uri else url

@@ -191,9 +191,9 @@ class Identifier(unohelper.Base,
             print(msg)
             raise e
 
-    def getFolderContent(self, content):
+    def getFolderContent(self, content, properties):
         try:
-            select, updated = self._getFolderContent(content, False)
+            select, updated = self._getFolderContent(content, properties, False)
             if updated:
                 loaded = self.User.DataBase.updateLoaded(self.User.Id, self.Id, OFFLINE, ONLINE)
                 content.insertValue('Loaded', loaded)
@@ -333,12 +333,12 @@ class Identifier(unohelper.Base,
         self._url = url
         return True
 
-    def _getFolderContent(self, content, updated):
+    def _getFolderContent(self, content, properties, updated):
         if ONLINE == content.getValue('Loaded') == self.User.Provider.SessionMode:
             self._logger.logprb(INFO, 'Identifier', '_getFolderContent()', 141, self.getContentIdentifier())
             updated = self.User.DataBase.updateFolderContent(self.User, content)
         mode = self.User.Provider.SessionMode
-        select = self.User.DataBase.getChildren(self.Id, mode)
+        select = self.User.DataBase.getChildren(self.Id, properties, mode)
         print("Identifier._getFolderContent()")
         return select, updated
 
@@ -367,6 +367,7 @@ class Identifier(unohelper.Base,
         properties['IsRemoveable'] = getProperty('IsRemoveable', 'boolean', BOUND | RO)
         properties['IsFloppy'] = getProperty('IsFloppy', 'boolean', BOUND | RO)
         properties['IsCompactDisc'] = getProperty('IsCompactDisc', 'boolean', BOUND | RO)
+        properties['IsVersionable'] = getProperty('IsVersionable', 'boolean', BOUND | RO)
         return properties
 
     def _getContentScheme(self):

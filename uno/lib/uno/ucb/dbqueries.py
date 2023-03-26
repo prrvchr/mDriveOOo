@@ -214,38 +214,18 @@ GRANT SELECT ON "Children" TO "%(Role)s";''' % format
 
     elif name == 'createPathView':
         query = '''\
-CREATE VIEW "Path" AS WITH RECURSIVE TREE ("ItemId", "Path") AS (
-    SELECT "RootId", '%(Scheme)s' || '://' || "UserName" 
+CREATE VIEW "Path" AS WITH RECURSIVE TREE ("UserId", "ParentId", "ItemId", "Path") AS (
+    SELECT "UserId", CAST(NULL AS VARCHAR(100)), "RootId", ''
     FROM "Users"
-  UNION ALL 
-    SELECT C2."ItemId", "Path" || '%(Separator)s' || C2."Uri"
-    FROM "Children" C2
-    JOIN TREE T on T."ItemId" = C2."ParentId"
+  UNION ALL
+    SELECT I."UserId", C."ParentId", C."ItemId", "Path" || '%(Separator)s' || C."Uri"
+    FROM "Items" AS I
+    INNER JOIN "Children" AS C ON I."ItemId"=C."ItemId"
+    INNER JOIN TREE AS T ON T."ItemId" = C."ParentId"
   )
-  SELECT "ItemId", "Path"
+  SELECT "UserId", "ParentId", "ItemId", "Path"
   FROM TREE;
 GRANT SELECT ON "Path" TO "%(Role)s";''' % format
-
-    elif name == 'createUpdateView':
-        query = '''\
-(SELECT I."ItemId", 3 AS "ChangeAction", I."RowEnd" AS "TimeStamp" 
-  FROM "Items"FOR SYSTEM_TIME AS OF FIRST AS I 
-  LEFT JOIN "Items" FOR SYSTEM_TIME AS OF LAST AS I2 ON I."ItemId" = I2."ItemId" 
-  WHERE I2."ItemId" IS NULL)
-UNION ALL
-(SELECT I2."ItemId", 1 AS "ChangeAction", I2."RowStart" AS "TimeStamp"
-  FROM "Items" FOR SYSTEM_TIME AS OF LAST AS I2
-  INNER JOIN "Path" AS P ON I2."ItemId"=P."ItemId" 
-  LEFT JOIN "Items" FOR SYSTEM_TIME AS OF FIRST AS I ON P."ItemId"=I."ItemId"
-  WHERE I."ItemId" IS NULL)
-UNION ALL
-(SELECT I2."ItemId", 2 AS "Action", I."RowEnd" AS "TimeStamp"
-  FROM "Items" FOR SYSTEM_TIME AS OF LAST AS I2
-  INNER JOIN "Items" FOR SYSTEM_TIME FROM FIRST TO LAST AS I
-    ON I2."ItemId"=I."ItemId" AND I2."RowStart"=I."RowEnd")
-ORDER BY "TimeStamp"
-
-'''
 
 # Create User
     elif name == 'createUser':
@@ -310,13 +290,25 @@ INNER JOIN "Items" AS I ON U."RootId" = I."ItemId"
 WHERE U."UserName" = ?;'''
 
     elif name == 'getChildren':
+        target = '? || %s || ? || P."Path" AS "TargetURL"' % "'://'"
+        properties = {'Title': 'C."Uri" AS "Title"',
+                      'Size': 'C."Size"',
+                      'DateModified': 'C."DateModified"',
+                      'DateCreated': 'C."DateCreated"',
+                      'IsFolder': 'C."IsFolder"',
+                      'TargetURL': target,
+                      'IsHidden': 'FALSE "IsHidden"',
+                      'IsVolume': 'FALSE "IsVolume"',
+                      'IsRemote': 'FALSE "IsRemote"',
+                      'IsRemoveable': 'FALSE "IsRemoveable"',
+                      'IsFloppy': 'FALSE "IsFloppy"',
+                      'IsCompactDisc': 'FALSE "IsCompactDisc"'}
+        columns = (properties[property.Name] for property in format if property.Name in properties)
         query = '''\
-SELECT C."Uri" AS Title, C."Size", C."DateModified", C."DateCreated", C."IsFolder", 
-P."Path" AS "TargetURL", FALSE "IsHidden", FALSE "IsVolume", 
-FALSE "IsRemote", FALSE "IsRemoveable", FALSE "IsFloppy", FALSE "IsCompactDisc" 
+SELECT %s 
 FROM "Children" AS C
 INNER JOIN "Path" AS P ON C."ItemId"=P."ItemId" 
-WHERE C."ParentId" = ? AND (C."IsFolder" = TRUE OR C."Loaded" >= ?);'''
+WHERE (C."IsFolder" = TRUE OR C."Loaded" >= ?) AND C."ParentId" = ?;''' % ', '.join(columns)
 
     elif name == 'getChildId':
         query = '''\
@@ -376,17 +368,15 @@ SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Uri" = ?;'''
 # Create Procedure Query
     elif name == 'createGetIdentifier':
         query = '''\
-CREATE PROCEDURE "GetIdentifier"(IN URI VARCHAR(500),
-                                 IN ROOTID VARCHAR(100),
-                                 OUT ITEMID VARCHAR(100),
-                                 OUT ISROOT BOOLEAN)
+CREATE PROCEDURE "GetIdentifier"(IN USERID VARCHAR(100),
+                                 IN URI VARCHAR(500),
+                                 OUT ITEMID VARCHAR(100))
   SPECIFIC "GetIdentifier_1"
   READS SQL DATA
   BEGIN ATOMIC
     DECLARE ITEM VARCHAR(100);
-    SET ITEM = SELECT "ItemId" FROM "Path" WHERE "Path" = URI;
+    SELECT "ItemId" INTO ITEM FROM "Path" WHERE "UserId" = USERID AND "Path" = URI;
     SET ITEMID = ITEM;
-    SET ISROOT = ITEM = ROOTID;
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetIdentifier_1" TO "%(Role)s";''' % format
 
@@ -398,15 +388,16 @@ CREATE PROCEDURE "GetRoot"(IN USERID VARCHAR(100))
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE "Result" CURSOR WITH RETURN FOR
-      SELECT I."ItemId" "Id", I."ItemId" "ParentId", P."Path" "ParentURI", I."ItemId" "ObjectId", 
-      I."Title", I."Title" "TitleOnServer", I."DateCreated", I."DateModified", 
-      I2."ContentType", I."MediaType", I."Size", I."Trashed", TRUE "IsRoot", I2."IsFolder", I2."IsDocument", 
-      C."CanAddChild", C."CanRename", C."IsReadOnly", C."IsVersionable", I."Loaded", '' "CasePreservingURL" 
+      SELECT I."ItemId" AS "Id", '' AS "ParentUri", 
+      '' AS "ParentId", I."ItemId" AS "ObjectId", I."Title", 
+      I."Title" AS "TitleOnServer", I."DateCreated", I."DateModified", 
+      I2."ContentType", I."MediaType", I."Size", I."Trashed", TRUE AS "IsRoot", 
+      I2."IsFolder", I2."IsDocument", C."CanAddChild", C."CanRename", 
+      C."IsReadOnly", C."IsVersionable", I."Loaded", '' AS "CasePreservingURL" 
       FROM "Users" AS U 
       INNER JOIN "Items" AS I ON U."RootId"=I."ItemId" 
       INNER JOIN "Item" AS I2 ON I."ItemId"=I2."ItemId" 
       INNER JOIN "Capabilities" AS C ON I."ItemId"=C."ItemId" 
-      INNER JOIN "Path" AS P ON C."ItemId"=P."ItemId"
       WHERE U."UserId" = USERID FOR READ ONLY;
     OPEN "Result";
   END;
@@ -421,11 +412,13 @@ CREATE PROCEDURE "GetItem"(IN ITEMID VARCHAR(100),
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE "Result" CURSOR WITH RETURN FOR
-      SELECT I."ItemId" "Id", P."ItemId" "ParentId", P2."Path" "ParentURI", I."ItemId" "ObjectId", 
-       "GetTitle"(I."Title",T."Title",SWAP) "Title", "GetTitle"(I."Title",T."Title",SWAP) "TitleOnServer",
+      SELECT I."ItemId" AS "Id", P2."Path" AS "ParentUri", 
+       P."ItemId" AS "ParentId", I."ItemId" AS "ObjectId", 
+       "GetTitle"(I."Title",T."Title",SWAP) AS "Title", 
+       "GetTitle"(I."Title",T."Title",SWAP) AS "TitleOnServer",
        I."DateCreated", I."DateModified", I2."ContentType", I."MediaType", I."Size", I."Trashed", 
-       FALSE "IsRoot", I2."IsFolder", I2."IsDocument", C."CanAddChild", C."CanRename", 
-       C."IsReadOnly", C."IsVersionable", I."Loaded", '' "CasePreservingURL" 
+       FALSE AS "IsRoot", I2."IsFolder", I2."IsDocument", C."CanAddChild", C."CanRename", 
+       C."IsReadOnly", C."IsVersionable", I."Loaded", '' AS "CasePreservingURL" 
       FROM "Items" AS I 
       INNER JOIN "Item" AS I2 ON I."ItemId"=I2."ItemId" 
       INNER JOIN "Capabilities" AS C ON I."ItemId"=C."ItemId" 
@@ -475,8 +468,8 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "GetUserTimeStamp_1" TO "%(Role)s";''' % forma
     elif name == 'createGetPushItems':
         query = '''\
 CREATE PROCEDURE "GetPushItems"(IN USERID VARCHAR(100),
-                                IN "Start" TIMESTAMP(6) WITH TIME ZONE,
-                                IN "Stop" TIMESTAMP(6) WITH TIME ZONE)
+                                IN STARTTIME TIMESTAMP(6) WITH TIME ZONE,
+                                IN STOPTIME TIMESTAMP(6) WITH TIME ZONE)
   SPECIFIC "GetPushItems_1"
   READS SQL DATA
   DYNAMIC RESULT SETS 1
@@ -484,32 +477,32 @@ CREATE PROCEDURE "GetPushItems"(IN USERID VARCHAR(100),
     DECLARE "Result" CURSOR WITH RETURN FOR
       -- com.sun.star.ucb.ChangeAction.INSERT
       (SELECT I."ItemId", 1 AS "ChangeAction", I."RowStart" AS "TimeStamp" 
-        FROM "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS I 
-        LEFT JOIN "Items" FOR SYSTEM_TIME AS OF "Start" AS I2 
+        FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
+        LEFT JOIN "Items" FOR SYSTEM_TIME AS OF STARTTIME AS I2 
           ON I."ItemId" = I2."ItemId" 
         WHERE I2."ItemId" IS NULL AND I."UserId" = USERID) 
       UNION
       (SELECT "ItemId", SUM("ChangeAction"), MAX("TimeStamp") FROM (
         -- com.sun.star.ucb.ChangeAction.UPDATE
         SELECT I."ItemId", 2 AS "ChangeAction", MAX(I."RowEnd") AS "TimeStamp" 
-          FROM "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS I 
-          INNER JOIN "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS I2 
+          FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
+          INNER JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
             ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
           WHERE I."UserId" = USERID GROUP BY "ItemId", "ChangeAction" 
        UNION
         -- com.sun.star.ucb.ChangeAction.MOVE
         SELECT P."ChildId" AS "ItemId", 4 AS "ChangeAction", MAX(I."RowEnd") AS "TimeStamp" 
-          FROM "Parents" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS P 
+          FROM "Parents" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS P 
           INNER JOIN "Items" AS I ON P."ChildId" = I."ItemId"
-          INNER JOIN "Parents" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS P2 
+          INNER JOIN "Parents" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS P2 
             ON P."ChildId" = P2."ChildId" AND P2."RowStart"=P."RowEnd" 
           WHERE I."UserId" = USERID GROUP BY "ChildId", "ChangeAction") 
       GROUP BY "ItemId")
       UNION
       -- com.sun.star.ucb.ChangeAction.DELETE
       (SELECT I."ItemId", 8 AS "ChangeAction", I."RowEnd" AS "TimeStamp" 
-        FROM "Items" FOR SYSTEM_TIME AS OF "Start" AS I 
-        LEFT JOIN "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS I2 
+        FROM "Items" FOR SYSTEM_TIME AS OF STARTTIME AS I 
+        LEFT JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
           ON I."ItemId" = I2."ItemId" 
         WHERE I2."ItemId" IS NULL AND I."UserId" = USERID) 
       ORDER BY "TimeStamp" FOR READ ONLY;
@@ -521,20 +514,27 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "GetPushItems_1" TO "%(Role)s";''' % format
         query = '''\
 CREATE PROCEDURE "GetPushProperties"(IN USERID VARCHAR(100),
                                      IN ITEMID VARCHAR(100),
-                                     IN "Start" TIMESTAMP(6) WITH TIME ZONE,
-                                     IN "Stop" TIMESTAMP(6) WITH TIME ZONE)
+                                     IN STARTTIME TIMESTAMP(6) WITH TIME ZONE,
+                                     IN STOPTIME TIMESTAMP(6) WITH TIME ZONE)
   SPECIFIC "GetPushProperties_1"
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE "Result" CURSOR WITH RETURN FOR
-      SELECT MAX(I."Title" <> I2."Title") AS "Title", 
-        MAX(I."DateModified" <> I2."DateModified") AS "DateModified", 
-        MAX(I."Size" <> I2."Size") AS "Size" 
-        FROM "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS I 
-        INNER JOIN "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS I2 
+      SELECT 1 AS "Properties", MAX(I."RowEnd") AS "TimeStamp" 
+        FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
+        INNER JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
           ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
-        WHERE I."UserId" = USERID AND I."ItemId" = ITEMID FOR READ ONLY;
+        WHERE I."UserId" = USERID AND I."ItemId" = ITEMID 
+        AND I."Title" <> I2."Title" GROUP BY "Properties"
+      UNION
+      SELECT 2 AS "Properties", MAX(I."RowEnd") AS "TimeStamp" 
+        FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
+        INNER JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
+          ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
+        WHERE I."UserId" = USERID AND I."ItemId" = ITEMID 
+        AND (I."Size" <> I2."Size" OR I."DateModified" <> I2."DateModified") GROUP BY "Properties"
+      ORDER BY "TimeStamp" FOR READ ONLY;
     OPEN "Result";
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetPushProperties_1" TO "%(Role)s";''' % format
@@ -562,88 +562,6 @@ CREATE PROCEDURE "GetItemParentIds"(IN ITEMID VARCHAR(100),
     SET NEWPARENT = NEWIDS;
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetItemParentIds_1" TO "%(Role)s";''' % format
-
-# System Time Period Procedure Queries
-    elif name == 'createGetSyncItems1':
-        query = '''\
-CREATE PROCEDURE "GetSyncItems"(IN "Start" TIMESTAMP(6) WITH TIME ZONE,
-                                IN "Stop" TIMESTAMP(6) WITH TIME ZONE)
-  SPECIFIC "GetSyncItems_1"
-  READS SQL DATA
-  DYNAMIC RESULT SETS 1
-  BEGIN ATOMIC
-    DECLARE "Result" CURSOR WITH RETURN FOR
-      (SELECT U."UserName", I."ItemId", 3 AS "ChangeAction", I."RowEnd" AS "TimeStamp" 
-        FROM "Items" FOR SYSTEM_TIME AS OF "Start" AS I 
-        INNER JOIN "Users" AS U ON I."UserId"=U."UserId" 
-        LEFT JOIN "Items" FOR SYSTEM_TIME AS OF "Stop" AS I2 
-          ON I."ItemId" = I2."ItemId" 
-        WHERE I2."ItemId" IS NULL)
-      UNION
-      (SELECT U."UserName", I2."ItemId", 1 AS "ChangeAction", I2."RowStart" AS "TimeStamp"
-        FROM "Items" FOR SYSTEM_TIME AS OF "Stop" AS I2
-        INNER JOIN "Users" AS U ON I2."UserId"=U."UserId" 
-        LEFT JOIN "Items" FOR SYSTEM_TIME AS OF "Start" AS I 
-          ON I."ItemId"=I2."ItemId"
-        WHERE I."ItemId" IS NULL)
-      UNION
-      (SELECT U."UserName", I2."ItemId", 2 AS "ChangeAction", I."RowEnd" AS "TimeStamp"
-        FROM "Items" FOR SYSTEM_TIME AS OF "Stop" AS I2
-        INNER JOIN "Users" AS U ON I2."UserId"=U."UserId" 
-        INNER JOIN "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS I 
-          ON I2."ItemId"=I."ItemId" AND I2."RowStart"=I."RowEnd")
-      ORDER BY "UserName", "TimeStamp" FOR READ ONLY;
-    OPEN "Result";
-  END;
-GRANT EXECUTE ON SPECIFIC ROUTINE "GetSyncItems_1" TO "%(Role)s";''' % format
-
-
-
-    elif name == 'createGetSyncItems2':
-        query = '''\
-CREATE PROCEDURE "GetSyncItems"(IN "Start" TIMESTAMP(6) WITH TIME ZONE,
-                                IN "Stop" TIMESTAMP(6) WITH TIME ZONE)
-  SPECIFIC "GetSyncItems_1"
-  READS SQL DATA
-  DYNAMIC RESULT SETS 1
-  BEGIN ATOMIC
-    DECLARE "Result" CURSOR WITH RETURN FOR
-    SELECT "UserName", "Id", "Title", "DateCreated", "DateModified", "MediaType", "Size", "Trashed",
-        GROUP_CONCAT("ParentId" SEPARATOR '","') "ParentId", "TimeStamp", "TitleUpdated", "SizeUpdated",
-        "TrashedUpdated", EVERY("AtRoot") "AtRoot" FROM
-    ((SELECT  "Users"."UserName" "UserName", "Items"."ItemId" "Id", "Items"."Title",
-        "Items"."DateCreated", "Items"."DateModified", "Items"."MediaType", "Items"."Size",
-        "Items"."Trashed", "Parents"."ItemId" "ParentId",
-        "Before"."TimeStamp" "TimeStamp",
-        "Items"."Title" <> "Before"."Title" "TitleUpdated",
-        "Items"."Size" <> "Before"."Size" AND "Before"."Size" = 0 "SizeUpdated",
-        "Items"."Trashed" <> "Before"."Trashed" "TrashedUpdated",
-        "Users"."RootId" = "Parents"."ItemId" "AtRoot" FROM "Items"
-    INNER JOIN "Capabilities" FOR SYSTEM_TIME AS OF "Stop" AS "Current" ON "Items"."ItemId" = "Current"."ItemId"
-    INNER JOIN "Parents" ON "Current"."UserId" = "Parents"."UserId" AND "Current"."ItemId" = "Parents"."ChildId"
-    INNER JOIN "Users" ON "Parents"."UserId" = "Users"."UserId" 
-    INNER JOIN "Capabilities" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS "Previous" ON "Current"."UserId" = "Previous"."UserId"
-     AND "Current"."ItemId" = "Previous"."ItemId" AND "Current"."RowStart" = "Previous"."RowEnd"
-    LEFT JOIN "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS "After" ON "Previous"."ItemId" = "After"."ItemId"
-    LEFT JOIN "Items" FOR SYSTEM_TIME FROM "Start" TO "Stop" AS "Before" ON "After"."ItemId" = "Before"."ItemId" AND "After"."RowStart" = "Before"."RowEnd")
-    UNION 
-    (SELECT "Users"."UserName" "UserName", "Items"."ItemId" "Id", "Items"."Title",
-        "Items"."DateCreated", "Items"."DateModified", "Items"."MediaType", "Items"."Size",
-        "Items"."Trashed", "Parents"."ItemId" "ParentId",
-        "Previous"."TimeStamp" "TimeStamp", TRUE "TitleUpdated", TRUE "SizeUpdated", TRUE "TrashedUpdated",
-        "Users"."RootId" = "Parents"."ItemId" "AtRoot" FROM "Items"
-    INNER JOIN "Capabilities" FOR SYSTEM_TIME AS OF "Stop" AS "Current" ON "Items"."ItemId" = "Current"."ItemId"
-    INNER JOIN "Parents" ON "Current"."UserId" = "Parents"."UserId" AND "Current"."ItemId" = "Parents"."ChildId"
-    INNER JOIN "Users" ON "Parents"."UserId" = "Users"."UserId" 
-    LEFT JOIN "Capabilities" FOR SYSTEM_TIME AS OF "Start" AS "Previous" ON "Current"."UserId" = "Previous"."UserId" AND "Current"."ItemId" = "Previous"."ItemId"
-    WHERE "Previous"."UserId" IS NULL AND "Previous"."ItemId" IS NULL))
-    GROUP BY "UserName", "Id", "Title", "DateCreated", "DateModified", "MediaType",
-        "Size", "Trashed", "TimeStamp", "TitleUpdated", "SizeUpdated", "TrashedUpdated"
-    ORDER BY "TimeStamp" FOR READ ONLY;
-    OPEN "Result";
-  END;
-GRANT EXECUTE ON SPECIFIC ROUTINE "GetSyncItems_1" TO "%(Role)s";''' % format
-
 
     elif name == 'createMergeItem':
         query = '''\
@@ -743,7 +661,7 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
 
 # Get Procedure Query
     elif name == 'getIdentifier':
-        query = 'CALL "GetIdentifier"(?,?,?,?)'
+        query = 'CALL "GetIdentifier"(?,?,?)'
     elif name == 'getRoot':
         query = 'CALL "GetRoot"(?)'
     elif name == 'getItem':

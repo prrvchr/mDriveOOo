@@ -38,6 +38,9 @@ from com.sun.star.ucb.ChangeAction import UPDATE
 from com.sun.star.ucb.ChangeAction import MOVE
 from com.sun.star.ucb.ChangeAction import DELETE
 
+from com.sun.star.ucb.ContentProperties import TITLE
+from com.sun.star.ucb.ContentProperties import CONTENT
+
 from com.sun.star.ucb import XRestReplicator
 
 from com.sun.star.rest import HTTPException
@@ -50,7 +53,6 @@ from .dbtool import getDateTimeInTZToString
 from .dbtool import getDateTimeToString
 
 from .database import DataBase
-from .user import User
 
 from .logger import getLogger
 
@@ -190,7 +192,7 @@ class Replicator(unohelper.Base,
         try:
             end = currentDateTimeInTZ()
             for user in self._users.values():
-                start = previous = self.DataBase.getUserTimeStamp(user.Id)
+                start = self.DataBase.getUserTimeStamp(user.Id)
                 for item in self.DataBase.getPushItems(user.Id, start, end):
                     print("Replicator._pushUsers() 1 Start: %s - End: %s" % (getDateTimeInTZToString(start), getDateTimeInTZToString(end)))
                     print("Replicator._pushUsers() 2 Item: UserName: %s - ItemId: %s - ChangeAction: %s - TimeStamp: %s" % (user.Name, item.getValue('ItemId'),item.getValue('ChangeAction'),getDateTimeInTZToString(item.getValue('TimeStamp'))))
@@ -198,8 +200,8 @@ class Replicator(unohelper.Base,
                     url = user.Provider.SourceURL
                     uploader = user.Request.getUploader(chunk, url, self)
                     metadata = self.DataBase.getMetaData(user, item)
-                    previous = self._pushItem(user, uploader, item, metadata, start, end, previous)
-                self.DataBase.updateUserTimeStamp(previous, user.Id)
+                    if not self._pushItem(user, uploader, item, metadata, start, end):
+                        break
                 print("Replicator._pushUsers() 4")
         except Exception as e:
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
@@ -286,10 +288,11 @@ class Replicator(unohelper.Base,
             rejected.append((title, itemid, ','.join(parents)))
         return rejected
 
-    def _pushItem(self, user, uploader, item, metadata, start, end, previous):
+    def _pushItem(self, user, uploader, item, metadata, start, end):
         try:
             status = False
             itemid = item.getValue('ItemId')
+            timestamp = item.getValue('TimeStamp')
             print("Replicator._pushItem() 3 Insert/Update Title: %s Size: %s - AtRoot: %s" % (metadata.getValue('Title'),
                                                                                  metadata.getValue('Size'),
                                                                                  metadata.getValue('AtRoot')))
@@ -301,14 +304,14 @@ class Replicator(unohelper.Base,
                 print("Replicator._pushItem() INSERT 1")
                 mediatype = metadata.getValue('MediaType')
                 print("Replicator._pushItem() INSERT 2")
-                timestamp = getDateTimeToString(metadata.getValue('DateCreated'))
+                created = getDateTimeToString(metadata.getValue('DateCreated'))
                 if user.Provider.isFolder(mediatype):
                     print("Replicator._pushItem() INSERT 3")
                     response = user.Provider.createFolder(user.Request, metadata)
                     print("Replicator._pushItem() INSERT 4")
                     status = self.callBack(itemid, response)
                     print("Replicator._pushItem() INSERT 5")
-                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 131, metadata.getValue('Title'), timestamp)
+                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 131, metadata.getValue('Title'), created)
                     print("Replicator._pushItem() INSERT 6")
                 elif user.Provider.isLink(mediatype):
                     pass
@@ -316,34 +319,47 @@ class Replicator(unohelper.Base,
                     if user.Provider.createFile(user.Request, uploader, metadata):
                         #if self._needPush('SizeUpdated', itemid, operations):
                         status = user.Provider.uploadFile(uploader, user, metadata, True)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 132, metadata.getValue('Title'), timestamp)
-            # UPDATE procedures, only a few properties are synchronized: (Size, Title, DateModified)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 132, metadata.getValue('Title'), created)
+                self._updateUserTimeStamp(user.Id, timestamp, metadata, status)
+            # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
             elif action & UPDATE:
-                properties = self.DataBase.getPushProperties(user.Id, itemid, start, end)
-                timestamp = getDateTimeToString(metadata.getValue('DateModified'))
-                if properties.getValue('Title'):
-                    status &= user.Provider.updateTitle(user.Request, metadata)
-                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 133, metadata.getValue('Title'), timestamp)
-                if properties.getValue('Size') or properties.getValue('DateModified'):
-                    status = user.Provider.uploadFile(uploader, user, metadata, False)
-                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 134, metadata.getValue('Title'), timestamp, metadata.getValue('Size'))
+                for property in self.DataBase.getPushProperties(user.Id, itemid, start, end):
+                    status = False
+                    properties = property.getValue('Properties')
+                    timestamp = property.getValue('TimeStamp')
+                    modified = getDateTimeToString(metadata.getValue('DateModified'))
+                    if properties & TITLE:
+                        status = user.Provider.updateTitle(user.Request, metadata)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 133, metadata.getValue('Title'), modified)
+                    elif properties & CONTENT:
+                        status = user.Provider.uploadFile(uploader, user, metadata, False)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 134, metadata.getValue('Title'), modified, metadata.getValue('Size'))
+                    if not self._updateUserTimeStamp(user.Id, timestamp, metadata, status):
+                        break
             # MOVE procedures to follow parent changes of a resource
             elif action & MOVE:
                 print("Replicator._pushItem() MOVE")
                 self.DataBase.getItemParentIds(itemid, metadata, start, end)
                 status = user.Provider.updateParents(user.Request, metadata)
+                self._updateUserTimeStamp(user.Id, timestamp, metadata, status)
                 print("Replicator.._pushItem() MOVE ToAdd: %s - ToRemove: %s" % (toadd, toremove))
             elif action & DELETE:
                 print("Replicator._pushItem() DELETE")
                 status = user.Provider.updateTrashed(user.Request, metadata)
                 self._logger.logprb(INFO, 'Replicator', '_pushItem()', 135, metadata.getValue('Title'), timestamp)
-            if not status:
-                timestamp = getDateTimeToString(metadata.getValue('DateModified'))
-                self._logger.logprb(SEVERE, 'Replicator', '_pushItem()', 136, metadata.getValue('Title'), timestamp, metadata.getValue('Id'))
-            return item.getValue('TimeStamp') if status else previous
+                self._updateUserTimeStamp(user.Id, timestamp, metadata, status)
+            return status
         except Exception as e:
             msg = "ERROR: %s - %s" % (e, traceback.print_exc())
             self._logger.logp(SEVERE, 'Replicator', '_pushItem()', msg)
+
+    def _updateUserTimeStamp(self, userid, timestamp, metadata, status):
+        if status:
+            self.DataBase.updateUserTimeStamp(timestamp, userid)
+        else:
+            modified = getDateTimeToString(metadata.getValue('DateModified'))
+            self._logger.logprb(SEVERE, 'Replicator', '_pushItem()', 136, metadata.getValue('Title'), modified, metadata.getValue('Id'))
+        return status
 
     def _getReplicateTimeout(self):
         configuration = getConfiguration(self._ctx, g_identifier, False)

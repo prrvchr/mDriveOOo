@@ -175,7 +175,7 @@ def getQueries():
             ('createItemView',{'Role': g_role}),
             ('createTitleView',{'Role': g_role}),
             ('createChildrenView',{'Role': g_role}),
-            ('createPathView',{'Role': g_role, 'Scheme': g_scheme, 'Separator': '/'}),
+            ('createPathView',{'Role': g_role, 'Separator': '/'}),
 
             ('createGetIdentifier',{'Role': g_role}),
             ('createGetRoot',{'Role': g_role}),

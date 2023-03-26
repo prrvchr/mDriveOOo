@@ -40,8 +40,6 @@ from .unolib import KeyMap
 
 from .unotool import createService
 
-from .configuration import g_admin
-
 from .dbqueries import getSqlQuery
 from .dbconfig import g_role
 from .dbconfig import g_dba
@@ -61,6 +59,9 @@ from .dbinit import getQueries
 from .dbinit import getTablesAndStatements
 
 from .logger import getLogger
+
+from .configuration import g_admin
+from .configuration import g_scheme
 
 import traceback
 
@@ -209,10 +210,10 @@ class DataBase(unohelper.Base,
         call.close()
         return all(rows)
 
-    def getChildren(self, itemid, mode):
+    def getChildren(self, username, itemid, properties, mode, authority):
         #TODO: Can't have a ResultSet of type SCROLL_INSENSITIVE with a Procedure,
         #TODO: as a workaround we use a simple quey...
-        select = self._getCall('getChildren')
+        select = self._getCall('getChildren', properties)
         scroll = uno.getConstantByName('com.sun.star.sdbc.ResultSetType.SCROLL_INSENSITIVE')
         select.ResultSetType = scroll
         # OpenOffice / LibreOffice Columns:
@@ -220,8 +221,10 @@ class DataBase(unohelper.Base,
         #    'IsVolume', 'IsRemote', 'IsRemoveable', 'IsFloppy', 'IsCompactDisc']
         # "TargetURL" is done by:
         #    CONCAT(identifier.getContentIdentifier(), Uri) for File and Foder
-        select.setString(1, itemid)
-        select.setShort(2, mode)
+        select.setString(1, g_scheme)
+        select.setString(2, username if authority else '')
+        select.setShort(3, mode)
+        select.setString(4, itemid)
         return select
 
     def updateLoaded(self, userid, itemid, value, default):
@@ -232,16 +235,16 @@ class DataBase(unohelper.Base,
         update.close()
         return value
 
-    def getIdentifier(self, uri, rootid):
+    def getIdentifier(self, user, uri):
         call = self._getCall('getIdentifier')
-        call.setString(1, uri)
-        call.setString(2, rootid)
+        call.setString(1, user.Id)
+        call.setString(2, uri)
         call.execute()
         itemid = call.getString(3)
         if call.wasNull():
             itemid = None
-        isroot = call.getBoolean(4)
         call.close()
+        isroot = itemid == user.Id
         return itemid, isroot
 
     def getNewIdentifier(self, userid):
@@ -317,12 +320,12 @@ class DataBase(unohelper.Base,
         call.close()
         return newtitle
 
-    def insertNewContent(self, userid, itemid, parentid, content, timestamp):
+    def insertNewContent(self, userid, content, timestamp):
         call = self._getCall('insertItem')
         call.setString(1, userid)
         call.setLong(2, 1)
         call.setObject(3, timestamp)
-        call.setString(4, itemid)
+        call.setString(4, content.getValue("Id"))
         call.setString(5, content.getValue("Title"))
         call.setTimestamp(6, content.getValue('DateCreated'))
         call.setTimestamp(7, content.getValue('DateModified'))
@@ -333,7 +336,7 @@ class DataBase(unohelper.Base,
         call.setBoolean(12, content.getValue('CanRename'))
         call.setBoolean(13, content.getValue('IsReadOnly'))
         call.setBoolean(14, content.getValue('IsVersionable'))
-        call.setString(15, parentid)
+        call.setString(15, content.getValue("ParentId"))
         status = call.execute() == 0
         path = call.getString(16)
         basename = call.getString(17)
@@ -456,15 +459,15 @@ class DataBase(unohelper.Base,
         return items
 
     def getPushProperties(self, userid, itemid, start, end):
-        properties = None
+        properties = []
         select = self._getCall('getPushProperties')
         select.setString(1, userid)
         select.setString(2, itemid)
         select.setObject(3, start)
         select.setObject(4, end)
         result = select.executeQuery()
-        if result.next():
-            properties = getKeyMapFromResult(result)
+        while result.next():
+            properties.append(getKeyMapFromResult(result))
         result.close()
         select.close()
         return properties

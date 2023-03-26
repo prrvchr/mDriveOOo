@@ -42,11 +42,12 @@ from com.sun.star.container import XChild
 from com.sun.star.lang import NoSupportException
 from com.sun.star.lang import XComponent
 
-from com.sun.star.ucb import XContent
-from com.sun.star.ucb import XCommandProcessor2
-from com.sun.star.ucb import XContentCreator
-from com.sun.star.ucb import InteractiveBadTransferURLException
 from com.sun.star.ucb import CommandAbortedException
+from com.sun.star.ucb import IllegalIdentifierException
+from com.sun.star.ucb import InteractiveBadTransferURLException
+from com.sun.star.ucb import XCommandProcessor2
+from com.sun.star.ucb import XContent
+from com.sun.star.ucb import XContentCreator
 
 from com.sun.star.ucb.ContentAction import INSERTED
 from com.sun.star.ucb.ContentAction import EXCHANGED
@@ -60,12 +61,12 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb import XRestContent
 
-from .unolib import PropertySetInfo
+from ..unolib import PropertySetInfo
 
-from .unotool import createService
-from .unotool import getSimpleFile
-from .unotool import getProperty
-from .unotool import hasInterface
+from ..unotool import createService
+from ..unotool import getSimpleFile
+from ..unotool import getProperty
+from ..unotool import hasInterface
 
 from .contentlib import CommandInfo
 from .contentlib import Row
@@ -79,9 +80,12 @@ from .contenttools import getContentEvent
 from .contenttools import getContentInfo
 from .contenttools import getMimeType
 
-from .logger import getLogger
+from .contentidentifier import ContentIdentifier
 
-from .configuration import g_defaultlog
+from ..logger import getLogger
+
+from ..configuration import g_defaultlog
+from ..configuration import g_scheme
 
 import traceback
 
@@ -92,19 +96,21 @@ class Content(unohelper.Base,
               XCommandProcessor2,
               XContentCreator,
               XChild,
-              XPropertiesChangeNotifier,
-              XRestContent):
-    def __init__(self, ctx, identifier):
+              XPropertiesChangeNotifier):
+    def __init__(self, ctx, user, identifier, uri, data=None):
         self._ctx = ctx
         msg = "Content loading ... "
+        self._user = user
         self._identifier = identifier
-        self.MetaData = identifier.MetaData
-        self._commandInfo = self._getCommandInfo()
+        self._new = data is not None
         self._contentListeners = []
         self._propertiesListener = {}
         self._listeners = []
-        msg += "Done."
         self._logger = getLogger(ctx, g_defaultlog)
+        self.MetaData = data if self._new else self._getMetaData(uri)
+        self._commandInfo = self._getCommandInfo()
+        self._propertySetInfo = self._getPropertySetInfo()
+        msg += "Done."
         self._logger.logp(INFO, 'Content', '__init__()', msg)
 
     @property
@@ -117,6 +123,24 @@ class Content(unohelper.Base,
     def CanAddChild(self):
         return self.MetaData.getValue('CanAddChild')
 
+    @property
+    def Uri(self):
+        return self.MetaData.getDefaultValue('Uri', None)
+    @property
+    def Id(self):
+        return self.MetaData.getDefaultValue('Id', None)
+    @property
+    def ParentId(self):
+        return self.MetaData.getDefaultValue('ParentId', None)
+    @property
+    def ParentUri(self):
+        return self.MetaData.getDefaultValue('ParentUri', None)
+
+    def isRoot(self):
+        return self.Id == self._user.RootId
+
+    def setIdentifier(self, identifier):
+        self._identifier = identifier
 
     # XComponent
     def dispose(self):
@@ -135,13 +159,20 @@ class Content(unohelper.Base,
 
     # XChild
     def getParent(self):
-        content = None
-        print("Content.getParent() 1")
-        if not self._identifier.isRoot():
-            print("Content.getParent() 1")
-            content = self._identifier.getParent().getContent()
-        print("Content.getParent() 1")
-        return content
+        try:
+            content = None
+            print("Content.getParent() 1 Name: %s" % self.MetaData.getValue('Title'))
+            if not self.isRoot():
+                print("Content.getParent() 2 ParentUri: %s" % self.ParentUri)
+                url = self._user.getContentUrl(self.ParentUri)
+                identifier = ContentIdentifier(url)
+                print("Content.getParent() 3")
+                content = self._user.getContent(identifier, self.ParentUri)
+            print("Content.getParent() 4")
+            return content
+        except Exception as e:
+            msg = "Error: %s" % traceback.print_exc()
+            print(msg)
 
     def setParent(self, parent):
         raise NoSupportException('Parent can not be set', self)
@@ -161,13 +192,13 @@ class Content(unohelper.Base,
 
     # XContentCreator
     def queryCreatableContentsInfo(self):
-        return self.getIdentifier().getCreatableContentsInfo()
+        return self._user.getCreatableContentsInfo(self.CanAddChild)
     def createNewContent(self, info):
         # To avoid circular imports, the creation of new content is delegated to
-        # Identifier.createNewContent() since the identifier also creates Content
-        # with Identifier.createContent()
+        # ContentUser.createNewContent() since the ContentUser also creates Content
+        # with ContentUser.createContent()
         print("Content.createNewContent() 1")
-        return self._identifier.createNewContent(info.Type)
+        return self._user.createNewContent(self.Id, self.Uri, info.Type)
 
     # XContent
     def getIdentifier(self):
@@ -187,15 +218,13 @@ class Content(unohelper.Base,
         return 1
     def execute(self, command, id, environment):
         print("Content.execute() 1  Commande Name: %s ****************************************************************" % command.Name)
-        url = self.getIdentifier().getContentIdentifier()
-        user = self.getIdentifier().User
-        print("Content.execute() %s - %s - %s" % (command.Name, url, self.getIdentifier().Id))
+        print("Content.execute() %s - %s - %s" % (command.Name, self.Uri, self.Id))
         msg = "command.Name: %s" % command.Name
         self._logger.logp(INFO, 'Content', 'execute()', msg)
         if command.Name == 'getCommandInfo':
             return CommandInfo(self._getCommandInfo())
         elif command.Name == 'getPropertySetInfo':
-            return PropertySetInfo(self._identifier._propertySetInfo)
+            return PropertySetInfo(self._propertySetInfo)
         elif command.Name == 'getPropertyValues':
             values = getPropertiesValues(self._logger, self, command.Argument)
             return Row(values)
@@ -203,21 +232,21 @@ class Content(unohelper.Base,
             return setPropertiesValues(self._logger, self, environment, command.Argument)
         elif command.Name == 'delete':
             self.MetaData.insertValue('Trashed', True)
-            user.DataBase.updateContent(user.Id, self._identifier.Id, 'Trashed', True)
+            self._user.DataBase.updateContent(self._user.Id, self.Id, 'Trashed', True)
         elif command.Name == 'open':
             print("Content.execute() open  Mode: %s" % command.Argument.Mode)
             if self.IsFolder:
                 print("Content.execute() open 1")
-                select = self._identifier.getFolderContent(self.MetaData, command.Argument.Properties)
+                select = self._user.getFolderContent(self.MetaData, command.Argument.Properties)
                 print("Content.execute() open 2")
                 msg += " IsFolder: %s" % self.IsFolder
                 self._logger.logp(INFO, 'Content', 'execute()', msg)
                 print("Content.execute() open 3")
-                return DynamicResultSet(self._identifier.User, select)
+                return DynamicResultSet(self._user, select)
             elif self.IsDocument:
                 print("Content.execute() open 4")
                 sf = getSimpleFile(self._ctx)
-                url, size = self._identifier.getDocumentContent(sf, self.MetaData, 0)
+                url, size = self._user.getDocumentContent(sf, self.MetaData, 0)
                 if not size:
                     title = self.MetaData.getValue('Title')
                     msg = "Error while downloading file: %s" % title
@@ -235,17 +264,15 @@ class Content(unohelper.Base,
             # It saves the content created by 'createNewContent' from the parent folder
             # right after the Title property is initialized
             print("Content.execute() insert 1 - %s - %s - %s" % (self.IsFolder,
-                                                                 self._identifier.Id,
+                                                                 self.Id,
                                                                  self.MetaData.getValue('Title')))
             if self.IsFolder:
-                #mediatype = self._identifier.User.Provider.Folder
-                #self.MetaData.insertValue('MediaType', mediatype)
                 print("Content.execute() insert 2 ************** %s" % self.MetaData.getValue('MediaType'))
                 try:
-                    if self._identifier.insertNewContent(self.MetaData):
+                    if self._user.insertNewContent(self.MetaData):
                         print("Content.execute() insert 3")
                         # Need to consum the new Identifier if needed...
-                        self._identifier.deleteNewIdentifier()
+                        self._user.deleteNewIdentifier(self.Id)
                         print("Content.execute() insert 4")
                 except Exception as e:
                     msg = "Content.Insert() Error: %s" % traceback.print_exc()
@@ -256,8 +283,8 @@ class Content(unohelper.Base,
                 stream = command.Argument.Data
                 replace = command.Argument.ReplaceExisting
                 sf = getSimpleFile(self._ctx)
-                url = self._identifier.User.Provider.SourceURL
-                target = '%s/%s' % (url, self._identifier.Id)
+                url = self._user.Provider.SourceURL
+                target = '%s/%s' % (url, self.Id)
                 if sf.exists(target) and not replace:
                     return
                 if hasInterface(stream, 'com.sun.star.io.XInputStream'):
@@ -267,9 +294,9 @@ class Content(unohelper.Base,
                     self.MetaData.setValue('MediaType', mediatype)
                     stream.closeInput()
                     print("Content.execute() insert 2 ************** %s" % mediatype)
-                    if self._identifier.insertNewContent(self.MetaData):
+                    if self._user.insertNewContent(self.MetaData):
                         # Need to consum the new Identifier if needed...
-                        self._identifier.deleteNewIdentifier()
+                        self._user.deleteNewIdentifier(self.Id)
                         print("Content.execute() insert 3")
 
         elif command.Name == 'createNewContent' and self.IsFolder:
@@ -286,7 +313,7 @@ class Content(unohelper.Base,
             clash = command.Argument.NameClash
             print("Content.execute() transfert 1 %s - %s -%s - %s" % (title, source, move, clash))
             # We check if 'NewTitle' is a child of this folder by recovering its ItemId
-            itemid = user.DataBase.getChildId(self._identifier.Id, title)
+            itemid = self._user.DataBase.getChildId(self.Id, title)
             if itemid is None:
                 print("Content.execute() transfert 2 %s" % itemid)
                 # ItemId could not be found: 'NewTitle' does not exist in the folder...
@@ -301,11 +328,11 @@ class Content(unohelper.Base,
             if not sf.exists(source):
                 raise CommandAbortedException("Error while saving file: %s" % source, self)
             inputstream = sf.openFileRead(source)
-            target = '%s/%s' % (user.Provider.SourceURL, itemid)
+            target = '%s/%s' % (self._user.Provider.SourceURL, itemid)
             sf.writeFile(target, inputstream)
             inputstream.closeInput()
             # We need to update the Size
-            user.DataBase.updateContent(user.Id, itemid, 'Size', sf.getSize(target))
+            self._user.DataBase.updateContent(self._user.Id, itemid, 'Size', sf.getSize(target))
             if move:
                 pass #must delete object
         elif command.Name == 'flush' and self.IsFolder:
@@ -315,6 +342,23 @@ class Content(unohelper.Base,
         pass
     def releaseCommandIdentifier(self, id):
         pass
+
+    # Private methods
+    def _getMetaData(self, uri):
+        print("Content._getMetaData() Uri: '%s'" % uri)
+        if uri:
+            itemid, isroot = self._user.DataBase.getIdentifier(self._user, uri)
+        else:
+            itemid, isroot = self._user.RootId, True
+        if itemid is None:
+            msg = self._logger.resolveString(201, uri)
+            raise IllegalIdentifierException(msg, self)
+        data = self._user.DataBase.getItem(self._user.Id, itemid, isroot)
+        if data is None:
+            msg = self._logger.resolveString(201, uri)
+            raise IllegalIdentifierException(msg, self)
+        data.insertValue('Uri', uri)
+        return data
 
     def _getCommandInfo(self):
         commands = {}
@@ -336,7 +380,7 @@ class Content(unohelper.Base,
         except RuntimeError as e:
             t6 = uno.getTypeByName('com.sun.star.ucb.InsertCommandArgument')
         commands['insert'] = getCommandInfo('insert', t6)
-        if not self._identifier.isRoot():
+        if not self.isRoot():
             commands['delete'] = getCommandInfo('delete', uno.getTypeByName('boolean'))
         try:
             t7 = uno.getTypeByName('com.sun.star.ucb.TransferInfo2')
@@ -349,3 +393,59 @@ class Content(unohelper.Base,
             t8 = uno.getTypeByName('com.sun.star.ucb.ContentInfo')
             commands['createNewContent'] = getCommandInfo('createNewContent', t8)
         return commands
+
+    def _getPropertySetInfo(self):
+        RO = 0 if self._new else READONLY
+        properties = {}
+        properties['ContentType'] = getProperty('ContentType', 'string', BOUND | RO)
+        properties['MediaType'] = getProperty('MediaType', 'string', BOUND | READONLY)
+        properties['IsDocument'] = getProperty('IsDocument', 'boolean', BOUND | RO)
+        properties['IsFolder'] = getProperty('IsFolder', 'boolean', BOUND | RO)
+        properties['Title'] = getProperty('Title', 'string', BOUND | CONSTRAINED)
+        properties['Size'] = getProperty('Size', 'long', BOUND | RO)
+        created = getProperty('DateCreated', 'com.sun.star.util.DateTime', BOUND | READONLY)
+        properties['DateCreated'] = created
+        modified = getProperty('DateModified', 'com.sun.star.util.DateTime', BOUND | RO)
+        properties['DateModified'] = modified
+        properties['IsReadOnly'] = getProperty('IsReadOnly', 'boolean', BOUND | RO)
+        info = getProperty('CreatableContentsInfo','[]com.sun.star.ucb.ContentInfo', BOUND | RO)
+        properties['CreatableContentsInfo'] = info
+        properties['CasePreservingURL'] = getProperty('CasePreservingURL', 'string', BOUND | RO)
+        properties['BaseURI'] = getProperty('BaseURI', 'string', BOUND | READONLY)
+        properties['TitleOnServer'] = getProperty('TitleOnServer', 'string', BOUND)
+        properties['IsHidden'] = getProperty('IsHidden', 'boolean', BOUND | RO)
+        properties['IsVolume'] = getProperty('IsVolume', 'boolean', BOUND | RO)
+        properties['IsRemote'] = getProperty('IsRemote', 'boolean', BOUND | RO)
+        properties['IsRemoveable'] = getProperty('IsRemoveable', 'boolean', BOUND | RO)
+        properties['IsFloppy'] = getProperty('IsFloppy', 'boolean', BOUND | RO)
+        properties['IsCompactDisc'] = getProperty('IsCompactDisc', 'boolean', BOUND | RO)
+        properties['IsVersionable'] = getProperty('IsVersionable', 'boolean', BOUND | RO)
+        return properties
+
+    def _setTitle(self, title):
+        try:
+            # If Title change we need to change Identifier.getContentIdentifier()
+            print("Identifier.setTitle() 1 New Title: %s - New: %s" % (title, self._new))
+            if not self._new:
+                # And as the uri changes we also have to clear this Identifier from the cache.
+                # New Identifier bypass the cache: they are created by the folder's Identifier
+                # (ie: createNewIdentifier()) and have same uri as this folder.
+                self._user.expireContent(self.Uri)
+            if self._user.Provider.SupportDuplicate:
+                newtitle = self._user.DataBase.getNewTitle(title, self.ParentId, self.IsFolder)
+            else:
+                newtitle = title
+            print("Identifier.setTitle() 2 Title: %s - New Title: %s" % (title, newtitle))
+            url = '%s/%s' % (self.ParentUri, newtitle)
+            self.MetaData.setValue('Uri', url)
+            self.MetaData.setValue('Title', newtitle)
+            self.MetaData.setValue('TitleOnServer', newtitle)
+            # If the identifier is new then the content is not yet in the database.
+            # It will be inserted by the insert command of the XCommandProcessor2.execute()
+            if not self._new:
+                self._user.DataBase.updateContent(self._user.Id, self.Id, 'Title', title)
+            print("Identifier.setTitle() 3 Title")
+        except Exception as e:
+            msg = "Identifier.setTitle() Error: %s" % traceback.print_exc()
+            print(msg)
+
