@@ -11,15 +11,59 @@
             <node oor:name="SecondaryKeys">
                 <node oor:name="Office">
                     <node oor:name="ProviderData">
-                        <node oor:name="Provider67" oor:op="fuse">
+                        <node oor:name="ProviderMicrosoft1" oor:op="fuse">
                             <prop oor:name="ServiceName">
-                                <value>io.github.prrvchr.oneDriveOOo.ContentProviderProxy</value>
+                                <value>io.github.prrvchr.oneDriveOOo.ContentProvider</value>
                             </prop>
                             <prop oor:name="URLTemplate">
-                                <value>vnd-microsoft</value>
+                                <value>"vnd-microsoft://"[^/?#]+"@outlook.com"([/?#].*)?</value>
                             </prop>
                             <prop oor:name="Arguments">
-                                <value>io.github.prrvchr.oneDriveOOo</value>
+                                <value>WithAuthority</value>
+                            </prop>
+                        </node>
+                        <node oor:name="ProviderMicrosoft2" oor:op="fuse">
+                            <prop oor:name="ServiceName">
+                                <value>io.github.prrvchr.oneDriveOOo.ContentProvider</value>
+                            </prop>
+                            <prop oor:name="URLTemplate">
+                                <value>"vnd-microsoft://"[^/?#]+"@outlook.fr"([/?#].*)?</value>
+                            </prop>
+                            <prop oor:name="Arguments">
+                                <value>WithAuthority</value>
+                            </prop>
+                        </node>
+                        <node oor:name="ProviderMicrosoft3" oor:op="fuse">
+                            <prop oor:name="ServiceName">
+                                <value>io.github.prrvchr.oneDriveOOo.ContentProvider</value>
+                            </prop>
+                            <prop oor:name="URLTemplate">
+                                <value>"vnd-microsoft://"[^/?#]+"@hotmail.com"([/?#].*)?</value>
+                            </prop>
+                            <prop oor:name="Arguments">
+                                <value>WithAuthority</value>
+                            </prop>
+                        </node>
+                        <node oor:name="ProviderMicrosoft4" oor:op="fuse">
+                            <prop oor:name="ServiceName">
+                                <value>io.github.prrvchr.oneDriveOOo.ContentProvider</value>
+                            </prop>
+                            <prop oor:name="URLTemplate">
+                                <value>"vnd-microsoft://"[^/?#]+"@gmail.com"([/?#].*)?</value>
+                            </prop>
+                            <prop oor:name="Arguments">
+                                <value>WithAuthority</value>
+                            </prop>
+                        </node>
+                        <node oor:name="ProviderMicrosoft10" oor:op="fuse">
+                            <prop oor:name="ServiceName">
+                                <value>io.github.prrvchr.oneDriveOOo.ContentProvider</value>
+                            </prop>
+                            <prop oor:name="URLTemplate">
+                                <value>"vnd-microsoft://"([/?#].*)?</value>
+                            </prop>
+                            <prop oor:name="Arguments">
+                                <value>WithOutAuthority</value>
                             </prop>
                         </node>
                     </node>

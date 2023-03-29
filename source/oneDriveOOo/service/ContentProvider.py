@@ -31,59 +31,63 @@ import uno
 import unohelper
 
 from com.sun.star.lang import XServiceInfo
-from com.sun.star.awt import XContainerWindowEventHandler
 
-from onedrive import OptionsManager
+from com.sun.star.ucb import XContentProvider
+from com.sun.star.ucb import XContentIdentifierFactory
+from com.sun.star.ucb import XParameterizedContentProvider
+
+from com.sun.star.logging.LogLevel import INFO
+
+from onedrive import ParameterizedProvider
+
+from onedrive import getLogger
 
 from onedrive import g_identifier
+from onedrive import g_basename
+from onedrive import g_defaultlog
 
 import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.OptionsHandler' % g_identifier
+g_ImplementationName = '%s.ContentProvider' % g_identifier
 
 
-class OptionsHandler(unohelper.Base,
-                     XServiceInfo,
-                     XContainerWindowEventHandler):
+class ContentProvider(unohelper.Base,
+                      XServiceInfo,
+                      XContentProvider,
+                      XContentIdentifierFactory,
+                      XParameterizedContentProvider):
     def __init__(self, ctx):
         self._ctx = ctx
-        self._manager = None
+        self._logger = getLogger(ctx, g_defaultlog, g_basename)
+        self._logger.logprb(INFO, 'ContentProvider', '__init__()', 101, g_ImplementationName)
 
-    # XContainerWindowEventHandler
-    def callHandlerMethod(self, window, event, method):
+    # XParameterizedContentProvider
+    def registerInstance(self, template, arguments, replace):
         try:
-            handled = False
-            if method == 'external_event':
-                if event == 'initialize':
-                    self._manager = OptionsManager(self._ctx, window)
-                    handled = True
-                elif event == 'ok':
-                    self._manager.saveSetting()
-                    handled = True
-                elif event == 'back':
-                    self._manager.loadSetting()
-                    handled = True
-            elif method == 'EnabledSync':
-                self._manager.enableTimeout(True)
-                handled = True
-            elif method == 'DisableSync':
-                self._manager.enableTimeout(False)
-                handled = True
-            elif method == 'ViewData':
-                self._manager.viewData()
-                handled = True
-            return handled
+            provider = ParameterizedProvider(self._ctx, self._logger, arguments)
+            self._logger.logprb(INFO, 'ContentProvider', 'registerInstance()', 111, arguments)
+            return provider
         except Exception as e:
-            msg = "OptionsHandler.callHandlerMethod() Error: %s" % traceback.print_exc()
+            msg = "ContentProvider.registerInstance() Error: %s" % traceback.print_exc()
             print(msg)
 
-    def getSupportedMethodNames(self):
-        return ('external_event',
-                'EnabledSync',
-                'DisableSync',
-                'ViewData')
+    def deregisterInstance(self, scheme, authority):
+        print('ContentProvider.deregisterInstance()')
+
+    # XContentIdentifierFactory
+    def createContentIdentifier(self, identifier):
+        print('ContentProvider.createContentIdentifier()')
+        return None
+
+    # XContentProvider
+    def queryContent(self, identifier):
+        print('ContentProvider.queryContent()')
+        return None
+    def compareContentIds(self, identifier1, identifier2):
+        print('ContentProvider.compareContentIds()')
+        return None
 
     # XServiceInfo
     def supportsService(self, service):
@@ -94,6 +98,8 @@ class OptionsHandler(unohelper.Base,
         return g_ImplementationHelper.getSupportedServiceNames(g_ImplementationName)
 
 
-g_ImplementationHelper.addImplementation(OptionsHandler,                            # UNO object class
-                                         g_ImplementationName,                      # Implementation name
-                                        (g_ImplementationName,))                    # List of implemented services
+g_ImplementationHelper.addImplementation(ContentProvider,
+                                         g_ImplementationName,
+                                         (g_ImplementationName,
+                                         'com.sun.star.ucb.ContentProvider'))
+

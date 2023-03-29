@@ -39,36 +39,33 @@ from com.sun.star.auth.RestRequestTokenType import TOKEN_QUERY
 from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
 from com.sun.star.auth.RestRequestTokenType import TOKEN_SYNC
 
-from onedrive import KeyMap
-from onedrive import ProviderBase
+from .providerbase import ProviderBase
 
-from onedrive import toUnoDateTime
+from .unolib import KeyMap
 
-from onedrive import g_identifier
-from onedrive import g_provider
-from onedrive import g_host
-from onedrive import g_url
-from onedrive import g_userfields
-from onedrive import g_drivefields
-from onedrive import g_itemfields
-from onedrive import g_chunk
-from onedrive import g_buffer
-from onedrive import g_pages
-from onedrive import g_folder
-from onedrive import g_office
-from onedrive import g_link
-from onedrive import g_doc_map
+from .dbtool import toUnoDateTime
 
-# pythonloader looks for a static g_ImplementationHelper variable
-g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.Provider' % g_identifier
+from .configuration import g_identifier
+from .configuration import g_scheme
+from .configuration import g_provider
+from .configuration import g_host
+from .configuration import g_url
+from .configuration import g_userfields
+from .configuration import g_drivefields
+from .configuration import g_itemfields
+from .configuration import g_chunk
+from .configuration import g_buffer
+from .configuration import g_pages
+from .configuration import g_folder
+from .configuration import g_office
+from .configuration import g_link
+from .configuration import g_doc_map
 
 
 class Provider(ProviderBase):
     def __init__(self, ctx):
         self._ctx = ctx
-        self.Scheme = ''
-        self.Plugin = ''
+        self.Scheme = g_scheme
         self.Link = ''
         self.Folder = ''
         self.SourceURL = ''
@@ -259,15 +256,3 @@ class Provider(ProviderBase):
         folder = item.getDefaultValue('file', None)
         return folder is None
 
-    # XServiceInfo
-    def supportsService(self, service):
-        return g_ImplementationHelper.supportsService(g_ImplementationName, service)
-    def getImplementationName(self):
-        return g_ImplementationName
-    def getSupportedServiceNames(self):
-        return g_ImplementationHelper.getSupportedServiceNames(g_ImplementationName)
-
-
-g_ImplementationHelper.addImplementation(Provider,
-                                         g_ImplementationName,
-                                        (g_ImplementationName, ))

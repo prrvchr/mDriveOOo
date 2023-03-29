@@ -63,12 +63,15 @@ g_doc_map = {'application/vnd.microsoft-apps.document':     'application/vnd.oas
 g_cache = 20
 g_admin = False
 
+# The URL separator
+g_separator = '/'
+
 # Resource strings files folder
 g_resource = 'resource'
 # Logging required global variable
-g_basename = 'contentprovider'
-g_defaultlog = 'oneDriveLogger'
+g_basename = 'ContentProvider'
+g_defaultlog = 'oneDriveLog'
 g_errorlog = 'oneDriveError'
 # Logging global variable
-g_synclog = 'SyncLogger'
+g_synclog = 'oneDriveSync'
 
