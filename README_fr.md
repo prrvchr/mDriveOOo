@@ -112,7 +112,7 @@ ou
 
 - **vnd-microsoft:///**
 
-Si vous ne donnez pas **votre_adresse_email**, il vous sera demandé...
+Si vous ne donnez pas **votre_adresse_email**, elle vous sera demandée...
 
 Après avoir autorisé l'application [OAuth2OOo][21] à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  ;-)
 
