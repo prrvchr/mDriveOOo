@@ -97,13 +97,22 @@ Edit or change "true" to "false" (set it to "false")
 
 In File - Open - File name enter:
 
-- **vnd-microsoft://your_account**
+- **vnd-microsoft://your_email_address**  
+  with **your_email_address** which must be located on one of the following domain names:
+
+  - **your_account@outlook.com**  
+  or
+  - **your_account@outlook.fr**  
+  or
+  - **your_account@hotmail.com**  
+  or
+  - **your_account@gmail.com**
 
 or
 
 - **vnd-microsoft:///**
 
-If you don't give **your_account**, you will be asked for...
+If you don't give **your_email_address**, you will be asked for...
 
 After authorizing the [OAuth2OOo][21] application to access your Microsoft OneDrive files, your OneDrive files should appear!!! normally  ;-)
 

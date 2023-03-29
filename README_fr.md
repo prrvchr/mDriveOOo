@@ -97,13 +97,22 @@ Editer ou changer "true" par "false" (réglez-le sur "false")
 
 Dans: Fichier - Ouvrir - Nom de fichier saisir:
 
-- **vnd-microsoft://votre_compte** 
+- **vnd-microsoft://votre_adresse_email**  
+  avec **votre_adresse_email** qui doit être située sur l'un des noms de domaine suivants:
+
+  - **votre_compte@outlook.com**  
+  ou
+  - **votre_compte@outlook.fr**  
+  ou
+  - **votre_compte@hotmail.com**  
+  ou
+  - **votre_compte@gmail.com**
 
 ou
 
 - **vnd-microsoft:///**
 
-Si vous ne donnez pas **votre_compte**, il vous sera demandé...
+Si vous ne donnez pas **votre_adresse_email**, il vous sera demandé...
 
 Après avoir autorisé l'application [OAuth2OOo][21] à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  ;-)
 
