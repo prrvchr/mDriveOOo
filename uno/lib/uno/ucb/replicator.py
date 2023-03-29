@@ -124,9 +124,10 @@ class Replicator(unohelper.Base,
     def _synchronize(self):
         policy = self._getSynchronizePolicy()
         if policy == NONE_IS_MASTER:
-            pass
-        elif self.Provider.isOffLine():
-            self._logger.logprb(INFO, 'Replicator', '_synchronize()', 101)
+            return
+        self._logger.logprb(INFO, 'Replicator', '_synchronize()', 101, getDateTimeInTZToString(currentDateTimeInTZ()))
+        if self.Provider.isOffLine():
+            self._logger.logprb(INFO, 'Replicator', '_synchronize()', 102)
         elif policy == SERVER_IS_MASTER:
             if not self._canceled:
                 self._pullUsers()
@@ -137,6 +138,7 @@ class Replicator(unohelper.Base,
                 self._pushUsers()
             if not self._canceled:
                 self._pullUsers()
+        self._logger.logprb(INFO, 'Replicator', '_synchronize()', 103, getDateTimeInTZToString(currentDateTimeInTZ()))
 
     def _pullUsers(self):
         try:
@@ -202,7 +204,7 @@ class Replicator(unohelper.Base,
         try:
             end = currentDateTimeInTZ()
             for user in self._users.values():
-                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 131, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
+                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 131, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
                 if self._isNewUser(user):
                     self._initUser(user)
                 start = user.TimeStamp
@@ -216,7 +218,7 @@ class Replicator(unohelper.Base,
                     if not self._pushItem(user, uploader, item, metadata, start, end):
                         break
                 print("Replicator._pushUsers() 4")
-                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 132, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
+                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 132, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
         except Exception as e:
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
 
