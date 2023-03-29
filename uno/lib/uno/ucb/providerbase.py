@@ -38,7 +38,6 @@ from com.sun.star.logging.LogLevel import SEVERE
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 from com.sun.star.ucb.ConnectionMode import ONLINE
 
-from com.sun.star.ucb import XRestProvider
 from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_RETRIEVED
 from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_CREATED
 from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_FOLDER
@@ -54,18 +53,14 @@ from .unotool import getConnectionMode
 
 from .dbtool import getDateTimeFromString
 
+from .configuration import g_identifier
+from .configuration import g_scheme
+
 import datetime
 import traceback
 
 
-class ProviderObject(object):
-    pass
-
-
-class ProviderBase(ProviderObject,
-                   unohelper.Base,
-                   XServiceInfo,
-                   XRestProvider):
+class ProviderBase(object):
 
     # Base properties
     @property
@@ -164,12 +159,10 @@ class ProviderBase(ProviderObject,
         self.SessionMode = getConnectionMode(self._ctx, self.Host)
         return  self.SessionMode != ONLINE
 
-    def initialize(self, scheme, plugin, folder, link):
-        self.Scheme = scheme
-        self.Plugin = plugin
+    def initialize(self, folder, link):
         self.Folder = folder
         self.Link = link
-        self.SourceURL = getResourceLocation(self._ctx, plugin, scheme)
+        self.SourceURL = getResourceLocation(self._ctx, g_identifier, g_scheme)
         self.SessionMode = getConnectionMode(self._ctx, self.Host)
 
     def initializeUser(self, user, name):
@@ -290,3 +283,4 @@ class ProviderBase(ProviderObject,
         parameter = self.getRequestParameter('updateParents', item)
         response = request.execute(parameter)
         return response.IsPresent
+

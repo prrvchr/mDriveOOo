@@ -49,8 +49,6 @@ from .contenttools import getCommand
 from .contenttools import getContentEvent
 from .contenttools import getInteractiveAugmentedIOException
 
-from ..logger import getLogger
-
 
 def getPropertiesValues(logger, content, properties):
     values = []

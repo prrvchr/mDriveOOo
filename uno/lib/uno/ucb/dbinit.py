@@ -55,6 +55,7 @@ from .dbtool import createStaticTable
 from .dbqueries import getSqlQuery
 
 from .configuration import g_scheme
+from .configuration import g_separator
 
 import traceback
 
@@ -175,13 +176,12 @@ def getQueries():
             ('createItemView',{'Role': g_role}),
             ('createTitleView',{'Role': g_role}),
             ('createChildrenView',{'Role': g_role}),
-            ('createPathView',{'Role': g_role, 'Separator': '/'}),
+            ('createPathView',{'Role': g_role, 'Separator': g_separator}),
 
-            ('createGetIdentifier',{'Role': g_role}),
+            ('createGetIdentifier',{'Role': g_role, 'Separator': g_separator}),
             ('createGetRoot',{'Role': g_role}),
             ('createGetItem',{'Role': g_role}),
             ('createGetNewTitle',{'Role': g_role}),
-            ('createGetUserTimeStamp',{'Role': g_role}),
             ('createGetPushItems',{'Role': g_role}),
             ('createGetPushProperties',{'Role': g_role}),
             ('createGetItemParentIds',{'Role': g_role}),

@@ -33,6 +33,10 @@ import unohelper
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from com.sun.star.ucb.SynchronizePolicy import SERVER_IS_MASTER
+from com.sun.star.ucb.SynchronizePolicy import CLIENT_IS_MASTER
+from com.sun.star.ucb.SynchronizePolicy import NONE_IS_MASTER
+
 from com.sun.star.ucb.ChangeAction import INSERT
 from com.sun.star.ucb.ChangeAction import UPDATE
 from com.sun.star.ucb.ChangeAction import MOVE
@@ -41,10 +45,10 @@ from com.sun.star.ucb.ChangeAction import DELETE
 from com.sun.star.ucb.ContentProperties import TITLE
 from com.sun.star.ucb.ContentProperties import CONTENT
 
-from com.sun.star.ucb import XRestReplicator
-
 from com.sun.star.rest import HTTPException
 from com.sun.star.rest.HTTPStatusCode import BAD_REQUEST
+
+from com.sun.star.ucb import XRestReplicator
 
 from .unotool import getConfiguration
 
@@ -57,9 +61,9 @@ from .database import DataBase
 from .logger import getLogger
 
 from .configuration import g_identifier
-from .configuration import g_defaultlog
+from .configuration import g_synclog
 
-g_basename = 'replicator'
+g_basename = 'Replicator'
 
 from collections import OrderedDict
 from threading import Thread
@@ -80,23 +84,26 @@ class Replicator(unohelper.Base,
         self._fullPull = False
         self.DataBase = DataBase(ctx, datasource)
         self.Provider = provider
-        self._logger = getLogger(ctx, g_defaultlog, g_basename)
+        self._config = getConfiguration(ctx, g_identifier, False)
+        self._logger = getLogger(ctx, g_synclog, g_basename)
         sync.clear()
         self.start()
 
-    def fullPull(self):
-        return self._fullPull
-
     # XRestReplicator
-    def cancel(self):
-        self._canceled = True
-        self._sync.set()
-        self.join()
     def callBack(self, itemid, response):
         if response.IsPresent:
             self.DataBase.updateItemId(self.Provider, itemid, response.Value)
             return True
         return False
+
+
+    def fullPull(self):
+        return self._fullPull
+
+    def cancel(self):
+        self._canceled = True
+        self._sync.set()
+        self.join()
 
     def run(self):
         try:
@@ -115,38 +122,41 @@ class Replicator(unohelper.Base,
             print(msg)
 
     def _synchronize(self):
-        if self.Provider.isOffLine():
+        policy = self._getSynchronizePolicy()
+        if policy == NONE_IS_MASTER:
+            pass
+        elif self.Provider.isOffLine():
             self._logger.logprb(INFO, 'Replicator', '_synchronize()', 101)
-        else:
-            try:
-                print("Replicator._synchronize() 1")
-                if not self._canceled:
-                    self._pullUsers()
-                if not self._canceled:
-                    self._pushUsers()
-                print("Replicator._synchronize() 2")
-            except Exception as e:
-                print("Replicator._syncData() ERROR: %s - %s" % (e, traceback.print_exc()))
+        elif policy == SERVER_IS_MASTER:
+            if not self._canceled:
+                self._pullUsers()
+            if not self._canceled:
+                self._pushUsers()
+        elif policy == CLIENT_IS_MASTER:
+            if not self._canceled:
+                self._pushUsers()
+            if not self._canceled:
+                self._pullUsers()
 
     def _pullUsers(self):
         try:
             print("Replicator._pullUsers() 1")
-            timestamp = currentDateTimeInTZ()
             for user in self._users.values():
                 print("Replicator._pullUsers() 2")
                 if self._canceled:
                     break
-                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 111, user.Name, getDateTimeInTZToString(timestamp))
+                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 111, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
                 # In order to make the creation of files or directories possible quickly,
                 # it is necessary to run the verification of the identifiers first.
                 self._checkNewIdentifier(user)
-                if not user.Token:
+                #if not user.Token:
+                if self._isNewUser(user):
                     self._initUser(user)
                     print("Replicator._pullUsers() 3")
                 else:
                     self._pullData(user)
                     print("Replicator._pullUsers() 4")
-                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 112, user.Name, getDateTimeInTZToString(timestamp))
+                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 112, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
         except Exception as e:
             print("Replicator._pullUsers() ERROR: %s - %s" % (e, traceback.print_exc()))
 
@@ -155,11 +165,11 @@ class Replicator(unohelper.Base,
         # This procedure corresponds to the initial pull for a new User (ie: without Token)
         rejected, pages, rows, count = self._firstPull(user)
         print("Replicator._initUser() 1 count: %s - %s pages - %s rows" % (count, pages, rows))
-        self._logger.logprb(INFO, 'Replicator', '_syncData()', 121, pages, rows, count)
+        self._logger.logprb(INFO, 'Replicator', '_initUser()', 121, pages, rows, count)
         if len(rejected):
-            self._logger.logprb(SEVERE, 'Replicator', '_syncData()', 122, len(rejected))
+            self._logger.logprb(SEVERE, 'Replicator', '_initUser()', 122, len(rejected))
         for title, itemid, parents in rejected:
-            self._logger.logprb(SEVERE, 'Replicator', '_syncData()', 123, title, itemid, parents)
+            self._logger.logprb(SEVERE, 'Replicator', '_initUser()', 123, title, itemid, parents)
         print("Replicator._initUser() 2 %s" % count)
         user.Provider.initUser(user.Request, self.DataBase, user.MetaData)
         self._fullPull = True
@@ -192,7 +202,10 @@ class Replicator(unohelper.Base,
         try:
             end = currentDateTimeInTZ()
             for user in self._users.values():
-                start = self.DataBase.getUserTimeStamp(user.Id)
+                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 131, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
+                if self._isNewUser(user):
+                    self._initUser(user)
+                start = user.TimeStamp
                 for item in self.DataBase.getPushItems(user.Id, start, end):
                     print("Replicator._pushUsers() 1 Start: %s - End: %s" % (getDateTimeInTZToString(start), getDateTimeInTZToString(end)))
                     print("Replicator._pushUsers() 2 Item: UserName: %s - ItemId: %s - ChangeAction: %s - TimeStamp: %s" % (user.Name, item.getValue('ItemId'),item.getValue('ChangeAction'),getDateTimeInTZToString(item.getValue('TimeStamp'))))
@@ -203,6 +216,7 @@ class Replicator(unohelper.Base,
                     if not self._pushItem(user, uploader, item, metadata, start, end):
                         break
                 print("Replicator._pushUsers() 4")
+                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 132, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
         except Exception as e:
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
 
@@ -230,8 +244,7 @@ class Replicator(unohelper.Base,
             call.executeBatch()
         call.close()
         user.Provider.updateDrive(self.DataBase, user.MetaData, token)
-        end = currentDateTimeInTZ()
-        self.DataBase.updateUserTimeStamp(end, user.Id)
+        user.TimeStamp = currentDateTimeInTZ()
         return rejected, pages, rows, count
 
     def _getFirstPull(self, call, provider, request, rootid, start):
@@ -311,7 +324,7 @@ class Replicator(unohelper.Base,
                     print("Replicator._pushItem() INSERT 4")
                     status = self.callBack(itemid, response)
                     print("Replicator._pushItem() INSERT 5")
-                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 131, metadata.getValue('Title'), created)
+                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 141, metadata.getValue('Title'), created)
                     print("Replicator._pushItem() INSERT 6")
                 elif user.Provider.isLink(mediatype):
                     pass
@@ -319,8 +332,8 @@ class Replicator(unohelper.Base,
                     if user.Provider.createFile(user.Request, uploader, metadata):
                         #if self._needPush('SizeUpdated', itemid, operations):
                         status = user.Provider.uploadFile(uploader, user, metadata, True)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 132, metadata.getValue('Title'), created)
-                self._updateUserTimeStamp(user.Id, timestamp, metadata, status)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 142, metadata.getValue('Title'), created)
+                self._updateUserTimeStamp(user, timestamp, metadata, status)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
             elif action & UPDATE:
                 for property in self.DataBase.getPushProperties(user.Id, itemid, start, end):
@@ -330,38 +343,44 @@ class Replicator(unohelper.Base,
                     modified = getDateTimeToString(metadata.getValue('DateModified'))
                     if properties & TITLE:
                         status = user.Provider.updateTitle(user.Request, metadata)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 133, metadata.getValue('Title'), modified)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 143, metadata.getValue('Title'), modified)
                     elif properties & CONTENT:
                         status = user.Provider.uploadFile(uploader, user, metadata, False)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 134, metadata.getValue('Title'), modified, metadata.getValue('Size'))
-                    if not self._updateUserTimeStamp(user.Id, timestamp, metadata, status):
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 144, metadata.getValue('Title'), modified, metadata.getValue('Size'))
+                    if not self._updateUserTimeStamp(user, timestamp, metadata, status):
                         break
             # MOVE procedures to follow parent changes of a resource
             elif action & MOVE:
                 print("Replicator._pushItem() MOVE")
                 self.DataBase.getItemParentIds(itemid, metadata, start, end)
                 status = user.Provider.updateParents(user.Request, metadata)
-                self._updateUserTimeStamp(user.Id, timestamp, metadata, status)
+                self._updateUserTimeStamp(user, timestamp, metadata, status)
                 print("Replicator.._pushItem() MOVE ToAdd: %s - ToRemove: %s" % (toadd, toremove))
             elif action & DELETE:
                 print("Replicator._pushItem() DELETE")
                 status = user.Provider.updateTrashed(user.Request, metadata)
-                self._logger.logprb(INFO, 'Replicator', '_pushItem()', 135, metadata.getValue('Title'), timestamp)
-                self._updateUserTimeStamp(user.Id, timestamp, metadata, status)
+                self._logger.logprb(INFO, 'Replicator', '_pushItem()', 145, metadata.getValue('Title'), timestamp)
+                self._updateUserTimeStamp(user, timestamp, metadata, status)
             return status
         except Exception as e:
             msg = "ERROR: %s - %s" % (e, traceback.print_exc())
             self._logger.logp(SEVERE, 'Replicator', '_pushItem()', msg)
 
-    def _updateUserTimeStamp(self, userid, timestamp, metadata, status):
+    def _isNewUser(self, user):
+        return user.TimeStamp == self.DataBase.getDefaultUserTimeStamp()
+
+    def _updateUserTimeStamp(self, user, timestamp, metadata, status):
         if status:
-            self.DataBase.updateUserTimeStamp(timestamp, userid)
+            user.TimeStamp = timestamp
         else:
             modified = getDateTimeToString(metadata.getValue('DateModified'))
-            self._logger.logprb(SEVERE, 'Replicator', '_pushItem()', 136, metadata.getValue('Title'), modified, metadata.getValue('Id'))
+            self._logger.logprb(SEVERE, 'Replicator', '_pushItem()', 151, metadata.getValue('Title'), modified, metadata.getValue('Id'))
         return status
 
     def _getReplicateTimeout(self):
-        configuration = getConfiguration(self._ctx, g_identifier, False)
-        timeout = configuration.getByName('ReplicateTimeout')
+        timeout = self._config.getByName('ReplicateTimeout')
         return timeout
+
+    def _getSynchronizePolicy(self):
+        policy = self._config.getByName('SynchronizePolicy')
+        return uno.Enum('com.sun.star.ucb.SynchronizePolicy', policy)

@@ -1,4 +1,7 @@
-/*
+#!
+# -*- coding: utf-8 -*-
+
+"""
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
 ║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
@@ -22,25 +25,9 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
- */
+"""
 
-#ifndef __com_sun_star_ucb_RestProvider_idl__
-#define __com_sun_star_ucb_RestProvider_idl__
+from .contentuser import ContentUser
 
-#include <com/sun/star/lang/XServiceInfo.idl>
-#include <com/sun/star/ucb/XRestProvider.idl>
+from .parameterizedprovider import ParameterizedProvider
 
-module com { module sun { module star { module ucb {
-
-service RestProvider
-{
-
-    interface ::com::sun::star::lang::XServiceInfo;
-    interface ::com::sun::star::ucb::XRestProvider;
-
-};
-
-
-}; }; }; };
-
-#endif

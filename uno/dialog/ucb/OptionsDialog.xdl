@@ -6,14 +6,23 @@
   </dlg:styles>
   <dlg:bulletinboard>
     <dlg:fixedline dlg:style-id="0" dlg:id="FixedLine1" dlg:tab-index="0" dlg:left="6" dlg:top="63" dlg:width="244" dlg:height="14" dlg:help-text="&amp;OptionsDialog.FixedLine1.HelpText" dlg:value="&amp;OptionsDialog.FixedLine1.Label"/>
-    <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:left="10" dlg:top="80" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label1.HelpText" dlg:value="&amp;OptionsDialog.Label1.Label" dlg:valign="center"/>
-    <dlg:numericfield dlg:id="NumericField1" dlg:tab-index="2" dlg:left="100" dlg:top="80" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField1.HelpText" dlg:decimal-accuracy="0" dlg:value-min="5" dlg:value-max="1440"/>
-    <dlg:text dlg:id="Label2" dlg:tab-index="3" dlg:left="10" dlg:top="100" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label2.HelpText" dlg:value="&amp;OptionsDialog.Label2.Label" dlg:valign="center"/>
-    <dlg:button dlg:id="CommandButton1" dlg:tab-index="4" dlg:disabled="true" dlg:left="100" dlg:top="100" dlg:width="100" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton1.HelpText" dlg:value="&amp;OptionsDialog.CommandButton1.Label">
+    <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:left="10" dlg:top="80" dlg:width="50" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label1.HelpText" dlg:value="&amp;OptionsDialog.Label1.Label" dlg:valign="center"/>
+    <dlg:radiogroup>
+      <dlg:radio dlg:id="OptionButton1" dlg:tab-index="2" dlg:left="65" dlg:top="80" dlg:width="75" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton1.HelpText" dlg:value="&amp;OptionsDialog.OptionButton1.Label" dlg:valign="center">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnabledSync" script:language="UNO"/>
+      </dlg:radio>
+      <dlg:radio dlg:id="OptionButton2" dlg:tab-index="3" dlg:left="145" dlg:top="80" dlg:width="75" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton2.HelpText" dlg:value="&amp;OptionsDialog.OptionButton2.Label" dlg:valign="center">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnabledSync" script:language="UNO"/>
+      </dlg:radio>
+      <dlg:radio dlg:id="OptionButton3" dlg:tab-index="4" dlg:left="225" dlg:top="80" dlg:width="25" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton3.HelpText" dlg:value="&amp;OptionsDialog.OptionButton3.Label" dlg:valign="center">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:DisableSync" script:language="UNO"/>
+      </dlg:radio>
+    </dlg:radiogroup>
+    <dlg:text dlg:id="Label2" dlg:tab-index="5" dlg:left="10" dlg:top="100" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label2.HelpText" dlg:value="&amp;OptionsDialog.Label2.Label" dlg:valign="center"/>
+    <dlg:numericfield dlg:id="NumericField1" dlg:tab-index="6" dlg:left="140" dlg:top="100" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField1.HelpText" dlg:decimal-accuracy="0" dlg:value-min="5" dlg:value-max="1440"/>
+    <dlg:text dlg:id="Label3" dlg:tab-index="7" dlg:left="10" dlg:top="120" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label3.HelpText" dlg:value="&amp;OptionsDialog.Label3.Label" dlg:valign="center"/>
+    <dlg:button dlg:id="CommandButton1" dlg:tab-index="8" dlg:disabled="true" dlg:left="100" dlg:top="120" dlg:width="100" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton1.HelpText" dlg:value="&amp;OptionsDialog.CommandButton1.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ViewData" script:language="UNO"/>
-    </dlg:button>
-    <dlg:button dlg:id="CommandButton2" dlg:tab-index="5" dlg:left="100" dlg:top="120" dlg:width="100" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton2.HelpText" dlg:value="&amp;OptionsDialog.CommandButton2.Label">
-      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:SaveFile" script:language="UNO"/>
     </dlg:button>
   </dlg:bulletinboard>
 </dlg:window>

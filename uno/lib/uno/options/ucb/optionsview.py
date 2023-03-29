@@ -33,22 +33,47 @@ import traceback
 
 
 class OptionsView(unohelper.Base):
-    def __init__(self, window, timeout, enabled):
+    def __init__(self, window, index, timeout, exist):
         self._window = window
-        self._getTimeout().Value = timeout
-        self._getDatasource().Model.Enabled = enabled
+        self.setSynchronizePolicy(index)
+        self.setTimeout(timeout)
+        self._getDatasource().Model.Enabled = exist
 
 # OptionsView getter methods
+    def getSynchronizePolicy(self):
+        return self._getOptionIndex()
+
     def getTimeout(self):
         return int(self._getTimeout().Value)
 
 # OptionsView setter methods
+    def setSynchronizePolicy(self, index):
+        self._getOption(index).State = 1
+        self.enableTimeout(index != 3)
+
     def setTimeout(self, timeout):
         self._getTimeout().Value = timeout
 
+    def enableTimeout(self, enabled):
+        self._getTimeoutLabel().Model.Enabled = enabled
+        self._getTimeout().Model.Enabled = enabled
+
+# OptionsView private methods
+    def _getOptionIndex(self):
+        for index in range(1,4):
+            if self._getOption(index).State:
+                return index
+
 # OptionsView private control methods
+    def _getOption(self, index):
+        return self._window.getControl('OptionButton%s' % index)
+
+    def _getTimeoutLabel(self):
+        return self._window.getControl('Label2')
+
     def _getTimeout(self):
         return self._window.getControl('NumericField1')
 
     def _getDatasource(self):
         return self._window.getControl('CommandButton1')
+

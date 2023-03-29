@@ -29,6 +29,10 @@
 
 import unohelper
 
+from com.sun.star.ucb.SynchronizePolicy import SERVER_IS_MASTER
+from com.sun.star.ucb.SynchronizePolicy import CLIENT_IS_MASTER
+from com.sun.star.ucb.SynchronizePolicy import NONE_IS_MASTER
+
 from ..unotool import getConfiguration
 from ..unotool import getResourceLocation
 from ..unotool import getSimpleFile
@@ -44,15 +48,23 @@ import traceback
 class OptionsModel(unohelper.Base):
     def __init__(self, ctx):
         self._ctx = ctx
-        self._configuration = getConfiguration(ctx, g_identifier, True)
+        self._config = getConfiguration(ctx, g_identifier, True)
         folder = g_folder + '/' + g_scheme
         location = getResourceLocation(ctx, g_identifier, folder)
+        self._policies = {'SERVER_IS_MASTER': 1, 'CLIENT_IS_MASTER': 2, 'NONE_IS_MASTER': 3}
         self._url = location + '.odb'
         self._factor = 60
 
 # OptionsModel getter methods
+    def getViewData(self):
+        return self.getSynchronizePolicy(), self.getTimeout(), self.hasDatasource()
+
+    def getSynchronizePolicy(self):
+        policy = self._config.getByName('SynchronizePolicy')
+        return self._policies.get(policy)
+
     def getTimeout(self):
-        timeout = self._configuration.getByName('ReplicateTimeout')
+        timeout = self._config.getByName('ReplicateTimeout')
         return timeout / self._factor
 
     def hasDatasource(self):
@@ -62,8 +74,21 @@ class OptionsModel(unohelper.Base):
         return self._url
 
 # OptionsModel setter methods
+    def setSynchronizePolicy(self, index):
+        policy = self._getSynchronizePolicy(index)
+        self._config.replaceByName('SynchronizePolicy', policy)
+        if self._config.hasPendingChanges():
+            self._config.commitChanges()
+
     def setTimeout(self, timeout):
         timeout = timeout * self._factor
-        self._configuration.replaceByName('ReplicateTimeout', timeout)
-        if self._configuration.hasPendingChanges():
-            self._configuration.commitChanges()
+        self._config.replaceByName('ReplicateTimeout', timeout)
+        if self._config.hasPendingChanges():
+            self._config.commitChanges()
+
+# OptionsModel private methods
+    def _getSynchronizePolicy(self, index):
+        for policy, value in self._policies.items():
+            if value == index:
+                return policy
+

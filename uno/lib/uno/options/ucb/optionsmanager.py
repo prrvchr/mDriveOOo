@@ -49,29 +49,27 @@ class OptionsManager(unohelper.Base):
     def __init__(self, ctx, window):
         self._ctx = ctx
         self._model = OptionsModel(ctx)
-        timeout = self._model.getTimeout()
-        enabled = self._model.hasDatasource()
-        self._view = OptionsView(window, timeout, enabled)
+        index, timeout, exist = self._model.getViewData()
+        self._view = OptionsView(window, index, timeout, exist)
         version  = ' '.join(sys.version.split())
         path = os.pathsep.join(sys.path)
         infos = {111: version, 112: path}
         self._logger = LogManager(self._ctx, window.Peer, infos, g_identifier, g_defaultlog)
 
     def saveSetting(self):
+        self._model.setSynchronizePolicy(self._view.getSynchronizePolicy())
         self._model.setTimeout(self._view.getTimeout())
         self._logger.saveSetting()
 
     def loadSetting(self):
+        self._view.setSynchronizePolicy(self._model.getSynchronizePolicy())
         self._view.setTimeout(self._model.getTimeout())
         self._logger.loadSetting()
+
+    def enableTimeout(self, enabled):
+        self._view.enableTimeout(enabled)
 
     def viewData(self):
         url = self._model.getDatasourceUrl()
         getDesktop(self._ctx).loadComponentFromURL(url, '_blank', 0, ())
 
-    def saveFile(self):
-        try:
-            executeDispatch(self._ctx, '.uno:Save')
-        except Exception as e:
-            msg = "OptionsManager.saveFile() Error: %s" % traceback.print_exc()
-            print(msg)

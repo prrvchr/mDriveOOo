@@ -399,7 +399,9 @@ class ContentResultSet(unohelper.Base,
 
     # XContentAccess
     def queryContentIdentifierString(self):
-        return self._result.getString(self._result.findColumn('TargetURL'))
+        url = self._result.getString(self._result.findColumn('TargetURL'))
+        print("DynamicResultSet.queryContentIdentifierString() %s" % url)
+        return url
     def queryContentIdentifier(self):
         return ContentIdentifier(self.queryContentIdentifierString())
     def queryContent(self):

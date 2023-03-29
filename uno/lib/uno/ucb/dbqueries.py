@@ -284,13 +284,13 @@ SELECT "Value2" "Folder","Value3" "Link" FROM "Settings" WHERE "Name"='ContentTy
 
     elif name == 'getUser':
         query = '''\
-SELECT U."UserId", U."RootId", U."Token", I."Title" "RootName" 
+SELECT U."UserId", U."RootId", U."Token", I."Title" "RootName", U."TimeStamp" 
 FROM "Users" AS U 
 INNER JOIN "Items" AS I ON U."RootId" = I."ItemId" 
 WHERE U."UserName" = ?;'''
 
     elif name == 'getChildren':
-        target = '? || %s || ? || P."Path" AS "TargetURL"' % "'://'"
+        target = '? || P."Path" AS "TargetURL"'
         properties = {'Title': 'C."Uri" AS "Title"',
                       'Size': 'C."Size"',
                       'DateModified': 'C."DateModified"',
@@ -328,7 +328,7 @@ SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Uri" = ?;'''
 
 # Insert Queries
     elif name == 'insertUser':
-        query = 'INSERT INTO "Users" ("UserName", "DisplayName", "RootId", "TimeStamp", "UserId") VALUES (?,?,?,?,?);'
+        query = 'INSERT INTO "Users" ("UserName", "DisplayName", "RootId", "UserId") VALUES (?,?,?,?);'
 
     elif name == 'insertNewIdentifier':
         query = 'INSERT INTO "Identifiers"("UserId","ItemId")VALUES(?,?);'
@@ -375,7 +375,8 @@ CREATE PROCEDURE "GetIdentifier"(IN USERID VARCHAR(100),
   READS SQL DATA
   BEGIN ATOMIC
     DECLARE ITEM VARCHAR(100);
-    SELECT "ItemId" INTO ITEM FROM "Path" WHERE "UserId" = USERID AND "Path" = URI;
+    SELECT "ItemId" INTO ITEM FROM "Path" WHERE "UserId" = USERID AND 
+    (URI = "Path" OR URI = ("Path" || '%(Separator)s'));
     SET ITEMID = ITEM;
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetIdentifier_1" TO "%(Role)s";''' % format
@@ -450,19 +451,6 @@ CREATE PROCEDURE "GetNewTitle"(IN TITLE VARCHAR(100),
     SET NEWTITLE = NEWNAME;
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetNewTitle_1" TO "%(Role)s";''' % format
-
-# Get the user timestamp of the oldest replication
-    elif name == 'createGetUserTimeStamp':
-        query = '''\
-CREATE PROCEDURE "GetUserTimeStamp"(OUT TS TIMESTAMP(6) WITH TIME ZONE)
-  SPECIFIC "GetUserTimeStamp_1"
-  READS SQL DATA
-  BEGIN ATOMIC
-    DECLARE TMP TIMESTAMP(6) WITH TIME ZONE;
-    SELECT MIN("TimeStamp") INTO TMP FROM "Users";
-    SET TS = TMP;
-  END;
-GRANT EXECUTE ON SPECIFIC ROUTINE "GetUserTimeStamp_1" TO "%(Role)s";''' % format
 
 # System Time Period Procedure Queries
     elif name == 'createGetPushItems':
@@ -668,8 +656,6 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
         query = 'CALL "GetItem"(?,?)'
     elif name == 'getNewTitle':
         query = 'CALL "GetNewTitle"(?,?,?,?)'
-    elif name == 'getUserTimeStamp':
-        query = 'CALL "GetUserTimeStamp"(?)'
     elif name == 'getPushItems':
         query = 'CALL "GetPushItems"(?,?,?)'
     elif name == 'getPushProperties':
