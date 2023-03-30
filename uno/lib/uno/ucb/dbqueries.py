@@ -203,9 +203,9 @@ GRANT SELECT ON "Title" TO "%(Role)s";''' % format
 
     elif name == 'createChildrenView':
         query = '''\
-CREATE VIEW "Children" ("UserId", "ItemId", "ParentId", "Title", "Uri", "DateCreated", "DateModified", "IsFolder", "Size", "Loaded") AS SELECT
+CREATE VIEW "Children" ("UserId", "ItemId", "ParentId", "Title", "Uri", "DateCreated", "DateModified", "IsFolder", "Size", "ConnectionMode") AS SELECT
   I."UserId", C."ItemId", C."ParentId", I."Title", COALESCE(T."Title",I."Title"), I."DateCreated", I."DateModified",
-  I2."IsFolder", I."Size", I."Loaded" 
+  I2."IsFolder", I."Size", I."ConnectionMode" 
   FROM "Items" AS I 
   INNER JOIN "Item" AS I2 ON I."ItemId"=I2."ItemId" 
   INNER JOIN "Child" AS C ON I2."ItemId"=C."ItemId" 
@@ -284,7 +284,7 @@ SELECT "Value2" "Folder","Value3" "Link" FROM "Settings" WHERE "Name"='ContentTy
 
     elif name == 'getUser':
         query = '''\
-SELECT U."UserId", U."RootId", U."Token", I."Title" "RootName", U."TimeStamp" 
+SELECT U."UserId", U."RootId", U."Token", I."Title" "RootName", U."TimeStamp", U."SyncMode"
 FROM "Users" AS U 
 INNER JOIN "Items" AS I ON U."RootId" = I."ItemId" 
 WHERE U."UserName" = ?;'''
@@ -308,7 +308,7 @@ WHERE U."UserName" = ?;'''
 SELECT %s 
 FROM "Children" AS C
 INNER JOIN "Path" AS P ON C."ItemId"=P."ItemId" 
-WHERE (C."IsFolder" = TRUE OR C."Loaded" >= ?) AND C."ParentId" = ?;''' % ', '.join(columns)
+WHERE (C."IsFolder" = TRUE OR C."ConnectionMode" >= ?) AND C."ParentId" = ?;''' % ', '.join(columns)
 
     elif name == 'getChildId':
         query = '''\
@@ -327,9 +327,6 @@ SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Uri" = ?;'''
         query = 'SELECT "Token" FROM "Users" WHERE "UserId" = ?;'
 
 # Insert Queries
-    elif name == 'insertUser':
-        query = 'INSERT INTO "Users" ("UserName", "DisplayName", "RootId", "UserId") VALUES (?,?,?,?);'
-
     elif name == 'insertNewIdentifier':
         query = 'INSERT INTO "Identifiers"("UserId","ItemId")VALUES(?,?);'
 
@@ -337,26 +334,20 @@ SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Uri" = ?;'''
     elif name == 'updateToken':
         query = 'UPDATE "Users" SET "Token"=? WHERE "UserId"=?;'
 
-    elif name == 'updateUserTimeStamp':
-        query = 'UPDATE "Users" SET "TimeStamp"=? WHERE "UserId"=?;'
-
-    elif name == 'updateUsersTimeStamp':
-        query = 'UPDATE "Users" SET "TimeStamp"=?;'
+    elif name == 'updateUserSyncMode':
+        query = 'UPDATE "Users" SET "SyncMode"=? WHERE "UserId"=?;'
 
     elif name == 'updateTitle':
-        query = 'UPDATE "Items" SET "TimeStamp"=?, "Title"=? WHERE "ItemId"=?;'
+        query = 'UPDATE "Items" SET "TimeStamp"=?, "Title"=?, "SyncMode"=BITOR("SyncMode", 2) WHERE "ItemId"=?;'
 
     elif name == 'updateSize':
-        query = 'UPDATE "Items" SET "TimeStamp"=?, "Size"=? WHERE "ItemId"=?;'
+        query = 'UPDATE "Items" SET "TimeStamp"=?, "Size"=?, "DateModified"=?, "SyncMode"=BITOR("SyncMode", 2) WHERE "ItemId"=?;'
 
     elif name == 'updateTrashed':
-        query = 'UPDATE "Items" SET "TimeStamp"=?, "Trashed"=? WHERE "ItemId"=?;'
+        query = 'UPDATE "Items" SET "TimeStamp"=?, "Trashed"=?, "SyncMode"=BITOR("SyncMode", 2) WHERE "ItemId"=?;'
 
-    elif name == 'updateCapabilities':
-        query = 'UPDATE "Capabilities" SET "TimeStamp"=? WHERE "UserId"=? AND "ItemId"=?;'
-
-    elif name == 'updateLoaded':
-        query = 'UPDATE "Items" SET "Loaded"=? WHERE "ItemId"=?;'
+    elif name == 'updateConnectionMode':
+        query = 'UPDATE "Items" SET "ConnectionMode"=? WHERE "ItemId"=?;'
 
     elif name == 'updateItemId':
         query = 'UPDATE "Items" SET "ItemId"=? WHERE "ItemId"=?;'
@@ -394,7 +385,7 @@ CREATE PROCEDURE "GetRoot"(IN USERID VARCHAR(100))
       I."Title" AS "TitleOnServer", I."DateCreated", I."DateModified", 
       I2."ContentType", I."MediaType", I."Size", I."Trashed", TRUE AS "IsRoot", 
       I2."IsFolder", I2."IsDocument", C."CanAddChild", C."CanRename", 
-      C."IsReadOnly", C."IsVersionable", I."Loaded", '' AS "CasePreservingURL" 
+      C."IsReadOnly", C."IsVersionable", I."ConnectionMode", '' AS "CasePreservingURL" 
       FROM "Users" AS U 
       INNER JOIN "Items" AS I ON U."RootId"=I."ItemId" 
       INNER JOIN "Item" AS I2 ON I."ItemId"=I2."ItemId" 
@@ -419,7 +410,7 @@ CREATE PROCEDURE "GetItem"(IN ITEMID VARCHAR(100),
        "GetTitle"(I."Title",T."Title",SWAP) AS "TitleOnServer",
        I."DateCreated", I."DateModified", I2."ContentType", I."MediaType", I."Size", I."Trashed", 
        FALSE AS "IsRoot", I2."IsFolder", I2."IsDocument", C."CanAddChild", C."CanRename", 
-       C."IsReadOnly", C."IsVersionable", I."Loaded", '' AS "CasePreservingURL" 
+       C."IsReadOnly", C."IsVersionable", I."ConnectionMode", '' AS "CasePreservingURL" 
       FROM "Items" AS I 
       INNER JOIN "Item" AS I2 ON I."ItemId"=I2."ItemId" 
       INNER JOIN "Capabilities" AS C ON I."ItemId"=C."ItemId" 
@@ -452,6 +443,39 @@ CREATE PROCEDURE "GetNewTitle"(IN TITLE VARCHAR(100),
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetNewTitle_1" TO "%(Role)s";''' % format
 
+    elif name == 'createInsertUser':
+        query = '''\
+CREATE PROCEDURE "InsertUser"(IN USERID VARCHAR(100),
+                              IN ROOTID VARCHAR(100),
+                              IN USERNAME VARCHAR(100),
+                              IN DISPLAYNAME VARCHAR(100),
+                              OUT DATETIME TIMESTAMP(6) WITH TIME ZONE)
+  SPECIFIC "InsertUser_1"
+  MODIFIES SQL DATA
+  BEGIN ATOMIC
+    DECLARE TMP TIMESTAMP(6) WITH TIME ZONE;
+    INSERT INTO "Users" ("UserId", "RootId", "UserName", "DisplayName") VALUES (USERID,ROOTID,USERNAME,DISPLAYNAME);
+    SELECT "TimeStamp" INTO TMP FROM "Users" WHERE "UserId" = USERID;
+    SET DATETIME = TMP;
+  END;
+GRANT EXECUTE ON SPECIFIC ROUTINE "InsertUser_1" TO "%(Role)s";''' % format
+
+    elif name == 'createUpdatePushItems':
+        query = '''\
+CREATE PROCEDURE "UpdatePushItems"(IN USERID VARCHAR(100),
+                                   IN ITEMS VARCHAR(100) ARRAY,
+                                   OUT DATETIME TIMESTAMP(6) WITH TIME ZONE)
+  SPECIFIC "UpdatePushItems_1"
+  MODIFIES SQL DATA
+  BEGIN ATOMIC
+    DECLARE TMP TIMESTAMP(6) WITH TIME ZONE;
+    UPDATE "Items" SET "SyncMode" = 0 WHERE "ItemId" IN (UNNEST(ITEMS));
+    SELECT "TimeStamp" INTO TMP FROM "Items" WHERE "ItemId" = ITEMS[CARDINALITY(ITEMS)];
+    UPDATE "Users" SET "TimeStamp" = TMP WHERE "UserId" = USERID;
+    SET DATETIME = TMP;
+  END;
+GRANT EXECUTE ON SPECIFIC ROUTINE "UpdatePushItems_1" TO "%(Role)s";''' % format
+
 # System Time Period Procedure Queries
     elif name == 'createGetPushItems':
         query = '''\
@@ -468,7 +492,7 @@ CREATE PROCEDURE "GetPushItems"(IN USERID VARCHAR(100),
         FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
         LEFT JOIN "Items" FOR SYSTEM_TIME AS OF STARTTIME AS I2 
           ON I."ItemId" = I2."ItemId" 
-        WHERE I2."ItemId" IS NULL AND I."UserId" = USERID) 
+        WHERE I2."ItemId" IS NULL AND BITAND(I."SyncMode", 1)=1 AND I."UserId" = USERID) 
       UNION
       (SELECT "ItemId", SUM("ChangeAction"), MAX("TimeStamp") FROM (
         -- com.sun.star.ucb.ChangeAction.UPDATE
@@ -476,7 +500,7 @@ CREATE PROCEDURE "GetPushItems"(IN USERID VARCHAR(100),
           FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
           INNER JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
             ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
-          WHERE I."UserId" = USERID GROUP BY "ItemId", "ChangeAction" 
+          WHERE I2."SyncMode"=2 AND I."UserId" = USERID GROUP BY "ItemId", "ChangeAction" 
        UNION
         -- com.sun.star.ucb.ChangeAction.MOVE
         SELECT P."ChildId" AS "ItemId", 4 AS "ChangeAction", MAX(I."RowEnd") AS "TimeStamp" 
@@ -484,7 +508,7 @@ CREATE PROCEDURE "GetPushItems"(IN USERID VARCHAR(100),
           INNER JOIN "Items" AS I ON P."ChildId" = I."ItemId"
           INNER JOIN "Parents" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS P2 
             ON P."ChildId" = P2."ChildId" AND P2."RowStart"=P."RowEnd" 
-          WHERE I."UserId" = USERID GROUP BY "ChildId", "ChangeAction") 
+          WHERE P2."SyncMode"=2 AND I."UserId" = USERID GROUP BY "ChildId", "ChangeAction") 
       GROUP BY "ItemId")
       UNION
       -- com.sun.star.ucb.ChangeAction.DELETE
@@ -514,14 +538,22 @@ CREATE PROCEDURE "GetPushProperties"(IN USERID VARCHAR(100),
         INNER JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
           ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
         WHERE I."UserId" = USERID AND I."ItemId" = ITEMID 
-        AND I."Title" <> I2."Title" GROUP BY "Properties"
+        AND I2."SyncMode"=2 AND I."Title" <> I2."Title" GROUP BY "Properties"
       UNION
       SELECT 2 AS "Properties", MAX(I."RowEnd") AS "TimeStamp" 
         FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
         INNER JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
           ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
         WHERE I."UserId" = USERID AND I."ItemId" = ITEMID 
-        AND (I."Size" <> I2."Size" OR I."DateModified" <> I2."DateModified") GROUP BY "Properties"
+        AND I2."SyncMode"=2 AND (I."Size" <> I2."Size" OR I."DateModified" <> I2."DateModified") 
+        GROUP BY "Properties"
+      UNION
+      SELECT 4 AS "Properties", MAX(I."RowEnd") AS "TimeStamp" 
+        FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
+        INNER JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
+          ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
+        WHERE I."UserId" = USERID AND I."ItemId" = ITEMID 
+        AND I2."SyncMode"=2 AND I."Trashed" <> I2."Trashed" GROUP BY "Properties"
       ORDER BY "TimeStamp" FOR READ ONLY;
     OPEN "Result";
   END;
@@ -554,7 +586,7 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "GetItemParentIds_1" TO "%(Role)s";''' % forma
     elif name == 'createMergeItem':
         query = '''\
 CREATE PROCEDURE "MergeItem"(IN "UserId" VARCHAR(100),
-                             IN "Loaded" SMALLINT,
+                             IN "ConnectionMode" SMALLINT,
                              IN "TimeStamp" TIMESTAMP(6) WITH TIME ZONE,
                              IN "ItemId" VARCHAR(100),
                              IN "Title" VARCHAR(100),
@@ -573,14 +605,14 @@ CREATE PROCEDURE "MergeItem"(IN "UserId" VARCHAR(100),
   BEGIN ATOMIC
     DECLARE "Index" INTEGER DEFAULT 1;
     MERGE INTO "Items" USING (VALUES("UserId","ItemId","Title","DateCreated","DateModified", 
-                                     "MediaType","Size","Trashed","Loaded","TimeStamp")) 
+                                     "MediaType","Size","Trashed","ConnectionMode","TimeStamp")) 
       AS vals(k,r,s,t,u,v,w,x,y,z) ON "Items"."ItemId"=vals.r 
         WHEN MATCHED THEN 
           UPDATE SET "Title"=vals.s, "DateCreated"=vals.t, "DateModified"=vals.u, "MediaType"=vals.v, 
-                     "Size"=vals.w, "Trashed"=vals.x, "Loaded"=vals.y, "TimeStamp"=vals.z 
+                     "Size"=vals.w, "Trashed"=vals.x, "ConnectionMode"=vals.y, "TimeStamp"=vals.z 
         WHEN NOT MATCHED THEN 
           INSERT ("UserId","ItemId","Title","DateCreated","DateModified", 
-                  "MediaType","Size","Trashed","Loaded","TimeStamp") 
+                  "MediaType","Size","Trashed","ConnectionMode","TimeStamp") 
           VALUES vals.k, vals.r, vals.s, vals.t, vals.u, vals.v, vals.w, vals.x, vals.y, vals.z; 
     MERGE INTO "Capabilities" USING (VALUES("UserId","ItemId","CanAddChild","CanRename", 
                                             "IsReadOnly","IsVersionable","TimeStamp")) 
@@ -608,7 +640,7 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "MergeItem_1" TO "%(Role)s";''' % format
     elif name == 'createInsertItem':
         query = '''\
 CREATE PROCEDURE "InsertItem"(IN USERID VARCHAR(100),
-                              IN LOADED SMALLINT,
+                              IN CONNECTIONMODE SMALLINT,
                               IN DATETIME TIMESTAMP(6) WITH TIME ZONE,
                               IN ITEMID VARCHAR(100),
                               IN TITLE VARCHAR(100),
@@ -630,13 +662,13 @@ CREATE PROCEDURE "InsertItem"(IN USERID VARCHAR(100),
     DECLARE PATH VARCHAR(500);
     DECLARE NAME VARCHAR(100);
     INSERT INTO "Items" ("UserId","ItemId","Title","DateCreated","DateModified","MediaType",
-      "Size","Trashed","Loaded","TimeStamp") VALUES (USERID,ITEMID,TITLE,CREATED,MODIFIED,
-      MEDIATYPE,SIZE,TRASHED,LOADED,DATETIME);
+      "Size","Trashed","ConnectionMode","SyncMode","TimeStamp") VALUES (USERID,ITEMID,TITLE,CREATED,MODIFIED,
+      MEDIATYPE,SIZE,TRASHED,CONNECTIONMODE,1,DATETIME);
     INSERT INTO "Capabilities" ("UserId","ItemId","CanAddChild","CanRename","IsReadOnly",
       "IsVersionable","TimeStamp") VALUES (USERID,ITEMID,ADDCHILD,CANRENAME,READONLY,
       ISVERSIONABLE,DATETIME);
-    INSERT INTO "Parents" ("ChildId","ItemId","TimeStamp") VALUES (ITEMID,
-      PARENT,DATETIME);
+    INSERT INTO "Parents" ("ChildId","ItemId","TimeStamp","SyncMode") VALUES (ITEMID,
+      PARENT,DATETIME,1);
     SELECT P."Path", COALESCE(T."Title", I."Title") "Title" INTO PATH, NAME
     FROM "Items" AS I 
     INNER JOIN "Path" AS P ON I."ItemId"=P."ItemId" 
@@ -656,12 +688,16 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
         query = 'CALL "GetItem"(?,?)'
     elif name == 'getNewTitle':
         query = 'CALL "GetNewTitle"(?,?,?,?)'
+    elif name == 'updatePushItems':
+        query = 'CALL "UpdatePushItems"(?,?,?)'
     elif name == 'getPushItems':
         query = 'CALL "GetPushItems"(?,?,?)'
     elif name == 'getPushProperties':
         query = 'CALL "GetPushProperties"(?,?,?,?)'
     elif name == 'getItemParentIds':
         query = 'CALL "GetItemParentIds"(?,?,?,?,?)'
+    elif name == 'insertUser':
+        query = 'CALL "InsertUser"(?,?,?,?,?)'
     elif name == 'mergeItem':
         query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'insertItem':

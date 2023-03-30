@@ -174,6 +174,7 @@ class Replicator(unohelper.Base,
             self._logger.logprb(SEVERE, 'Replicator', '_initUser()', 123, title, itemid, parents)
         print("Replicator._initUser() 2 %s" % count)
         user.Provider.initUser(user.Request, self.DataBase, user.MetaData)
+        user.SyncMode = 1
         self._fullPull = True
 
     def _pullData(self, user):
@@ -207,6 +208,7 @@ class Replicator(unohelper.Base,
                 self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 131, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
                 if self._isNewUser(user):
                     self._initUser(user)
+                items = []
                 start = user.TimeStamp
                 for item in self.DataBase.getPushItems(user.Id, start, end):
                     print("Replicator._pushUsers() 1 Start: %s - End: %s" % (getDateTimeInTZToString(start), getDateTimeInTZToString(end)))
@@ -215,10 +217,17 @@ class Replicator(unohelper.Base,
                     url = user.Provider.SourceURL
                     uploader = user.Request.getUploader(chunk, url, self)
                     metadata = self.DataBase.getMetaData(user, item)
-                    if not self._pushItem(user, uploader, item, metadata, start, end):
+                    itemid = item.getValue('ItemId')
+                    if self._pushItem(user, itemid, uploader, item, metadata, start, end):
+                        items.append(itemid)
+                    else:
+                        modified = getDateTimeToString(metadata.getValue('DateModified'))
+                        self._logger.logprb(SEVERE, 'Replicator', '_pushUsers()', 132, metadata.getValue('Title'), modified, metadata.getValue('Id'))
                         break
+                if items:
+                    self.DataBase.updatePushItems(user, items)
                 print("Replicator._pushUsers() 4")
-                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 132, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
+                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 133, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
         except Exception as e:
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
 
@@ -246,7 +255,6 @@ class Replicator(unohelper.Base,
             call.executeBatch()
         call.close()
         user.Provider.updateDrive(self.DataBase, user.MetaData, token)
-        user.TimeStamp = currentDateTimeInTZ()
         return rejected, pages, rows, count
 
     def _getFirstPull(self, call, provider, request, rootid, start):
@@ -303,10 +311,9 @@ class Replicator(unohelper.Base,
             rejected.append((title, itemid, ','.join(parents)))
         return rejected
 
-    def _pushItem(self, user, uploader, item, metadata, start, end):
+    def _pushItem(self, user, itemid, uploader, item, metadata, start, end):
         try:
             status = False
-            itemid = item.getValue('ItemId')
             timestamp = item.getValue('TimeStamp')
             action = item.getValue('ChangeAction')
             print("Replicator._pushItem() 3 Insert/Update Title: %s Id: %s - Action: %s" % (metadata.getValue('Title'),
@@ -335,7 +342,6 @@ class Replicator(unohelper.Base,
                         #if self._needPush('SizeUpdated', itemid, operations):
                         status = user.Provider.uploadFile(uploader, user, metadata, True)
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 142, metadata.getValue('Title'), created)
-                self._updateUserTimeStamp(user, timestamp, metadata, status)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
             elif action & UPDATE:
                 for property in self.DataBase.getPushProperties(user.Id, itemid, start, end):
@@ -349,35 +355,25 @@ class Replicator(unohelper.Base,
                     elif properties & CONTENT:
                         status = user.Provider.uploadFile(uploader, user, metadata, False)
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 144, metadata.getValue('Title'), modified, metadata.getValue('Size'))
-                    if not self._updateUserTimeStamp(user, timestamp, metadata, status):
+                    if not status:
                         break
             # MOVE procedures to follow parent changes of a resource
             elif action & MOVE:
                 print("Replicator._pushItem() MOVE")
                 self.DataBase.getItemParentIds(itemid, metadata, start, end)
                 status = user.Provider.updateParents(user.Request, metadata)
-                self._updateUserTimeStamp(user, timestamp, metadata, status)
                 print("Replicator.._pushItem() MOVE ToAdd: %s - ToRemove: %s" % (toadd, toremove))
             elif action & DELETE:
                 print("Replicator._pushItem() DELETE")
                 status = user.Provider.updateTrashed(user.Request, metadata)
                 self._logger.logprb(INFO, 'Replicator', '_pushItem()', 145, metadata.getValue('Title'), timestamp)
-                self._updateUserTimeStamp(user, timestamp, metadata, status)
             return status
         except Exception as e:
             msg = "ERROR: %s - %s" % (e, traceback.print_exc())
             self._logger.logp(SEVERE, 'Replicator', '_pushItem()', msg)
 
     def _isNewUser(self, user):
-        return user.TimeStamp == self.DataBase.getDefaultUserTimeStamp()
-
-    def _updateUserTimeStamp(self, user, timestamp, metadata, status):
-        if status:
-            user.TimeStamp = timestamp
-        else:
-            modified = getDateTimeToString(metadata.getValue('DateModified'))
-            self._logger.logprb(SEVERE, 'Replicator', '_pushItem()', 151, metadata.getValue('Title'), modified, metadata.getValue('Id'))
-        return status
+        return user.SyncMode == 0
 
     def _getReplicateTimeout(self):
         timeout = self._config.getByName('ReplicateTimeout')

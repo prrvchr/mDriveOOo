@@ -60,7 +60,7 @@ def setContentData(content, call, properties, index=1):
             call.setTimestamp(index, value)
         elif name in ('Trashed', 'CanAddChild', 'CanRename', 'IsReadOnly', 'IsVersionable'):
             call.setBoolean(index, value)
-        elif name in ('Size', 'Loaded'):
+        elif name in ('Size', 'ConnectionMode'):
             call.setLong(index, value)
         index += 1
     return index

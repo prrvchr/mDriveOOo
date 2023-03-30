@@ -36,6 +36,8 @@ constants ContentProperties
 
     const long CONTENT = 2;
 
+    const long TRASHED = 4;
+
 };
 
 }; }; }; };

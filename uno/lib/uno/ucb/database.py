@@ -49,6 +49,7 @@ from .dbtool import Array
 from .dbtool import checkDataBase
 from .dbtool import createStaticTable
 from .dbtool import currentDateTimeInTZ
+from .dbtool import currentUnoDateTime
 from .dbtool import executeSqlQueries
 from .dbtool import getDataSourceCall
 from .dbtool import getDateTimeInTZToString
@@ -144,13 +145,14 @@ class DataBase():
         rootid = provider.getRootId(root)
         rootname = provider.getRootTitle(root)
         timestamp = currentDateTimeInTZ()
-        insert = self._getCall('insertUser')
-        insert.setString(1, username)
-        insert.setString(2, displayname)
-        insert.setString(3, rootid)
-        insert.setString(4, userid)
-        insert.execute()
-        insert.close()
+        call = self._getCall('insertUser')
+        call.setString(1, userid)
+        call.setString(2, rootid)
+        call.setString(3, username)
+        call.setString(4, displayname)
+        call.execute()
+        timestamp = call.getObject(5, None)
+        call.close()
         self._mergeRoot(provider, userid, rootid, rootname, root, timestamp)
         data = KeyMap()
         data.insertValue('UserId', userid)
@@ -158,7 +160,7 @@ class DataBase():
         data.insertValue('RootId', rootid)
         data.insertValue('RootName', rootname)
         data.insertValue('Token', '')
-        timestamp = self.getDefaultUserTimeStamp()
+        data.insertValue('SyncMode', 0)
         print("DataBase.insertUser() TimeStamp: %s" % getDateTimeInTZToString(timestamp))
         data.insertValue('TimeStamp', timestamp)
         return data
@@ -238,8 +240,8 @@ class DataBase():
         select.setString(3, itemid)
         return select
 
-    def updateLoaded(self, userid, itemid, value, default):
-        update = self._getCall('updateLoaded')
+    def updateConnectionMode(self, userid, itemid, value, default):
+        update = self._getCall('updateConnectionMode')
         update.setLong(1, value)
         update.setString(2, itemid)
         update.executeUpdate()
@@ -288,15 +290,11 @@ class DataBase():
             update.close()
         elif property == 'Size':
             update = self._getCall('updateSize')
-            # The Size of the file is not sufficient to detect a 'Save' of the file,
-            # It can be modified and have the same Size...
-            # For this we temporarily update the Size to 0
+            # FIXME: If we update the Size, we need to update the DateModified too...
             update.setObject(1, timestamp)
-            update.setLong(2, 0)
-            update.setString(3, itemid)
-            update.execute()
             update.setLong(2, value)
-            update.setString(3, itemid)
+            update.setTimestamp(3, currentUnoDateTime())
+            update.setString(4, itemid)
             updated = update.execute() == 0
             update.close()
         elif property == 'Trashed':
@@ -307,17 +305,6 @@ class DataBase():
             updated = update.execute() == 0
             update.close()
         if updated:
-            # We need to update Capabilities table to be able to retrieve
-            # changes by user with system versioning
-            # TODO: I cannot use a procedure performing the two UPDATE 
-            # TODO: without the system versioning malfunctioning...
-            # TODO: As a workaround I use two successive UPDATE queries
-            update = self._getCall('updateCapabilities')
-            update.setObject(1, timestamp)
-            update.setString(2, userid)
-            update.setString(3, itemid)
-            update.execute()
-            update.close()
             # Start Replicator for pushing changes…
             self._sync.set()
 
@@ -421,10 +408,10 @@ class DataBase():
         insert.addBatch()
 
     # First pull procedure: header of merge request
-    def getFirstPullCall(self, userid, loaded, timestamp):
+    def getFirstPullCall(self, userid, connectionmode, timestamp):
         call = self._getCall('mergeItem')
         call.setString(1, userid)
-        call.setInt(2, loaded)
+        call.setInt(2, connectionmode)
         call.setObject(3, timestamp)
         return call
 
@@ -434,12 +421,10 @@ class DataBase():
         call.addBatch()
         return row
 
-    def updateUserTimeStamp(self, timestamp, userid=None):
-        call = 'updateUsersTimeStamp' if userid is None else 'updateUserTimeStamp'
-        update = self._getCall(call)
-        update.setObject(1, timestamp)
-        if userid is not None:
-            update.setString(2, userid)
+    def updateUserSyncMode(self, userid, mode):
+        update = self._getCall('updateUserSyncMode')
+        update.setInt(1, mode)
+        update.setString(2, userid)
         update.executeUpdate()
         update.close()
 
@@ -474,6 +459,14 @@ class DataBase():
         result.close()
         select.close()
         return properties
+
+    def updatePushItems(self, user, itemids):
+        call = self._getCall('updatePushItems')
+        call.setString(1, user.Id)
+        call.setArray(2, Array('VARCHAR', itemids))
+        call.execute()
+        user.TimeStamp = call.getObject(3, None)
+        call.close()
 
     def getItemParentIds(self, itemid, metadata, start, end):
         call = self._getCall('getItemParentIds')

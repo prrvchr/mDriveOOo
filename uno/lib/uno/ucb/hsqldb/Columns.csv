@@ -11,10 +11,11 @@ Column|Name
 9|MediaType
 10|Size
 11|Trashed
-12|Loaded
+12|ConnectionMode
 13|ChildId
-14|CanAddChild
-15|CanRename
-16|IsReadOnly
-17|IsVersionable
-18|TimeStamp
+14|SyncMode
+15|CanAddChild
+16|CanRename
+17|IsReadOnly
+18|IsVersionable
+19|TimeStamp

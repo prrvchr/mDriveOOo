@@ -41,6 +41,7 @@ from ..dbconfig  import g_folder
 
 from ..configuration import g_identifier
 from ..configuration import g_scheme
+from ..configuration import g_separator
 
 import traceback
 
@@ -49,7 +50,7 @@ class OptionsModel(unohelper.Base):
     def __init__(self, ctx):
         self._ctx = ctx
         self._config = getConfiguration(ctx, g_identifier, True)
-        folder = g_folder + '/' + g_scheme
+        folder = g_folder + g_separator + g_scheme
         location = getResourceLocation(ctx, g_identifier, folder)
         self._policies = {'SERVER_IS_MASTER': 1, 'CLIENT_IS_MASTER': 2, 'NONE_IS_MASTER': 3}
         self._url = location + '.odb'

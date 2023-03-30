@@ -84,6 +84,7 @@ from ..logger import getLogger
 
 from ..configuration import g_defaultlog
 from ..configuration import g_scheme
+from ..configuration import g_separator
 
 import traceback
 from oauthlib.uri_validate import authority
@@ -281,8 +282,7 @@ class Content(unohelper.Base,
                 stream = command.Argument.Data
                 replace = command.Argument.ReplaceExisting
                 sf = getSimpleFile(self._ctx)
-                url = self._user.Provider.SourceURL
-                target = '%s/%s' % (url, self.Id)
+                target = self._user.Provider.SourceURL + g_separator + self.Id
                 if sf.exists(target) and not replace:
                     return
                 if hasInterface(stream, 'com.sun.star.io.XInputStream'):
@@ -326,7 +326,7 @@ class Content(unohelper.Base,
             if not sf.exists(source):
                 raise CommandAbortedException("Error while saving file: %s" % source, self)
             inputstream = sf.openFileRead(source)
-            target = '%s/%s' % (self._user.Provider.SourceURL, itemid)
+            target = self._user.Provider.SourceURL + g_separator + itemid
             sf.writeFile(target, inputstream)
             inputstream.closeInput()
             # We need to update the Size
@@ -344,7 +344,7 @@ class Content(unohelper.Base,
     # Private methods
     def _getMetaData(self, uri):
         print("Content._getMetaData() Uri: '%s'" % uri)
-        if uri in ('', '/'):
+        if uri in ('', g_separator):
             itemid = self._user.RootId
         else:
             itemid = self._user.DataBase.getIdentifier(self._user, uri)
@@ -420,6 +420,7 @@ class Content(unohelper.Base,
         properties['IsFloppy'] = getProperty('IsFloppy', 'boolean', BOUND | RO)
         properties['IsCompactDisc'] = getProperty('IsCompactDisc', 'boolean', BOUND | RO)
         properties['IsVersionable'] = getProperty('IsVersionable', 'boolean', BOUND | RO)
+        properties['ConnectionMode'] = getProperty('ConnectionMode', 'short', BOUND | READONLY)
         return properties
 
     def _setTitle(self, title):
@@ -436,7 +437,7 @@ class Content(unohelper.Base,
             else:
                 newtitle = title
             print("Identifier.setTitle() 2 Title: %s - New Title: %s" % (title, newtitle))
-            url = '%s/%s' % (self.ParentUri, newtitle)
+            url = self.ParentUri + g_separator + newtitle
             self.MetaData.setValue('Uri', url)
             self.MetaData.setValue('Title', newtitle)
             self.MetaData.setValue('TitleOnServer', newtitle)

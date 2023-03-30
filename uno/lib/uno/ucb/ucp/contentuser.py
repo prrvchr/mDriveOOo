@@ -70,6 +70,7 @@ from .contentidentifier import ContentIdentifier
 from .contenttools import getContentInfo
 
 from ..configuration import g_scheme
+from ..configuration import g_separator
 
 
 import binascii
@@ -136,19 +137,22 @@ class ContentUser():
     def Token(self):
         return self.MetaData.getValue('Token')
     @property
+    def SyncMode(self):
+        return self.MetaData.getValue('SyncMode')
+    @SyncMode.setter
+    def SyncMode(self, mode):
+        self.MetaData.setValue('SyncMode', mode)
+        self.DataBase.updateUserSyncMode(self.Id, mode)
+    @property
     def TimeStamp(self):
-        timestamp = self.MetaData.getValue('TimeStamp')
-        print("ContentUser.getTimeStamp() TimeStamp: %s" % getDateTimeInTZToString(timestamp))
         return self.MetaData.getValue('TimeStamp')
     @TimeStamp.setter
     def TimeStamp(self, timestamp):
-        print("ContentUser.TimeStamp() TimeStamp: %s" % getDateTimeInTZToString(timestamp))
-        self.DataBase.updateUserTimeStamp(timestamp, self.Id)
         self.MetaData.setValue('TimeStamp', timestamp)
 
     # method called from DataSource.queryContent(), Content.getParent() and ContentResultSet.queryContent()
     def getContent(self, identifier, path, authority):
-        #path = path if path else '/'
+        #path = path if path else g_separator
         if self._expired is not None and path.startswith(self._expired):
             self._removeIdentifiers()
         id = self._identifiers.get(path)
@@ -162,8 +166,7 @@ class ContentUser():
         return content
 
     def getContentUrl(self, authority, path):
-        name = self.Name if authority else ''
-        return '%s://%s%s' % (g_scheme, name, path)
+        return self._getContentScheme(authority) + path
 
     def expireIdentifier(self, path):
         # FIXME: We need to remove all the child of a resource (if it's a folder)
@@ -188,8 +191,8 @@ class ContentUser():
     def getDocumentContent(self, sf, content, size):
         size = 0
         itemid = content.getValue('Id')
-        url = '%s/%s' % (self.Provider.SourceURL, itemid)
-        if content.getValue('Loaded') == OFFLINE and sf.exists(url):
+        url = self.Provider.SourceURL + g_separator + itemid
+        if content.getValue('ConnectionMode') == OFFLINE and sf.exists(url):
             size = sf.getSize(url)
             return url, size
         stream = self.Provider.getDocumentContent(self.Request, content)
@@ -200,8 +203,8 @@ class ContentUser():
                 self._logger.logprb(SEVERE, 'ContentUser', 'getDocumentContent()', 421, e, traceback.format_exc())
             else:
                 size = sf.getSize(url)
-                loaded = self.DataBase.updateLoaded(self.Id, itemid, OFFLINE, ONLINE)
-                content.insertValue('Loaded', loaded)
+                loaded = self.DataBase.updateConnectionMode(self.Id, itemid, OFFLINE, ONLINE)
+                content.insertValue('ConnectionMode', loaded)
             finally:
                 stream.closeInput()
         return url, size
@@ -211,8 +214,8 @@ class ContentUser():
             select, updated = self._getFolderContent(content, properties, authority, False)
             if updated:
                 itemid = content.getValue('Id')
-                loaded = self.DataBase.updateLoaded(self.Id, itemid, OFFLINE, ONLINE)
-                content.insertValue('Loaded', loaded)
+                loaded = self.DataBase.updateConnectionMode(self.Id, itemid, OFFLINE, ONLINE)
+                content.insertValue('ConnectionMode', loaded)
             return select
         except Exception as e:
             msg = "Error: %s" % traceback.print_exc()
@@ -259,7 +262,7 @@ class ContentUser():
         data.insertValue('CanRename', True)
         data.insertValue('IsReadOnly', False)
         data.insertValue('IsVersionable', isdocument)
-        data.insertValue('Loaded', True)
+        data.insertValue('ConnectionMode', True)
         data.insertValue('BaseURI', uri)
         return data
 
@@ -272,11 +275,11 @@ class ContentUser():
 
     def _getFolderContent(self, content, properties, authority, updated):
         itemid = content.getValue('Id')
-        if ONLINE == content.getValue('Loaded') == self.Provider.SessionMode:
+        if ONLINE == content.getValue('ConnectionMode') == self.Provider.SessionMode:
             self._logger.logprb(INFO, 'ContentUser', '_getFolderContent()', 411, content.getValue('Uri'))
             updated = self.DataBase.updateFolderContent(self, content)
         mode = self.Provider.SessionMode
-        scheme = '%s://%s' % (g_scheme, self.Name) if authority else '%s://' % g_scheme
+        scheme = self._getContentScheme(authority)
         select = self.DataBase.getChildren(self.Name, itemid, properties, mode, scheme)
         print("ContentUser._getFolderContent()")
         return select, updated
@@ -288,4 +291,8 @@ class ContentUser():
                     if url in self._identifiers:
                         del self._identifiers[url]
         self._expired = None
+
+    def _getContentScheme(self, authority):
+        name = self.Name if authority else ''
+        return '%s://%s' % (g_scheme, self.Name)
 
