@@ -76,7 +76,7 @@ class OptionsHandler(unohelper.Base,
                 handled = True
             return handled
         except Exception as e:
-            msg = "OptionsHandler.callHandlerMethod() Error: %s" % traceback.print_exc()
+            msg = "OptionsHandler.callHandlerMethod() Error: %s" % traceback.format_exc()
             print(msg)
 
     def getSupportedMethodNames(self):
