@@ -220,18 +220,24 @@ class Content(unohelper.Base,
         print("Content.execute() %s - %s - %s" % (command.Name, self.Uri, self.Id))
         msg = "command.Name: %s" % command.Name
         self._logger.logp(INFO, 'Content', 'execute()', msg)
+
         if command.Name == 'getCommandInfo':
             return CommandInfo(self._getCommandInfo())
+
         elif command.Name == 'getPropertySetInfo':
             return PropertySetInfo(self._propertySetInfo)
+
         elif command.Name == 'getPropertyValues':
             values = getPropertiesValues(self._logger, self, command.Argument)
             return Row(values)
+
         elif command.Name == 'setPropertyValues':
             return setPropertiesValues(self._logger, self, environment, command.Argument)
+
         elif command.Name == 'delete':
             self.MetaData.insertValue('Trashed', True)
             self._user.DataBase.updateContent(self._user.Id, self.Id, 'Trashed', True)
+
         elif command.Name == 'open':
             print("Content.execute() open  Mode: %s" % command.Argument.Mode)
             if self.IsFolder:
@@ -257,6 +263,7 @@ class Content(unohelper.Base,
                     sink.setInputStream(sf.openFileRead(url))
                 elif not isreadonly and hasInterface(sink, 'com.sun.star.io.XActiveDataStreamer'):
                     sink.setStream(sf.openFileReadWrite(url))
+
         elif command.Name == 'insert':
             # The Insert command is only used to create a new folder or a new document
             # (ie: File Save As).
@@ -299,6 +306,7 @@ class Content(unohelper.Base,
 
         elif command.Name == 'createNewContent' and self.IsFolder:
             return self.createNewContent(command.Argument)
+
         elif command.Name == 'transfer' and self.IsFolder:
             # Transfer command is used for document 'File Save' or 'File Save As'
             # NewTitle come from:
@@ -333,6 +341,7 @@ class Content(unohelper.Base,
             self._user.DataBase.updateContent(self._user.Id, itemid, 'Size', sf.getSize(target))
             if move:
                 pass #must delete object
+
         elif command.Name == 'flush' and self.IsFolder:
             pass
 
@@ -440,7 +449,7 @@ class Content(unohelper.Base,
             url = self.ParentUri + g_separator + newtitle
             self.MetaData.setValue('Uri', url)
             self.MetaData.setValue('Title', newtitle)
-            self.MetaData.setValue('TitleOnServer', newtitle)
+            self.MetaData.setValue('TitleOnServer', title)
             # If the identifier is new then the content is not yet in the database.
             # It will be inserted by the insert command of the XCommandProcessor2.execute()
             if not self._new:

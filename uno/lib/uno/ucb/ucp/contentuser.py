@@ -224,10 +224,7 @@ class ContentUser():
 
     def insertNewContent(self, content):
         timestamp = currentDateTimeInTZ()
-        uri, title = self.DataBase.insertNewContent(self.Id, content, timestamp)
-        content.setValue('Title', title)
-        content.setValue('TitleOnServer', title)
-        content.setValue('BaseURI', uri)
+        self.DataBase.insertNewContent(self.Id, content, timestamp)
         return True
 
     def deleteNewIdentifier(self, itemid):
@@ -239,7 +236,7 @@ class ContentUser():
         isfolder = self.Provider.isFolder(contentype)
         isdocument = self.Provider.isDocument(contentype)
         itemid = self._getNewIdentifier()
-        print("ContentUser._getNewContent() New Uri: %s - NewID: %s" % (uri, itemid))
+        print("ContentUser._getNewContent() NewID: %s" % itemid)
         data = KeyMap()
         data.insertValue('Uri', uri)
         data.insertValue('Id', itemid)

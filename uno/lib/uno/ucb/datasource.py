@@ -31,6 +31,7 @@ import uno
 import unohelper
 
 from com.sun.star.util import XCloseListener
+from com.sun.star.util import CloseVetoException
 
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
@@ -119,6 +120,9 @@ class DataSource(unohelper.Base,
 
     # XCloseListener
     def queryClosing(self, source, ownership):
+        if ownership:
+            raise CloseVetoException()
+        print("DataSource.queryClosing() ownership: %s" % ownership)
         if self.Replicator.is_alive():
             self.Replicator.cancel()
             self.Replicator.join()

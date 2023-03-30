@@ -60,8 +60,6 @@ from .dbinit import getStaticTables
 from .dbinit import getQueries
 from .dbinit import getTablesAndStatements
 
-from .logger import getLogger
-
 from .configuration import g_admin
 from .configuration import g_scheme
 
@@ -186,9 +184,6 @@ class DataBase():
 # Procedures called by the Content
         #TODO: Can't have a simple SELECT ResultSet with a Procedure,
     def getItem(self, user, itemid, rewite=True):
-        #TODO: Can't have a simple SELECT ResultSet with a Procedure,
-        #TODO: the malfunction is rather bizard: it always returns the same result
-        #TODO: as a workaround we use a simple query...
         item = None
         isroot = itemid == user.RootId
         print("Content.getItem() 1 isroot: '%s'" % isroot)
@@ -272,6 +267,7 @@ class DataBase():
         return identifier
 
     def deleteNewIdentifier(self, userid, itemid):
+        print("DataBase.deleteNewIdentifier() NewID: %s" % itemid)
         call = self._getCall('deleteNewIdentifier')
         call.setString(1, userid)
         call.setString(2, itemid)
@@ -324,7 +320,7 @@ class DataBase():
         call.setLong(2, 1)
         call.setObject(3, timestamp)
         call.setString(4, content.getValue("Id"))
-        call.setString(5, content.getValue("Title"))
+        call.setString(5, content.getValue("TitleOnServer"))
         call.setTimestamp(6, content.getValue('DateCreated'))
         call.setTimestamp(7, content.getValue('DateModified'))
         call.setString(8, content.getValue('MediaType'))
@@ -336,13 +332,13 @@ class DataBase():
         call.setBoolean(14, content.getValue('IsVersionable'))
         call.setString(15, content.getValue("ParentId"))
         status = call.execute() == 0
-        path = call.getString(16)
-        basename = call.getString(17)
+        content.setValue('BaseURI', call.getString(16))
+        content.setValue('Title', call.getString(17))
+        content.setValue('TitleOnServer', call.getString(18))
         call.close()
         if status:
             # Start Replicator for pushing changes…
             self._sync.set()
-        return path, basename
 
     def hasTitle(self, userid, parentid, title):
         has = True
@@ -486,9 +482,7 @@ class DataBase():
             update = self._getCall('updateItemId')
             update.setString(1, newid)
             update.setString(2, itemid)
-            row = update.executeUpdate()
-            msg = "execute UPDATE Items - Old ItemId: %s - New ItemId: %s - RowCount: %s" % (itemid, newid, row)
-            getLogger(self._ctx).logp(INFO, "DataBase", "updateItemId", msg)
+            update.executeUpdate()
             update.close()
 
 # Procedures called internally

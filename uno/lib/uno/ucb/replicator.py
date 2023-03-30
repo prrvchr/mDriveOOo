@@ -44,6 +44,7 @@ from com.sun.star.ucb.ChangeAction import DELETE
 
 from com.sun.star.ucb.ContentProperties import TITLE
 from com.sun.star.ucb.ContentProperties import CONTENT
+from com.sun.star.ucb.ContentProperties import TRASHED
 
 from com.sun.star.rest import HTTPException
 from com.sun.star.rest.HTTPStatusCode import BAD_REQUEST
@@ -109,7 +110,6 @@ class Replicator(unohelper.Base,
         try:
             msg = "Replicator for Scheme: %s loading ... " % self.Provider.Scheme
             print("Replicator.run() 1 *************************************************************")
-            self._logger.logp(INFO, 'Replicator', 'run()', 'stage 1')
             print("Replicator run() 2")
             while not self._canceled:
                 self._sync.wait(self._getReplicateTimeout())
@@ -355,6 +355,9 @@ class Replicator(unohelper.Base,
                     elif properties & CONTENT:
                         status = user.Provider.uploadFile(uploader, user, metadata, False)
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 144, metadata.getValue('Title'), modified, metadata.getValue('Size'))
+                    elif properties & TRASHED:
+                        status = user.Provider.updateTrashed(user.Request, metadata)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 145, metadata.getValue('Title'), modified)
                     if not status:
                         break
             # MOVE procedures to follow parent changes of a resource

@@ -203,9 +203,9 @@ GRANT SELECT ON "Title" TO "%(Role)s";''' % format
 
     elif name == 'createChildrenView':
         query = '''\
-CREATE VIEW "Children" ("UserId", "ItemId", "ParentId", "Title", "Uri", "DateCreated", "DateModified", "IsFolder", "Size", "ConnectionMode") AS SELECT
+CREATE VIEW "Children" ("UserId", "ItemId", "ParentId", "Title", "Uri", "DateCreated", "DateModified", "IsFolder", "Size", "ConnectionMode", "Trashed") AS SELECT
   I."UserId", C."ItemId", C."ParentId", I."Title", COALESCE(T."Title",I."Title"), I."DateCreated", I."DateModified",
-  I2."IsFolder", I."Size", I."ConnectionMode" 
+  I2."IsFolder", I."Size", I."ConnectionMode", I."Trashed"
   FROM "Items" AS I 
   INNER JOIN "Item" AS I2 ON I."ItemId"=I2."ItemId" 
   INNER JOIN "Child" AS C ON I2."ItemId"=C."ItemId" 
@@ -308,7 +308,7 @@ WHERE U."UserName" = ?;'''
 SELECT %s 
 FROM "Children" AS C
 INNER JOIN "Path" AS P ON C."ItemId"=P."ItemId" 
-WHERE (C."IsFolder" = TRUE OR C."ConnectionMode" >= ?) AND C."ParentId" = ?;''' % ', '.join(columns)
+WHERE (C."IsFolder" = TRUE OR C."ConnectionMode" >= ?) AND C."Trashed" = FALSE AND C."ParentId" = ?;''' % ', '.join(columns)
 
     elif name == 'getChildId':
         query = '''\
@@ -407,7 +407,7 @@ CREATE PROCEDURE "GetItem"(IN ITEMID VARCHAR(100),
       SELECT I."ItemId" AS "Id", P2."Path" AS "ParentUri", 
        P."ItemId" AS "ParentId", I."ItemId" AS "ObjectId", 
        "GetTitle"(I."Title",T."Title",SWAP) AS "Title", 
-       "GetTitle"(I."Title",T."Title",SWAP) AS "TitleOnServer",
+       I."Title" AS "TitleOnServer", 
        I."DateCreated", I."DateModified", I2."ContentType", I."MediaType", I."Size", I."Trashed", 
        FALSE AS "IsRoot", I2."IsFolder", I2."IsDocument", C."CanAddChild", C."CanRename", 
        C."IsReadOnly", C."IsVersionable", I."ConnectionMode", '' AS "CasePreservingURL" 
@@ -490,8 +490,8 @@ CREATE PROCEDURE "GetPushItems"(IN USERID VARCHAR(100),
       -- com.sun.star.ucb.ChangeAction.INSERT
       (SELECT I."ItemId", 1 AS "ChangeAction", I."RowStart" AS "TimeStamp" 
         FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
-        LEFT JOIN "Items" FOR SYSTEM_TIME AS OF STARTTIME AS I2 
-          ON I."ItemId" = I2."ItemId" 
+        LEFT JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
+          ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
         WHERE I2."ItemId" IS NULL AND BITAND(I."SyncMode", 1)=1 AND I."UserId" = USERID) 
       UNION
       (SELECT "ItemId", SUM("ChangeAction"), MAX("TimeStamp") FROM (
@@ -655,12 +655,14 @@ CREATE PROCEDURE "InsertItem"(IN USERID VARCHAR(100),
                               IN ISVERSIONABLE BOOLEAN,
                               IN PARENT VARCHAR(100),
                               OUT URI VARCHAR(500),
-                              OUT BASENAME VARCHAR(100))
+                              OUT NEWTITLE VARCHAR(100),
+                              OUT NEWNAME VARCHAR(100))
   SPECIFIC "InsertItem_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
     DECLARE PATH VARCHAR(500);
-    DECLARE NAME VARCHAR(100);
+    DECLARE TMP1 VARCHAR(100);
+    DECLARE TMP2 VARCHAR(100);
     INSERT INTO "Items" ("UserId","ItemId","Title","DateCreated","DateModified","MediaType",
       "Size","Trashed","ConnectionMode","SyncMode","TimeStamp") VALUES (USERID,ITEMID,TITLE,CREATED,MODIFIED,
       MEDIATYPE,SIZE,TRASHED,CONNECTIONMODE,1,DATETIME);
@@ -669,13 +671,14 @@ CREATE PROCEDURE "InsertItem"(IN USERID VARCHAR(100),
       ISVERSIONABLE,DATETIME);
     INSERT INTO "Parents" ("ChildId","ItemId","TimeStamp","SyncMode") VALUES (ITEMID,
       PARENT,DATETIME,1);
-    SELECT P."Path", COALESCE(T."Title", I."Title") "Title" INTO PATH, NAME
+    SELECT P."Path", COALESCE(T."Title", I."Title"), I."Title" "Title" INTO PATH, TMP1, TMP2
     FROM "Items" AS I 
     INNER JOIN "Path" AS P ON I."ItemId"=P."ItemId" 
     LEFT JOIN "Title" AS T ON I."ItemId"=T."ItemId" 
     WHERE I."ItemId"=ITEMID;
     SET URI = PATH;
-    SET BASENAME = NAME;
+    SET NEWTITLE = TMP1;
+    SET NEWNAME = TMP2;
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
 
@@ -701,7 +704,7 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
     elif name == 'mergeItem':
         query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'insertItem':
-        query = 'CALL "InsertItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        query = 'CALL "InsertItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 
 # Get DataBase Version Query
     elif name == 'getVersion':
