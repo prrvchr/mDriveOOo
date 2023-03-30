@@ -54,6 +54,7 @@ from ..oauth2lib import getOAuth2UserName
 from ..oauth2lib import getRequest
 from ..oauth2lib import g_oauth2
 
+from ..dbtool import currentDateTimeInTZ
 from ..dbtool import currentUnoDateTime
 from ..dbtool import getDateTimeInTZToString
 
@@ -83,7 +84,6 @@ class ContentUser():
         self._sync = sync
         self._lock = lock
         self._expired = None
-        self._authority = True
         self.Provider = provider
         #self.CanAddChild = not self.Provider.GenerateIds
         self.CanAddChild = True
@@ -113,6 +113,7 @@ class ContentUser():
                 raise IllegalIdentifierException(msg, source)
         self.MetaData = data
         self.DataBase = DataBase(ctx, database.getDataSource(), name, password, sync)
+        self._identifiers = {}
         self._contents = {}
         self._logger.logprb(INFO, 'ContentUser', '__init__()', 405)
         if new:
@@ -145,18 +146,17 @@ class ContentUser():
         self.DataBase.updateUserTimeStamp(timestamp, self.Id)
         self.MetaData.setValue('TimeStamp', timestamp)
 
-    # method called from DataSource.queryContent() and Content.getParent()
+    # method called from DataSource.queryContent(), Content.getParent() and ContentResultSet.queryContent()
     def getContent(self, identifier, path, authority):
-        path = path if path else '/'
-        #if authority is not None:
-        #    self._authority = authority
+        #path = path if path else '/'
         if self._expired is not None and path.startswith(self._expired):
-            self._removeContents()
-        else:
-            content = self._contents.get(path)
+            self._removeIdentifiers()
+        id = self._identifiers.get(path)
+        content = None if id is None else self._contents.get(id)
         if content is None:
             content = Content(self._ctx, self, authority, identifier, path)
-            self._contents[path] = content
+            self._identifiers[path] = content.Id
+            self._contents[content.Id] = content
         else:
             content.setProperties(identifier, authority)
         return content
@@ -165,24 +165,14 @@ class ContentUser():
         name = self.Name if authority else ''
         return '%s://%s%s' % (g_scheme, name, path)
 
-    def addContent(self, identifier):
-        key = identifier.getContentIdentifier()
-        print("User.addIdentifier() Uri: %s - Id: %s" % (key, identifier.Id))
-        if key not in self._identifiers:
-            with self._lock:
-                self._identifiers[key] = identifier
-
-    def expireContent(self, path):
+    def expireIdentifier(self, path):
         # FIXME: We need to remove all the child of a resource (if it's a folder)
          self._expired = path
 
     def createNewContent(self, id, path, authority, contentype):
-        print("ContentUser.createNewContent() 1")
         data = self._getNewContent(id, path, contentype)
-        print("ContentUser.createNewContent() 2")
-        identifier = ContentIdentitifier(self.getContentUrl(authority, path))
-        content = Content(self._ctx, self, identifier, path, data)
-        print("ContentUser.createNewContent() 3")
+        identifier = ContentIdentifier(self.getContentUrl(authority, path))
+        content = Content(self._ctx, self, authority, identifier, path, data)
         return content
 
     def getCreatableContentsInfo(self, canaddchild):
@@ -231,9 +221,7 @@ class ContentUser():
 
     def insertNewContent(self, content):
         timestamp = currentDateTimeInTZ()
-        print("Identifier.insertNewContent() 1")
         uri, title = self.DataBase.insertNewContent(self.Id, content, timestamp)
-        print("Identifier.insertNewContent() 2 Path: %s - BaseName: %s" % (uri, title))
         content.setValue('Title', title)
         content.setValue('TitleOnServer', title)
         content.setValue('BaseURI', uri)
@@ -293,11 +281,11 @@ class ContentUser():
         print("ContentUser._getFolderContent()")
         return select, updated
 
-    def _removeContents(self):
-        for url in tuple(self._contents.keys()):
+    def _removeIdentifiers(self):
+        for url in tuple(self._identifiers.keys()):
             if url.startswith(self._expired):
                 with self._lock:
-                    if url in self._contents:
-                        del self._contents[url]
+                    if url in self._identifiers:
+                        del self._identifiers[url]
         self._expired = None
 

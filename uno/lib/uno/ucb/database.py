@@ -175,24 +175,24 @@ class DataBase():
 
 # Procedures called by the Replicator
     def getMetaData(self, user, item):
-        rootid = user.RootId
         itemid = item.getValue('ItemId')
-        metadata = self.getItem(user.Id, itemid, rootid == itemid, False)
-        atroot = metadata.getValue('ParentId') == rootid
+        metadata = self.getItem(user, itemid, False)
+        atroot = metadata.getValue('ParentId') == user.RootId
         metadata.insertValue('AtRoot', atroot)
         return metadata
 
 # Procedures called by the Content
         #TODO: Can't have a simple SELECT ResultSet with a Procedure,
-    def getItem(self, userid, itemid, isroot, rewite=True):
+    def getItem(self, user, itemid, rewite=True):
         #TODO: Can't have a simple SELECT ResultSet with a Procedure,
         #TODO: the malfunction is rather bizard: it always returns the same result
         #TODO: as a workaround we use a simple query...
-        print("Content.getItem() 1 isroot: '%s'" % isroot)
         item = None
+        isroot = itemid == user.RootId
+        print("Content.getItem() 1 isroot: '%s'" % isroot)
         call = 'getRoot' if isroot else 'getItem'
         select = self._getCall(call)
-        select.setString(1, userid if isroot else itemid)
+        select.setString(1, user.Id if isroot else itemid)
         if not isroot:
              select.setBoolean(2, rewite)
         result = select.executeQuery()
@@ -256,8 +256,7 @@ class DataBase():
         if call.wasNull():
             itemid = None
         call.close()
-        isroot = itemid == user.RootId
-        return itemid, isroot
+        return itemid
 
     def getNewIdentifier(self, userid):
         identifier = ''

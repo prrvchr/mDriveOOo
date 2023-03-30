@@ -308,13 +308,13 @@ class Replicator(unohelper.Base,
             status = False
             itemid = item.getValue('ItemId')
             timestamp = item.getValue('TimeStamp')
-            print("Replicator._pushItem() 3 Insert/Update Title: %s Size: %s - AtRoot: %s" % (metadata.getValue('Title'),
-                                                                                 metadata.getValue('Size'),
-                                                                                 metadata.getValue('AtRoot')))
+            action = item.getValue('ChangeAction')
+            print("Replicator._pushItem() 3 Insert/Update Title: %s Id: %s - Action: %s" % (metadata.getValue('Title'),
+                                                                                 itemid,
+                                                                                 action))
             # If the synchronization of an INSERT or an UPDATE fails
             # then the user's TimeStamp will not be updated
             # INSERT procedures, new files and folders are synced here.
-            action = item.getValue('ChangeAction')
             if action & INSERT:
                 print("Replicator._pushItem() INSERT 1")
                 mediatype = metadata.getValue('MediaType')

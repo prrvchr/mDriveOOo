@@ -49,6 +49,8 @@ from ..unolib import PropertySet
 
 from ..unotool import getProperty
 
+from ..configuration import g_separator
+
 from .contenttools import getParametersRequest
 
 import traceback
@@ -278,13 +280,15 @@ class Row(unohelper.Base,
 
 class DynamicResultSet(unohelper.Base,
                        XDynamicResultSet):
-    def __init__(self, user, select):
+    def __init__(self, user, path, authority, select):
         self._user = user
+        self._path = path
+        self._authority = authority
         self._select = select
 
     # XDynamicResultSet
     def getStaticResultSet(self):
-        return ContentResultSet(self._user, self._select)
+        return ContentResultSet(self._user, self._path, self._authority, self._select)
     def setListener(self, listener):
         pass
     def connectToCache(self, cache):
@@ -299,9 +303,11 @@ class ContentResultSet(unohelper.Base,
                        XRow,
                        XResultSetMetaDataSupplier,
                        XContentAccess):
-    def __init__(self, user, select):
+    def __init__(self, user, path, authority, select):
         try:
             self._user = user
+            self._path = path
+            self._authority = authority
             result = select.executeQuery()
             result.last()
             self.RowCount = result.getRow()
@@ -399,13 +405,13 @@ class ContentResultSet(unohelper.Base,
 
     # XContentAccess
     def queryContentIdentifierString(self):
-        url = self._result.getString(self._result.findColumn('TargetURL'))
-        print("DynamicResultSet.queryContentIdentifierString() %s" % url)
-        return url
+        return  self._result.getString(self._result.findColumn('TargetURL'))
     def queryContentIdentifier(self):
         return ContentIdentifier(self.queryContentIdentifierString())
     def queryContent(self):
-        return self._user.getContent(self.queryContentIdentifierString())
+        title = self._result.getString(self._result.findColumn('Title'))
+        path = self._path + g_separator + title
+        return self._user.getContent(self.queryContentIdentifier(), path, self._authority)
 
     def _getPropertySetInfo(self):
         properties = {}

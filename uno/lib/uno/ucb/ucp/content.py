@@ -240,7 +240,7 @@ class Content(unohelper.Base,
                 msg += " IsFolder: %s" % self.IsFolder
                 self._logger.logp(INFO, 'Content', 'execute()', msg)
                 print("Content.execute() open 3")
-                return DynamicResultSet(self._user, select)
+                return DynamicResultSet(self._user, self.Uri, self._authority, select)
             elif self.IsDocument:
                 print("Content.execute() open 4")
                 sf = getSimpleFile(self._ctx)
@@ -344,15 +344,15 @@ class Content(unohelper.Base,
     # Private methods
     def _getMetaData(self, uri):
         print("Content._getMetaData() Uri: '%s'" % uri)
-        if uri:
-            itemid, isroot = self._user.DataBase.getIdentifier(self._user, uri)
+        if uri in ('', '/'):
+            itemid = self._user.RootId
         else:
-            itemid, isroot = self._user.RootId, True
+            itemid = self._user.DataBase.getIdentifier(self._user, uri)
         print("Content._getMetaData() ItemId: '%s'" % itemid)
         if itemid is None:
             msg = self._logger.resolveString(511, uri)
             raise IllegalIdentifierException(msg, self)
-        data = self._user.DataBase.getItem(self._user.Id, itemid, isroot)
+        data = self._user.DataBase.getItem(self._user, itemid)
         if data is None:
             msg = self._logger.resolveString(512, itemid, uri)
             print("Content._getMetaData() ERREUR ID: %s - Uri: '%s'" % (itemid, uri))
@@ -430,7 +430,7 @@ class Content(unohelper.Base,
                 # And as the uri changes we also have to clear this Identifier from the cache.
                 # New Identifier bypass the cache: they are created by the folder's Identifier
                 # (ie: createNewIdentifier()) and have same uri as this folder.
-                self._user.expireContent(self.Uri)
+                self._user.expireIdentifier(self.Uri)
             if self._user.Provider.SupportDuplicate:
                 newtitle = self._user.DataBase.getNewTitle(title, self.ParentId, self.IsFolder)
             else:
