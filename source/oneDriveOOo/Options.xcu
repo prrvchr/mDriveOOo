@@ -35,6 +35,6 @@
         <value>600</value>
     </prop>
     <prop oor:name="SynchronizePolicy">
-        <value>SERVER_IS_MASTER</value>
+        <value>CLIENT_IS_MASTER</value>
     </prop>
 </oor:component-data>
