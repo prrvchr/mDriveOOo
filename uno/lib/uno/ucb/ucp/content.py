@@ -486,7 +486,7 @@ class Content(unohelper.Base,
                 data = getPropertyValueSet({'TargetFolderURL': url,
                                             'ClashingName': title,
                                             'ProposedNewName': '%s(1)' % title})
-                #data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
+                #data = getPropertyValueSet({'Uri': self.getIdentifier().getContentIdentifier(),'ResourceName': title})
                 error = getInteractiveAugmentedIOException(msg, environment, 'QUERY', 'ALREADY_EXISTING', data)
                 result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
         else:

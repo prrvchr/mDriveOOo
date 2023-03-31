@@ -171,11 +171,11 @@ class ContentUser():
         return path in ('', g_separator)
 
     def getContentIdentifier(self, authority, path, title, isroot):
-        url = self._getContentScheme(authority) + self.getContentPath(path, title, isroot)
+        url = self._getContentScheme(authority) + self.getContentPath(path, title, isroot, g_separator)
         return ContentIdentifier(url)
 
-    def getContentPath(self, path, title, isroot=False):
-        return '' if isroot else path + g_separator + title
+    def getContentPath(self, path, title, isroot=False, rootpath=''):
+        return rootpath if isroot else path + g_separator + title
 
     def getTargetUrl(self, itemid):
         return self.Provider.SourceURL + g_separator + itemid
@@ -300,5 +300,5 @@ class ContentUser():
 
     def _getContentScheme(self, authority):
         name = self.Name if authority else ''
-        return '%s://%s' % (g_scheme, self.Name)
+        return '%s://%s' % (g_scheme, name)
 

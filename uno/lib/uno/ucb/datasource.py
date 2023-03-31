@@ -127,6 +127,7 @@ class DataSource(unohelper.Base,
 
     # Private methods
     def _getUser(self, source, url, authority):
+        default = False
         uri = self._factory.parse(url)
         if uri is None:
             msg = self._logger.resolveString(311, url)
@@ -141,7 +142,7 @@ class DataSource(unohelper.Base,
             name = self._default
         else:
             name = self._getUserName(source, url)
-            self._default = name
+            default = True
         # User never change... we can cache it...
         if name in self._users:
             user = self._users[name]
@@ -149,10 +150,9 @@ class DataSource(unohelper.Base,
             user = ContentUser(self._ctx, self._logger, source, self.DataBase,
                                self._provider, name, self._sync, self._lock)
             self._users[name] = user
-        # FIXME: if the user has been instantiated or comes 
-        # FIXME: from the cache then we can consider it as the default user
-        if authority and self._default != name:
-            self._default = name
+            # FIXME: if the user has been instantiated then we can consider it as the default user
+            if default:
+                self._default = name
         return user, uri.getPath()
 
     def _getUserName(self, source, url):
