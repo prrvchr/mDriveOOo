@@ -49,9 +49,7 @@ from ..unolib import PropertySet
 
 from ..unotool import getProperty
 
-from ..configuration import g_separator
-
-from .contenttools import getParametersRequest
+from .contenthelper import getParametersRequest
 
 import traceback
 
@@ -410,8 +408,8 @@ class ContentResultSet(unohelper.Base,
         return ContentIdentifier(self.queryContentIdentifierString())
     def queryContent(self):
         title = self._result.getString(self._result.findColumn('Title'))
-        path = self._path + g_separator + title
-        return self._user.getContent(self.queryContentIdentifier(), path, self._authority)
+        path = self._user.getContentPath(self._path, title)
+        return self._user.getContent(path, self._authority)
 
     def _getPropertySetInfo(self):
         properties = {}

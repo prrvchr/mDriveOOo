@@ -30,6 +30,7 @@
 import uno
 import unohelper
 
+from com.sun.star.beans import UnknownPropertyException
 from com.sun.star.beans import XPropertiesChangeNotifier
 
 from com.sun.star.beans.PropertyAttribute import BOUND
@@ -39,6 +40,7 @@ from com.sun.star.beans.PropertyAttribute import TRANSIENT
 
 from com.sun.star.container import XChild
 
+from com.sun.star.lang import IllegalAccessException
 from com.sun.star.lang import NoSupportException
 from com.sun.star.lang import XComponent
 
@@ -62,21 +64,21 @@ from com.sun.star.logging.LogLevel import SEVERE
 from ..unolib import PropertySetInfo
 
 from ..unotool import createService
-from ..unotool import getSimpleFile
+from ..unotool import getNamedValue
 from ..unotool import getProperty
+from ..unotool import getPropertyValueSet
+from ..unotool import getSimpleFile
 from ..unotool import hasInterface
 
 from .contentlib import CommandInfo
 from .contentlib import Row
 from .contentlib import DynamicResultSet
 
-from .contentcore import getPropertiesValues
-from .contentcore import setPropertiesValues
-
-from .contenttools import getCommandInfo
-from .contenttools import getContentEvent
-from .contenttools import getContentInfo
-from .contenttools import getMimeType
+from .contenthelper import getCommandInfo
+from .contenthelper import getContentEvent
+from .contenthelper import getContentInfo
+from .contenthelper import getInteractiveAugmentedIOException
+from .contenthelper import getMimeType
 
 from .contentidentifier import ContentIdentifier
 
@@ -87,7 +89,6 @@ from ..configuration import g_scheme
 from ..configuration import g_separator
 
 import traceback
-from oauthlib.uri_validate import authority
 
 
 class Content(unohelper.Base,
@@ -97,17 +98,16 @@ class Content(unohelper.Base,
               XContentCreator,
               XChild,
               XPropertiesChangeNotifier):
-    def __init__(self, ctx, user, authority, identifier, uri, data=None):
+    def __init__(self, ctx, user, authority=True, url='', data=None):
         self._ctx = ctx
         self._user = user
         self._authority = authority
-        self._identifier = identifier
         self._new = data is not None
         self._contentListeners = []
         self._propertiesListener = {}
         self._listeners = []
         self._logger = user._logger
-        self.MetaData = data if self._new else self._getMetaData(uri)
+        self.MetaData = data if self._new else self._getMetaData(url)
         self._commandInfo = self._getCommandInfo()
         self._propertySetInfo = self._getPropertySetInfo()
         self._logger.logprb(INFO, 'Content', '__init__()', 501)
@@ -119,27 +119,26 @@ class Content(unohelper.Base,
     def IsDocument(self):
         return self.MetaData.getValue('IsDocument')
     @property
+    def IsRoot(self):
+        return self.MetaData.getValue('IsRoot')
+    @property
     def CanAddChild(self):
         return self.MetaData.getValue('CanAddChild')
 
     @property
-    def Uri(self):
-        return self.MetaData.getDefaultValue('Uri', None)
-    @property
     def Id(self):
-        return self.MetaData.getDefaultValue('Id', None)
+        return self.MetaData.getValue('Id')
     @property
     def ParentId(self):
-        return self.MetaData.getDefaultValue('ParentId', None)
+        return self.MetaData.getValue('ParentId')
     @property
-    def ParentUri(self):
-        return self.MetaData.getDefaultValue('ParentUri', None)
+    def Path(self):
+        return self.MetaData.getValue('Path')
+    @property
+    def Title(self):
+        return self.MetaData.getValue('Title')
 
-    def isRoot(self):
-        return self.Id == self._user.RootId
-
-    def setProperties(self, identifier, authority):
-        self._identifier = identifier
+    def setAuthority(self, authority):
         self._authority = authority
 
     # XComponent
@@ -147,7 +146,6 @@ class Content(unohelper.Base,
         event = uno.createUnoStruct('com.sun.star.lang.EventObject')
         event.Source = self
         for listener in self._listeners:
-            print("Content.dispose() ***************************************************************")
             listener.disposing(event)
 
     def addEventListener(self, listener):
@@ -159,19 +157,10 @@ class Content(unohelper.Base,
 
     # XChild
     def getParent(self):
-        try:
-            content = None
-            print("Content.getParent() 1 ParentUri: %s" % self.ParentUri)
-            if not self.isRoot():
-                url = self._user.getContentUrl(self._authority, self.ParentUri)
-                identifier = ContentIdentifier(url)
-                print("Content.getParent() 2")
-                content = self._user.getContent(identifier, self.ParentUri, self._authority)
-            print("Content.getParent() 3")
-            return content
-        except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
-            print(msg)
+        content = None
+        if not self.IsRoot:
+            content = self._user.getContent(self.Path, self._authority)
+        return content
 
     def setParent(self, parent):
         raise NoSupportException('Parent can not be set', self)
@@ -193,19 +182,16 @@ class Content(unohelper.Base,
     def queryCreatableContentsInfo(self):
         return self._user.getCreatableContentsInfo(self.CanAddChild)
     def createNewContent(self, info):
-        # To avoid circular imports, the creation of new content is delegated to
-        # ContentUser.createNewContent() since the ContentUser also creates Content
-        # with ContentUser.createContent()
-        print("Content.createNewContent() 1")
-        return self._user.createNewContent(self.Id, self.Uri, self._authority, info.Type)
+        path = self._user.getContentPath(self.Path, self.Title, self.IsRoot)
+        return self._user.createNewContent(self.Id, path, self._authority, info.Type)
 
     # XContent
     def getIdentifier(self):
-        return self._identifier
+        identifier = self._user.getContentIdentifier(self._authority, self.Path, self.Title, self.IsRoot)
+        return identifier
     def getContentType(self):
         return self.MetaData.getValue('ContentType')
     def addContentEventListener(self, listener):
-        print("Content.addContentEventListener() ***************************************************************")
         self._contentListeners.append(listener)
     def removeContentEventListener(self, listener):
         if listener in self._contentListeners:
@@ -217,7 +203,8 @@ class Content(unohelper.Base,
         return 1
     def execute(self, command, id, environment):
         print("Content.execute() 1  Commande Name: %s ****************************************************************" % command.Name)
-        print("Content.execute() %s - %s - %s" % (command.Name, self.Uri, self.Id))
+        uri = self._user.getContentPath(self.Path, self.Title, self.IsRoot)
+        print("Content.execute() %s - %s - %s" % (command.Name, uri, self.Id))
         msg = "command.Name: %s" % command.Name
         self._logger.logp(INFO, 'Content', 'execute()', msg)
 
@@ -228,11 +215,11 @@ class Content(unohelper.Base,
             return PropertySetInfo(self._propertySetInfo)
 
         elif command.Name == 'getPropertyValues':
-            values = getPropertiesValues(self._logger, self, command.Argument)
+            values = self._getPropertiesValues(command.Argument)
             return Row(values)
 
         elif command.Name == 'setPropertyValues':
-            return setPropertiesValues(self._logger, self, environment, command.Argument)
+            return self._setPropertiesValues(environment, command.Argument)
 
         elif command.Name == 'delete':
             self.MetaData.insertValue('Trashed', True)
@@ -242,12 +229,12 @@ class Content(unohelper.Base,
             print("Content.execute() open  Mode: %s" % command.Argument.Mode)
             if self.IsFolder:
                 print("Content.execute() open 1")
-                select = self._user.getFolderContent(self.MetaData, command.Argument.Properties, self._authority)
+                select = self._user.getFolderContent(self.MetaData, command.Argument.Properties, self._authority, self.IsRoot)
                 print("Content.execute() open 2")
                 msg += " IsFolder: %s" % self.IsFolder
                 self._logger.logp(INFO, 'Content', 'execute()', msg)
                 print("Content.execute() open 3")
-                return DynamicResultSet(self._user, self.Uri, self._authority, select)
+                return DynamicResultSet(self._user, uri, self._authority, select)
             elif self.IsDocument:
                 print("Content.execute() open 4")
                 sf = getSimpleFile(self._ctx)
@@ -263,6 +250,9 @@ class Content(unohelper.Base,
                     sink.setInputStream(sf.openFileRead(url))
                 elif not isreadonly and hasInterface(sink, 'com.sun.star.io.XActiveDataStreamer'):
                     sink.setStream(sf.openFileReadWrite(url))
+
+        elif command.Name == 'createNewContent' and self.IsFolder:
+            return self.createNewContent(command.Argument)
 
         elif command.Name == 'insert':
             # The Insert command is only used to create a new folder or a new document
@@ -289,7 +279,7 @@ class Content(unohelper.Base,
                 stream = command.Argument.Data
                 replace = command.Argument.ReplaceExisting
                 sf = getSimpleFile(self._ctx)
-                target = self._user.Provider.SourceURL + g_separator + self.Id
+                target = self._user.getTargetUrl(self.Id)
                 if sf.exists(target) and not replace:
                     return
                 if hasInterface(stream, 'com.sun.star.io.XInputStream'):
@@ -303,9 +293,6 @@ class Content(unohelper.Base,
                         # Need to consum the new Identifier if needed...
                         self._user.deleteNewIdentifier(self.Id)
                         print("Content.execute() insert 3")
-
-        elif command.Name == 'createNewContent' and self.IsFolder:
-            return self.createNewContent(command.Argument)
 
         elif command.Name == 'transfer' and self.IsFolder:
             # Transfer command is used for document 'File Save' or 'File Save As'
@@ -334,7 +321,7 @@ class Content(unohelper.Base,
             if not sf.exists(source):
                 raise CommandAbortedException("Error while saving file: %s" % source, self)
             inputstream = sf.openFileRead(source)
-            target = self._user.Provider.SourceURL + g_separator + itemid
+            target = self._user.getTargetUrl(itemid)
             sf.writeFile(target, inputstream)
             inputstream.closeInput()
             # We need to update the Size
@@ -351,22 +338,18 @@ class Content(unohelper.Base,
         pass
 
     # Private methods
-    def _getMetaData(self, uri):
-        print("Content._getMetaData() Uri: '%s'" % uri)
-        if uri in ('', g_separator):
+    def _getMetaData(self, url):
+        if self._user.isRootPath(url):
             itemid = self._user.RootId
         else:
-            itemid = self._user.DataBase.getIdentifier(self._user, uri)
-        print("Content._getMetaData() ItemId: '%s'" % itemid)
+            itemid = self._user.DataBase.getIdentifier(self._user, url)
         if itemid is None:
-            msg = self._logger.resolveString(511, uri)
+            msg = self._logger.resolveString(511, url)
             raise IllegalIdentifierException(msg, self)
         data = self._user.DataBase.getItem(self._user, itemid)
         if data is None:
-            msg = self._logger.resolveString(512, itemid, uri)
-            print("Content._getMetaData() ERREUR ID: %s - Uri: '%s'" % (itemid, uri))
+            msg = self._logger.resolveString(512, itemid, url)
             raise IllegalIdentifierException(msg, self)
-        data.insertValue('Uri', uri)
         return data
 
     def _getCommandInfo(self):
@@ -389,7 +372,7 @@ class Content(unohelper.Base,
         except RuntimeError as e:
             t6 = uno.getTypeByName('com.sun.star.ucb.InsertCommandArgument')
         commands['insert'] = getCommandInfo('insert', t6)
-        if not self.isRoot():
+        if not self.IsRoot:
             commands['delete'] = getCommandInfo('delete', uno.getTypeByName('boolean'))
         try:
             t7 = uno.getTypeByName('com.sun.star.ucb.TransferInfo2')
@@ -420,7 +403,7 @@ class Content(unohelper.Base,
         info = getProperty('CreatableContentsInfo','[]com.sun.star.ucb.ContentInfo', BOUND | RO)
         properties['CreatableContentsInfo'] = info
         properties['CasePreservingURL'] = getProperty('CasePreservingURL', 'string', BOUND | RO)
-        properties['BaseURI'] = getProperty('BaseURI', 'string', BOUND | READONLY)
+        #properties['BaseURI'] = getProperty('BaseURI', 'string', BOUND | READONLY)
         properties['TitleOnServer'] = getProperty('TitleOnServer', 'string', BOUND)
         properties['IsHidden'] = getProperty('IsHidden', 'boolean', BOUND | RO)
         properties['IsVolume'] = getProperty('IsVolume', 'boolean', BOUND | RO)
@@ -432,30 +415,102 @@ class Content(unohelper.Base,
         properties['ConnectionMode'] = getProperty('ConnectionMode', 'short', BOUND | READONLY)
         return properties
 
-    def _setTitle(self, title):
-        try:
-            # If Title change we need to change Identifier.getContentIdentifier()
-            print("Identifier.setTitle() 1 New Title: %s - New: %s" % (title, self._new))
+    def _getPropertiesValues(self, properties):
+        values = []
+        for property in properties:
+            value = None
+            if all((hasattr(property, 'Name'),
+                    property.Name in self._propertySetInfo,
+                    self.MetaData.hasValue(property.Name))):
+                value = self.MetaData.getValue(property.Name)
+                msg = "Name: %s - Value: %s" % (property.Name, value)
+                level = INFO
+                print("content._getPropertiesValues(): %s: %s" % (property.Name, value))
+            else:
+                msg = "ERROR: Requested property: %s is not available" % property.Name
+                level = SEVERE
+            self._logger.logp(level, 'Content', '_getPropertiesValues()', msg)
+            values.append(getNamedValue(property.Name, value))
+        return tuple(values)
+
+    def _setPropertiesValues(self, environment, properties):
+        results = []
+        for property in properties:
+            if all((hasattr(property, 'Name'),
+                    hasattr(property, 'Value'),
+                    property.Name in self._propertySetInfo)):
+                result, level, msg = self._setPropertyValue(environment, property)
+            else:
+                msg = "ERROR: Requested property: %s is not available" % property.Name
+                level = SEVERE
+                error = UnknownPropertyException(msg, self)
+                result = uno.Any('com.sun.star.beans.UnknownPropertyException', error)
+            self._logger.logp(level, 'Content', '_setPropertiesValues()', msg)
+            results.append(result)
+        return tuple(results)
+
+    def _setPropertyValue(self, environment, property):
+        name, value = property.Name, property.Value
+        print("Content._setPropertyValue() 1 %s - %s" % (name, value))
+        if self._propertySetInfo.get(name).Attributes & READONLY:
+            msg = "ERROR: Requested property: %s is READONLY" % name
+            level = SEVERE
+            error = IllegalAccessException(msg, self)
+            result = uno.Any('com.sun.star.lang.IllegalAccessException', error)
+        else:
+            result, level, msg = self._setProperty(environment, name, value)
+        return result, level, msg
+
+
+    def _setProperty(self, environment, name, value):
+        if name == 'Title':
+            result, level, msg = self._setTitle(environment, value)
+        else:
+            self.MetaData.insertValue(name, value)
+            msg = "Set property: %s value: %s" % (name, value)
+            level = INFO
+            result = None
+        return result, level, msg
+
+    def _setTitle(self, environment, title):
+        url = self.getIdentifier().getContentIdentifier()
+        if u'~' in title:
+            msg = "Can't set property: Title value: %s contains invalid character: '~'." % title
+            level = SEVERE
+            data = getPropertyValueSet({'Uri': url,'ResourceName': title})
+            error = getInteractiveAugmentedIOException(msg, environment, 'QUERY', 'INVALID_CHARACTER', data)
+            result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
+        elif not self._user.Provider.SupportDuplicate and self._user.DataBase.hasTitle(self._user.Id, self.ParentId, title):
+                msg = "Can't set property: %s value: %s - Name Clash Error" % ('Title', title)
+                level = SEVERE
+                data = getPropertyValueSet({'TargetFolderURL': url,
+                                            'ClashingName': title,
+                                            'ProposedNewName': '%s(1)' % title})
+                #data = getPropertyValueSet({'Uri': identifier.getContentIdentifier(),'ResourceName': title})
+                error = getInteractiveAugmentedIOException(msg, environment, 'QUERY', 'ALREADY_EXISTING', data)
+                result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
+        else:
+            # FIXME: When you change Title you must change also the Identifier.getContentIdentifier()
             if not self._new:
                 # And as the uri changes we also have to clear this Identifier from the cache.
                 # New Identifier bypass the cache: they are created by the folder's Identifier
                 # (ie: createNewIdentifier()) and have same uri as this folder.
-                self._user.expireIdentifier(self.Uri)
+                self._user.expireIdentifier(self.getIdentifier())
             if self._user.Provider.SupportDuplicate:
                 newtitle = self._user.DataBase.getNewTitle(title, self.ParentId, self.IsFolder)
             else:
                 newtitle = title
             print("Identifier.setTitle() 2 Title: %s - New Title: %s" % (title, newtitle))
-            url = self.ParentUri + g_separator + newtitle
-            self.MetaData.setValue('Uri', url)
-            self.MetaData.setValue('Title', newtitle)
-            self.MetaData.setValue('TitleOnServer', title)
+            self.MetaData.setValue('Title', title)
+            self.MetaData.setValue('TitleOnServer', newtitle)
             # If the identifier is new then the content is not yet in the database.
             # It will be inserted by the insert command of the XCommandProcessor2.execute()
             if not self._new:
                 self._user.DataBase.updateContent(self._user.Id, self.Id, 'Title', title)
-            print("Identifier.setTitle() 3 Title")
-        except Exception as e:
-            msg = "Identifier.setTitle() Error: %s" % traceback.print_exc()
-            print(msg)
+            path = self._user.getContentPath(self.Path, newtitle, self.IsRoot)
+            print("Identifier.setTitle() 3 Path: %s - Url: %s" % (path, self.getIdentifier().getContentIdentifier()))
+            msg = "Set property: %s value: %s" % ('Title', title)
+            level = INFO
+            result = None
+        return result, level, msg
 

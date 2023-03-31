@@ -291,7 +291,7 @@ WHERE U."UserName" = ?;'''
 
     elif name == 'getChildren':
         target = '? || P."Path" AS "TargetURL"'
-        properties = {'Title': 'C."Uri" AS "Title"',
+        properties = {'Title': 'C."Title"',
                       'Size': 'C."Size"',
                       'DateModified': 'C."DateModified"',
                       'DateCreated': 'C."DateCreated"',
@@ -338,13 +338,13 @@ SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Uri" = ?;'''
         query = 'UPDATE "Users" SET "SyncMode"=? WHERE "UserId"=?;'
 
     elif name == 'updateTitle':
-        query = 'UPDATE "Items" SET "TimeStamp"=?, "Title"=?, "SyncMode"=BITOR("SyncMode", 2) WHERE "ItemId"=?;'
+        query = 'UPDATE "Items" SET "TimeStamp"=?, "Title"=?, "SyncMode"=2 WHERE "ItemId"=?;'
 
     elif name == 'updateSize':
-        query = 'UPDATE "Items" SET "TimeStamp"=?, "Size"=?, "DateModified"=?, "SyncMode"=BITOR("SyncMode", 2) WHERE "ItemId"=?;'
+        query = 'UPDATE "Items" SET "TimeStamp"=?, "Size"=?, "DateModified"=?, "SyncMode"=2 WHERE "ItemId"=?;'
 
     elif name == 'updateTrashed':
-        query = 'UPDATE "Items" SET "TimeStamp"=?, "Trashed"=?, "SyncMode"=BITOR("SyncMode", 2) WHERE "ItemId"=?;'
+        query = 'UPDATE "Items" SET "TimeStamp"=?, "Trashed"=?, "SyncMode"=2 WHERE "ItemId"=?;'
 
     elif name == 'updateConnectionMode':
         query = 'UPDATE "Items" SET "ConnectionMode"=? WHERE "ItemId"=?;'
@@ -380,7 +380,7 @@ CREATE PROCEDURE "GetRoot"(IN USERID VARCHAR(100))
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE "Result" CURSOR WITH RETURN FOR
-      SELECT I."ItemId" AS "Id", '' AS "ParentUri", 
+      SELECT I."ItemId" AS "Id", '' AS "Path", 
       '' AS "ParentId", I."ItemId" AS "ObjectId", I."Title", 
       I."Title" AS "TitleOnServer", I."DateCreated", I."DateModified", 
       I2."ContentType", I."MediaType", I."Size", I."Trashed", TRUE AS "IsRoot", 
@@ -404,7 +404,7 @@ CREATE PROCEDURE "GetItem"(IN ITEMID VARCHAR(100),
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE "Result" CURSOR WITH RETURN FOR
-      SELECT I."ItemId" AS "Id", P2."Path" AS "ParentUri", 
+      SELECT I."ItemId" AS "Id", P2."Path", 
        P."ItemId" AS "ParentId", I."ItemId" AS "ObjectId", 
        "GetTitle"(I."Title",T."Title",SWAP) AS "Title", 
        I."Title" AS "TitleOnServer", 
@@ -449,14 +449,12 @@ CREATE PROCEDURE "InsertUser"(IN USERID VARCHAR(100),
                               IN ROOTID VARCHAR(100),
                               IN USERNAME VARCHAR(100),
                               IN DISPLAYNAME VARCHAR(100),
-                              OUT DATETIME TIMESTAMP(6) WITH TIME ZONE)
+                              IN DATETIME TIMESTAMP(6) WITH TIME ZONE)
   SPECIFIC "InsertUser_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
     DECLARE TMP TIMESTAMP(6) WITH TIME ZONE;
-    INSERT INTO "Users" ("UserId", "RootId", "UserName", "DisplayName") VALUES (USERID,ROOTID,USERNAME,DISPLAYNAME);
-    SELECT "TimeStamp" INTO TMP FROM "Users" WHERE "UserId" = USERID;
-    SET DATETIME = TMP;
+    INSERT INTO "Users" ("UserId", "RootId", "UserName", "DisplayName", "TimeStamp") VALUES (USERID,ROOTID,USERNAME,DISPLAYNAME,DATETIME);
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "InsertUser_1" TO "%(Role)s";''' % format
 
@@ -470,7 +468,8 @@ CREATE PROCEDURE "UpdatePushItems"(IN USERID VARCHAR(100),
   BEGIN ATOMIC
     DECLARE TMP TIMESTAMP(6) WITH TIME ZONE;
     UPDATE "Items" SET "SyncMode" = 0 WHERE "ItemId" IN (UNNEST(ITEMS));
-    SELECT "TimeStamp" INTO TMP FROM "Items" WHERE "ItemId" = ITEMS[CARDINALITY(ITEMS)];
+    SELECT MAX("RowStart") INTO TMP FROM "Items" FOR SYSTEM_TIME AS OF CURRENT_TIMESTAMP(6)
+    WHERE "ItemId"=ITEMS[CARDINALITY(ITEMS)];
     UPDATE "Users" SET "TimeStamp" = TMP WHERE "UserId" = USERID;
     SET DATETIME = TMP;
   END;
@@ -491,8 +490,8 @@ CREATE PROCEDURE "GetPushItems"(IN USERID VARCHAR(100),
       (SELECT I."ItemId", 1 AS "ChangeAction", I."RowStart" AS "TimeStamp" 
         FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
         LEFT JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
-          ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
-        WHERE I2."ItemId" IS NULL AND BITAND(I."SyncMode", 1)=1 AND I."UserId" = USERID) 
+          ON I."ItemId" = I2."ItemId" AND I."RowStart" = I2."RowEnd" 
+        WHERE I2."ItemId" IS NULL AND I."SyncMode"=1 AND I."UserId" = USERID) 
       UNION
       (SELECT "ItemId", SUM("ChangeAction"), MAX("TimeStamp") FROM (
         -- com.sun.star.ucb.ChangeAction.UPDATE

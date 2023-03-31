@@ -148,8 +148,8 @@ class DataBase():
         call.setString(2, rootid)
         call.setString(3, username)
         call.setString(4, displayname)
+        call.setObject(5, timestamp)
         call.execute()
-        timestamp = call.getObject(5, None)
         call.close()
         self._mergeRoot(provider, userid, rootid, rootname, root, timestamp)
         data = KeyMap()
@@ -228,8 +228,7 @@ class DataBase():
         # OpenOffice / LibreOffice Columns:
         #    ['Title', 'Size', 'DateModified', 'DateCreated', 'IsFolder', 'TargetURL', 'IsHidden',
         #    'IsVolume', 'IsRemote', 'IsRemoveable', 'IsFloppy', 'IsCompactDisc']
-        # "TargetURL" is done by:
-        #    CONCAT(identifier.getContentIdentifier(), Uri) for File and Foder
+        # "TargetURL" is done by: the database view Path
         select.setString(1, scheme)
         select.setShort(2, mode)
         select.setString(3, itemid)
@@ -243,11 +242,11 @@ class DataBase():
         update.close()
         return value
 
-    def getIdentifier(self, user, uri):
-        print("DataBase.getIdentifier() Uri: '%s'" % uri)
+    def getIdentifier(self, user, url):
+        print("DataBase.getIdentifier() Url: '%s'" % url)
         call = self._getCall('getIdentifier')
         call.setString(1, user.Id)
-        call.setString(2, uri)
+        call.setString(2, url)
         call.execute()
         itemid = call.getString(3)
         if call.wasNull():
@@ -320,7 +319,7 @@ class DataBase():
         call.setLong(2, 1)
         call.setObject(3, timestamp)
         call.setString(4, content.getValue("Id"))
-        call.setString(5, content.getValue("TitleOnServer"))
+        call.setString(5, content.getValue("Title"))
         call.setTimestamp(6, content.getValue('DateCreated'))
         call.setTimestamp(7, content.getValue('DateModified'))
         call.setString(8, content.getValue('MediaType'))
@@ -461,8 +460,9 @@ class DataBase():
         call.setString(1, user.Id)
         call.setArray(2, Array('VARCHAR', itemids))
         call.execute()
-        user.TimeStamp = call.getObject(3, None)
+        timestamp = call.getObject(3, None)
         call.close()
+        user.TimeStamp = timestamp
 
     def getItemParentIds(self, itemid, metadata, start, end):
         call = self._getCall('getItemParentIds')

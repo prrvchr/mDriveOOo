@@ -108,20 +108,14 @@ class DataSource(unohelper.Base,
 
     # FIXME: Get called from ParameterizedProvider.queryContent()
     def queryContent(self, source, authority, identifier):
-        try:
-            print("DataSource.queryContent() 1")
-            user, path = self._getUser(source, identifier.getContentIdentifier(), authority)
-            print("DataSource.queryContent() 2")
-            return user.getContent(identifier, path, authority)
-        except Exception as e:
-            msg = "DataSource.queryContent() Error: %s" % traceback.print_exc()
-            print(msg)
-            raise e
+        user, path = self._getUser(source, identifier.getContentIdentifier(), authority)
+        content = user.getContent(path, authority)
+        return content
 
     # XCloseListener
     def queryClosing(self, source, ownership):
         if ownership:
-            raise CloseVetoException()
+            raise CloseVetoException('cant close', self)
         print("DataSource.queryClosing() ownership: %s" % ownership)
         if self.Replicator.is_alive():
             self.Replicator.cancel()
@@ -133,38 +127,33 @@ class DataSource(unohelper.Base,
 
     # Private methods
     def _getUser(self, source, url, authority):
-        try:
-            print("DataSource._getUser() 1 Url: %s" % url)
-            uri = self._factory.parse(url)
-            if uri is None:
-                msg = self._logger.resolveString(311, url)
+        uri = self._factory.parse(url)
+        if uri is None:
+            msg = self._logger.resolveString(311, url)
+            raise IllegalIdentifierException(msg, source)
+        if authority:
+            if uri.hasAuthority() and uri.getAuthority() != '':
+                name = uri.getAuthority()
+            else:
+                msg = self._logger.resolveString(312, url)
                 raise IllegalIdentifierException(msg, source)
-            if authority:
-                if uri.hasAuthority() and uri.getAuthority() != '':
-                    name = uri.getAuthority()
-                else:
-                    msg = self._logger.resolveString(312, url)
-                    raise IllegalIdentifierException(msg, source)
-            elif self._default:
-                name = self._default
-            else:
-                name = self._getUserName(source, url)
-                self._default = name
-            # User never change... we can cache it...
-            if name in self._users:
-                user = self._users[name]
-            else:
-                user = ContentUser(self._ctx, self._logger, source, self.DataBase, self._provider, name, self._sync, self._lock)
-                self._users[name] = user
-            # FIXME: if the user has been instantiated or comes 
-            # FIXME: from the cache then we can consider it as the default user
-            if authority and self._default != name:
-                self._default = name
-            return user, uri.getPath()
-        except Exception as e:
-            msg = "DataSource._getUser() Error: %s" % traceback.format_exc()
-            print(msg)
-            raise e
+        elif self._default:
+            name = self._default
+        else:
+            name = self._getUserName(source, url)
+            self._default = name
+        # User never change... we can cache it...
+        if name in self._users:
+            user = self._users[name]
+        else:
+            user = ContentUser(self._ctx, self._logger, source, self.DataBase,
+                               self._provider, name, self._sync, self._lock)
+            self._users[name] = user
+        # FIXME: if the user has been instantiated or comes 
+        # FIXME: from the cache then we can consider it as the default user
+        if authority and self._default != name:
+            self._default = name
+        return user, uri.getPath()
 
     def _getUserName(self, source, url):
         name = getOAuth2UserName(self._ctx, self, self._provider.Scheme)
