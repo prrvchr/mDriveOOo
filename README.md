@@ -218,7 +218,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [18]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.png>
 [19]: <https://github.com/prrvchr/jdbcDriverOOo/raw/master/source/jdbcDriverOOo/dist/jdbcDriverOOo.oxt>
 [20]: <https://github.com/prrvchr/oneDriveOOo/raw/master/source/oneDriveOOo/dist/oneDriveOOo.oxt>
-[21]: <https://github.com/prrvchr/oneDriveOOo#configuration>
+[21]: <https://prrvchr.github.io/oneDriveOOo/#configuration>
 [22]: <https://prrvchr.github.io/OAuth2OOo>
 [23]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [24]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
