@@ -174,7 +174,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 - Creation of a [ParameterizedContentProvider][32] able to respond to the two types of Urls supported (named and anonymous).  
   Regular expressions (regex), declared in the [UCB configuration file][33], are now used by OpenOffice/LibreOffice to send URLs to the appropriate ContentProvider.
 
-- Use of the new UNO structure [DateTime With Timezone][34] provided by the extension [jdbcDriverOOo][35] since its version 0.0.4.  
+- Use of the new UNO structure [DateTimeWithTimezone][34] provided by the extension [jdbcDriverOOo][35] since its version 0.0.4.  
   Although this struct already exists in LibreOffice, its creation was necessary in order to remain compatible with OpenOffice (see [Enhancement Request 128560][36]).
 
 - Modification of the [Replicator][23] interface, in order to allow:
