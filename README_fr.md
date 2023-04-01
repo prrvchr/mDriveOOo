@@ -183,10 +183,10 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
   Pour ce faire, trois procédures SQL [GetPushItems][37], [GetPushProperties][38] et [UpdatePushItems][39] sont utilisées pour chaque utilisateur ayant accédé à ses fichiers / dossiers.
 
 - Réécriture de la [fenêtre des options][40] accessible par : **Outils -> Options -> Internet -> oneDriveOOo** afin de permettre :
-  - Accès aux deux fichiers journaux concernant les activités de l'UCP et du réplicateur de données.
-  - Choix de l'ordre de synchronisation.
+  - L'accès aux deux fichiers journaux concernant les activités de l'UCP et du réplicateur de données.
+  - Le choix de l'ordre de synchronisation.
   - La modification de l'intervalle entre deux synchronisations.
-  - Accès à la base de données HsqlDB 2.7.1 sous-jacente gérant vos métadonnées Microsoft oneDrive.
+  - L'accès à la base de données HsqlDB 2.7.1 sous-jacente gérant vos métadonnées Microsoft oneDrive.
 
 - La présence ou l'absence d'une barre oblique finale dans l'Url est maintenant prise en charge.
 
