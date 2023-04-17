@@ -1,4 +1,7 @@
-/*
+#!
+# -*- coding: utf-8 -*-
+
+"""
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
 ║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
@@ -22,25 +25,48 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
- */
+"""
 
-#ifndef __com_sun_star_auth_XRestEnumeration_idl__
-#define __com_sun_star_auth_XRestEnumeration_idl__
+import unohelper
 
-#include <com/sun/star/uno/XInterface.idl>
-#include <com/sun/star/container/XEnumeration.idl>
+from com.sun.star.frame import XTerminateListener
 
-module com { module sun { module star { module auth {
+from com.sun.star.lang import XEventListener
 
-interface XRestEnumeration: com::sun::star::container::XEnumeration
-{
 
-    [attribute, readonly] short PageCount;
-    [attribute, readonly] long RowCount;
-    [attribute, readonly] string SyncToken;
+import traceback
 
-};
 
-}; }; }; };
+class TerminateListener(unohelper.Base,
+                        XTerminateListener):
+    def __init__(self, replicator):
+        self._replicator = replicator
 
-#endif
+# XTerminateListener
+    def queryTermination(self, event):
+        try:
+            self._replicator.dispose()
+        except Exception as e:
+            msg = "TerminateListener Error: %s" % traceback.print_exc()
+            print(msg)
+
+    def notifyTermination(self, event):
+        pass
+
+    def disposing(self, source):
+        pass
+
+
+class EventListener(unohelper.Base,
+                    XEventListener):
+    def __init__(self, datasource):
+        self._datasource = datasource
+
+# XEventListener
+    def disposing(self, event):
+        try:
+            print("EventListener.disposing() ******************")
+            self._datasource.closeConnection(event.Source)
+        except Exception as e:
+            msg = "EventListener Error: %s" % traceback.print_exc()
+            print(msg)

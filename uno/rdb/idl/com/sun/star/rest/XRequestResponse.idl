@@ -28,7 +28,13 @@
 #define __com_sun_star_rest_XRequestResponse_idl__
 
 #include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/io/XInputStream.idl>
+#include <com/sun/star/container/XEnumeration.idl>
 #include <com/sun/star/auth/XRestKeyMap.idl>
+#include <com/sun/star/rest/HTTPException.idl>
+#include <com/sun/star/rest/JSONDecodeException.idl>
+#include <com/sun/star/rest/XJsonParser.idl>
+#include <com/sun/star/rest/RequestParameter.idl>
 
 module com { module sun { module star { module rest {
 
@@ -36,21 +42,44 @@ interface XRequestResponse: com::sun::star::uno::XInterface
 {
 
     void close();
-    string getHeader([in] string Header);
 
-    [attribute, readonly] string Name;
-    [attribute, readonly] string Method;
+    boolean hasHeader([in] string Key);
+
+    string getHeader([in] string Key);
+
+    com::sun::star::auth::XRestKeyMap json()
+         raises(JSONDecodeException);
+
+    any jsonWithParser([in] XJsonParser Parser)
+         raises(JSONDecodeException);
+
+    void raiseForStatus()
+         raises(com::sun::star::rest::HTTPException);
+
+    com::sun::star::container::XEnumeration iterContent([in] long ChunkSize,
+                                                        [in] boolean DecodeUnicode);
+
+    com::sun::star::container::XEnumeration iterLines([in] long ChunkSize,
+                                                      [in] boolean DecodeUnicode,
+                                                      [in] string Delimiter);
+
+    [attribute, readonly] RequestParameter Parameter;
+    [attribute, readonly] string Url;
     [attribute, readonly] long StatusCode;
+    [attribute, readonly] string Reason;
+    [attribute, readonly] string Links;
     [attribute, readonly] string ApparentEncoding;
     [attribute] string Encoding;
     [attribute, readonly] string Text;
     [attribute, readonly] sequence<byte> Content;
-    [attribute, readonly] any Data;
-    [attribute, readonly] com::sun::star::auth::XRestKeyMap Json;
+    [attribute, readonly] com::sun::star::auth::XRestKeyMap Headers;
+    [attribute, readonly] sequence<XRequestResponse> History;
     [attribute, readonly] boolean Ok;
     [attribute, readonly] boolean IsPermanentRedirect;
     [attribute, readonly] boolean IsRedirect;
     [attribute, readonly] long Elapsed;
+    [attribute, readonly] com::sun::star::io::XInputStream Raw;
+
 
 };
 

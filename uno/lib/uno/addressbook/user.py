@@ -36,10 +36,8 @@ from com.sun.star.logging.LogLevel import SEVERE
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 from com.sun.star.ucb.ConnectionMode import ONLINE
 
-from com.sun.star.sdbc import XRestUser
-
-from .oauth2lib import getRequest
-from .oauth2lib import g_oauth2
+from .oauth2 import getRequest
+from .oauth2 import g_oauth2
 
 from .unotool import executeDispatch
 
@@ -53,8 +51,7 @@ g_basename = 'User'
 import traceback
 
 
-class User(unohelper.Base,
-           XRestUser):
+class User(unohelper.Base):
     def __init__(self, ctx, database, provider, name, password=''):
         self._ctx = ctx
         self.Fields = database.getUserFields()

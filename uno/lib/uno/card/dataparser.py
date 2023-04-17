@@ -27,14 +27,24 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .oauth2config import g_oauth2
+import unohelper
 
-from .oauth2lib import InteractionRequest
-from .oauth2lib import NoOAuth2
-from .oauth2lib import OAuth2OOo
+from com.sun.star.rest import XJsonParser
 
-from .oauth2tools import getRequest
-from .oauth2tools import getOAuth2
+from .unolib import KeyMap
 
-from .oauth2core import getOAuth2UserName
-from .oauth2core import getOAuth2Token
+
+class JsonParser(unohelper.Base,
+                 XJsonParser):
+    def __init__(self, field, **kwargs):
+        self._field = field
+        self._keys = kwargs
+
+    def parse(self, data):
+        keymap = KeyMap()
+        for key, value in data:
+            if isinstance(value, list):
+                value = tuple(value)
+            keymap.insertValue(self._keys.get(key, key), value)
+        return keymap.getValue(self._field) if keymap.hasValue(self._field) else keymap
+

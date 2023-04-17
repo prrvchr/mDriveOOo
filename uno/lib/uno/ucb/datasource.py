@@ -38,8 +38,8 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb import IllegalIdentifierException
 
-from .oauth2lib import g_oauth2
-from .oauth2lib import getOAuth2UserName
+from .oauth2 import g_oauth2
+from .oauth2 import getOAuth2UserName
 
 from .unotool import createService
 from .unotool import getResourceLocation
@@ -86,7 +86,7 @@ class DataSource(unohelper.Base,
         self._sync = sync
         self._lock = lock
         self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
-        self._provider = Provider(ctx)
+        self._provider = Provider(ctx, logger)
         datasource, url, created = self._getDataSource(True)
         self.DataBase = DataBase(self._ctx, datasource)
         if created:

@@ -24,19 +24,28 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_auth_RestRequestEnumerator_idl__
-#define __com_sun_star_auth_RestRequestEnumerator_idl__
+#ifndef __com_sun_star_rest_RequestParameter_idl__
+#define __com_sun_star_rest_RequestParameter_idl__
 
-#include <com/sun/star/auth/RestRequestToken.idl>
+#include <com/sun/star/io/XInputStream.idl>
 
-module com { module sun { module star { module auth {
+module com { module sun { module star { module rest {
 
-struct RestRequestEnumerator
+struct RequestParameter
 {
 
-    ::com::sun::star::auth::RestRequestToken Token;
-    string Field;
-
+    string Name;
+    string Method;
+    string Url;
+    string Header;
+    string Query;
+    string Data;
+    string Json;
+    com::sun::star::io::XInputStream DataSink;
+    boolean NoAuth;
+    sequence<string> Auth;
+    boolean NoRedirect;
+    boolean NoVerify;
 
 };
 

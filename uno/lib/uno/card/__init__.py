@@ -1,4 +1,7 @@
-/*
+#!
+# -*- coding: utf-8 -*-
+
+"""
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
 ║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
@@ -22,25 +25,30 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
- */
+"""
 
-#ifndef __com_sun_star_auth_RestRequestTokenType_idl__
-#define __com_sun_star_auth_RestRequestTokenType_idl__
+from .configuration import g_identifier
+from .configuration import g_extension
+from .configuration import g_defaultlog
+from .configuration import g_scheme
+from .configuration import g_host
 
-module com { module sun { module star { module auth {
+from .datasource import DataSource
 
-constants RestRequestTokenType
-{
+from .logger import getLogger
 
-    const long TOKEN_NONE = 0;
-    const long TOKEN_URL = 1;
-    const long TOKEN_REDIRECT = 2;
-    const long TOKEN_QUERY = 4;
-    const long TOKEN_JSON = 8;
-    const long TOKEN_SYNC = 16;
+from .options import OptionsManager
 
-};
+from .dbtool import getDriverPropertyInfos
 
-}; }; }; };
+from .providerbase import getSqlException
 
-#endif
+from .unotool import createMessageBox
+from .unotool import createService
+from .unotool import getDesktop
+from .unotool import getDialog
+from .unotool import getFileSequence
+from .unotool import getResourceLocation
+from .unotool import getSimpleFile
+from .unotool import getStringResource
+

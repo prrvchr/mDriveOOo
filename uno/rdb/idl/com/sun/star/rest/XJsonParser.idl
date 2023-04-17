@@ -24,23 +24,17 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_auth_XRestRequest_idl__
-#define __com_sun_star_auth_XRestRequest_idl__
+#ifndef __com_sun_star_rest_XJsonParser_idl__
+#define __com_sun_star_rest_XJsonParser_idl__
 
 #include <com/sun/star/uno/XInterface.idl>
-#include <com/sun/star/beans/Optional.idl>
-#include <com/sun/star/auth/RestRequestParameter.idl>
-#include <com/sun/star/auth/XRestKeyMap.idl>
 
-module com { module sun { module star { module auth {
+module com { module sun { module star { module rest {
 
-interface XRestRequest: com::sun::star::uno::XInterface
+interface XJsonParser: com::sun::star::uno::XInterface
 {
 
-    any getWarnings();
-    void clearWarnings();
-
-    ::com::sun::star::beans::Optional<::com::sun::star::auth::XRestKeyMap> execute();
+    any parse([in] any Response);
 
 };
 

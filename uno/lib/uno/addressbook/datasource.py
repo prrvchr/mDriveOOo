@@ -35,8 +35,6 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.sdb.CommandType import QUERY
 
-from com.sun.star.sdbc import XRestDataSource
-
 from .configuration import g_identifier
 from .configuration import g_group
 from .configuration import g_compact
@@ -54,8 +52,7 @@ from .unotool import getDesktop
 import traceback
 
 
-class DataSource(unohelper.Base,
-                 XRestDataSource):
+class DataSource(unohelper.Base):
     def __init__(self, ctx):
         self._ctx = ctx
         self._users = {}
@@ -68,7 +65,6 @@ class DataSource(unohelper.Base,
         desktop = getDesktop(ctx)
         desktop.addTerminateListener(listener)
 
-# XRestDataSource
     def getConnection(self, user, password):
         connection = self._database.getConnection(user, password)
         connection.addEventListener(self._listener)

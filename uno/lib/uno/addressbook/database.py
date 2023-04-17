@@ -35,8 +35,6 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.sdb.CommandType import QUERY
 
-from com.sun.star.sdbc import XRestDataBase
-
 from .unolib import KeyMap
 
 from .unotool import parseDateTime
@@ -83,8 +81,7 @@ import traceback
 from time import sleep
 
 
-class DataBase(unohelper.Base,
-               XRestDataBase):
+class DataBase(unohelper.Base):
     def __init__(self, ctx):
         self._ctx = ctx
         self._statement = None

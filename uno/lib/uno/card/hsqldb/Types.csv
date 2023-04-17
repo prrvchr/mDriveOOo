@@ -1,0 +1,9 @@
+Type|Value|Column|Order
+0|car|Car|1
+1|cell|Mobile|1
+2|fax|Fax|1
+3|home|Home|0
+4|other|Other|0
+5|pager|Pager|1
+6|voice|Phone|1
+7|work|Work|0

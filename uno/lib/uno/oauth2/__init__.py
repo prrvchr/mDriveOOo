@@ -1,4 +1,7 @@
-/*
+#!
+# -*- coding: utf-8 -*-
+
+"""
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
 ║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
@@ -22,25 +25,17 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
- */
+"""
 
-#ifndef __com_sun_star_auth_XRestDataParser_idl__
-#define __com_sun_star_auth_XRestDataParser_idl__
+from .oauth2config import g_oauth2
 
-#include <com/sun/star/uno/XInterface.idl>
+from .oauth2lib import InteractionRequest
+from .oauth2lib import NoOAuth2
+from .oauth2lib import OAuth2OOo
 
-module com { module sun { module star { module auth {
+from .oauth2tools import getRequest
+from .oauth2tools import getOAuth2
 
-interface XRestDataParser: com::sun::star::uno::XInterface
-{
+from .oauth2core import getOAuth2UserName
+from .oauth2core import getOAuth2Token
 
-    any parseResponse([in] any Response);
-
-    [attribute, readonly] string DataType;
-
-};
-
-
-}; }; }; };
-
-#endif

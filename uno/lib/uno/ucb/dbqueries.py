@@ -328,7 +328,7 @@ SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Uri" = ?;'''
 
 # Insert Queries
     elif name == 'insertNewIdentifier':
-        query = 'INSERT INTO "Identifiers"("UserId","ItemId")VALUES(?,?);'
+        query = 'INSERT INTO "Identifiers"("UserId", "ItemId") VALUES (?, ?);'
 
 # Update Queries
     elif name == 'updateToken':
@@ -445,16 +445,38 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "GetNewTitle_1" TO "%(Role)s";''' % format
 
     elif name == 'createInsertUser':
         query = '''\
-CREATE PROCEDURE "InsertUser"(IN USERID VARCHAR(100),
-                              IN ROOTID VARCHAR(100),
-                              IN USERNAME VARCHAR(100),
-                              IN DISPLAYNAME VARCHAR(100),
-                              IN DATETIME TIMESTAMP(6) WITH TIME ZONE)
+CREATE PROCEDURE "InsertUser"(IN UserId VARCHAR(100),
+                              IN RootId VARCHAR(100),
+                              IN UserName VARCHAR(100),
+                              IN DisplayName VARCHAR(100),
+                              IN Title VARCHAR(100),
+                              IN Created TIMESTAMP(6),
+                              IN Modified TIMESTAMP(6),
+                              IN MediaType VARCHAR(100),
+                              IN Trashed BOOLEAN,
+                              IN CanAddChild BOOLEAN,
+                              IN CanRename BOOLEAN,
+                              IN IsReadOnly BOOLEAN,
+                              IN IsVersionable BOOLEAN,
+                              IN DateTime TIMESTAMP(6) WITH TIME ZONE)
   SPECIFIC "InsertUser_1"
   MODIFIES SQL DATA
+  DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE TMP TIMESTAMP(6) WITH TIME ZONE;
-    INSERT INTO "Users" ("UserId", "RootId", "UserName", "DisplayName", "TimeStamp") VALUES (USERID,ROOTID,USERNAME,DISPLAYNAME,DATETIME);
+    DECLARE RSLT CURSOR WITH RETURN FOR
+      SELECT U."UserId", U."RootId", U."Token", I."Title" "RootName", U."TimeStamp", U."SyncMode" 
+      FROM "Users" AS U 
+      INNER JOIN "Items" AS I ON U."RootId" = I."ItemId" 
+      WHERE U."UserName" = UserName FOR READ ONLY;
+    INSERT INTO "Users" ("UserId", "RootId", "UserName", "DisplayName", "TimeStamp") 
+                 VALUES (UserId, RootId, UserName, DisplayName, DateTime);
+    INSERT INTO "Items" ("UserId", "ItemId", "Title", "DateCreated", "DateModified", 
+                         "MediaType", "Size", "Trashed", "ConnectionMode", "TimeStamp") 
+                 VALUES (UserId, RootId, Title, Created, Modified, MediaType, 0, Trashed, 0, DateTime);
+    INSERT INTO "Capabilities" ("UserId", "ItemId", "CanAddChild", "CanRename", 
+                                "IsReadOnly", "IsVersionable", "TimeStamp")
+                        VALUES (UserId, RootId, CanAddChild, CanRename, IsReadOnly, IsVersionable, DateTime);
+    OPEN RSLT;
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "InsertUser_1" TO "%(Role)s";''' % format
 
@@ -582,6 +604,30 @@ CREATE PROCEDURE "GetItemParentIds"(IN ITEMID VARCHAR(100),
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetItemParentIds_1" TO "%(Role)s";''' % format
 
+    elif name == 'createPullChanges':
+        query = '''\
+CREATE PROCEDURE "PullChanges"(IN UserId VARCHAR(100),
+                               IN ItemId VARCHAR(100),
+                               IN Trashed BOOLEAN,
+                               IN Title VARCHAR(100),
+                               IN Modified TIMESTAMP(6),
+                               IN DateTime TIMESTAMP(6) WITH TIME ZONE)
+  SPECIFIC "PullChanges_1"
+  MODIFIES SQL DATA
+  BEGIN ATOMIC
+    IF Trashed THEN
+      DELETE FROM "Items" WHERE "UserId"=UserId AND "ItemId"=ItemId;
+    ELSEIF Title IS NULL THEN
+      UPDATE "Items" SET "DateModified"=Modified, "TimeStamp"=DateTime 
+        WHERE "UserId"=UserId AND "ItemId"=ItemId;
+    ELSE
+      UPDATE "Items" SET "Title"=Title, "DateModified"=Modified, "TimeStamp"=DateTime 
+        WHERE "UserId"=UserId AND "ItemId"=ItemId;
+    END IF;
+  END;
+GRANT EXECUTE ON SPECIFIC ROUTINE "PullChanges_1" TO "%(Role)s";''' % format
+
+
     elif name == 'createMergeItem':
         query = '''\
 CREATE PROCEDURE "MergeItem"(IN "UserId" VARCHAR(100),
@@ -699,9 +745,11 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
     elif name == 'getItemParentIds':
         query = 'CALL "GetItemParentIds"(?,?,?,?,?)'
     elif name == 'insertUser':
-        query = 'CALL "InsertUser"(?,?,?,?,?)'
+        query = 'CALL "InsertUser"(?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'mergeItem':
         query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    elif name == 'pullChanges':
+        query = 'CALL "PullChanges"(?,?,?,?,?,?)'
     elif name == 'insertItem':
         query = 'CALL "InsertItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
 

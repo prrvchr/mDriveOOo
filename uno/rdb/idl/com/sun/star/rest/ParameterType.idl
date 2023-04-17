@@ -24,29 +24,19 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_auth_RestRequestParameter_idl__
-#define __com_sun_star_auth_RestRequestParameter_idl__
+#ifndef __com_sun_star_rest_ParameterType_idl__
+#define __com_sun_star_rest_ParameterType_idl__
 
-#include <com/sun/star/auth/RestRequestEnumerator.idl>
+module com { module sun { module star { module rest {
 
-module com { module sun { module star { module auth {
-
-struct RestRequestParameter
+constants ParameterType
 {
 
-    string Name;
-    string Method;
-    string Url;
-    string Header;
-    string Query;
-    string Data;
-    string Json;
-    string Optional;
-    ::com::sun::star::auth::RestRequestEnumerator Enumerator;
-    boolean NoAuth;
-    sequence<string> Auth;
-    boolean NoRedirect;
-    boolean NoVerify;
+    const short NONE = 0;
+    const short URL = 1;
+    const short QUERY = 2;
+    const short HEADER = 3;
+    const short JSON = 4;
 
 };
 

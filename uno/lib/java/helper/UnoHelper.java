@@ -5,6 +5,7 @@ import java.io.StringWriter;
 import java.lang.IllegalAccessException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -29,6 +30,7 @@ import com.sun.star.lang.XServiceInfo;
 import com.sun.star.logging.LogLevel;
 import com.sun.star.resource.XStringResourceResolver;
 import com.sun.star.sdbc.SQLException;
+import com.sun.star.sdbc.XRow;
 import com.sun.star.uno.Any;
 import com.sun.star.uno.AnyConverter;
 import com.sun.star.uno.Exception;
@@ -457,7 +459,55 @@ public class UnoHelper
         return value;
     }
 
-    public static com.sun.star.util.DateTimeWithTimezone getUnoDateTimeWithTimezone(java.time.OffsetDateTime datetime)
+    public static io.github.prrvchr.css.util.TimeWithTimezone getTimeWithTimezone(java.time.OffsetTime time)
+    {
+        io.github.prrvchr.css.util.TimeWithTimezone value = new io.github.prrvchr.css.util.TimeWithTimezone();
+        if (time != null) {
+            value.TimeInTZ = getTime(time.toLocalTime());
+            value.Timezone = getUnoTimezone(time.getOffset());
+        }
+        return value;
+    }
+
+    public static io.github.prrvchr.css.util.Time getTime(java.time.LocalTime time)
+    {
+        io.github.prrvchr.css.util.Time value = new io.github.prrvchr.css.util.Time();
+        if (time != null) {
+            value.Hours = (short) time.getHour();
+            value.Minutes = (short) time.getMinute();
+            value.Seconds = (short) time.getSecond();
+            value.NanoSeconds = time.getNano();
+        }
+        return value;
+    }
+
+    public static io.github.prrvchr.css.util.DateTimeWithTimezone getDateTimeWithTimezone(OffsetDateTime datetime)
+    {
+        io.github.prrvchr.css.util.DateTimeWithTimezone value = new io.github.prrvchr.css.util.DateTimeWithTimezone();
+        if (datetime != null) {
+            value.DateTimeInTZ = getDateTime(datetime.toLocalDateTime());
+            value.Timezone = getUnoTimezone(datetime.getOffset());
+        }
+        return value;
+    }
+
+    public static io.github.prrvchr.css.util.DateTime getDateTime(java.time.LocalDateTime datetime)
+    {
+        io.github.prrvchr.css.util.DateTime value = new io.github.prrvchr.css.util.DateTime();
+        if (datetime != null) {
+            value.Year = (short) datetime.getYear();
+            value.Month = (short) datetime.getMonthValue();
+            value.Day = (short) datetime.getDayOfMonth();
+            value.Hours = (short) datetime.getHour();
+            value.Minutes = (short) datetime.getMinute();
+            value.Seconds = (short) datetime.getSecond();
+            value.NanoSeconds = datetime.getNano();
+            value.IsUTC = false;
+        }
+        return value;
+    }
+
+    public static com.sun.star.util.DateTimeWithTimezone getUnoDateTimeWithTimezone(OffsetDateTime datetime)
     {
         com.sun.star.util.DateTimeWithTimezone value = new com.sun.star.util.DateTimeWithTimezone();
         if (datetime != null) {
@@ -519,14 +569,14 @@ public class UnoHelper
         return java.time.OffsetTime.of(getJavaLocalTime(time.TimeInTZ), getJavaZoneOffset(time.Timezone));
     }
 
-    public static java.time.OffsetDateTime getJavaOffsetDateTime(com.sun.star.util.DateTimeWithTimezone datetime)
+    public static OffsetDateTime getJavaOffsetDateTime(com.sun.star.util.DateTimeWithTimezone datetime)
     {
-        return java.time.OffsetDateTime.of(getJavaLocalDateTime(datetime.DateTimeInTZ), getJavaZoneOffset(datetime.Timezone));
+        return OffsetDateTime.of(getJavaLocalDateTime(datetime.DateTimeInTZ), getJavaZoneOffset(datetime.Timezone));
     }
 
-    public static java.time.OffsetDateTime getJavaOffsetDateTime(DateTimeWithTimezone datetime)
+    public static OffsetDateTime getJavaOffsetDateTime(DateTimeWithTimezone datetime)
     {
-        return java.time.OffsetDateTime.of(getJavaLocalDateTime(datetime.DateTimeInTZ), getJavaZoneOffset(datetime.Timezone));
+        return OffsetDateTime.of(getJavaLocalDateTime(datetime.DateTimeInTZ), getJavaZoneOffset(datetime.Timezone));
     }
 
     public static Object getObjectFromResult(java.sql.ResultSet result, int index)
@@ -553,39 +603,159 @@ public class UnoHelper
         return value;
     }
 
-    public static Object getValueFromResult(java.sql.ResultSet result, int index)
+    public static Object getResultValue(java.sql.ResultSet result, int index)
     {
-        // TODO: 'TINYINT' is buggy: don't use it
+        boolean retrieved = true;
         Object value = null;
         try {
-            String dbtype = result.getMetaData().getColumnTypeName(index);
-            if (dbtype == "VARCHAR")
+            switch (result.getMetaData().getColumnType(index)) {
+            case java.sql.Types.CHAR:
+            case java.sql.Types.VARCHAR:
                 value = result.getString(index);
-            else if (dbtype == "BOOLEAN")
+                break;
+            case java.sql.Types.BOOLEAN:
                 value = result.getBoolean(index);
-            else if (dbtype == "TINYINT")
+                break;
+            case java.sql.Types.TINYINT:
+                value = result.getByte(index);
+                break;
+            case java.sql.Types.SMALLINT:
                 value = result.getShort(index);
-            else if (dbtype == "SMALLINT")
-                value = result.getShort(index);
-            else if (dbtype == "INTEGER")
+                break;
+            case java.sql.Types.INTEGER:
                 value = result.getInt(index);
-            else if (dbtype == "BIGINT")
+                break;
+            case java.sql.Types.BIGINT:
                 value = result.getLong(index);
-            else if (dbtype == "FLOAT")
+                break;
+            case java.sql.Types.FLOAT:
                 value = result.getFloat(index);
-            else if (dbtype == "DOUBLE")
+                break;
+            case java.sql.Types.DOUBLE:
                 value = result.getDouble(index);
-            else if (dbtype == "TIMESTAMP")
+                break;
+            case java.sql.Types.TIMESTAMP:
                 value = result.getTimestamp(index);
-            else if (dbtype == "TIME")
+                break;
+            case java.sql.Types.TIME:
                 value = result.getTime(index);
-            else if (dbtype == "DATE")
+                break;
+            case java.sql.Types.DATE:
                 value = result.getDate(index);
+                break;
+            case java.sql.Types.BINARY:
+                value = result.getBytes(index);
+                break;
+            case java.sql.Types.TIME_WITH_TIMEZONE:
+            case java.sql.Types.TIMESTAMP_WITH_TIMEZONE:
+                value = result.getObject(index);
+                break;
+            default:
+                retrieved = false;
+            }
+            if(retrieved && result.wasNull()) value = null;
         }
         catch (java.sql.SQLException e) {
             e.getStackTrace();
         }
         return value;
+    }
+
+    public static Object getRowValue(XRow row, int dbtype, int index)
+       throws SQLException
+    {
+        return getRowValue(row, dbtype, index, null);
+    }
+
+    public static Object getRowValue(XRow row, int dbtype, int index, Object value)
+        throws SQLException
+    {
+        boolean retrieved = true;
+        switch (dbtype) {
+        case java.sql.Types.CHAR:
+        case java.sql.Types.VARCHAR:
+            value = row.getString(index);
+            break;
+        case java.sql.Types.BOOLEAN:
+            value = row.getBoolean(index);
+            break;
+        case java.sql.Types.TINYINT:
+            value = row.getByte(index);
+            break;
+        case java.sql.Types.SMALLINT:
+            value = row.getShort(index);
+            break;
+        case java.sql.Types.INTEGER:
+            value = row.getInt(index);
+            break;
+        case java.sql.Types.BIGINT:
+            value = row.getLong(index);
+            break;
+        case java.sql.Types.FLOAT:
+            value = row.getFloat(index);
+            break;
+        case java.sql.Types.DOUBLE:
+            value = row.getDouble(index);
+            break;
+        case java.sql.Types.TIMESTAMP:
+            value = row.getTimestamp(index);
+            break;
+        case java.sql.Types.TIME:
+            value = row.getTime(index);
+            break;
+        case java.sql.Types.DATE:
+            value = row.getDate(index);
+            break;
+        case java.sql.Types.BINARY:
+            value = row.getBytes(index);
+            break;
+        case java.sql.Types.ARRAY:
+            value = row.getArray(index);
+            break;
+        case java.sql.Types.TIME_WITH_TIMEZONE:
+        case java.sql.Types.TIMESTAMP_WITH_TIMEZONE:
+            value = row.getObject(index, null);
+            break;
+        default:
+            retrieved = false;
+        }
+        if(retrieved && row.wasNull()) value = null;
+        return value;
+    }
+
+    public static DateTimeWithTimezone currentDateTimeInTZ() 
+    {
+        return currentDateTimeInTZ(true);
+    }
+
+    public static DateTimeWithTimezone currentDateTimeInTZ(boolean utc) 
+    {
+        DateTimeWithTimezone dtz = new DateTimeWithTimezone();
+        OffsetDateTime now = utc ? OffsetDateTime.now(java.time.ZoneOffset.UTC) : OffsetDateTime.now();
+        dtz.DateTimeInTZ = _currentDateTime(now, utc);
+        dtz.Timezone =  utc ? 0 : (short) (now.getOffset().getTotalSeconds() / 60);
+        return dtz;
+    }
+
+    public static DateTime currentDateTime(boolean utc)
+    {
+        OffsetDateTime now = utc ? OffsetDateTime.now(java.time.ZoneOffset.UTC) : OffsetDateTime.now();
+        return _currentDateTime(now, utc);
+    }
+
+    private static DateTime _currentDateTime(OffsetDateTime now,
+                                             boolean utc)
+    {
+        DateTime dt = new DateTime();
+        dt.Year = (short) now.getYear();
+        dt.Month = (short) now.getMonthValue();
+        dt.Day = (short) now.getDayOfMonth();
+        dt.Hours = (short) now.getHour();
+        dt.Minutes = (short) now.getMinute();
+        dt.Seconds = (short) now.getSecond();
+        dt.NanoSeconds = now.getNano();
+        dt.IsUTC = utc;
+        return dt;
     }
 
     public static Integer getConstantValue(Class<?> clazz, String name)

@@ -1,0 +1,10 @@
+Property|Value|Getter|Method|View
+0|UID|getUid|1|Uid
+1|FN|getFormattedNames|1|Owners
+2|EMAIL|getEmails|2|Emails
+3|ADR|getAddresses|2|Addresses
+4|N|getStructuredNames|1|Names
+5|ORG|getOrganizations|1|Organizations
+6|TEL|getTelephoneNumbers|2|Telephones
+7|TITLE|getTitles|1|Titles
+8|CATEGORIES|getCategoriesList|0|

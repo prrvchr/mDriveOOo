@@ -24,23 +24,47 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_auth_RestRequestToken_idl__
-#define __com_sun_star_auth_RestRequestToken_idl__
+#ifndef __com_sun_star_rest_XRequestParameter_idl__
+#define __com_sun_star_rest_XRequestParameter_idl__
 
-module com { module sun { module star { module auth {
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/io/XInputStream.idl>
 
-struct RestRequestToken
+module com { module sun { module star { module rest {
+
+interface XRequestParameter: com::sun::star::uno::XInterface
 {
 
-    long Type;
-    string Field;
-    string Value;
-    boolean IsConditional;
-    string ConditionField;
-    any ConditionValue;
-    string SyncField;
+    boolean hasNextPage();
+    void setNextPage([in] string Key,
+                     [in] string Value,
+                     [in] short ParameterType);
+
+    void updateHeaders([in] string Header,
+                       [in] string Value);
+
+    [attribute, readonly] string Name;
+    [attribute] string Method;
+    [attribute] string Url;
+    [attribute] string Headers;
+    [attribute] string Query;
+    [attribute] string Data;
+    [attribute] string Json;
+    [attribute] com::sun::star::io::XInputStream DataSink;
+    [attribute] boolean NoAuth;
+    [attribute] sequence<string> Auth;
+    [attribute] boolean NoRedirect;
+    [attribute] boolean NoVerify;
+    [attribute] boolean Stream;
+    [attribute] string SyncToken;
+    [attribute, readonly] long PageCount;
+    [attribute, readonly] string PageKey;
+    [attribute, readonly] string PageValue;
+    [attribute, readonly] short PageType;
+
 
 };
+
 
 }; }; }; };
 

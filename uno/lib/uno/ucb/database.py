@@ -32,7 +32,10 @@ import unohelper
 
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
+
 from com.sun.star.sdb.CommandType import QUERY
+
+from com.sun.star.sdbc.DataType import VARCHAR
 
 from io.github.prrvchr.css.util import DateTimeWithTimezone
 
@@ -53,7 +56,7 @@ from .dbtool import currentUnoDateTime
 from .dbtool import executeSqlQueries
 from .dbtool import getDataSourceCall
 from .dbtool import getDateTimeInTZToString
-from .dbtool import getKeyMapFromResult
+from .dbtool import getDataFromResult
 from .dbtool import executeQueries
 
 from .dbinit import getStaticTables
@@ -124,7 +127,7 @@ class DataBase():
         select.setString(1, name)
         result = select.executeQuery()
         if result.next():
-            user = getKeyMapFromResult(result)
+            user = getDataFromResult(result)
         result.close()
         select.close()
         return user
@@ -136,31 +139,29 @@ class DataBase():
         dtz.DateTimeInTZ.Day = 1
         return dtz
 
-    def insertUser(self, provider, user, root):
-        userid = provider.getUserId(user)
-        username = provider.getUserName(user)
-        displayname = provider.getUserDisplayName(user)
-        rootid = provider.getRootId(root)
-        rootname = provider.getRootTitle(root)
+    def insertUser(self, user):
+        data = None
         timestamp = currentDateTimeInTZ()
         call = self._getCall('insertUser')
-        call.setString(1, userid)
-        call.setString(2, rootid)
-        call.setString(3, username)
-        call.setString(4, displayname)
-        call.setObject(5, timestamp)
-        call.execute()
+        call.setString(1, user.get('UserId'))
+        call.setString(2, user.get('RootId'))
+        call.setString(3, user.get('UserName'))
+        call.setString(4, user.get('DisplayName'))
+        call.setString(5, user.get("Title"))
+        call.setTimestamp(6, user.get('DateCreated'))
+        call.setTimestamp(7, user.get('DateModified'))
+        call.setString(8, user.get('MediaType'))
+        call.setBoolean(9, user.get('Trashed'))
+        call.setBoolean(10, user.get('CanAddChild'))
+        call.setBoolean(11, user.get('CanRename'))
+        call.setBoolean(12, user.get('IsReadOnly'))
+        call.setBoolean(13, user.get('IsVersionable'))
+        call.setObject(14, timestamp)
+        result = call.executeQuery() 
+        if result.next():
+            data = getDataFromResult(result)
+        result.close()
         call.close()
-        self._mergeRoot(provider, userid, rootid, rootname, root, timestamp)
-        data = KeyMap()
-        data.insertValue('UserId', userid)
-        data.insertValue('UserName', username)
-        data.insertValue('RootId', rootid)
-        data.insertValue('RootName', rootname)
-        data.insertValue('Token', '')
-        data.insertValue('SyncMode', 0)
-        print("DataBase.insertUser() TimeStamp: %s" % getDateTimeInTZToString(timestamp))
-        data.insertValue('TimeStamp', timestamp)
         return data
 
     def getContentType(self):
@@ -175,10 +176,10 @@ class DataBase():
 
 # Procedures called by the Replicator
     def getMetaData(self, user, item):
-        itemid = item.getValue('ItemId')
+        itemid = item.get('ItemId')
         metadata = self.getItem(user, itemid, False)
-        atroot = metadata.getValue('ParentId') == user.RootId
-        metadata.insertValue('AtRoot', atroot)
+        atroot = metadata.get('ParentId') == user.RootId
+        metadata['AtRoot'] = atroot
         return metadata
 
 # Procedures called by the Content
@@ -195,29 +196,26 @@ class DataBase():
         result = select.executeQuery()
         if result.next():
             print("Content.getItem() 2 isroot: '%s'" % isroot)
-            item = getKeyMapFromResult(result)
+            item = getDataFromResult(result)
         result.close()
         select.close()
         return item
 
-    def updateFolderContent(self, user, content):
-        rows = []
+    def updateFolderContent(self, iterator, userid):
+        count = 0
         timestamp = currentDateTimeInTZ()
         call = self._getCall('mergeItem')
-        call.setString(1, user.Id)
+        call.setString(1, userid)
         call.setLong(2, 0)
         call.setObject(3, timestamp)
-        enumerator = user.Provider.getFolderContent(user.Request, content)
-        while enumerator.hasMoreElements():
-            item = enumerator.nextElement()
-            itemid = user.Provider.getItemId(item)
-            parents = user.Provider.getItemParent(item, user.RootId)
-            rows.append(self._mergeItem(call, user.Provider, item, itemid, parents, timestamp))
+        for item in iterator:
+            self._mergeItem(call, item)
             call.addBatch()
-        if enumerator.RowCount > 0:
+            count += 1
+        if count > 0:
             call.executeBatch()
         call.close()
-        return all(rows)
+        return count > 0
 
     def getChildren(self, username, itemid, properties, mode, scheme):
         #TODO: Can't have a ResultSet of type SCROLL_INSENSITIVE with a Procedure,
@@ -318,18 +316,18 @@ class DataBase():
         call.setString(1, userid)
         call.setLong(2, 1)
         call.setObject(3, timestamp)
-        call.setString(4, content.getValue("Id"))
-        call.setString(5, content.getValue("Title"))
-        call.setTimestamp(6, content.getValue('DateCreated'))
-        call.setTimestamp(7, content.getValue('DateModified'))
-        call.setString(8, content.getValue('MediaType'))
-        call.setLong(9, content.getValue('Size'))
-        call.setBoolean(10, content.getValue('Trashed'))
-        call.setBoolean(11, content.getValue('CanAddChild'))
-        call.setBoolean(12, content.getValue('CanRename'))
-        call.setBoolean(13, content.getValue('IsReadOnly'))
-        call.setBoolean(14, content.getValue('IsVersionable'))
-        call.setString(15, content.getValue("ParentId"))
+        call.setString(4, content.get("Id"))
+        call.setString(5, content.get("Title"))
+        call.setTimestamp(6, content.get('DateCreated'))
+        call.setTimestamp(7, content.get('DateModified'))
+        call.setString(8, content.get('MediaType'))
+        call.setLong(9, content.get('Size'))
+        call.setBoolean(10, content.get('Trashed'))
+        call.setBoolean(11, content.get('CanAddChild'))
+        call.setBoolean(12, content.get('CanRename'))
+        call.setBoolean(13, content.get('IsReadOnly'))
+        call.setBoolean(14, content.get('IsVersionable'))
+        call.setString(15, content.get("ParentId"))
         status = call.execute() == 0
         content.setValue('BaseURI', call.getString(16))
         content.setValue('Title', call.getString(17))
@@ -387,20 +385,17 @@ class DataBase():
         return count
 
     # Identifier inserting procedure
-    def insertIdentifier(self, enumerator, userid):
-        result = []
-        insert = self._getCall('insertNewIdentifier')
-        insert.setString(1, userid)
-        while enumerator.hasMoreElements():
-            item = enumerator.nextElement()
-            self._doInsert(insert, item)
-        if enumerator.RowCount > 0:
-            insert.executeBatch()
-        insert.close()
-
-    def _doInsert(self, insert, identifier):
-        insert.setString(2, identifier)
-        insert.addBatch()
+    def insertIdentifier(self, iterator, userid):
+        count = 0
+        call = self._getCall('insertNewIdentifier')
+        call.setString(1, userid)
+        for itemid in iterator:
+            call.setString(2, itemid)
+            call.addBatch()
+            count += 1
+        if count > 0:
+            call.executeBatch()
+        call.close()
 
     # First pull procedure: header of merge request
     def getFirstPullCall(self, userid, connectionmode, timestamp):
@@ -411,10 +406,30 @@ class DataBase():
         return call
 
     # First pull procedure: body of merge request
-    def setFirstPullCall(self, call, provider, item, itemid, parents, timestamp):
-        row = self._mergeItem(call, provider, item, itemid, parents, timestamp)
-        call.addBatch()
-        return row
+    def pullItems(self, call, iterator, isvalid, roots, orphans):
+        count = 0
+        for item in iterator:
+            if isvalid(item, roots, orphans):
+                count += self._mergeItem(call, item)
+                call.addBatch()
+        return count
+
+    def pullChanges(self, iterator, userid, timestamp):
+        call = self._getCall('pullChanges')
+        count = 0
+        for item in iterator:
+            call.setString(1, userid)
+            call.setString(2, item[0])
+            call.setBoolean(3, item[1])
+            call.setNull(4, VARCHAR) if item[2] is None else call.setString(4, item[2])
+            call.setTimestamp(5, item[3])
+            call.setObject(6, timestamp)
+            call.addBatch()
+            count += 1
+        if count:
+            call.executeBatch()
+        call.close()
+        return count
 
     def updateUserSyncMode(self, userid, mode):
         update = self._getCall('updateUserSyncMode')
@@ -436,7 +451,7 @@ class DataBase():
         select.setObject(3, end)
         result = select.executeQuery()
         while result.next():
-            items.append(getKeyMapFromResult(result))
+            items.append(getDataFromResult(result))
         result.close()
         select.close()
         return items
@@ -450,7 +465,7 @@ class DataBase():
         select.setObject(4, end)
         result = select.executeQuery()
         while result.next():
-            properties.append(getKeyMapFromResult(result))
+            properties.append(getDataFromResult(result))
         result.close()
         select.close()
         return properties
@@ -486,38 +501,38 @@ class DataBase():
             update.close()
 
 # Procedures called internally
-    def _mergeItem(self, call, provider, item, id, parents, timestamp):
-        call.setString(4, id)
-        call.setString(5, provider.getItemTitle(item))
-        call.setTimestamp(6, provider.getItemCreated(item, timestamp))
-        call.setTimestamp(7, provider.getItemModified(item, timestamp))
-        call.setString(8, provider.getItemMediaType(item))
-        call.setLong(9, provider.getItemSize(item))
-        call.setBoolean(10, provider.getItemTrashed(item))
-        call.setBoolean(11, provider.getItemCanAddChild(item))
-        call.setBoolean(12, provider.getItemCanRename(item))
-        call.setBoolean(13, provider.getItemIsReadOnly(item))
-        call.setBoolean(14, provider.getItemIsVersionable(item))
-        call.setArray(15, Array('VARCHAR', parents))
+    def _mergeItem(self, call, item):
+        call.setString(4, item[0])
+        call.setString(5, item[1])
+        call.setTimestamp(6, item[2])
+        call.setTimestamp(7, item[3])
+        call.setString(8, item[4])
+        call.setLong(9, item[5])
+        call.setBoolean(10, item[6])
+        call.setBoolean(11, item[7])
+        call.setBoolean(12, item[8])
+        call.setBoolean(13, item[9])
+        call.setBoolean(14, item[10])
+        call.setArray(15, Array('VARCHAR', item[11]))
         return 1
 
     def _mergeRoot(self, provider, userid, rootid, rootname, root, timestamp):
         call = self._getCall('mergeItem')
-        call.setString(1, userid)
+        call.setString(1, user.get('UserId'))
         call.setLong(2, 0)
         call.setObject(3, timestamp)
-        call.setString(4, rootid)
-        call.setString(5, rootname)
-        call.setTimestamp(6, provider.getRootCreated(root, timestamp))
-        call.setTimestamp(7, provider.getRootModified(root, timestamp))
-        call.setString(8, provider.getRootMediaType(root))
-        call.setLong(9, provider.getRootSize(root))
-        call.setBoolean(10, provider.getRootTrashed(root))
-        call.setBoolean(11, provider.getRootCanAddChild(root))
-        call.setBoolean(12, provider.getRootCanRename(root))
-        call.setBoolean(13, provider.getRootIsReadOnly(root))
-        call.setBoolean(14, provider.getRootIsVersionable(root))
-        call.setArray(15, Array('VARCHAR'))
+        call.setString(4, user.get('RootId'))
+        call.setString(5, user.get('RootName'))
+        call.setTimestamp(6, user.get('DateCreated'))
+        call.setTimestamp(7, user.get('DateModified'))
+        call.setString(8, user.get('MediaType'))
+        call.setLong(9, user.get('Size'))
+        call.setBoolean(10, user.get('Trashed'))
+        call.setBoolean(11, user.get('CanAddChild'))
+        call.setBoolean(12, user.get('CanRename'))
+        call.setBoolean(13, user.get('IsReadOnly'))
+        call.setBoolean(14, user.get('IsVersionable'))
+        call.setArray(15, Array('VARCHAR', user.get('Parents')))
         call.executeUpdate()
         call.close()
 

@@ -37,7 +37,7 @@ g_csv = '%s.csv;fs=|;ignore_first=true;encoding=UTF-8;quoted=true'
 g_version = '2.5.1'
 g_role = 'FrontOffice'
 g_dba = 'SA'
-g_superuser = ('https://', 'localhost', '/', 'admin')
+g_superuser = ('#', 'https://', 'localhost', '/', 'admin')
 g_schema = '%i'
 g_user = '%i'
 g_cardview = 'CardView'

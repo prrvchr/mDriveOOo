@@ -71,7 +71,6 @@ class Replicator(unohelper.Base):
         self._thread = Thread(target=self._replicate)
         self._thread.start()
 
-    # XRestReplicator
     def dispose(self):
         print("replicator.dispose() 1")
         self._disposed.set()
