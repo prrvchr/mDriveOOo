@@ -65,14 +65,23 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
     com::sun::star::rest::XRequestParameter getRequestParameter([in] string Name);
 
     com::sun::star::rest::XRequestResponse execute([in] com::sun::star::rest::XRequestParameter Parameter)
-                                                   raises(com::sun::star::rest::RequestException);
+                                           raises(com::sun::star::rest::RequestException);
 
     com::sun::star::io::XInputStream getInputStream([in] com::sun::star::rest::XRequestParameter Parameter,
                                                     [in] long Chunk,
-                                                    [in] boolean Decode);
+                                                    [in] boolean Decode)
+                                     raises(com::sun::star::rest::RequestException);
 
-    void upload([in] com::sun::star::rest::XRequestParameter Parameter,
-                [in] string Url);
+    com::sun::star::rest::XRequestResponse download([in] com::sun::star::rest::XRequestParameter Parameter,
+                                                    [in] string Url,
+                                                    [in] long Chunk,
+                                                    [in] short Retry,
+                                                    [in] short Delay)
+                                           raises(com::sun::star::rest::RequestException);
+
+    com::sun::star::rest::XRequestResponse upload([in] com::sun::star::rest::XRequestParameter Parameter,
+                                                  [in] string Url)
+                                           raises(com::sun::star::rest::RequestException);
 
     [attribute, readonly] string ResourceUrl;
     [attribute, readonly] string ProviderName;

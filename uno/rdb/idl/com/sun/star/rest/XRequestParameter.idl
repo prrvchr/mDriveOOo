@@ -40,8 +40,8 @@ interface XRequestParameter: com::sun::star::uno::XInterface
                      [in] string Value,
                      [in] short ParameterType);
 
-    void updateHeaders([in] string Header,
-                       [in] string Value);
+    void setHeader([in] string Key,
+                   [in] string Value);
 
     [attribute, readonly] string Name;
     [attribute] string Method;

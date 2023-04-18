@@ -63,6 +63,9 @@ interface XRequestResponse: com::sun::star::uno::XInterface
                                                       [in] boolean DecodeUnicode,
                                                       [in] string Delimiter);
 
+    com::sun::star::io::XInputStream getInputStream([in] long Chunk);
+
+
     [attribute, readonly] RequestParameter Parameter;
     [attribute, readonly] string Url;
     [attribute, readonly] long StatusCode;
@@ -78,7 +81,7 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     [attribute, readonly] boolean IsPermanentRedirect;
     [attribute, readonly] boolean IsRedirect;
     [attribute, readonly] long Elapsed;
-    [attribute, readonly] com::sun::star::io::XInputStream Raw;
+    [attribute, readonly] com::sun::star::io::XInputStream DataSink;
 
 
 };
