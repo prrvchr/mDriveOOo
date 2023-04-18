@@ -34,7 +34,7 @@ g_identifier = 'io.github.prrvchr.%s' % g_extension
 
 g_provider = 'Microsoft'
 g_host = 'graph.microsoft.com'
-g_version = 'v1.0' # v1.0 or beta
+g_version = 'beta' # v1.0 or beta
 g_url = 'https://%s/%s' % (g_host, g_version)
 g_upload = '%s/me/drive/items/%%s:/%%s:/createUploadSession' % g_url
 
@@ -46,11 +46,8 @@ g_itemkeys = ('file','size','parentReference')
 g_itemfields = '%s,%s' % (g_drivefields, ','.join(g_itemkeys))
 g_pages = 100
 
-# If your app splits a file into multiple byte ranges, the size of each byte range MUST be
-# a multiple of 320 KiB (327,680 bytes). Using a fragment size that does not divide evenly
-# by 320 KiB will result in errors committing some files
-g_chunk = 327680  # Http request maximum data size, must be a multiple of 'g_buffer'
-g_buffer = 32768  # InputStream (Downloader) maximum 'Buffers' size
+# Data chunk: 327680 (320Ko) is the Request iter_content() buffer_size, must be a multiple of 64
+g_chunk = 320 * 1024
 
 g_office = 'application/vnd.oasis.opendocument'
 g_folder = 'application/vnd.microsoft-apps.folder'

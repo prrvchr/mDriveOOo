@@ -165,7 +165,7 @@ class Replicator(unohelper.Base,
     def _initUser(self, user):
         # This procedure is launched only once for each new user
         # This procedure corresponds to the initial pull for a new User (ie: without Token)
-        rejected, pages, count = self.Provider.firstPull(user)
+        rejected, pages, count, token = self.Provider.firstPull(user)
         print("Replicator._initUser() 1 Count: %s - Pages %s" % (count, pages))
         self._logger.logprb(INFO, 'Replicator', '_initUser()', 121, pages, count)
         if len(rejected):
@@ -173,7 +173,7 @@ class Replicator(unohelper.Base,
         for title, itemid, parents in rejected:
             self._logger.logprb(SEVERE, 'Replicator', '_initUser()', 123, title, itemid, parents)
         print("Replicator._initUser() 2 %s" % count)
-        user.Provider.initUser(self.DataBase, user)
+        user.Provider.initUser(self.DataBase, user, token)
         user.SyncMode = 1
         self._fullPull = True
 
@@ -201,7 +201,6 @@ class Replicator(unohelper.Base,
                 for item in self.DataBase.getPushItems(user.Id, start, end):
                     print("Replicator._pushUsers() 1 Start: %s - End: %s" % (getDateTimeInTZToString(start), getDateTimeInTZToString(end)))
                     print("Replicator._pushUsers() 2 Item: UserName: %s - ItemId: %s - ChangeAction: %s - TimeStamp: %s" % (user.Name, item.get('ItemId'),item.get('ChangeAction'),getDateTimeInTZToString(item.get('TimeStamp'))))
-                    chunk = user.Provider.Chunk
                     metadata = self.DataBase.getMetaData(user, item)
                     itemid = item.get('ItemId')
                     if self._pushItem(user, itemid, item, metadata, start, end):

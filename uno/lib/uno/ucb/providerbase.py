@@ -50,7 +50,6 @@ from com.sun.star.ucb import IllegalIdentifierException
 
 from .unolib import KeyMap
 
-from .unotool import getResourceLocation
 from .unotool import getConnectionMode
 
 from .dbtool import currentDateTimeInTZ
@@ -61,10 +60,10 @@ from .logger import getLogger
 from .configuration import g_identifier
 from .configuration import g_scheme
 from .configuration import g_separator
+from .configuration import g_chunk
 
 from collections import OrderedDict
 import traceback
-from oauthlib.oauth2.rfc6749.grant_types import resource_owner_password_credentials
 
 
 class ProviderBase(object):
@@ -99,6 +98,15 @@ class ProviderBase(object):
     @property
     def Buffer(self):
         raise NotImplementedError
+    @property
+    def DateTimeFormat(self):
+        raise NotImplementedError
+    @property
+    def Folder(self):
+        raise NotImplementedError
+    @property
+    def Link(self):
+        raise NotImplementedError
 
     # Can be rewrited properties
     @property
@@ -119,14 +127,22 @@ class ProviderBase(object):
 
     # Method called by Content
     def updateFolderContent(self, content):
-        parameter = self.getRequestParameter(content.User.Request, 'getFolderContent', content.Id)
+        parameter = self.getRequestParameter(content.User.Request, 'getFolderContent', content)
         iterator = self.parseItems(content.User.Request, parameter)
         updated = content.User.DataBase.updateFolderContent(iterator, content.User.Id)
         return updated
 
-    def getDocumentContent(self, content):
-        parameter = self.getRequestParameter(content.User.Request, 'getDocumentContent', content)
-        return content.User.Request.getInputStream(parameter, self.Chunk, False)
+    def getDocumentContent(self, content, url):
+        print('ProviderBase.getDocumentContent() Url: %s' % url)
+        data = self.getDocumentLocation(content)
+        parameter = self.getRequestParameter(content.User.Request, 'getDocumentContent', data)
+        response = content.User.Request.download(parameter, url, g_chunk, 3, 10)
+        response.close()
+        return response.Ok
+
+    # Can be rewrited properties
+    def getDocumentLocation(self, content):
+        return content
 
     # Method called by Replicator
     def pullNewIdentifiers(self, user):
@@ -149,7 +165,7 @@ class ProviderBase(object):
         if count > 0:
             call.executeBatch()
         call.close()
-        return rejected, pages, count
+        return rejected, pages, count, token
 
     def getUserToken(self, user):
         parameter = self.getRequestParameter(user.Request, 'getToken', user)
@@ -228,21 +244,16 @@ class ProviderBase(object):
     def getFirstPullRoots(self, user):
         raise NotImplementedError
 
-    # Base method
-    def parseDateTime(self, timestamp, format='%Y-%m-%dT%H:%M:%S.%fZ'):
-        return getDateTimeFromString(timestamp, format)
-    def isOnLine(self):
-        self.SessionMode = getConnectionMode(self._ctx, self.Host)
-        return  self.SessionMode != OFFLINE
-    def isOffLine(self):
-        self.SessionMode = getConnectionMode(self._ctx, self.Host)
-        return  self.SessionMode != ONLINE
+    def initUser(self, database, user, token):
+        pass
 
-    def initialize(self, folder, link):
-        self.Folder = folder
-        self.Link = link
-        self.SourceURL = getResourceLocation(self._ctx, g_identifier, g_scheme)
-        self.SessionMode = getConnectionMode(self._ctx, self.Host)
+    # Base method
+    def parseDateTime(self, timestamp):
+        return getDateTimeFromString(timestamp, self.DateTimeFormat)
+    def isOnLine(self):
+        return OFFLINE != getConnectionMode(self._ctx, self.Host)
+    def isOffLine(self):
+        return ONLINE != getConnectionMode(self._ctx, self.Host)
 
     # Can be rewrited method
     def isFolder(self, contenttype):
@@ -276,15 +287,6 @@ class ProviderBase(object):
         response.close()
         user.Request.upload(parameter, url)
         return True
-
-    def uploadFile1(self, uploader, user, item, new=False):
-        method = 'getNewUploadLocation' if new else 'getUploadLocation'
-        parameter = self.getRequestParameter(user.Request, method, item)
-        response = user.Request.execute(parameter)
-        if response.IsPresent:
-            parameter = self.getRequestParameter(user.Request, 'getUploadStream', response.Value)
-            return uploader.start(user.Name, item.get('Id'), parameter)
-        return False
 
     def updateTitle(self, request, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)

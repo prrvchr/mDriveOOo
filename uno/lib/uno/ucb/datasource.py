@@ -86,7 +86,6 @@ class DataSource(unohelper.Base,
         self._sync = sync
         self._lock = lock
         self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
-        self._provider = Provider(ctx, logger)
         datasource, url, created = self._getDataSource(True)
         self.DataBase = DataBase(self._ctx, datasource)
         if created:
@@ -97,7 +96,8 @@ class DataSource(unohelper.Base,
                 print("DataSource.__init__() 3")
         self.DataBase.addCloseListener(self)
         folder, link = self.DataBase.getContentType()
-        self._provider.initialize(folder, link)
+        print("DataSource.__init__() Folder: %s - Link: %s" % (folder, link))
+        self._provider = Provider(ctx, folder, link, logger)
         self.Replicator = Replicator(ctx, datasource, self._provider, self._users, self._sync, self._lock)
         self._logger.logprb(INFO, 'DataSource', '__init__()', 301)
         print("DataSource.__init__() 4")

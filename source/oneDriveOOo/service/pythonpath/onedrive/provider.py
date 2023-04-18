@@ -32,18 +32,16 @@ import unohelper
 
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 
-from com.sun.star.auth.RestRequestTokenType import TOKEN_NONE
-from com.sun.star.auth.RestRequestTokenType import TOKEN_URL
-from com.sun.star.auth.RestRequestTokenType import TOKEN_REDIRECT
-from com.sun.star.auth.RestRequestTokenType import TOKEN_QUERY
-from com.sun.star.auth.RestRequestTokenType import TOKEN_JSON
-from com.sun.star.auth.RestRequestTokenType import TOKEN_SYNC
+from com.sun.star.rest.ParameterType import URL
 
 from .providerbase import ProviderBase
 
 from .unolib import KeyMap
 
+from .dbtool import currentUnoDateTime
 from .dbtool import toUnoDateTime
+
+from .unotool import getResourceLocation
 
 from .configuration import g_identifier
 from .configuration import g_scheme
@@ -54,7 +52,6 @@ from .configuration import g_userfields
 from .configuration import g_drivefields
 from .configuration import g_itemfields
 from .configuration import g_chunk
-from .configuration import g_buffer
 from .configuration import g_pages
 from .configuration import g_folder
 from .configuration import g_office
@@ -62,13 +59,18 @@ from .configuration import g_link
 from .configuration import g_doc_map
 
 
+from . import ijson
+import traceback
+
+
 class Provider(ProviderBase):
-    def __init__(self, ctx):
+    def __init__(self, ctx, folder, link, logger):
         self._ctx = ctx
+        self._folder = folder
+        self._link = link
+        self._logger = logger
         self.Scheme = g_scheme
-        self.Link = ''
-        self.Folder = ''
-        self.SourceURL = ''
+        self.SourceURL = getResourceLocation(ctx, g_identifier, g_scheme)
         self.SessionMode = OFFLINE
         self._Error = ''
         self._folders = []
@@ -92,86 +94,228 @@ class Provider(ProviderBase):
     def Document(self):
         return g_doc_map
     @property
-    def Chunk(self):
-        return g_chunk
+    def DateTimeFormat(self):
+        return '%Y-%m-%dT%H:%M:%S.%fZ'
     @property
-    def Buffer(self):
-        return g_buffer
+    def Folder(self):
+        return self._folder
     @property
-    def TimeStampPattern(self):
-        return '%Y-%m-%dT%H:%M:%S.0'
+    def Link(self):
+        return self._link
 
-    def getRequestParameter(self, method, data=None):
-        parameter = uno.createUnoStruct('com.sun.star.auth.RestRequestParameter')
-        parameter.Name = method
+    def getFirstPullRoots(self, user):
+        return (user.RootId, )
+
+    def getUser(self, source, request, name):
+        user = {}
+        user.update(self._getUser(source, request, name))
+        user.update(self._getRoot(source, request, name))
+        return user
+
+    def parseItems(self, request, parameter):
+        while parameter.hasNextPage():
+            events = ijson.sendable_list()
+            parser = ijson.parse_coro(events)
+            response = request.execute(parameter)
+            if not response.Ok:
+                break
+            iterator = response.iterContent(g_chunk, False)
+            while iterator.hasMoreElements():
+                chunk = iterator.nextElement().value
+                print("Provider.parseItems() Method: %s- Page: %s - Content\n: %s" % (parameter.Name, parameter.PageCount, chunk.decode('utf-8')))
+                parser.send(chunk)
+                for prefix, event, value in events:
+                    print("Provider.parseItems() Prefix: %s - Event: %s - Value: %s" % (prefix, event, value))
+                    if (prefix, event) == ('@odata.deltaLink', 'string'):
+                        pass
+                        #parameter.SyncToken = value
+                    elif (prefix, event) == ('@odata.nextLink', 'string'):
+                        pass
+                        #parameter.setNextPage('', value, URL)
+                    elif (prefix, event) == ('value.item', 'start_map'):
+                        itemid = name = None
+                        created = modified = currentUnoDateTime()
+                        mimetype = g_folder
+                        size = 0
+                        addchild = canrename = True
+                        trashed = readonly = versionable = False
+                        parents = []
+                    elif (prefix, event) == ('value.item.id', 'string'):
+                        itemid = value
+                    elif (prefix, event) == ('value.item.name', 'string'):
+                        name = value
+                    elif (prefix, event) == ('value.item.createdDateTime', 'string'):
+                        created = self.parseDateTime(value)
+                    elif (prefix, event) == ('value.item.lastModifiedDateTime', 'string'):
+                        modified = self.parseDateTime(value)
+                    elif (prefix, event) == ('value.item.file.mimeType', 'string'):
+                        mimetype = value
+                    elif (prefix, event) == ('value.item.trashed', 'boolean'):
+                        trashed = value
+                    elif (prefix, event) == ('value.item.size', 'string'):
+                        size = int(value)
+                    elif (prefix, event) == ('value.item.parentReference.id', 'string'):
+                        parents.append(value)
+                    elif (prefix, event) == ('value.item', 'end_map'):
+                        yield itemid, name, created, modified, mimetype, size, trashed, True, True, False, False, parents
+                del events[:]
+            parser.close()
+            response.close()
+
+    def parseChanges(self, request, parameter):
+        while parameter.hasNextPage():
+            events = ijson.sendable_list()
+            parser = ijson.parse_coro(events)
+            response = request.execute(parameter)
+            if not response.Ok:
+                break
+            iterator = response.iterContent(g_chunk, False)
+            while iterator.hasMoreElements():
+                chunk = iterator.nextElement().value
+                #print("Provider.parseChanges() Method: %s- Page: %s - Content\n: %s" % (parameter.Name, parameter.PageCount, chunk.decode('utf-8')))
+                parser.send(chunk)
+                for prefix, event, value in events:
+                    #print("Provider._parseFolderContent() Prefix: %s - Event: %s - Value: %s" % (prefix, event, value))
+                    if (prefix, event) == ('@odata.nextLink', 'string'):
+                        parameter.setNextPage('', value, URL)
+                    elif (prefix, event) == ('@odata.deltaLink', 'string'):
+                        parameter.SyncToken = value
+                    elif (prefix, event) == ('value.item', 'start_map'):
+                        itemid = name = modified = None
+                        trashed = False
+                    elif (prefix, event) == ('value.item.removed', 'boolean'):
+                        trashed = value
+                    elif (prefix, event) == ('value.item.fileId', 'string'):
+                        itemid = value
+                    elif (prefix, event) == ('value.item.time', 'string'):
+                        modified = self.parseDateTime(value)
+                    elif (prefix, event) == ('value.item.file.name', 'string'):
+                        name = value
+                    elif (prefix, event) == ('value.item', 'end_map'):
+                        pass
+                        #yield itemid, trashed, name, modified
+                del events[:]
+            parser.close()
+            response.close()
+
+    def getDocumentLocation(self, content):
+        parameter = self.getRequestParameter(content.User.Request, 'getDocumentLocation', content)
+        response = content.User.Request.execute(parameter)
+        print("Provider.getDocumentContent() Status: %s - Reason: %s" % (response.StatusCode, response.Reason))
+        if not response.Ok:
+            response.close()
+            pass
+        url = response.getHeader('Location')
+        response.close()
+        return url
+
+    def _getUser(self, source, request, name):
+        parameter = self.getRequestParameter(request, 'getUser')
+        response = request.execute(parameter)
+        if not response.Ok:
+            msg = self._logger.resolveString(403, name)
+            raise IllegalIdentifierException(msg, source)
+        user = self._parseUser(response)
+        response.close()
+        return user
+
+    def _getRoot(self, source, request, name):
+        parameter = self.getRequestParameter(request, 'getRoot')
+        response = request.execute(parameter)
+        if not response.Ok:
+            msg = self._logger.resolveString(403, name)
+            raise IllegalIdentifierException(msg, source)
+        root = self._parseRoot(response)
+        response.close()
+        return root
+
+    def _parseUser(self, response):
+        userid = name = displayname = None
+        events = ijson.sendable_list()
+        parser = ijson.parse_coro(events)
+        iterator = response.iterContent(g_chunk, False)
+        while iterator.hasMoreElements():
+            parser.send(iterator.nextElement().value)
+            for prefix, event, value in events:
+                if (prefix, event) == ('id', 'string'):
+                    userid = value
+                elif (prefix, event) == ('userPrincipalName', 'string'):
+                    name = value
+                elif (prefix, event) == ('displayName', 'string'):
+                    displayname = value
+            del events[:]
+        parser.close()
+        return {'UserId': userid, 'UserName': name, 'DisplayName': displayname}
+
+    def _parseRoot(self, response):
+        events = ijson.sendable_list()
+        parser = ijson.parse_coro(events)
+        iterator = response.iterContent(g_chunk, False)
+        while iterator.hasMoreElements():
+            chunk = iterator.nextElement().value
+            print("Provider.parseItems() Method: %s- Content: \n%s" % ('ParseRoot', chunk.decode('utf-8')))
+            parser.send(chunk)
+            for prefix, event, value in events:
+                print("Provider.parseItems() Prefix: %s - Event: %s - Value: %s" % (prefix, event, value))
+                if (prefix, event) == ('id', 'string'):
+                    rootid = value
+                elif (prefix, event) == ('name', 'string'):
+                    name = value
+                elif (prefix, event) == ('createdDateTime', 'string'):
+                    created = self.parseDateTime(value)
+                elif (prefix, event) == ('lastModifiedDateTime', 'string'):
+                    modified = self.parseDateTime(value)
+            del events[:]
+        parser.close()
+        return {'RootId': rootid, 'Title': name, 'DateCreated': created, 'DateModified': modified, 
+                "MediaType": g_folder, 'Trashed': False, 'CanAddChild': True, 
+                'CanRename': False, 'IsReadOnly': False, 'IsVersionable': False}
+
+    def updateDrive(self, database, user, token):
+        if database.updateToken(user.get('UserId'), token):
+            user.setValue('Token', token)
+
+    def getRequestParameter(self, request, method, data=None):
+        parameter = request.getRequestParameter(method)
+        print("Provider. Name: %s - Url: %s" % (parameter.Name, parameter.Url))
         if method == 'getUser':
-            parameter.Method = 'GET'
             parameter.Url = '%s/me' % self.BaseUrl
             parameter.Query = '{"select": "%s"}' % g_userfields
-        elif method == 'getItem':
-            parameter.Method = 'GET'
-            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
-            parameter.Query = '{"select": "%s"}' % g_itemfields
         elif method == 'getRoot':
-            parameter.Method = 'GET'
             parameter.Url = '%s/me/drive/root' % self.BaseUrl
             parameter.Query = '{"select": "%s"}' % g_drivefields
+        elif method == 'getItem':
+            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.Id)
+            parameter.Query = '{"select": "%s"}' % g_itemfields
         elif method == 'getFirstPull':
-            parameter.Method = 'GET'
             parameter.Url = '%s/me/drive/root/delta' % self.BaseUrl
             parameter.Query = '{"select": "%s"}' % g_itemfields
-            token = uno.createUnoStruct('com.sun.star.auth.RestRequestToken')
-            token.Type = TOKEN_REDIRECT | TOKEN_SYNC
-            token.Field = '@odata.nextLink'
-            token.SyncField = '@odata.deltaLink'
-            enumerator = uno.createUnoStruct('com.sun.star.auth.RestRequestEnumerator')
-            enumerator.Field = 'value'
-            enumerator.Token = token
-            parameter.Enumerator = enumerator
         elif method == 'getPull':
-            parameter.Method = 'GET'
-            parameter.Url = data.getValue('Token')
+            parameter.Url = data.Token
             parameter.Query = '{"select": "%s"}' % g_itemfields
-            token = uno.createUnoStruct('com.sun.star.auth.RestRequestToken')
-            token.Type = TOKEN_REDIRECT | TOKEN_SYNC
-            token.Field = '@odata.nextLink'
-            token.SyncField = '@odata.deltaLink'
-            enumerator = uno.createUnoStruct('com.sun.star.auth.RestRequestEnumerator')
-            enumerator.Field = 'value'
-            enumerator.Token = token
-            parameter.Enumerator = enumerator
         elif method == 'getFolderContent':
-            parameter.Method = 'GET'
-            parameter.Url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.getValue('Id'))
+            parameter.Url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.Id)
             parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)
-            token = uno.createUnoStruct('com.sun.star.auth.RestRequestToken')
-            token.Type = TOKEN_REDIRECT
-            token.Field = '@odata:nextLink'
-            enumerator = uno.createUnoStruct('com.sun.star.auth.RestRequestEnumerator')
-            enumerator.Field = 'value'
-            enumerator.Token = token
-            parameter.Enumerator = enumerator
         elif method == 'getDocumentLocation':
-            parameter.Method = 'GET'
-            parameter.Url = '%s/me/drive/items/%s/content' % (self.BaseUrl, data.getValue('Id'))
+            parameter.Url = '%s/me/drive/items/%s/content' % (self.BaseUrl, data.Id)
+            print("Provider.getRequestParameter() Name: %s - Url: %s" % (parameter.Name, parameter.Url))
             parameter.NoRedirect = True
         elif method == 'getDocumentContent':
-            parameter.Method = 'GET'
-            parameter.Url = data.getValue('Location')
+            parameter.Url = data
             parameter.NoAuth = True
         elif method == 'updateTitle':
             parameter.Method = 'PATCH'
-            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
-            parameter.Json = '{"name": "%s"}' % data.getValue('name')
+            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.Id)
+            parameter.Json = '{"name": "%s"}' % data.get('name')
         elif method == 'updateTrashed':
             parameter.Method = 'DELETE'
-            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.getValue('Id'))
+            parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.Id)
 
         elif method == 'updateParents':
             parameter.Method = 'PATCH'
-            parameter.Url = '%s/files/%s' % (self.BaseUrl, data.getValue('Id'))
-            toadd = data.getValue('ParentToAdd')
-            toremove = data.getValue('ParentToRemove')
+            parameter.Url = '%s/files/%s' % (self.BaseUrl, data.get('Id'))
+            toadd = data.get('ParentToAdd')
+            toremove = data.get('ParentToRemove')
             if len(toadd) > 0:
                 parameter.Json = '{"addParents": %s}' % ','.join(toadd)
             if len(toremove) > 0:
@@ -179,80 +323,26 @@ class Provider(ProviderBase):
 
         elif method == 'createNewFolder':
             parameter.Method = 'POST'
-            url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.getValue('ParentId'))
+            url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.ParentId)
             parameter.Url = url
             rename = '"@microsoft.graph.conflictBehavior": "replace"'
-            parameter.Json = '{"name": "%s", "folder": { }, %s}' % (data.getValue('Title'), rename)
+            parameter.Json = '{"name": "%s", "folder": { }, %s}' % (data.Title, rename)
         elif method in ('getUploadLocation', 'getNewUploadLocation'):
             parameter.Method = 'POST'
-            url, parent, name = self.BaseUrl, data.getValue('ParentId'), data.getValue('Title')
+            url, parent, name = self.BaseUrl, data.get('ParentId'), data.get('Title')
             parameter.Url = '%s/me/drive/items/%s:/%s:/createUploadSession' % (url, parent, name)
             odata = '"@odata.type": "microsoft.graph.driveItemUploadableProperties"'
             onconflict = '"@microsoft.graph.conflictBehavior": "replace"'
             parameter.Json = '{"item": {%s, %s, "name": "%s"}}' % (odata, onconflict, name)
         elif method == 'getUploadStream':
             parameter.Method = 'PUT'
-            parameter.Url = data.getValue('uploadUrl')
+            parameter.Url = data.get('uploadUrl')
             parameter.NoAuth = True
         return parameter
 
-    def getUserId(self, user):
-        return user.getValue('id')
-    def getUserName(self, user):
-        return user.getValue('userPrincipalName')
-    def getUserDisplayName(self, user):
-        return user.getValue('displayName')
+    def initUser(self, database, user, token):
+        token = self.getUserToken(user)
+        if database.updateToken(user.Id, token):
+            user.setToken(token)
 
-    def getItemParent(self, item, rootid):
-        ref = item.getDefaultValue('parentReference', KeyMap())
-        parent = ref.getDefaultValue('id', rootid)
-        return (parent, )
-
-    def getItemId(self, item):
-        return item.getDefaultValue('id', None)
-    def getItemTitle(self, item):
-        return item.getDefaultValue('name', None)
-    def getItemCreated(self, item, timestamp=None):
-        created = item.getDefaultValue('createdDateTime', None)
-        if created:
-            return self.parseDateTime(created)
-        return toUnoDateTime(timestamp)
-    def getItemModified(self, item, timestamp=None):
-        modified = item.getDefaultValue('lastModifiedDateTime', None)
-        if modified:
-            return self.parseDateTime(modified)
-        return toUnoDateTime(timestamp)
-    def getItemMediaType(self, item):
-        return item.getDefaultValue('file', KeyMap()).getDefaultValue('mimeType', self.Folder)
-    def getItemSize(self, item):
-        return int(item.getDefaultValue('size', 0))
-    def getItemTrashed(self, item):
-        return item.getDefaultValue('trashed', False)
-    def getItemCanAddChild(self, item):
-        return True
-    def getItemCanRename(self, item):
-        return True
-    def getItemIsReadOnly(self, item):
-        return False
-    def getItemIsVersionable(self, item):
-        return False
-
-    def updateDrive(self, database, user, token):
-        if database.updateToken(user.getValue('UserId'), token):
-            user.setValue('Token', token)
-    def setDriveContent1(self, item):
-        if self._isFolder(item):
-            self._folders.append(self.getItemId(item))
-
-    def getDocumentContent(self, request, content):
-        parameter = self.getRequestParameter('getDocumentLocation', content)
-        response = request.execute(parameter)
-        if response.IsPresent:
-            parameter = self.getRequestParameter('getDocumentContent', response.Value)
-            return request.getInputStream(parameter, self.Chunk, self.Buffer)
-        return None
-
-    def _isFolder(self, item):
-        folder = item.getDefaultValue('file', None)
-        return folder is None
 

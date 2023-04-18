@@ -144,6 +144,9 @@ class ContentUser():
         self.MetaData['SyncMode'] = mode
         self.DataBase.updateUserSyncMode(self.Id, mode)
     @property
+    def SessionMode(self):
+        return self.Request.getSessionMode(self.Provider.Host)
+    @property
     def TimeStamp(self):
         return self.MetaData.get('TimeStamp')
     @TimeStamp.setter

@@ -142,7 +142,7 @@ class Content(unohelper.Base,
         return self.MetaData.get('Title')
     @property
     def MediaType(self):
-        return self.MetaData.get('MediaType')
+        return self.MetaData.get('MediaType', 'application/octet-stream')
     @property
     def ConnectionMode(self):
         return self.MetaData.get('ConnectionMode')
@@ -547,11 +547,11 @@ class Content(unohelper.Base,
 
     def _updateFolderContent(self, properties):
         updated = False
-        if ONLINE == self.ConnectionMode == self._user.Provider.SessionMode:
+        if ONLINE == self.ConnectionMode == self._user.SessionMode:
             url = self._user.getContentPath(self.Path, self.Title, self.IsRoot)
             self._logger.logprb(INFO, 'Content', '_updateFolderContent()', 411, url)
             updated = self._user.Provider.updateFolderContent(self)
-        mode = self._user.Provider.SessionMode
+        mode = self._user.SessionMode
         scheme = self._user.getContentScheme(self._authority)
         select = self._user.DataBase.getChildren(self._user.Name, self.Id, properties, mode, scheme)
         return select, updated
@@ -561,18 +561,12 @@ class Content(unohelper.Base,
         url = self._user.Provider.SourceURL + g_separator + self.Id
         if self.ConnectionMode == OFFLINE and sf.exists(url):
             return url, sf.getSize(url)
-        stream = self._user.Provider.getDocumentContent(self)
-        if stream:
-            try:
-                sf.writeFile(url, stream)
-            except Exception as e:
-                self._logger.logprb(SEVERE, 'Content', 'getDocumentContent()', 421, e, traceback.format_exc())
-            else:
-                size = sf.getSize(url)
-                loaded = self._user.DataBase.updateConnectionMode(self._user.Id, self.Id, OFFLINE, ONLINE)
-                self._setConnectionMode(loaded)
-            finally:
-                stream.closeInput()
-        return url, size
+        if self._user.Provider.getDocumentContent(self, url):
+            loaded = self._user.DataBase.updateConnectionMode(self._user.Id, self.Id, OFFLINE, ONLINE)
+            self._setConnectionMode(loaded)
+        else:
+            pass
+            # TODO: raise correct exception
+        return url, sf.getSize(url)
 
 
