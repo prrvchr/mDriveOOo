@@ -30,10 +30,7 @@
 #include <com/sun/star/uno/XInterface.idl>
 #include <com/sun/star/io/XInputStream.idl>
 #include <com/sun/star/container/XEnumeration.idl>
-#include <com/sun/star/auth/XRestKeyMap.idl>
 #include <com/sun/star/rest/HTTPException.idl>
-#include <com/sun/star/rest/JSONDecodeException.idl>
-#include <com/sun/star/rest/XJsonParser.idl>
 #include <com/sun/star/rest/RequestParameter.idl>
 
 module com { module sun { module star { module rest {
@@ -46,12 +43,6 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     boolean hasHeader([in] string Key);
 
     string getHeader([in] string Key);
-
-    com::sun::star::auth::XRestKeyMap json()
-         raises(JSONDecodeException);
-
-    any jsonWithParser([in] XJsonParser Parser)
-         raises(JSONDecodeException);
 
     void raiseForStatus()
          raises(com::sun::star::rest::HTTPException);
@@ -75,7 +66,7 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     [attribute] string Encoding;
     [attribute, readonly] string Text;
     [attribute, readonly] sequence<byte> Content;
-    [attribute, readonly] com::sun::star::auth::XRestKeyMap Headers;
+    [attribute, readonly] string Headers;
     [attribute, readonly] sequence<XRequestResponse> History;
     [attribute, readonly] boolean Ok;
     [attribute, readonly] boolean IsPermanentRedirect;

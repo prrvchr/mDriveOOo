@@ -24,20 +24,19 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_rest_XJsonParser_idl__
-#define __com_sun_star_rest_XJsonParser_idl__
-
-#include <com/sun/star/uno/XInterface.idl>
+#ifndef __com_sun_star_rest_ContentType_idl__
+#define __com_sun_star_rest_ContentType_idl__
 
 module com { module sun { module star { module rest {
 
-interface XJsonParser: com::sun::star::uno::XInterface
+constants ContentType
 {
 
-    any parse([in] any Response);
+    const short HTML = 0;
+    const short JSON = 1;
+    const short XML = 2;
 
 };
-
 
 }; }; }; };
 

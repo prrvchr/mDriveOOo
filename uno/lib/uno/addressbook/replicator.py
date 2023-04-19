@@ -167,6 +167,21 @@ class Replicator(unohelper.Base):
 
     def _syncPeople(self, user, timestamp):
         token = None
+        pages = update = delete = 0
+        parameter = self.Provider.getRequestParameter(user.Request, 'People', user)
+        response = user.Request.execute(parameter)
+        if not response.Ok:
+            pass
+        iterator = reponse.iterContent(g_chunk, False)
+        map = self.DataBase.getFieldsMap('People', False)
+        self.DataBase.mergePeopleData(iterator, timestamp)
+        self._logger.logprb(INFO, 'Replicator', '_syncPeople()', 231, pages, update, delete)
+        self._count += update + delete
+        print("replicator._syncPeople() 1 %s" % 'Resource')
+        return parameter.SyncToken
+
+    def _syncPeople1(self, user, timestamp):
+        token = None
         method = {'Name': 'People',
                   'PrimaryKey': 'Resource',
                   'ResourceFilter': (),
@@ -174,7 +189,7 @@ class Replicator(unohelper.Base):
                   'Filter': (('metadata', 'primary'), True),
                   'Skip': ('Type', 'metadata')}
         pages = update = delete = 0
-        parameter = self.Provider.getRequestParameter(method['Name'], user)
+        parameter = self.Provider.getRequestParameter(user.Request, method['Name'], user)
         parser = DataParser(self.DataBase, self.Provider, method['Name'])
         map = self.DataBase.getFieldsMap(method['Name'], False)
         enumerator = user.Request.getEnumeration(parameter, parser)
@@ -198,7 +213,7 @@ class Replicator(unohelper.Base):
                   'ResourceFilter': (('groupType', ), g_filter),
                   'Deleted': (('metadata','deleted'), True)}
         pages = update = delete = 0
-        parameter = self.Provider.getRequestParameter(method['Name'], user)
+        parameter = self.Provider.getRequestParameter(user.Request, method['Name'], user)
         parser = DataParser(self.DataBase, self.Provider, method['Name'])
         map = self.DataBase.getFieldsMap(method['Name'], False)
         enumerator = user.Request.getEnumeration(parameter, parser)
@@ -227,7 +242,7 @@ class Replicator(unohelper.Base):
             method = {'Name': 'Connection',
                       'PrimaryKey': 'Group',
                       'ResourceFilter': ()}
-            parameter = self.Provider.getRequestParameter(method['Name'], groups)
+            parameter = self.Provider.getRequestParameter(user.Request, method['Name'], groups)
             parser = DataParser(self.DataBase, self.Provider, method['Name'])
             map = self.DataBase.getFieldsMap(method['Name'], False)
             request = user.Request.getRequest(parameter, parser)

@@ -43,6 +43,8 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     void setHeader([in] string Key,
                    [in] string Value);
 
+    string toJson([in] boolean Stream);
+
     [attribute, readonly] string Name;
     [attribute] string Method;
     [attribute] string Url;
