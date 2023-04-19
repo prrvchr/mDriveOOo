@@ -446,9 +446,9 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "GetNewTitle_1" TO "%(Role)s";''' % format
     elif name == 'createInsertUser':
         query = '''\
 CREATE PROCEDURE "InsertUser"(IN UserId VARCHAR(100),
-                              IN RootId VARCHAR(100),
                               IN UserName VARCHAR(100),
                               IN DisplayName VARCHAR(100),
+                              IN RootId VARCHAR(100),
                               IN Title VARCHAR(100),
                               IN Created TIMESTAMP(6),
                               IN Modified TIMESTAMP(6),

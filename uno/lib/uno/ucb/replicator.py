@@ -172,7 +172,7 @@ class Replicator(unohelper.Base,
             self._logger.logprb(SEVERE, 'Replicator', '_initUser()', 122, len(rejected))
         for title, itemid, parents in rejected:
             self._logger.logprb(SEVERE, 'Replicator', '_initUser()', 123, title, itemid, parents)
-        print("Replicator._initUser() 2 %s" % count)
+        print("Replicator._initUser() 2 Count: %s - Token: %s" % (count, token))
         user.Provider.initUser(self.DataBase, user, token)
         user.SyncMode = 1
         self._fullPull = True

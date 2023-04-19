@@ -107,31 +107,30 @@ class Provider(ProviderBase):
         return (user.RootId, )
 
     def getUser(self, source, request, name):
-        user = {}
-        user.update(self._getUser(source, request, name))
-        user.update(self._getRoot(source, request, name))
-        return user
+        user = self._getUser(source, request, name)
+        root = self._getRoot(source, request, name)
+        return user, root
 
     def parseItems(self, request, parameter):
         while parameter.hasNextPage():
             events = ijson.sendable_list()
             parser = ijson.parse_coro(events)
             response = request.execute(parameter)
+            print("Provider.parseItems() Method: %s - Encoding: %s - StatusCode: %s - Url:\n%s" % (parameter.Name, response.ApparentEncoding, response.StatusCode, parameter.Url))
             if not response.Ok:
+                print("Provider.parseItems() Text: %s" % response.Text)
                 break
             iterator = response.iterContent(g_chunk, False)
             while iterator.hasMoreElements():
                 chunk = iterator.nextElement().value
-                print("Provider.parseItems() Method: %s- Page: %s - Content\n: %s" % (parameter.Name, parameter.PageCount, chunk.decode('utf-8')))
+                print("Provider.parseItems() Method: %s- Page: %s - Content\n'%s'" % (parameter.Name, parameter.PageCount, chunk.decode('ascii')))
                 parser.send(chunk)
                 for prefix, event, value in events:
-                    print("Provider.parseItems() Prefix: %s - Event: %s - Value: %s" % (prefix, event, value))
+                    #print("Provider.parseItems() Prefix: %s - Event: %s - Value: %s" % (prefix, event, value))
                     if (prefix, event) == ('@odata.deltaLink', 'string'):
-                        pass
-                        #parameter.SyncToken = value
+                        parameter.SyncToken = value
                     elif (prefix, event) == ('@odata.nextLink', 'string'):
-                        pass
-                        #parameter.setNextPage('', value, URL)
+                        parameter.setNextPage('', value, URL)
                     elif (prefix, event) == ('value.item', 'start_map'):
                         itemid = name = None
                         created = modified = currentUnoDateTime()
@@ -245,7 +244,7 @@ class Provider(ProviderBase):
                     displayname = value
             del events[:]
         parser.close()
-        return {'UserId': userid, 'UserName': name, 'DisplayName': displayname}
+        return userid, name, displayname
 
     def _parseRoot(self, response):
         events = ijson.sendable_list()
@@ -267,9 +266,7 @@ class Provider(ProviderBase):
                     modified = self.parseDateTime(value)
             del events[:]
         parser.close()
-        return {'RootId': rootid, 'Title': name, 'DateCreated': created, 'DateModified': modified, 
-                "MediaType": g_folder, 'Trashed': False, 'CanAddChild': True, 
-                'CanRename': False, 'IsReadOnly': False, 'IsVersionable': False}
+        return rootid, name, created, modified, g_folder, False, True, False, False, False
 
     def updateDrive(self, database, user, token):
         if database.updateToken(user.get('UserId'), token):
@@ -277,7 +274,7 @@ class Provider(ProviderBase):
 
     def getRequestParameter(self, request, method, data=None):
         parameter = request.getRequestParameter(method)
-        print("Provider. Name: %s - Url: %s" % (parameter.Name, parameter.Url))
+        print("Provider. Name: %s" % parameter.Name)
         if method == 'getUser':
             parameter.Url = '%s/me' % self.BaseUrl
             parameter.Query = '{"select": "%s"}' % g_userfields
@@ -292,6 +289,8 @@ class Provider(ProviderBase):
             parameter.Query = '{"select": "%s"}' % g_itemfields
         elif method == 'getPull':
             parameter.Url = data.Token
+            print("Provider. Name: %s - Url: %s" % (parameter.Name, parameter.Url))
+
             parameter.Query = '{"select": "%s"}' % g_itemfields
         elif method == 'getFolderContent':
             parameter.Url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.Id)
@@ -341,7 +340,7 @@ class Provider(ProviderBase):
         return parameter
 
     def initUser(self, database, user, token):
-        token = self.getUserToken(user)
+        #token = self.getUserToken(user)
         if database.updateToken(user.Id, token):
             user.setToken(token)
 

@@ -101,8 +101,8 @@ class ContentUser():
                 elif not self.Provider.isOnLine():
                     msg = self._logger.resolveString(402, name)
                     raise IllegalIdentifierException(msg, source)
-                user = self.Provider.getUser(source, self.Request, name)
-                metadata = database.insertUser(user)
+                user, root = self.Provider.getUser(source, self.Request, name)
+                metadata = database.insertUser(user, root)
                 if metadata is None:
                     msg = self._logger.resolveString(403, name)
                     raise IllegalIdentifierException(msg, source)

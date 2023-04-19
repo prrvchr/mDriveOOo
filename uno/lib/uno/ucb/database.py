@@ -139,23 +139,23 @@ class DataBase():
         dtz.DateTimeInTZ.Day = 1
         return dtz
 
-    def insertUser(self, user):
+    def insertUser(self, user, root):
         data = None
         timestamp = currentDateTimeInTZ()
         call = self._getCall('insertUser')
-        call.setString(1, user.get('UserId'))
-        call.setString(2, user.get('RootId'))
-        call.setString(3, user.get('UserName'))
-        call.setString(4, user.get('DisplayName'))
-        call.setString(5, user.get("Title"))
-        call.setTimestamp(6, user.get('DateCreated'))
-        call.setTimestamp(7, user.get('DateModified'))
-        call.setString(8, user.get('MediaType'))
-        call.setBoolean(9, user.get('Trashed'))
-        call.setBoolean(10, user.get('CanAddChild'))
-        call.setBoolean(11, user.get('CanRename'))
-        call.setBoolean(12, user.get('IsReadOnly'))
-        call.setBoolean(13, user.get('IsVersionable'))
+        call.setString(1, user[0])
+        call.setString(2, user[1])
+        call.setString(3, user[2])
+        call.setString(4, root[0])
+        call.setString(5, root[1])
+        call.setTimestamp(6, root[2])
+        call.setTimestamp(7, root[3])
+        call.setString(8, root[4])
+        call.setBoolean(9, root[5])
+        call.setBoolean(10, root[6])
+        call.setBoolean(11, root[7])
+        call.setBoolean(12, root[8])
+        call.setBoolean(13, root[9])
         call.setObject(14, timestamp)
         result = call.executeQuery() 
         if result.next():
