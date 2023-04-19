@@ -34,9 +34,9 @@ constants ParameterType
 
     const short NONE = 0;
     const short URL = 1;
-    const short QUERY = 2;
-    const short HEADER = 3;
-    const short JSON = 4;
+    const short JSON = 2;
+    const short QUERY = 3;
+    const short HEADER = 4;
     const short REDIRECT = 5;
 
 };
