@@ -31,7 +31,8 @@
 #include <com/sun/star/io/XInputStream.idl>
 #include <com/sun/star/container/XEnumeration.idl>
 #include <com/sun/star/rest/HTTPException.idl>
-#include <com/sun/star/rest/RequestParameter.idl>
+#include <com/sun/star/rest/XRequestParameter.idl>
+
 
 module com { module sun { module star { module rest {
 
@@ -45,7 +46,7 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     string getHeader([in] string Key);
 
     void raiseForStatus()
-         raises(com::sun::star::rest::HTTPException);
+         raises(HTTPException);
 
     com::sun::star::container::XEnumeration iterContent([in] long ChunkSize,
                                                         [in] boolean DecodeUnicode);
@@ -57,7 +58,7 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     com::sun::star::io::XInputStream getInputStream([in] long Chunk);
 
 
-    [attribute, readonly] RequestParameter Parameter;
+    [attribute, readonly] XRequestParameter Parameter;
     [attribute, readonly] string Url;
     [attribute, readonly] long StatusCode;
     [attribute, readonly] string Reason;
