@@ -32,7 +32,7 @@ import unohelper
 
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 
-from com.sun.star.rest.ParameterType import URL
+from com.sun.star.rest.ParameterType import REDIRECT
 
 from .providerbase import ProviderBase
 
@@ -130,7 +130,7 @@ class Provider(ProviderBase):
                     if (prefix, event) == ('@odata.deltaLink', 'string'):
                         parameter.SyncToken = value
                     elif (prefix, event) == ('@odata.nextLink', 'string'):
-                        parameter.setNextPage('', value, URL)
+                        parameter.setNextPage('', value, REDIRECT)
                     elif (prefix, event) == ('value.item', 'start_map'):
                         itemid = name = None
                         created = modified = currentUnoDateTime()
@@ -176,7 +176,7 @@ class Provider(ProviderBase):
                 for prefix, event, value in events:
                     #print("Provider._parseFolderContent() Prefix: %s - Event: %s - Value: %s" % (prefix, event, value))
                     if (prefix, event) == ('@odata.nextLink', 'string'):
-                        parameter.setNextPage('', value, URL)
+                        parameter.setNextPage('', value, REDIRECT)
                     elif (prefix, event) == ('@odata.deltaLink', 'string'):
                         parameter.SyncToken = value
                     elif (prefix, event) == ('value.item', 'start_map'):
