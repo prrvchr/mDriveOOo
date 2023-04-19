@@ -37,6 +37,7 @@ constants ParameterType
     const short QUERY = 2;
     const short HEADER = 3;
     const short JSON = 4;
+    const short REDIRECT = 5;
 
 };
 
