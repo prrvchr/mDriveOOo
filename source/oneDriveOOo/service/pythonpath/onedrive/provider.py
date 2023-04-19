@@ -111,15 +111,19 @@ class Provider(ProviderBase):
         root = self._getRoot(source, request, name)
         return user, root
 
+    def mergePullUser(self, user, parameter, iterator, timestamp):
+        count = user.DataBase.mergeItems(iterator)
+        return parameter.SyncToken, count, parameter.PageCount
+
     def parseItems(self, request, parameter):
         while parameter.hasNextPage():
-            events = ijson.sendable_list()
-            parser = ijson.parse_coro(events)
             response = request.execute(parameter)
             print("Provider.parseItems() Method: %s - Encoding: %s - StatusCode: %s - Url:\n%s" % (parameter.Name, response.ApparentEncoding, response.StatusCode, parameter.Url))
             if not response.Ok:
                 print("Provider.parseItems() Text: %s" % response.Text)
                 break
+            events = ijson.sendable_list()
+            parser = ijson.parse_coro(events)
             iterator = response.iterContent(g_chunk, False)
             while iterator.hasMoreElements():
                 chunk = iterator.nextElement().value
@@ -163,11 +167,11 @@ class Provider(ProviderBase):
 
     def parseChanges(self, request, parameter):
         while parameter.hasNextPage():
-            events = ijson.sendable_list()
-            parser = ijson.parse_coro(events)
             response = request.execute(parameter)
             if not response.Ok:
                 break
+            events = ijson.sendable_list()
+            parser = ijson.parse_coro(events)
             iterator = response.iterContent(g_chunk, False)
             while iterator.hasMoreElements():
                 chunk = iterator.nextElement().value
@@ -291,7 +295,7 @@ class Provider(ProviderBase):
             parameter.Url = data.Token
             print("Provider. Name: %s - Url: %s" % (parameter.Name, parameter.Url))
 
-            parameter.Query = '{"select": "%s"}' % g_itemfields
+            #parameter.Query = '{"select": "%s"}' % g_itemfields
         elif method == 'getFolderContent':
             parameter.Url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.Id)
             parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)

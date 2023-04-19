@@ -219,8 +219,7 @@ class ProviderBase(object):
         timestamp = currentDateTimeInTZ()
         parameter = self.getRequestParameter(user.Request, 'getPull', user)
         iterator = self.parseChanges(user.Request, parameter)
-        count = user.DataBase.pullChanges(iterator, user.Id, timestamp)
-        return parameter.SyncToken, count, parameter.PageCount
+        return self.mergePullUser(user, parameter, iterator, timestamp)
 
     # Must be implemented method
     def getRequestParameter(self, request, method, data):
@@ -242,6 +241,9 @@ class ProviderBase(object):
         raise NotImplementedError
 
     def getFirstPullRoots(self, user):
+        raise NotImplementedError
+
+    def mergePullUser(self, user, parameter, iterator):
         raise NotImplementedError
 
     def initUser(self, database, user, token):

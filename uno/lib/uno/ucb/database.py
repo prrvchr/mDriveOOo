@@ -414,6 +414,18 @@ class DataBase():
                 call.addBatch()
         return count
 
+    def mergeItems(self, iterator):
+        count = 0
+        call = self._getCall('mergeItem')
+        for item in iterator:
+            count += self._mergeItem(call, item)
+            call.addBatch()
+        if count:
+            call.executeBatch()
+        call.close()
+        return count
+
+
     def pullChanges(self, iterator, userid, timestamp):
         call = self._getCall('pullChanges')
         count = 0
