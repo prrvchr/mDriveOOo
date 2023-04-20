@@ -36,9 +36,14 @@ interface XRequestParameter: com::sun::star::uno::XInterface
 {
 
     boolean hasNextPage();
+
     void setNextPage([in] string Key,
                      [in] string Value,
                      [in] short ParameterType);
+
+    boolean hasHeader([in] string Key);
+
+    string getHeader([in] string Key);
 
     void setHeader([in] string Key,
                    [in] string Value);
@@ -50,8 +55,8 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     [attribute] string Url;
     [attribute] string Headers;
     [attribute] string Query;
-    [attribute] string Data;
     [attribute] string Json;
+    [attribute] string Data;
     [attribute] com::sun::star::io::XInputStream DataSink;
     [attribute] boolean NoAuth;
     [attribute] sequence<string> Auth;
@@ -60,9 +65,6 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     [attribute] boolean Stream;
     [attribute] string SyncToken;
     [attribute, readonly] long PageCount;
-    [attribute, readonly] string PageKey;
-    [attribute, readonly] string PageValue;
-    [attribute, readonly] short PageType;
 
 
 };

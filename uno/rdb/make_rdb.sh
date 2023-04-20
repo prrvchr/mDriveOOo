@@ -31,6 +31,7 @@ rm -f ${Path}/types.rdb
 
 ${Path}/merge_rdb.sh ${OOoPath} com/sun/star/rest/XRequestResponse
 ${Path}/merge_rdb.sh ${OOoPath} com/sun/star/rest/XRequestParameter
+${Path}/merge_rdb.sh ${OOoPath} com/sun/star/rest/HTTPStatusCode
 ${Path}/merge_rdb.sh ${OOoPath} com/sun/star/auth/XOAuth2Service
 
 read -p "Press enter to continue"

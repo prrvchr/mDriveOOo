@@ -33,34 +33,87 @@ module com {  module sun {  module star {  module rest {
 constants HTTPStatusCode
 {
 
-    /** The server cannot or will not process the request due to something that is perceived to be a client error
-        (e.g., malformed request syntax, invalid request message framing, or deceptive request routing).
+
+    /** Informational.
     */
-    const long BAD_REQUEST = 400;
+    const long CONTINUE                     = 100;
+    const long SWITCH_PROTOCOL              = 101;
+    const long PROCESSING                   = 102;
+    const long CHECKPOINT                   = 103;
+    const long URI_TOO_LONG                 = 122;
+    const long OK                           = 200;
+    const long CREATED                      = 201;
+    const long ACCEPTED                     = 202;
+    const long NON_AUTHORITATIVE_INFO       = 203;
+    const long NO_CONTENT                   = 204;
+    const long RESET_CONTENT                = 205;
+    const long PARTIAL                      = 206;
+    const long MULTI_STATUS                 = 207;
+    const long ALREADY_REPORTED             = 208;
+    const long IM_USED                      = 226;
 
-
-    /** Although the HTTP standard specifies "unauthorized", semantically this response means "unauthenticated".
-        That is, the client must authenticate itself to get the requested response.
+    /**  Redirection.
     */
-    const long UNAUTHORIZED = 401;
+    const long MULTIPLE_CHOICES             = 300;
+    const long MOVED                        = 301;
+    const long FOUND                        = 302;
+    const long OTHER                        = 303;
+    const long NOT_MODIFIED                 = 304;
+    const long USE_PROXY                    = 305;
+    const long SWITCH_PROXY                 = 306;
+    const long TEMPORARY_REDIRECT           = 307;
+    const long PERMANENT_REDIRECT           = 308;
 
-
-    /** This response code is reserved for future use. The initial aim for creating this code was using it for digital 
-        payment systems, however this status code is used very rarely and no standard convention exists. 
+    /** Client Error.
     */
-    const long PAYMENT_REQUIRED = 402;
+    const long BAD_REQUEST                  = 400;
+    const long UNAUTHORIZED                 = 401;
+    const long PAYEMENT_REQUIRED            = 402;
+    const long FORBIDDEN                    = 403;
+    const long NOT_FOUND                    = 404;
+    const long NOT_ALLOWED                  = 405;
+    const long NOT_ACCEPTABLE               = 406;
+    const long PROXY_AUTH                   = 407;
+    const long TIMEOUT                      = 408;
+    const long CONFLICT                     = 409;
+    const long GONE                         = 410;
+    const long LENGTH_REQUIRED              = 411;
+    const long PRECONDITION_FAILED          = 412;
+    const long REQUEST_ENTITY_TOO_LARGE     = 413;
+    const long REQUEST_MEDIA_TOO_LARGE      = 414;
+    const long UNSUPPORTED_MEDIA            = 415;
+    const long RANGE_NOT_SATISFIABLE        = 416;
+    const long EXPECTATION_FAILED           = 417;
+    const long TEAPOT                       = 418;
+    const long MISDIRECTED_REQUEST          = 421;
+    const long UNPROCESSABLE                = 422;
+    const long LOCKED                       = 423;
+    const long DEPENDENCY                   = 424;
+    const long UNORDERED                    = 425;
+    const long UPGRADE                      = 426;
+    const long PRECONDITION_REQUIRED        = 428;
+    const long TOO_MANY                     = 429;
+    const long FIELDS_TOO_LARGE             = 431;
+    const long NO_RESPONSE                  = 444;
+    const long RETRY                        = 449;
+    const long PARENTAL_REASONS             = 450;
+    const long LEGAL_REASONS                = 451;
+    const long CLIENT_CLOSED                = 499;
 
-
-    /** The client does not have access rights to the content; that is, it is unauthorized, so the server is refusing
-        to give the requested resource. Unlike 401 Unauthorized, the client's identity is known to the server.
+    /** Server Error.
     */
-    const long FORBIDDEN = 403;
+    const long SERVER_ERROR                 = 500;
+    const long NOT_IMPLEMENTED              = 501;
+    const long BAD_GATEWAY                  = 502;
+    const long UNAVAILABLE                  = 503;
+    const long GATEWAY_TIMEOUT              = 504;
+    const long HTTP_VERSION                 = 505;
+    const long VARIANT_ALSO_NEGOTIATES      = 506;
+    const long INSUFFICIENT_STORAGE         = 507;
+    const long BANDWIDTH                    = 509;
+    const long NOT_EXTENTED                 = 510;
+    const long NETWORK_AUTH                 = 511;
 
-
-    /** A 404 status code only indicates that the resource is missing: not whether the absence is temporary or permanent.
-        If a resource is permanently removed, use the 410 (Gone) status instead. 
-    */
-    const long NOT_FOUND = 404;
 
 };
 
