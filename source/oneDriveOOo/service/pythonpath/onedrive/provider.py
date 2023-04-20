@@ -211,7 +211,7 @@ class Provider(ProviderBase):
         print("Provider.getDocumentContent() Status: %s - IsOk: %s - Reason: %s" % (response.StatusCode, response.Ok, response.Reason))
         if not response.Ok:
             response.close()
-            pass
+            return None
         url = response.getHeader('Location')
         response.close()
         print("Provider.getDocumentContent() Url: %s" % url)

@@ -135,14 +135,13 @@ class ProviderBase(object):
     def getDocumentContent(self, content, url):
         print('ProviderBase.getDocumentContent() Url: %s' % url)
         data = self.getDocumentLocation(content)
-        parameter = self.getRequestParameter(content.User.Request, 'getDocumentContent', data)
-        response = content.User.Request.download(parameter, url, g_chunk, 3, 10)
-        response.close()
-        return response.Ok
-
-    # Can be rewrited properties
-    def getDocumentLocation(self, content):
-        return content
+        if data is not None:
+            print('ProviderBase.getDocumentContent() Data: %s' % data)
+            parameter = self.getRequestParameter(content.User.Request, 'getDocumentContent', data)
+            response = content.User.Request.download(parameter, url, g_chunk, 3, 10)
+            response.close()
+            return response.Ok
+        return False
 
     # Method called by Replicator
     def pullNewIdentifiers(self, user):
@@ -241,6 +240,9 @@ class ProviderBase(object):
         raise NotImplementedError
 
     def parseUploadLocation(self, user):
+        raise NotImplementedError
+
+    def getDocumentLocation(self, user):
         raise NotImplementedError
 
     def initUser(self, database, user, token):
