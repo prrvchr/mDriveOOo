@@ -182,6 +182,20 @@ class DataBase():
         metadata['AtRoot'] = atroot
         return metadata
 
+    def updateNewItemId(self, item, newitem):
+        newid, created, modified = newitem
+        print("DataBase.mergeNewFolder() 1 Item Id: %s - New Item Id: %s" % (item.get('Id'), newid))
+        call = self._getCall('updateNewItemId')
+        call.setString(1, item.get('Id'))
+        call.setString(2, newid)
+        call.setTimestamp(3, created)
+        call.setTimestamp(4, modified)
+        call.close()
+        print("DataBase.mergeNewFolder() 1 Item Id: %s - New Item Id: %s" % (item.get('Id'), newid))
+        item['Id'] = newid
+        print("DataBase.mergeNewFolder() 2 Item Id: %s - New Item Id: %s" % (item.get('Id'), newid))
+        return True
+
 # Procedures called by the Content
         #TODO: Can't have a simple SELECT ResultSet with a Procedure,
     def getItem(self, user, itemid, rewite=True):
@@ -406,17 +420,27 @@ class DataBase():
         return call
 
     # First pull procedure: body of merge request
-    def pullItems(self, call, iterator, isvalid, roots, orphans):
+    def pullItems(self, userid, iterator, isvalid, roots, orphans):
         count = 0
+        call = self._getCall('mergeItem')
+        call.setString(1, userid)
+        call.setInt(2, 1)
+        call.setObject(3, currentDateTimeInTZ())
         for item in iterator:
             if isvalid(item, roots, orphans):
                 count += self._mergeItem(call, item)
                 call.addBatch()
+        if count:
+            call.executeBatch()
+        call.close()
         return count
 
-    def mergeItems(self, iterator):
+    def mergeItems(self, userid, iterator):
         count = 0
         call = self._getCall('mergeItem')
+        call.setString(1, userid)
+        call.setInt(2, 1)
+        call.setObject(3, currentDateTimeInTZ())
         for item in iterator:
             count += self._mergeItem(call, item)
             call.addBatch()
@@ -424,7 +448,6 @@ class DataBase():
             call.executeBatch()
         call.close()
         return count
-
 
     def pullChanges(self, iterator, userid, timestamp):
         call = self._getCall('pullChanges')

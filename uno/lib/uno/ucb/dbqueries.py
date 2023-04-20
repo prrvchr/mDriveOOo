@@ -372,6 +372,19 @@ CREATE PROCEDURE "GetIdentifier"(IN USERID VARCHAR(100),
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetIdentifier_1" TO "%(Role)s";''' % format
 
+    elif name == 'createUpdateNewItemId':
+        query = '''\
+CREATE PROCEDURE "UpdateNewItemId"(IN ItemId VARCHAR(100),
+                                   IN NewId VARCHAR(100),
+                                   IN Created TIMESTAMP(6),
+                                   IN Modified TIMESTAMP(6))
+  SPECIFIC "UpdateNewItemId_1"
+  MODIFIES SQL DATA
+  BEGIN ATOMIC
+    UPDATE "Items" SET "ItemId"=NewId, "DateCreated"=Created, "DateModified"=Modified WHERE "ItemId"=ItemId;
+  END;
+GRANT EXECUTE ON SPECIFIC ROUTINE "UpdateNewItemId_1" TO "%(Role)s";''' % format
+
     elif name == 'createGetRoot':
         query = '''\
 CREATE PROCEDURE "GetRoot"(IN USERID VARCHAR(100))
@@ -752,6 +765,8 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
         query = 'CALL "PullChanges"(?,?,?,?,?,?)'
     elif name == 'insertItem':
         query = 'CALL "InsertItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    elif name == 'updateNewItemId':
+        query = 'CALL "UpdateNewItemId"(?,?,?,?)'
 
 # Get DataBase Version Query
     elif name == 'getVersion':

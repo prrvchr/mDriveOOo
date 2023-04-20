@@ -155,16 +155,45 @@ class ProviderBase(object):
         user.DataBase.insertIdentifier(iterator, user.Id)
         response.close()
 
+
+
     def firstPull(self, user):
+        orphans, pages, count, token = self._pullItems(user)
+        rejected = self._getRejectedItems(orphans)
+        return rejected, pages, count, token
+
+    def _pullItems(self, user):
+        orphans = OrderedDict()
+        roots = [user.RootId]
+        pages = count = 0
+        token = ''
+        for root in self.getFirstPullRoots(user):
+            parameter = self.getRequestParameter(user.Request, 'getFirstPull', root)
+            iterator = self.parseItems(user.Request, parameter)
+            count = user.DataBase.pullItems(user.Id, iterator, self._isValidItem, roots, orphans)
+        return orphans, parameter.PageCount, count, parameter.SyncToken
+
+    def firstPull1(self, user):
         start = currentDateTimeInTZ()
-        call = user.DataBase.getFirstPullCall(user.Id, 1, start)
-        orphans, pages, count, token = self._pullItems(call, user, start, 'getFirstPull', user)
+        #call = user.DataBase.getFirstPullCall(user.Id, 1, start)
+        orphans, pages, count, token = self._pullItems(user)
         #rows += self._filterParents(call, user.Provider, items, parents, roots, start)
         rejected = self._getRejectedItems(orphans)
         if count > 0:
             call.executeBatch()
         call.close()
         return rejected, pages, count, token
+
+    def _pullItems1(self, call, user, start, method, data):
+        orphans = OrderedDict()
+        roots = [user.RootId]
+        pages = count = 0
+        token = ''
+        for root in self.getFirstPullRoots(user):
+            parameter = self.getRequestParameter(user.Request, method, root)
+            iterator = self.parseItems(user.Request, parameter)
+            count = user.DataBase.pullItems(call, iterator, self._isValidItem, roots, orphans)
+        return orphans, parameter.PageCount, count, parameter.SyncToken
 
     def getUserToken(self, user):
         parameter = self.getRequestParameter(user.Request, 'getToken', user)
@@ -183,17 +212,6 @@ class ProviderBase(object):
             parents = self._getItemParents(item)
             rejected.append((title, itemid, ','.join(parents)))
         return rejected
-
-    def _pullItems(self, call, user, start, method, data):
-        orphans = OrderedDict()
-        roots = [user.RootId]
-        pages = count = 0
-        token = ''
-        for root in self.getFirstPullRoots(user):
-            parameter = self.getRequestParameter(user.Request, method, root)
-            iterator = self.parseItems(user.Request, parameter)
-            count = user.DataBase.pullItems(call, iterator, self._isValidItem, roots, orphans)
-        return orphans, parameter.PageCount, count, parameter.SyncToken
 
     def _isValidItem(self, item, roots, orphans):
         itemid = self._getItemId(item)
@@ -245,6 +263,9 @@ class ProviderBase(object):
     def getDocumentLocation(self, user):
         raise NotImplementedError
 
+    def mergeNewFolder(self, response, user):
+        raise NotImplementedError
+
     def initUser(self, database, user, token):
         pass
 
@@ -268,9 +289,12 @@ class ProviderBase(object):
         parameter = self.getRequestParameter(request, 'getItem', identifier)
         return request.execute(parameter)
 
-    def createFolder(self, request, item):
-        parameter = self.getRequestParameter(request, 'createNewFolder', item)
-        return request.execute(parameter)
+    def createFolder(self, user, item):
+        parameter = self.getRequestParameter(user.Request, 'createNewFolder', item)
+        response = user.Request.execute(parameter)
+        if response.Ok:
+            return self.mergeNewFolder(response, user, item)
+        return False
 
     def createFile(self, request, data):
         return True

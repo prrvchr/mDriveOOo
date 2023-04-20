@@ -116,7 +116,7 @@ class Provider(ProviderBase):
         timestamp = currentDateTimeInTZ()
         parameter = self.getRequestParameter(user.Request, 'getPull', user)
         iterator = self.parseItems(user.Request, parameter)
-        count = user.DataBase.mergeItems(iterator)
+        count = user.DataBase.mergeItems(user.Id, iterator)
         return parameter.SyncToken, count, parameter.PageCount
 
     def parseItems(self, request, parameter):
@@ -216,6 +216,28 @@ class Provider(ProviderBase):
         response.close()
         print("Provider.getDocumentContent() Url: %s" % url)
         return url
+
+    def mergeNewFolder(self, response, user, item):
+        return user.DataBase.updateNewItemId(item, self._parseNewFolder(response))
+
+    def _parseNewFolder(self, response):
+        newid = created = modified = None
+        events = ijson.sendable_list()
+        parser = ijson.parse_coro(events)
+        iterator = response.iterContent(g_chunk, False)
+        while iterator.hasMoreElements():
+            parser.send(iterator.nextElement().value)
+            for prefix, event, value in events:
+                if (prefix, event) == ('id', 'string'):
+                    newid = value
+                elif (prefix, event) == ('createdDateTime', 'string'):
+                    created = self.parseDateTime(value)
+                elif (prefix, event) == ('lastModifiedDateTime', 'string'):
+                    modified = self.parseDateTime(value)
+            del events[:]
+        parser.close()
+        response.close()
+        return newid, created, modified
 
     def _getUser(self, source, request, name):
         parameter = self.getRequestParameter(request, 'getUser')

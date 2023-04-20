@@ -263,14 +263,10 @@ class Replicator(unohelper.Base,
                 created = getDateTimeToString(metadata.get('DateCreated'))
                 if user.Provider.isFolder(mediatype):
                     print("Replicator._pushItem() INSERT 3")
-                    response = user.Provider.createFolder(user.Request, metadata)
+                    status = user.Provider.createFolder(user, metadata)
                     print("Replicator._pushItem() INSERT 4")
-                    if response is not None:
-                        status = response.Ok
-                        response.close()
-                    print("Replicator._pushItem() INSERT 5")
                     self._logger.logprb(INFO, 'Replicator', '_pushItem()', 141, metadata.get('Title'), created)
-                    print("Replicator._pushItem() INSERT 6")
+                    print("Replicator._pushItem() INSERT 5")
                 elif user.Provider.isLink(mediatype):
                     pass
                 elif user.Provider.isDocument(mediatype):
