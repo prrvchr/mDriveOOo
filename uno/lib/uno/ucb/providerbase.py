@@ -215,12 +215,6 @@ class ProviderBase(object):
     def _getItemParents(self, item):
         return item[11]
 
-    def pullUser(self, user):
-        timestamp = currentDateTimeInTZ()
-        parameter = self.getRequestParameter(user.Request, 'getPull', user)
-        iterator = self.parseChanges(user.Request, parameter)
-        return self.mergePullUser(user, parameter, iterator, timestamp)
-
     # Must be implemented method
     def getRequestParameter(self, request, method, data):
         raise NotImplementedError
@@ -243,7 +237,10 @@ class ProviderBase(object):
     def getFirstPullRoots(self, user):
         raise NotImplementedError
 
-    def mergePullUser(self, user, parameter, iterator):
+    def pullUser(self, user):
+        raise NotImplementedError
+
+    def parseUploadLocation(self, user):
         raise NotImplementedError
 
     def initUser(self, database, user, token):
@@ -280,15 +277,14 @@ class ProviderBase(object):
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
         parameter = self.getRequestParameter(user.Request, method, item)
         response = user.Request.execute(parameter)
-        print("Provider.uploadFile() 1 Content: '%s'" % response.getHeader('Location'))
         if not response.Ok:
             response.close()
-            return False
-        url = self.SourceURL + g_separator + item.get('Id')
-        parameter = self.getRequestParameter(user.Request, 'getUploadStream', response)
+            return None
+        location = self.parseUploadLocation(response)
         response.close()
-        user.Request.upload(parameter, url)
-        return True
+        parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
+        url = self.SourceURL + g_separator + item.get('Id')
+        return user.Request.upload(parameter, url)
 
     def updateTitle(self, request, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)

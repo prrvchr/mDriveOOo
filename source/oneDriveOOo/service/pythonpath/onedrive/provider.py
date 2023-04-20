@@ -39,6 +39,7 @@ from .providerbase import ProviderBase
 from .unolib import KeyMap
 
 from .dbtool import currentUnoDateTime
+from .dbtool import currentDateTimeInTZ
 from .dbtool import toUnoDateTime
 
 from .unotool import getResourceLocation
@@ -111,7 +112,10 @@ class Provider(ProviderBase):
         root = self._getRoot(source, request, name)
         return user, root
 
-    def mergePullUser(self, user, parameter, iterator, timestamp):
+    def pullUser(self, user):
+        timestamp = currentDateTimeInTZ()
+        parameter = self.getRequestParameter(user.Request, 'getPull', user)
+        iterator = self.parseItems(user.Request, parameter)
         count = user.DataBase.mergeItems(iterator)
         return parameter.SyncToken, count, parameter.PageCount
 
@@ -204,12 +208,13 @@ class Provider(ProviderBase):
     def getDocumentLocation(self, content):
         parameter = self.getRequestParameter(content.User.Request, 'getDocumentLocation', content)
         response = content.User.Request.execute(parameter)
-        print("Provider.getDocumentContent() Status: %s - Reason: %s" % (response.StatusCode, response.Reason))
+        print("Provider.getDocumentContent() Status: %s - IsOk: %s - Reason: %s" % (response.StatusCode, response.Ok, response.Reason))
         if not response.Ok:
             response.close()
             pass
         url = response.getHeader('Location')
         response.close()
+        print("Provider.getDocumentContent() Url: %s" % url)
         return url
 
     def _getUser(self, source, request, name):
@@ -272,9 +277,23 @@ class Provider(ProviderBase):
         parser.close()
         return rootid, name, created, modified, g_folder, False, True, False, False, False
 
+    def parseUploadLocation(self, response):
+        url =  None
+        events = ijson.sendable_list()
+        parser = ijson.parse_coro(events)
+        iterator = response.iterContent(g_chunk, False)
+        while iterator.hasMoreElements():
+            parser.send(iterator.nextElement().value)
+            for prefix, event, value in events:
+                if (prefix, event) == ('uploadUrl', 'string'):
+                    url = value
+            del events[:]
+        parser.close()
+        return url
+
     def updateDrive(self, database, user, token):
         if database.updateToken(user.get('UserId'), token):
-            user.setValue('Token', token)
+            user['Token'] = token
 
     def getRequestParameter(self, request, method, data=None):
         parameter = request.getRequestParameter(method)
@@ -326,10 +345,10 @@ class Provider(ProviderBase):
 
         elif method == 'createNewFolder':
             parameter.Method = 'POST'
-            url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.ParentId)
+            url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.get('ParentId'))
             parameter.Url = url
             rename = '"@microsoft.graph.conflictBehavior": "replace"'
-            parameter.Json = '{"name": "%s", "folder": { }, %s}' % (data.Title, rename)
+            parameter.Json = '{"name": "%s", "folder": { }, %s}' % (data.get('Title'), rename)
         elif method in ('getUploadLocation', 'getNewUploadLocation'):
             parameter.Method = 'POST'
             url, parent, name = self.BaseUrl, data.get('ParentId'), data.get('Title')
@@ -339,8 +358,17 @@ class Provider(ProviderBase):
             parameter.Json = '{"item": {%s, %s, "name": "%s"}}' % (odata, onconflict, name)
         elif method == 'getUploadStream':
             parameter.Method = 'PUT'
-            parameter.Url = data.get('uploadUrl')
+            parameter.Url = data
             parameter.NoAuth = True
+        elif method == 'uploadFile':
+            parameter.Method = 'PUT'
+            parameter.Url = '/me/drive/items/%s/content' % data.get('ItemId')
+        elif method == 'uploadNewFile':
+            parameter.Method = 'PUT'
+            parent, name = data.get('ParentId'), data.get('Title')
+            parameter.Url = '/me/drive/items/{parent-id}:/{filename}:/content' % (parent, name)
+        return parameter
+
         return parameter
 
     def initUser(self, database, user, token):

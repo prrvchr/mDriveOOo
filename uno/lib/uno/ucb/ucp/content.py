@@ -146,7 +146,7 @@ class Content(unohelper.Base,
     @property
     def ConnectionMode(self):
         return self.MetaData.get('ConnectionMode')
-    def _setConnectionMode(self, mode):
+    def setConnectionMode(self, mode):
         self.MetaData['ConnectionMode'] = mode
 
     @property
@@ -453,20 +453,25 @@ class Content(unohelper.Base,
         return tuple(values)
 
     def _setPropertiesValues(self, environment, properties):
-        results = []
-        for property in properties:
-            if all((hasattr(property, 'Name'),
-                    hasattr(property, 'Value'),
-                    property.Name in self._propertySetInfo)):
-                result, level, msg = self._setPropertyValue(environment, property)
-            else:
-                msg = "ERROR: Requested property: %s is not available" % property.Name
-                level = SEVERE
-                error = UnknownPropertyException(msg, self)
-                result = uno.Any('com.sun.star.beans.UnknownPropertyException', error)
-            self._logger.logp(level, 'Content', '_setPropertiesValues()', msg)
-            results.append(result)
-        return tuple(results)
+        try:
+            results = []
+            for property in properties:
+                if all((hasattr(property, 'Name'),
+                        hasattr(property, 'Value'),
+                        property.Name in self._propertySetInfo)):
+                    result, level, msg = self._setPropertyValue(environment, property)
+                else:
+                    msg = "ERROR: Requested property: %s is not available" % property.Name
+                    level = SEVERE
+                    error = UnknownPropertyException(msg, self)
+                    result = uno.Any('com.sun.star.beans.UnknownPropertyException', error)
+                self._logger.logp(level, 'Content', '_setPropertiesValues()', msg)
+                results.append(result)
+            return tuple(results)
+        except Exception as e:
+            msg = "Content._setPropertiesValues() Error: %s" % traceback.format_exc()
+            print(msg)
+
 
     def _setPropertyValue(self, environment, property):
         name, value = property.Name, property.Value
@@ -492,6 +497,7 @@ class Content(unohelper.Base,
         return result, level, msg
 
     def _setTitle(self, environment, title):
+        print("Identifier.setTitle() 2 Title: %s" % (title, ))
         url = self.getIdentifier().getContentIdentifier()
         if u'~' in title:
             msg = "Can't set property: Title value: %s contains invalid character: '~'." % title
@@ -500,15 +506,17 @@ class Content(unohelper.Base,
             error = getInteractiveAugmentedIOException(msg, environment, 'QUERY', 'INVALID_CHARACTER', data)
             result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
         elif not self._user.Provider.SupportDuplicate and self._user.DataBase.hasTitle(self._user.Id, self.ParentId, title):
-                msg = "Can't set property: %s value: %s - Name Clash Error" % ('Title', title)
-                level = SEVERE
-                data = getPropertyValueSet({'TargetFolderURL': url,
-                                            'ClashingName': title,
-                                            'ProposedNewName': '%s(1)' % title})
-                #data = getPropertyValueSet({'Uri': self.getIdentifier().getContentIdentifier(),'ResourceName': title})
-                error = getInteractiveAugmentedIOException(msg, environment, 'QUERY', 'ALREADY_EXISTING', data)
-                result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
+            print("Identifier.setTitle() 3 Title: %s" % (title, ))
+            msg = "Can't set property: %s value: %s - Name Clash Error" % ('Title', title)
+            level = SEVERE
+            data = getPropertyValueSet({'TargetFolderURL': url,
+                                        'ClashingName': title,
+                                        'ProposedNewName': '%s(1)' % title})
+            #data = getPropertyValueSet({'Uri': self.getIdentifier().getContentIdentifier(),'ResourceName': title})
+            error = getInteractiveAugmentedIOException(msg, environment, 'QUERY', 'ALREADY_EXISTING', data)
+            result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
         else:
+            print("Identifier.setTitle() 4 Title: %s" % (title, ))
             # FIXME: When you change Title you must change also the Identifier.getContentIdentifier()
             if not self._new:
                 # And as the uri changes we also have to clear this Identifier from the cache.
@@ -519,7 +527,7 @@ class Content(unohelper.Base,
                 newtitle = self._user.DataBase.getNewTitle(title, self.ParentId, self.IsFolder)
             else:
                 newtitle = title
-            print("Identifier.setTitle() 2 Title: %s - New Title: %s" % (title, newtitle))
+            print("Identifier.setTitle() 5 Title: %s - New Title: %s" % (title, newtitle))
             self.MetaData['Title'] = title
             self.MetaData['TitleOnServer'] = newtitle
             # If the identifier is new then the content is not yet in the database.
@@ -538,7 +546,7 @@ class Content(unohelper.Base,
             select, updated = self._updateFolderContent(properties)
             if updated:
                 loaded = self._user.DataBase.updateConnectionMode(self._user.Id, self.Id, OFFLINE, ONLINE)
-                self._setConnectionMode(loaded)
+                self.setConnectionMode(loaded)
             return select
         except Exception as e:
             msg = "Error: %s" % traceback.print_exc()
@@ -563,7 +571,7 @@ class Content(unohelper.Base,
             return url, sf.getSize(url)
         if self._user.Provider.getDocumentContent(self, url):
             loaded = self._user.DataBase.updateConnectionMode(self._user.Id, self.Id, OFFLINE, ONLINE)
-            self._setConnectionMode(loaded)
+            self.setConnectionMode(loaded)
         else:
             pass
             # TODO: raise correct exception

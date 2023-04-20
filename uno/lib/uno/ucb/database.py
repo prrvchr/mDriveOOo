@@ -329,9 +329,9 @@ class DataBase():
         call.setBoolean(14, content.get('IsVersionable'))
         call.setString(15, content.get("ParentId"))
         status = call.execute() == 0
-        content.setValue('BaseURI', call.getString(16))
-        content.setValue('Title', call.getString(17))
-        content.setValue('TitleOnServer', call.getString(18))
+        content['BaseURI'] = call.getString(16)
+        content['Title'] = call.getString(17)
+        content['TitleOnServer'] = call.getString(18)
         call.close()
         if status:
             # Start Replicator for pushing changes…

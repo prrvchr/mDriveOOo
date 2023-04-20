@@ -221,7 +221,7 @@ class ContentUser():
             else:
                 size = sf.getSize(url)
                 loaded = self.DataBase.updateConnectionMode(self.Id, itemid, OFFLINE, ONLINE)
-                content.insertValue('ConnectionMode', loaded)
+                content.setConnectionMode(loaded)
             finally:
                 stream.closeInput()
         return url, size
@@ -244,29 +244,29 @@ class ContentUser():
         isfolder = self.Provider.isFolder(contentype)
         isdocument = self.Provider.isDocument(contentype)
         itemid = self._getNewIdentifier()
-        data = KeyMap()
-        data.insertValue('Id', itemid)
-        data.insertValue('ParentId', parentid)
-        data.insertValue('Path', path)
-        data.insertValue('ObjectId', itemid)
-        data.insertValue('Title', '')
-        data.insertValue('TitleOnServer', '')
-        data.insertValue('DateCreated', timestamp)
-        data.insertValue('DateModified', timestamp)
-        data.insertValue('ContentType', contentype)
+        data = {}
+        data['Id'] = itemid
+        data['ParentId'] = parentid
+        data['Path'] = path
+        data['ObjectId'] = itemid
+        data['Title'] = ''
+        data['TitleOnServer'] = ''
+        data['DateCreated'] = timestamp
+        data['DateModified'] = timestamp
+        data['ContentType'] = contentype
         mediatype = '' if isdocument else contentype
-        data.insertValue('MediaType', mediatype)
-        data.insertValue('Size', 0)
-        data.insertValue('Trashed', False)
-        data.insertValue('IsRoot', False)
-        data.insertValue('IsFolder', isfolder)
-        data.insertValue('IsDocument', isdocument)
-        data.insertValue('CanAddChild', isfolder)
-        data.insertValue('CanRename', True)
-        data.insertValue('IsReadOnly', False)
-        data.insertValue('IsVersionable', isdocument)
-        data.insertValue('ConnectionMode', True)
-        data.insertValue('BaseURI', path)
+        data['MediaType'] = mediatype
+        data['Size'] = 0
+        data['Trashed'] = False
+        data['IsRoot'] = False
+        data['IsFolder'] = isfolder
+        data['IsDocument'] = isdocument
+        data['CanAddChild'] = isfolder
+        data['CanRename'] = True
+        data['IsReadOnly'] = False
+        data['IsVersionable'] = isdocument
+        data['ConnectionMode'] = True
+        data['BaseURI'] = path
         return data
 
     def _getNewIdentifier(self):
