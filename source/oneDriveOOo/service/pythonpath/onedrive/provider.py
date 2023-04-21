@@ -375,10 +375,10 @@ class Provider(ProviderBase):
         elif method in ('getUploadLocation', 'getNewUploadLocation'):
             parameter.Method = 'POST'
             parameter.Url += f'/me/drive/items/{data.get("ParentId")}:/{data.get("Title")}:/createUploadSession'
-            parameter.setNestedJson('item/folder', '/', None)
-            parameter.setNestedJson('item/@odata.type', '/', 'microsoft.graph.driveItemUploadableProperties')
-            parameter.setNestedJson('item/@microsoft.graph.conflictBehavior', '/', 'replace')
-            parameter.setNestedJson('item/name', '/', data.get('Title'))
+            parameter.setNesting('item/folder', None)
+            parameter.setNesting('item/@odata.type', 'microsoft.graph.driveItemUploadableProperties')
+            parameter.setNesting('item/@microsoft.graph.conflictBehavior', 'replace')
+            parameter.setNesting('item/name', data.get('Title'))
             print("Provider.getUploadLocation() Parameter.Json: '%s'" % parameter.Json)
 
         elif method == 'getUploadStream':
