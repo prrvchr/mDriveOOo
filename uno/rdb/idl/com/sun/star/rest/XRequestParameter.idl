@@ -70,6 +70,7 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     [attribute] string Query;
     [attribute] string Json;
     [attribute] sequence<byte> Data;
+    [attribute] string Text;
     [attribute] com::sun::star::io::XInputStream DataSink;
     [attribute] boolean NoAuth;
     [attribute] sequence<string> Auth;
