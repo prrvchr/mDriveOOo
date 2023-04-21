@@ -318,38 +318,46 @@ class Provider(ProviderBase):
         parameter = request.getRequestParameter(method)
         parameter.Url = self.BaseUrl
         print("Provider. Name: %s" % parameter.Name)
+
         if method == 'getUser':
             parameter.Url += '/me'
             parameter.setQuery('select', g_userfields)
+
         elif method == 'getRoot':
             parameter.Url += '/me/drive/root'
             parameter.setQuery('select', g_drivefields)
+
         elif method == 'getItem':
             parameter.Url += f'/me/drive/items/{data.Id}'
             parameter.setQuery('select', g_itemfields)
+
         elif method == 'getFirstPull':
             parameter.Url += '/me/drive/root/delta'
             parameter.setQuery('select', g_itemfields)
+
         elif method == 'getPull':
             parameter.Url = data.Token
             print("Provider. Name: %s - Url: %s" % (parameter.Name, parameter.Url))
 
-            #parameter.Query = '{"select": "%s"}' % g_itemfields
         elif method == 'getFolderContent':
             parameter.Url += f'/me/drive/items/{data.Id}/children'
             parameter.setQuery('select', g_itemfields)
             parameter.setQuery('top', g_pages)
+
         elif method == 'getDocumentLocation':
             parameter.Url += f'/me/drive/items/{data.Id}/content'
             print("Provider.getRequestParameter() Name: %s - Url: %s" % (parameter.Name, parameter.Url))
             parameter.NoRedirect = True
+
         elif method == 'getDocumentContent':
             parameter.Url = data
             parameter.NoAuth = True
+
         elif method == 'updateTitle':
             parameter.Method = 'PATCH'
             parameter.Url += f'/me/drive/items/{data.Id}'
             parameter.setJson('name', data.get('name'))
+
         elif method == 'updateTrashed':
             parameter.Method = 'DELETE'
             parameter.Url += f'/me/drive/items/{data.Id}'
@@ -368,29 +376,30 @@ class Provider(ProviderBase):
             parameter.Method = 'POST'
             parameter.Url += f'/me/drive/items/{data.get("ParentId")}/children'
             parameter.setJson('name', data.get('Title'))
-            parameter.setJson('folder', '{ }')
+            parameter.setJson('folder', None)
             parameter.setJson('@microsoft.graph.conflictBehavior', 'replace')
+            print("Provider.createNewFolder() Parameter.Json: '%s'" % parameter.Json)
+
         elif method in ('getUploadLocation', 'getNewUploadLocation'):
             parameter.Method = 'POST'
             parameter.Url += f'/me/drive/items/{data.get("ParentId")}:/{data.get("Title")}:/createUploadSession'
-            odata = '"@odata.type": "microsoft.graph.driveItemUploadableProperties"'
-            onconflict = '"@microsoft.graph.conflictBehavior": "replace"'
-            parameter.Json = '{"item": {%s, %s, "name": "%s"}}' % (odata, onconflict, name)
-            parameter.setJson('name', data.get('Title'))
-            parameter.setJson('folder', '{ }')
-            parameter.setJson('@microsoft.graph.conflictBehavior', 'replace')
+            parameter.setNestedJson('item/folder', '/', None)
+            parameter.setNestedJson('item/@odata.type', '/', 'microsoft.graph.driveItemUploadableProperties')
+            parameter.setNestedJson('item/@microsoft.graph.conflictBehavior', '/', 'replace')
+            parameter.setNestedJson('item/name', '/', data.get('Title'))
+            print("Provider.getUploadLocation() Parameter.Json: '%s'" % parameter.Json)
 
         elif method == 'getUploadStream':
             parameter.Method = 'PUT'
             parameter.Url = data
             parameter.NoAuth = True
+
         elif method == 'uploadFile':
             parameter.Method = 'PUT'
             parameter.Url = f'/me/drive/items/{data.get("ItemId")}/content'
+
         elif method == 'uploadNewFile':
             parameter.Method = 'PUT'
             parameter.Url = f'/me/drive/items/{data.get("ParentId")}:/{data.get("Title")}:/content'
         return parameter
-
-
 
