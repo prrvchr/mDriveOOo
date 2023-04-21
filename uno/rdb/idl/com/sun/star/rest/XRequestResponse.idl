@@ -75,7 +75,7 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     [attribute, readonly] boolean IsRedirect;
     [attribute, readonly] io::github::prrvchr::css::util::Duration Elapsed;
     [attribute, readonly] com::sun::star::io::XInputStream DataSink;
-    [attribute, readonly] HTTPException Error;
+    [attribute, readonly] any Error;
 
 
 };

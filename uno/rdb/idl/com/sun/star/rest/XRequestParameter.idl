@@ -51,11 +51,11 @@ interface XRequestParameter: com::sun::star::uno::XInterface
                    [in] string Value);
 
     void setJson([in] string Key,
-                 [in] any Value)
+                 [in] any Value);
 
     void setNestedJson([in] string Path,
                        [in] string Separator,
-                       [in] any Value)
+                       [in] any Value);
 
     void setQuery([in] string Key,
                   [in] string Value);
