@@ -46,7 +46,7 @@ interface XRequestResponse: com::sun::star::uno::XInterface
 
     string getHeader([in] string Key);
 
-    void raiseForStatus()
+    void raiseForStatus([in] boolean AllowRedirect)
          raises(HTTPException);
 
     com::sun::star::container::XEnumeration iterContent([in] long ChunkSize,
@@ -75,6 +75,7 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     [attribute, readonly] boolean IsRedirect;
     [attribute, readonly] io::github::prrvchr::css::util::Duration Elapsed;
     [attribute, readonly] com::sun::star::io::XInputStream DataSink;
+    [attribute, readonly] HTTPException Error;
 
 
 };
