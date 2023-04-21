@@ -30,17 +30,12 @@
 import uno
 import unohelper
 
-from com.sun.star.ucb.ConnectionMode import OFFLINE
-
 from com.sun.star.rest.ParameterType import REDIRECT
 
 from .providerbase import ProviderBase
 
-from .unolib import KeyMap
-
 from .dbtool import currentUnoDateTime
 from .dbtool import currentDateTimeInTZ
-from .dbtool import toUnoDateTime
 
 from .unotool import getResourceLocation
 
@@ -59,7 +54,6 @@ from .configuration import g_office
 from .configuration import g_link
 from .configuration import g_doc_map
 
-
 from . import ijson
 import traceback
 
@@ -72,8 +66,6 @@ class Provider(ProviderBase):
         self._logger = logger
         self.Scheme = g_scheme
         self.SourceURL = getResourceLocation(ctx, g_identifier, g_scheme)
-        self.SessionMode = OFFLINE
-        self._Error = ''
         self._folders = []
 
     @property
@@ -106,6 +98,11 @@ class Provider(ProviderBase):
 
     def getFirstPullRoots(self, user):
         return (user.RootId, )
+
+    def initUser(self, database, user, token):
+        #token = self.getUserToken(user)
+        if database.updateToken(user.Id, token):
+            user.setToken(token)
 
     def getUser(self, source, request, name):
         user = self._getUser(source, request, name)
@@ -391,11 +388,5 @@ class Provider(ProviderBase):
             parameter.Url = '/me/drive/items/{parent-id}:/{filename}:/content' % (parent, name)
         return parameter
 
-        return parameter
-
-    def initUser(self, database, user, token):
-        #token = self.getUserToken(user)
-        if database.updateToken(user.Id, token):
-            user.setToken(token)
 
 
