@@ -305,9 +305,11 @@ class ProviderBase(object):
         response = user.Request.execute(parameter)
         if not response.Ok:
             response.close()
-            return None
+            return False
         location = self.parseUploadLocation(response)
         response.close()
+        if location is None:
+            return False
         parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
         url = self.SourceURL + g_separator + item.get('Id')
         return user.Request.upload(parameter, url)
