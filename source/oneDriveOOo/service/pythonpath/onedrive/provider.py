@@ -175,11 +175,8 @@ class Provider(ProviderBase):
             parser = ijson.parse_coro(events)
             iterator = response.iterContent(g_chunk, False)
             while iterator.hasMoreElements():
-                chunk = iterator.nextElement().value
-                #print("Provider.parseChanges() Method: %s- Page: %s - Content\n: %s" % (parameter.Name, parameter.PageCount, chunk.decode('utf-8')))
-                parser.send(chunk)
+                parser.send(iterator.nextElement().value)
                 for prefix, event, value in events:
-                    #print("Provider._parseFolderContent() Prefix: %s - Event: %s - Value: %s" % (prefix, event, value))
                     if (prefix, event) == ('@odata.nextLink', 'string'):
                         parameter.setNextPage('', value, REDIRECT)
                     elif (prefix, event) == ('@odata.deltaLink', 'string'):
@@ -279,11 +276,8 @@ class Provider(ProviderBase):
         parser = ijson.parse_coro(events)
         iterator = response.iterContent(g_chunk, False)
         while iterator.hasMoreElements():
-            chunk = iterator.nextElement().value
-            print("Provider.parseItems() Method: %s- Content: \n%s" % ('ParseRoot', chunk.decode('utf-8')))
-            parser.send(chunk)
+            parser.send(iterator.nextElement().value)
             for prefix, event, value in events:
-                print("Provider.parseItems() Prefix: %s - Event: %s - Value: %s" % (prefix, event, value))
                 if (prefix, event) == ('id', 'string'):
                     rootid = value
                 elif (prefix, event) == ('name', 'string'):
@@ -317,8 +311,6 @@ class Provider(ProviderBase):
     def getRequestParameter(self, request, method, data=None):
         parameter = request.getRequestParameter(method)
         parameter.Url = self.BaseUrl
-        print("Provider. Name: %s" % parameter.Name)
-
         if method == 'getUser':
             parameter.Url += '/me'
             parameter.setQuery('select', g_userfields)
