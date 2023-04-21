@@ -319,16 +319,16 @@ class Provider(ProviderBase):
         print("Provider. Name: %s" % parameter.Name)
         if method == 'getUser':
             parameter.Url = '%s/me' % self.BaseUrl
-            parameter.Query = '{"select": "%s"}' % g_userfields
+            parameter.setQuery('select', g_userfields)
         elif method == 'getRoot':
             parameter.Url = '%s/me/drive/root' % self.BaseUrl
-            parameter.Query = '{"select": "%s"}' % g_drivefields
+            parameter.setQuery('select', g_drivefields)
         elif method == 'getItem':
             parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.Id)
-            parameter.Query = '{"select": "%s"}' % g_itemfields
+            parameter.setQuery('select', g_itemfields)
         elif method == 'getFirstPull':
             parameter.Url = '%s/me/drive/root/delta' % self.BaseUrl
-            parameter.Query = '{"select": "%s"}' % g_itemfields
+            parameter.setQuery('select', g_itemfields)
         elif method == 'getPull':
             parameter.Url = data.Token
             print("Provider. Name: %s - Url: %s" % (parameter.Name, parameter.Url))
@@ -336,7 +336,8 @@ class Provider(ProviderBase):
             #parameter.Query = '{"select": "%s"}' % g_itemfields
         elif method == 'getFolderContent':
             parameter.Url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.Id)
-            parameter.Query = '{"select": "%s", "top": "%s"}' % (g_itemfields, g_pages)
+            parameter.setQuery('select', g_itemfields)
+            parameter.setQuery('top', g_pages)
         elif method == 'getDocumentLocation':
             parameter.Url = '%s/me/drive/items/%s/content' % (self.BaseUrl, data.Id)
             print("Provider.getRequestParameter() Name: %s - Url: %s" % (parameter.Name, parameter.Url))
@@ -347,7 +348,7 @@ class Provider(ProviderBase):
         elif method == 'updateTitle':
             parameter.Method = 'PATCH'
             parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.Id)
-            parameter.Json = '{"name": "%s"}' % data.get('name')
+            parameter.setJson('name', data.get('name'))
         elif method == 'updateTrashed':
             parameter.Method = 'DELETE'
             parameter.Url = '%s/me/drive/items/%s' % (self.BaseUrl, data.Id)
@@ -358,16 +359,17 @@ class Provider(ProviderBase):
             toadd = data.get('ParentToAdd')
             toremove = data.get('ParentToRemove')
             if len(toadd) > 0:
-                parameter.Json = '{"addParents": %s}' % ','.join(toadd)
+                parameter.setJson('addParents', ','.join(toadd))
             if len(toremove) > 0:
-                parameter.Json = '{"removeParents": %s}' % ','.join(toremove)
+                parameter.setJson('removeParents', ','.join(toremove))
 
         elif method == 'createNewFolder':
             parameter.Method = 'POST'
             url = '%s/me/drive/items/%s/children' % (self.BaseUrl, data.get('ParentId'))
             parameter.Url = url
-            rename = '"@microsoft.graph.conflictBehavior": "replace"'
-            parameter.Json = '{"name": "%s", "folder": { }, %s}' % (data.get('Title'), rename)
+            parameter.setJson('name', data.get('Title'))
+            parameter.setJson('folder', '{ }')
+            parameter.setJson('@microsoft.graph.conflictBehavior', 'replace')
         elif method in ('getUploadLocation', 'getNewUploadLocation'):
             parameter.Method = 'POST'
             url, parent, name = self.BaseUrl, data.get('ParentId'), data.get('Title')
