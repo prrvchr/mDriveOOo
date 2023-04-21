@@ -53,9 +53,8 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     void setJson([in] string Key,
                  [in] any Value);
 
-    void setNestedJson([in] string Path,
-                       [in] string Separator,
-                       [in] any Value);
+    void setNesting([in] string Path,
+                    [in] any Value);
 
     void setQuery([in] string Key,
                   [in] string Value);
@@ -80,6 +79,7 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     [attribute] string NextUrl;
     [attribute] string SyncToken;
     [attribute, readonly] long PageCount;
+    [attribute] char Separator;
 
 
 };
