@@ -59,6 +59,7 @@ class ParameterizedProvider(unohelper.Base,
                             XContentIdentifierFactory,
                             XContentProvider):
     def __init__(self, ctx, logger, arguments):
+        print("ParameterizedProvider.__init__() 1 Scheme: %s" % g_scheme)
         self._ctx = ctx
         self._authority = True if arguments == 'WithAuthority' else False
         self._clazz = 'ParameterizedProvider%s' % arguments
@@ -66,6 +67,7 @@ class ParameterizedProvider(unohelper.Base,
         self._lock = Lock()
         self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
         if self._datasource is None:
+            print("ParameterizedProvider.__init__() 2 Scheme: %s" % g_scheme)
             ParameterizedProvider.__datasource = DataSource(ctx, logger, self._sync, self._lock)
         self._logger = logger
         self._logger.logprb(INFO, self._clazz, '__init__()', 201, arguments)
