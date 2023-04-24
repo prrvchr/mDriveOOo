@@ -166,6 +166,13 @@ class ProviderBase(object):
             page += parameter.PageCount
         return page, count, parameter.SyncToken
 
+    def pullUser(self, user):
+        timestamp = currentDateTimeInTZ()
+        parameter = self.getRequestParameter(user.Request, 'getPull', user)
+        iterator = self.parseItems(user.Request, parameter)
+        count = user.DataBase.pullItems(iterator, user.Id, timestamp)
+        return parameter.PageCount, count, parameter.SyncToken
+
     def getUserToken(self, user):
         parameter = self.getRequestParameter(user.Request, 'getToken', user)
         response = user.Request.execute(parameter)
@@ -223,9 +230,6 @@ class ProviderBase(object):
         raise NotImplementedError
 
     def getFirstPullRoots(self, user):
-        raise NotImplementedError
-
-    def pullUser(self, user):
         raise NotImplementedError
 
     def parseUploadLocation(self, user):

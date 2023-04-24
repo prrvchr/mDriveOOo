@@ -110,29 +110,20 @@ class Provider(ProviderBase):
         root = self._getRoot(source, request, name)
         return user, root
 
-    def pullUser(self, user):
-        timestamp = currentDateTimeInTZ()
-        parameter = self.getRequestParameter(user.Request, 'getPull', user)
-        iterator = self.parseItems(user.Request, parameter)
-        count = user.DataBase.mergeItems(user.Id, iterator)
-        return parameter.SyncToken, count, parameter.PageCount
+    def parseRootFolder(self, parameter, content):
+        return self.parseItems(content.User.Request, parameter)
 
-    def parseItems(self, request, parameter, path=None):
+    def parseItems(self, request, parameter):
         while parameter.hasNextPage():
             response = request.execute(parameter)
-            print("Provider.parseItems() Method: %s - Encoding: %s - StatusCode: %s - Url:\n%s" % (parameter.Name, response.ApparentEncoding, response.StatusCode, parameter.Url))
             if not response.Ok:
-                print("Provider.parseItems() Text: %s" % response.Text)
                 break
             events = ijson.sendable_list()
             parser = ijson.parse_coro(events)
             iterator = response.iterContent(g_chunk, False)
             while iterator.hasMoreElements():
-                chunk = iterator.nextElement().value
-                print("Provider.parseItems() Method: %s- Page: %s - Content\n'%s'" % (parameter.Name, parameter.PageCount, chunk.decode('ascii')))
-                parser.send(chunk)
+                parser.send(iterator.nextElement().value)
                 for prefix, event, value in events:
-                    #print("Provider.parseItems() Prefix: %s - Event: %s - Value: %s" % (prefix, event, value))
                     if (prefix, event) == ('@odata.deltaLink', 'string'):
                         parameter.SyncToken = value
                     elif (prefix, event) == ('@odata.nextLink', 'string'):
@@ -162,7 +153,7 @@ class Provider(ProviderBase):
                     elif (prefix, event) == ('value.item.parentReference.id', 'string'):
                         parents.append(value)
                     elif (prefix, event) == ('value.item', 'end_map'):
-                        yield itemid, name, created, modified, mimetype, size, trashed, True, True, False, False, path, parents
+                        yield itemid, name, created, modified, mimetype, size, trashed, True, True, False, False, None, parents
                 del events[:]
             parser.close()
             response.close()
