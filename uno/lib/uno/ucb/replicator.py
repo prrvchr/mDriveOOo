@@ -264,12 +264,8 @@ class Replicator(unohelper.Base,
                 elif user.Provider.isLink(mediatype):
                     pass
                 elif user.Provider.isDocument(mediatype):
-                    if user.Provider.createFile(user.Request, metadata):
-                        #if self._needPush('SizeUpdated', itemid, operations):
-                        response = user.Provider.uploadFile(user, metadata, True)
-                        if response is not None:
-                            status = response.Ok
-                            response.close()
+                    status = user.Provider.uploadFile(user, metadata, True)
+                    if status:
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 142, metadata.get('Title'), created)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
             elif action & UPDATE:

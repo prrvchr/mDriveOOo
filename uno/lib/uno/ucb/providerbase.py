@@ -234,7 +234,10 @@ class ProviderBase(object):
     def getDocumentLocation(self, user):
         raise NotImplementedError
 
-    def mergeNewFolder(self, response, user):
+    def mergeNewFolder(self, response, user, item):
+        raise NotImplementedError
+
+    def createNewFile(self, user, data):
         raise NotImplementedError
 
     def initUser(self, database, user, token):
@@ -263,27 +266,21 @@ class ProviderBase(object):
     def createFolder(self, user, item):
         parameter = self.getRequestParameter(user.Request, 'createNewFolder', item)
         response = user.Request.execute(parameter)
-        if response.Ok:
-            return self.mergeNewFolder(response, user, item)
-        return False
+        return self.mergeNewFolder(response, user, item)
 
-    def createFile(self, request, data):
-        return True
-
-    def uploadFile(self, user, item, new=False):
+    def uploadFile(self, user, data, new=False):
+        status = False
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
-        parameter = self.getRequestParameter(user.Request, method, item)
+        parameter = self.getRequestParameter(user.Request, method, data)
         response = user.Request.execute(parameter)
-        if not response.Ok:
-            response.close()
-            return False
         location = self.parseUploadLocation(response)
-        response.close()
-        if location is None:
-            return False
-        parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
-        url = self.SourceURL + g_separator + item.get('Id')
-        return user.Request.upload(parameter, url)
+        if location is not None:
+            parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
+            url = self.SourceURL + g_separator + data.get('Id')
+            response = user.Request.upload(parameter, url)
+            status = response.Ok
+            response.close()
+        return status
 
     def updateTitle(self, request, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)
