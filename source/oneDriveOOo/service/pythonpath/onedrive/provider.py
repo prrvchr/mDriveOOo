@@ -100,6 +100,7 @@ class Provider(ProviderBase):
         return (user.RootId, )
 
     def initUser(self, database, user, token):
+        # FIXME: Some APIs like Microsoft oneDrive allow to have the token during the firstPull
         #token = self.getUserToken(user)
         if database.updateToken(user.Id, token):
             user.setToken(token)
@@ -161,7 +162,7 @@ class Provider(ProviderBase):
                     elif (prefix, event) == ('value.item.parentReference.id', 'string'):
                         parents.append(value)
                     elif (prefix, event) == ('value.item', 'end_map'):
-                        yield itemid, name, created, modified, mimetype, size, trashed, True, True, False, False, parents
+                        yield itemid, name, created, modified, mimetype, size, trashed, True, True, False, False, None, parents
                 del events[:]
             parser.close()
             response.close()
