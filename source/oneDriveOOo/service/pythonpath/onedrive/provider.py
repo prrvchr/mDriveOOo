@@ -117,7 +117,7 @@ class Provider(ProviderBase):
         count = user.DataBase.mergeItems(user.Id, iterator)
         return parameter.SyncToken, count, parameter.PageCount
 
-    def parseItems(self, request, parameter):
+    def parseItems(self, request, parameter, path=None):
         while parameter.hasNextPage():
             response = request.execute(parameter)
             print("Provider.parseItems() Method: %s - Encoding: %s - StatusCode: %s - Url:\n%s" % (parameter.Name, response.ApparentEncoding, response.StatusCode, parameter.Url))
@@ -162,7 +162,7 @@ class Provider(ProviderBase):
                     elif (prefix, event) == ('value.item.parentReference.id', 'string'):
                         parents.append(value)
                     elif (prefix, event) == ('value.item', 'end_map'):
-                        yield itemid, name, created, modified, mimetype, size, trashed, True, True, False, False, None, parents
+                        yield itemid, name, created, modified, mimetype, size, trashed, True, True, False, False, path, parents
                 del events[:]
             parser.close()
             response.close()
