@@ -165,14 +165,8 @@ class Replicator(unohelper.Base,
     def _initUser(self, user):
         # This procedure is launched only once for each new user
         # This procedure corresponds to the initial pull for a new User (ie: without Token)
-        rejected, pages, count, token = self.Provider.firstPull(user)
-        print("Replicator._initUser() 1 Count: %s - Pages %s" % (count, pages))
-        self._logger.logprb(INFO, 'Replicator', '_initUser()', 121, pages, count)
-        if len(rejected):
-            self._logger.logprb(SEVERE, 'Replicator', '_initUser()', 122, len(rejected))
-        for title, itemid, parents in rejected:
-            self._logger.logprb(SEVERE, 'Replicator', '_initUser()', 123, title, itemid, parents)
-        print("Replicator._initUser() 2 Count: %s - Token: %s" % (count, token))
+        pages, count, token = self.Provider.firstPull(user)
+        print("Replicator._initUser() 1 Count: %s - Pages %s - Token: %s" % (count, pages, token))
         user.Provider.initUser(self.DataBase, user, token)
         user.SyncMode = 1
         self._fullPull = True
@@ -181,7 +175,7 @@ class Replicator(unohelper.Base,
         # This procedure is launched each time the synchronization is started
         # This procedure corresponds to the pull for a User (ie: a Token is required)
         print("Replicator._pullUser() 1")
-        token, count, pages = user.Provider.pullUser(user)
+        pages, count, token = user.Provider.pullUser(user)
         if token:
             user.setToken(token)
         print("Replicator._pullUser() 2 Items count: %s - Pages count: %s - Token: %s" % (count, pages, token))

@@ -188,6 +188,7 @@ def getQueries():
             ('createGetItemParentIds',{'Role': g_role}),
             ('createInsertUser',{'Role': g_role}),
             ('createMergeItem',{'Role': g_role}),
+            ('createMergeParent',{'Role': g_role}),
             ('createInsertItem',{'Role': g_role}),
             ('createPullChanges',{'Role': g_role}),
             ('createUpdateNewItemId',{'Role': g_role}))

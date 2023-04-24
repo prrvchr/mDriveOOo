@@ -127,10 +127,11 @@ class ProviderBase(object):
 
     # Method called by Content
     def updateFolderContent(self, content):
+        timestamp = currentDateTimeInTZ()
         parameter = self.getRequestParameter(content.User.Request, 'getFolderContent', content)
-        iterator = self.parseItems(content.User.Request, parameter)
-        updated = content.User.DataBase.updateFolderContent(iterator, content.User.Id)
-        return updated
+        iterator = self.parseItems(content.User.Request, parameter, (content.Id, ))
+        count = content.User.DataBase.pullItems(iterator, content.User.Id, timestamp)
+        return count
 
     def getDocumentContent(self, content, url):
         print('ProviderBase.getDocumentContent() Url: %s' % url)
@@ -155,45 +156,15 @@ class ProviderBase(object):
         user.DataBase.insertIdentifier(iterator, user.Id)
         response.close()
 
-
-
     def firstPull(self, user):
-        orphans, pages, count, token = self._pullItems(user)
-        rejected = self._getRejectedItems(orphans)
-        return rejected, pages, count, token
-
-    def _pullItems(self, user):
-        orphans = OrderedDict()
-        roots = [user.RootId]
-        pages = count = 0
-        token = ''
+        timestamp = currentDateTimeInTZ()
+        page = count = 0
         for root in self.getFirstPullRoots(user):
             parameter = self.getRequestParameter(user.Request, 'getFirstPull', root)
             iterator = self.parseItems(user.Request, parameter)
-            count = user.DataBase.pullItems(user.Id, iterator, self._isValidItem, roots, orphans)
-        return orphans, parameter.PageCount, count, parameter.SyncToken
-
-    def firstPull1(self, user):
-        start = currentDateTimeInTZ()
-        #call = user.DataBase.getFirstPullCall(user.Id, 1, start)
-        orphans, pages, count, token = self._pullItems(user)
-        #rows += self._filterParents(call, user.Provider, items, parents, roots, start)
-        rejected = self._getRejectedItems(orphans)
-        if count > 0:
-            call.executeBatch()
-        call.close()
-        return rejected, pages, count, token
-
-    def _pullItems1(self, call, user, start, method, data):
-        orphans = OrderedDict()
-        roots = [user.RootId]
-        pages = count = 0
-        token = ''
-        for root in self.getFirstPullRoots(user):
-            parameter = self.getRequestParameter(user.Request, method, root)
-            iterator = self.parseItems(user.Request, parameter)
-            count = user.DataBase.pullItems(call, iterator, self._isValidItem, roots, orphans)
-        return orphans, parameter.PageCount, count, parameter.SyncToken
+            count +=  user.DataBase.pullItems(iterator, user.Id, timestamp)
+            page += parameter.PageCount
+        return page, count, parameter.SyncToken
 
     def getUserToken(self, user):
         parameter = self.getRequestParameter(user.Request, 'getToken', user)

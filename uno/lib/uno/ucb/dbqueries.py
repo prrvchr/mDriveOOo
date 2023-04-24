@@ -643,27 +643,29 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "PullChanges_1" TO "%(Role)s";''' % format
 
     elif name == 'createMergeItem':
         query = '''\
-CREATE PROCEDURE "MergeItem"(IN "UserId" VARCHAR(100),
-                             IN "ConnectionMode" SMALLINT,
-                             IN "TimeStamp" TIMESTAMP(6) WITH TIME ZONE,
-                             IN "ItemId" VARCHAR(100),
-                             IN "Title" VARCHAR(100),
-                             IN "DateCreated" TIMESTAMP(6),
-                             IN "DateModified" TIMESTAMP(6),
-                             IN "MediaType" VARCHAR(100),
-                             IN "Size" BIGINT,
-                             IN "Trashed" BOOLEAN,
-                             IN "CanAddChild" BOOLEAN,
-                             IN "CanRename" BOOLEAN,
-                             IN "IsReadOnly" BOOLEAN,
-                             IN "IsVersionable" BOOLEAN,
-                             IN "Parents" VARCHAR(100) ARRAY)
+CREATE PROCEDURE "MergeItem"(IN UserId VARCHAR(100),
+                             IN ConnectionMode SMALLINT,
+                             IN DateTime TIMESTAMP(6) WITH TIME ZONE,
+                             IN ItemId VARCHAR(100),
+                             IN Title VARCHAR(100),
+                             IN DateCreated TIMESTAMP(6),
+                             IN DateModified TIMESTAMP(6),
+                             IN MediaType VARCHAR(100),
+                             IN Size BIGINT,
+                             IN Trashed BOOLEAN,
+                             IN CanAddChild BOOLEAN,
+                             IN CanRename BOOLEAN,
+                             IN IsReadOnly BOOLEAN,
+                             IN IsVersionable BOOLEAN)
   SPECIFIC "MergeItem_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    DECLARE "Index" INTEGER DEFAULT 1;
-    MERGE INTO "Items" USING (VALUES("UserId","ItemId","Title","DateCreated","DateModified", 
-                                     "MediaType","Size","Trashed","ConnectionMode","TimeStamp")) 
+    DECLARE Index INTEGER DEFAULT 1;
+    DECLARE TmpItem VARCHAR(100) DEFAULT NULL;
+    DECLARE TmpParent VARCHAR(100) DEFAULT NULL;
+    DECLARE TmpRoots VARCHAR(100) ARRAY;
+    MERGE INTO "Items" USING (VALUES(UserId, ItemId, Title, DateCreated, DateModified, 
+                                     MediaType, Size, Trashed, ConnectionMode, DateTime)) 
       AS vals(k,r,s,t,u,v,w,x,y,z) ON "Items"."ItemId"=vals.r 
         WHEN MATCHED THEN 
           UPDATE SET "Title"=vals.s, "DateCreated"=vals.t, "DateModified"=vals.u, "MediaType"=vals.v, 
@@ -672,8 +674,8 @@ CREATE PROCEDURE "MergeItem"(IN "UserId" VARCHAR(100),
           INSERT ("UserId","ItemId","Title","DateCreated","DateModified", 
                   "MediaType","Size","Trashed","ConnectionMode","TimeStamp") 
           VALUES vals.k, vals.r, vals.s, vals.t, vals.u, vals.v, vals.w, vals.x, vals.y, vals.z; 
-    MERGE INTO "Capabilities" USING (VALUES("UserId","ItemId","CanAddChild","CanRename", 
-                                            "IsReadOnly","IsVersionable","TimeStamp")) 
+    MERGE INTO "Capabilities" USING (VALUES(UserId, ItemId, CanAddChild, CanRename, 
+                                            IsReadOnly, IsVersionable, DateTime)) 
       AS vals(t,u,v,w,x,y,z) ON "Capabilities"."UserId"=vals.t AND "Capabilities"."ItemId"=vals.u 
         WHEN MATCHED THEN 
           UPDATE SET "CanAddChild"=vals.v, "CanRename"=vals.w, "IsReadOnly"=vals.x, 
@@ -682,18 +684,36 @@ CREATE PROCEDURE "MergeItem"(IN "UserId" VARCHAR(100),
           INSERT ("UserId","ItemId","CanAddChild","CanRename","IsReadOnly", 
                   "IsVersionable","TimeStamp")
           VALUES vals.t, vals.u, vals.v, vals.w, vals.x, vals.y, vals.z;
-    DELETE FROM "Parents" WHERE "ChildId"="ItemId" AND "ItemId" NOT IN (UNNEST("Parents"));
-    -- A resource can have several parents in any case Google allows it...
-    WHILE "Index" <= CARDINALITY("Parents") DO
-      MERGE INTO "Parents" USING (VALUES("ItemId","Parents"["Index"],"TimeStamp")) 
-        AS vals(x,y,z) ON "Parents"."ChildId"=vals.x AND "Parents"."ItemId"=vals.y 
-          WHEN NOT MATCHED THEN 
-            INSERT ("ChildId","ItemId","TimeStamp") 
-            VALUES vals.x, vals.y, vals.z;
-      SET "Index" = "Index" + 1;
-    END WHILE;
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "MergeItem_1" TO "%(Role)s";''' % format
+
+    elif name == 'createMergeParent':
+        query = '''\
+CREATE PROCEDURE "MergeParent"(IN ItemId VARCHAR(100),
+                               IN Path VARCHAR(100),
+                               IN Parents VARCHAR(100) ARRAY,
+                               IN DateTime TIMESTAMP(6) WITH TIME ZONE)
+  SPECIFIC "MergeParent_1"
+  MODIFIES SQL DATA
+  BEGIN ATOMIC
+    DECLARE Index INTEGER DEFAULT 1;
+    DECLARE TmpParents VARCHAR(100) ARRAY;
+    IF Path IS NULL THEN
+      SET TmpParents = Parents;
+    ELSE
+      SELECT ARRAY_AGG("ItemId") INTO TmpParents FROM "Path" WHERE "Path" = Path;
+    END IF;
+    DELETE FROM "Parents" WHERE "ChildId"=ItemId AND "ItemId" NOT IN (UNNEST(TmpParents));
+    WHILE Index <= CARDINALITY(TmpParents) DO
+      MERGE INTO "Parents" USING (VALUES(ItemId, TmpParents[Index], DateTime)) 
+      AS vals(x,y,z) ON "Parents"."ChildId"=vals.x AND "Parents"."ItemId"=vals.y 
+        WHEN NOT MATCHED THEN 
+          INSERT ("ChildId","ItemId","TimeStamp") 
+          VALUES vals.x, vals.y, vals.z;
+      SET Index = Index + 1;
+    END WHILE;
+  END;
+GRANT EXECUTE ON SPECIFIC ROUTINE "MergeParent_1" TO "%(Role)s";''' % format
 
     elif name == 'createInsertItem':
         query = '''\
@@ -760,7 +780,9 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
     elif name == 'insertUser':
         query = 'CALL "InsertUser"(?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'mergeItem':
-        query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    elif name == 'mergeParent':
+        query = 'CALL "MergeParent"(?,?,?,?)'
     elif name == 'pullChanges':
         query = 'CALL "PullChanges"(?,?,?,?,?,?)'
     elif name == 'insertItem':

@@ -218,7 +218,7 @@ class Content(unohelper.Base,
     def execute(self, command, id, environment):
         print("Content.execute() 1  Commande Name: %s ****************************************************************" % command.Name)
         uri = self._user.getContentPath(self.Path, self.Title, self.IsRoot)
-        print("Content.execute() %s - %s - %s" % (command.Name, uri, self.Id))
+        print("Content.execute() %s - %s - %s - IsFolder: %s" % (command.Name, uri, self.Id, self.IsFolder))
         msg = "command.Name: %s" % command.Name
         self._logger.logp(INFO, 'Content', 'execute()', msg)
 

@@ -36,6 +36,7 @@ from com.sun.star.logging.LogLevel import SEVERE
 from com.sun.star.sdb.CommandType import QUERY
 
 from com.sun.star.sdbc.DataType import VARCHAR
+from com.sun.star.sdbc.DataType import ARRAY
 
 from io.github.prrvchr.css.util import DateTimeWithTimezone
 
@@ -214,22 +215,6 @@ class DataBase():
         result.close()
         select.close()
         return item
-
-    def updateFolderContent(self, iterator, userid):
-        count = 0
-        timestamp = currentDateTimeInTZ()
-        call = self._getCall('mergeItem')
-        call.setString(1, userid)
-        call.setLong(2, 0)
-        call.setObject(3, timestamp)
-        for item in iterator:
-            self._mergeItem(call, item)
-            call.addBatch()
-            count += 1
-        if count > 0:
-            call.executeBatch()
-        call.close()
-        return count > 0
 
     def getChildren(self, username, itemid, properties, mode, scheme):
         #TODO: Can't have a ResultSet of type SCROLL_INSENSITIVE with a Procedure,
@@ -411,42 +396,21 @@ class DataBase():
             call.executeBatch()
         call.close()
 
-    # First pull procedure: header of merge request
-    def getFirstPullCall(self, userid, connectionmode, timestamp):
-        call = self._getCall('mergeItem')
-        call.setString(1, userid)
-        call.setInt(2, connectionmode)
-        call.setObject(3, timestamp)
-        return call
-
-    # First pull procedure: body of merge request
-    def pullItems(self, userid, iterator, isvalid, roots, orphans):
+    # Pull procedure
+    def pullItems(self, iterator, userid, timestamp):
         count = 0
-        call = self._getCall('mergeItem')
-        call.setString(1, userid)
-        call.setInt(2, 1)
-        call.setObject(3, currentDateTimeInTZ())
+        call1 = self._getCall('mergeItem')
+        call2 = self._getCall('mergeParent')
+        call1.setString(1, userid)
+        call1.setInt(2, 1)
+        call1.setObject(3, timestamp)
         for item in iterator:
-            if isvalid(item, roots, orphans):
-                count += self._mergeItem(call, item)
-                call.addBatch()
+            count += self._mergeItem(call1, call2, item, timestamp)
         if count:
-            call.executeBatch()
-        call.close()
-        return count
-
-    def mergeItems(self, userid, iterator):
-        count = 0
-        call = self._getCall('mergeItem')
-        call.setString(1, userid)
-        call.setInt(2, 1)
-        call.setObject(3, currentDateTimeInTZ())
-        for item in iterator:
-            count += self._mergeItem(call, item)
-            call.addBatch()
-        if count:
-            call.executeBatch()
-        call.close()
+            call1.executeBatch()
+            call2.executeBatch()
+        call1.close()
+        call2.close()
         return count
 
     def pullChanges(self, iterator, userid, timestamp):
@@ -536,20 +500,31 @@ class DataBase():
             update.close()
 
 # Procedures called internally
-    def _mergeItem(self, call, item):
-        call.setString(4, item[0])
-        call.setString(5, item[1])
-        call.setTimestamp(6, item[2])
-        call.setTimestamp(7, item[3])
-        call.setString(8, item[4])
-        call.setLong(9, item[5])
-        call.setBoolean(10, item[6])
-        call.setBoolean(11, item[7])
-        call.setBoolean(12, item[8])
-        call.setBoolean(13, item[9])
-        call.setBoolean(14, item[10])
-        call.setArray(15, Array('VARCHAR', item[11]))
+    def _mergeItem(self, call1, call2, item, timestamp):
+        call1.setString(4, item[0])
+        call1.setString(5, item[1])
+        call1.setTimestamp(6, item[2])
+        call1.setTimestamp(7, item[3])
+        call1.setString(8, item[4])
+        call1.setLong(9, item[5])
+        call1.setBoolean(10, item[6])
+        call1.setBoolean(11, item[7])
+        call1.setBoolean(12, item[8])
+        call1.setBoolean(13, item[9])
+        call1.setBoolean(14, item[10])
+        call1.addBatch()
+        self._mergeParent(call2, item, timestamp)
         return 1
+
+    def _mergeParent(self, call, item, timestamp):
+        call.setString(1, item[0])
+        self._setPath(call, 2, item[-2])
+        call.setArray(3, Array('VARCHAR', item[-1]))
+        call.setObject(4, timestamp)
+        call.addBatch()
+
+    def _setPath(self, call, i, path):
+        call.setNull(i, VARCHAR) if path is None else call.setString(i, path)
 
     def _mergeRoot(self, provider, userid, rootid, rootname, root, timestamp):
         call = self._getCall('mergeItem')
