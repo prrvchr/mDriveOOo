@@ -129,7 +129,7 @@ class ProviderBase(object):
     def updateFolderContent(self, content):
         timestamp = currentDateTimeInTZ()
         parameter = self.getRequestParameter(content.User.Request, 'getFolderContent', content)
-        iterator = self.parseItems(content.User.Request, parameter, (content.Id, ))
+        iterator = self.parseRootFolder(parameter, content)
         count = content.User.DataBase.pullItems(iterator, content.User.Id, timestamp)
         return count
 
@@ -213,7 +213,7 @@ class ProviderBase(object):
     def parseNewIdentifiers(self, response):
         raise NotImplementedError
 
-    def parseItems(self, request, parameter, data=None):
+    def parseItems(self, request, parameter):
         raise NotImplementedError
 
     def parseChanges(self, user, parameter):
@@ -238,6 +238,9 @@ class ProviderBase(object):
         raise NotImplementedError
 
     def createNewFile(self, user, data):
+        raise NotImplementedError
+
+    def parseRootFolder(self, parameter, content):
         raise NotImplementedError
 
     def initUser(self, database, user, token):
