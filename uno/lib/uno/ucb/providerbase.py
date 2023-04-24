@@ -213,7 +213,7 @@ class ProviderBase(object):
     def parseNewIdentifiers(self, response):
         raise NotImplementedError
 
-    def parseItems(self, request, parameter):
+    def parseItems(self, request, parameter, data=None):
         raise NotImplementedError
 
     def parseChanges(self, user, parameter):
