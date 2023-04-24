@@ -59,14 +59,17 @@ class ContentProvider(unohelper.Base,
                       XContentIdentifierFactory,
                       XParameterizedContentProvider):
     def __init__(self, ctx):
+        print('ContentProvider.__init__()')
         self._ctx = ctx
         self._logger = getLogger(ctx, g_defaultlog, g_basename)
         self._logger.logprb(INFO, 'ContentProvider', '__init__()', 101, g_ImplementationName)
 
     # XParameterizedContentProvider
     def registerInstance(self, template, arguments, replace):
+        print('ContentProvider.registerInstance() 1')
         try:
             provider = ParameterizedProvider(self._ctx, self._logger, arguments)
+            print('ContentProvider.registerInstance() 2')
             self._logger.logprb(INFO, 'ContentProvider', 'registerInstance()', 111, arguments)
             return provider
         except Exception as e:
