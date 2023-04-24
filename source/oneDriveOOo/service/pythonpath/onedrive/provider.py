@@ -201,13 +201,12 @@ class Provider(ProviderBase):
             response.close()
 
     def getDocumentLocation(self, content):
+        url = None
         parameter = self.getRequestParameter(content.User.Request, 'getDocumentLocation', content)
         response = content.User.Request.execute(parameter)
         print("Provider.getDocumentContent() Status: %s - IsOk: %s - Reason: %s" % (response.StatusCode, response.Ok, response.Reason))
-        if not response.Ok:
-            response.close()
-            return None
-        url = response.getHeader('Location')
+        if response.Ok and response.hasHeader('Location'):
+            url = response.getHeader('Location')
         response.close()
         print("Provider.getDocumentContent() Url: %s" % url)
         return url
@@ -293,16 +292,18 @@ class Provider(ProviderBase):
 
     def parseUploadLocation(self, response):
         url =  None
-        events = ijson.sendable_list()
-        parser = ijson.parse_coro(events)
-        iterator = response.iterContent(g_chunk, False)
-        while iterator.hasMoreElements():
-            parser.send(iterator.nextElement().value)
-            for prefix, event, value in events:
-                if (prefix, event) == ('uploadUrl', 'string'):
-                    url = value
-            del events[:]
-        parser.close()
+        if response.Ok:
+            events = ijson.sendable_list()
+            parser = ijson.parse_coro(events)
+            iterator = response.iterContent(g_chunk, False)
+            while iterator.hasMoreElements():
+                parser.send(iterator.nextElement().value)
+                for prefix, event, value in events:
+                    if (prefix, event) == ('uploadUrl', 'string'):
+                        url = value
+                del events[:]
+            parser.close()
+        response.close()
         return url
 
     def updateDrive(self, database, user, token):
