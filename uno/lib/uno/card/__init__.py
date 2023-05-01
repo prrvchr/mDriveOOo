@@ -33,15 +33,19 @@ from .configuration import g_defaultlog
 from .configuration import g_scheme
 from .configuration import g_host
 
-from .datasource import DataSource
+from .card import DataSource
 
-from .logger import getLogger
+from .provider import Provider
+
+from .database import DataBase
 
 from .options import OptionsManager
 
+from .logger import getLogger
+
 from .dbtool import getDriverPropertyInfos
 
-from .providerbase import getSqlException
+from .card import getSqlException
 
 from .unotool import createMessageBox
 from .unotool import createService
@@ -51,4 +55,6 @@ from .unotool import getFileSequence
 from .unotool import getResourceLocation
 from .unotool import getSimpleFile
 from .unotool import getStringResource
+# FIXME Import necessary exclusively for vCardOOo
+from .unotool import getUrl
 

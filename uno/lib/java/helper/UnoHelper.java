@@ -737,6 +737,19 @@ public class UnoHelper
         return dtz;
     }
 
+    public static com.sun.star.util.DateTime currentUnoDateTime()
+    {
+        OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
+        com.sun.star.util.DateTime dt = new com.sun.star.util.DateTime();
+        dt.Year = (short) now.getYear();
+        dt.Month = (short) now.getMonthValue();
+        dt.Day = (short) now.getDayOfMonth();
+        dt.Hours = (short) now.getHour();
+        dt.Minutes = (short) now.getMinute();
+        dt.Seconds = (short) now.getSecond();
+        return dt;
+    }
+
     public static DateTime currentDateTime(boolean utc)
     {
         OffsetDateTime now = utc ? OffsetDateTime.now(java.time.ZoneOffset.UTC) : OffsetDateTime.now();

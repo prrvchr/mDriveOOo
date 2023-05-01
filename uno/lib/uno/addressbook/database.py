@@ -289,7 +289,12 @@ class DataBase(unohelper.Base):
         call.addBatch()
         return (0, 1) if deleted else (1, 0)
 
-    def mergePeopleData(self, table, resource, typename, label, value, timestamp):
+    def mergePeopleData(self, iterator, timestamp):
+        for item in iterator:
+            pass
+        return 1
+
+    def mergePeopleData1(self, table, resource, typename, label, value, timestamp):
         format = {'Table': table, 'Type': typename}
         call = self._getBatchedCall(table, 'mergePeopleData', format)
         call.setString(1, 'people/')

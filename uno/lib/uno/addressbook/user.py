@@ -93,10 +93,9 @@ class User(unohelper.Base):
             raise self._getSqlException(1003, 1105, '_getMetaData', g_oauth2)
         if provider.isOffLine():
             raise self._getSqlException(1004, 1108, '_getMetaData', name)
-        data = provider.getUser(self.Request, self.Fields)
-        if not data.IsPresent:
+        userid = provider.getUser(self.Request, self.Fields)
+        if userid is None:
             raise self._getSqlException(1006, 1107, '_getMetaData', name)
-        userid = provider.getUserId(data.Value)
         return database.insertUser(userid, name)
 
     def _initUser(self, database, password):

@@ -35,24 +35,16 @@ from com.sun.star.ucb.ConnectionMode import ONLINE
 
 from .addressbook import AddressBooks
 
-from .provider import Provider
+from .provider import getSqlException
 
-from .unotool import getConnectionMode
-from .providerbase import getSqlException
+from ..dbconfig import g_user
+from ..dbconfig import g_schema
 
-from .oauth2 import getRequest
-from .oauth2 import g_oauth2
-
-from .dbconfig import g_user
-from .dbconfig import g_schema
-
-from .configuration import g_path
+from ..unotool import getConnectionMode
+from ..oauth2 import getRequest
+from ..oauth2 import g_oauth2
 
 import traceback
-
-
-def getUserUri(server, name):
-    return server + '/' + name
 
 
 class User(unohelper.Base):
@@ -108,9 +100,6 @@ class User(unohelper.Base):
         return self._isOffLine(self.Server)
 
 # Procedures called by DataSource
-    def getUri(self):
-        return getUserUri(self.Server, self.Name)
-
     def getName(self):
         return g_user % self.Id
 

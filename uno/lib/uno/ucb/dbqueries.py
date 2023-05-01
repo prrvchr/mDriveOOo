@@ -30,8 +30,6 @@
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .dbconfig import g_csv
-
 from .logger import getLogger
 
 from .configuration import g_errorlog
@@ -85,7 +83,7 @@ def getSqlQuery(ctx, name, format=None):
         p = ','.join(c)
         query = 'CREATE TEXT TABLE "Settings"(%s);' % p
     elif name == 'setTableSource':
-        query = 'SET TABLE "%s" SOURCE "%s"' % (format, g_csv % format)
+        query = 'SET TABLE "%s" SOURCE "%s"' % format
     elif name == 'setTableHeader':
         query = 'SET TABLE "%s" SOURCE HEADER "%s"' % format
     elif name == 'setTableReadOnly':

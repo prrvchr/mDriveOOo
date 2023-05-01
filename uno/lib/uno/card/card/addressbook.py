@@ -33,14 +33,12 @@ import unohelper
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .dbtool import getSqlException
+from ..unotool import createService
 
-from .unotool import createService
+from ..logger import getLogger
 
-from .logger import getLogger
-
-from .configuration import g_errorlog
-from .configuration import g_basename
+from ..configuration import g_errorlog
+from ..configuration import g_basename
 
 from collections import OrderedDict
 import traceback

@@ -33,12 +33,12 @@ import unohelper
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .unotool import getConfiguration
+from ..unotool import getConfiguration
 
-from .configuration import g_identifier
-from .configuration import g_synclog
+from ..configuration import g_identifier
+from ..configuration import g_synclog
 
-from .logger import getLogger
+from ..logger import getLogger
 g_basename = 'Replicator'
 
 from threading import Thread
@@ -98,16 +98,15 @@ class Replicator(unohelper.Base):
                 self._started.wait()
                 if not self._disposed.is_set():
                     print("replicator.run()3 synchronize started ****************************************")
-                    dltd, mdfd = self._synchronize(logger)
-                    total = dltd + mdfd
+                    pages, total = self._synchronize(logger)
+                    logger.logprb(INFO, 'Replicator', '_replicate()', 101, pages, total)
                     if total > 0:
                         print("replicator.run()4 synchronize started CardSync.jar")
-                        self._provider.parseCard(self._database.Connection)
+                        pages, total = self._finalize(logger)
                         print("replicator.run()5 synchronize ended CardSync.jar")
-                        self._database.syncGroups()
+                        logger.logprb(INFO, 'Replicator', '_replicate()', 102, pages, total)
                     self._database.dispose()
-                    logger.logprb(INFO, 'Replicator', '_replicate()', 101, total, mdfd, dltd)
-                    print("replicator.run()6 synchronize ended query=%s modified=%s deleted=%s *******************************************" % (total, mdfd, dltd))
+                    print("replicator.run()6 synchronize ended Pages: %s - Total: %s *******************************************" % (pages, total))
                     if self._started.is_set():
                         print("replicator.run()7 start waitting *******************************************")
                         self._paused.clear()
@@ -120,30 +119,42 @@ class Replicator(unohelper.Base):
             print(msg)
 
     def _synchronize(self, logger):
-        dltd = mdfd = 0
+        pages = count = 0
         for user in self._users.values():
-            if self._canceled():
-                break
             if not user.hasSession():
                 continue
             if user.isOffLine():
                 logger.logprb(INFO, 'Replicator', '_synchronize()', 111)
-            elif not self._canceled():
-                logger.logprb(INFO, 'Replicator', '_synchronize()', 112, user.Name)
-                dltd, mdfd = self._syncUser(logger, user, dltd, mdfd)
-                logger.logprb(INFO, 'Replicator', '_synchronize()', 113, user.Name)
-        return dltd, mdfd
-
-    def _syncUser(self, logger, user, dltd, mdfd):
-        for addressbook in user.getAddressbooks():
-            print("Replicator._syncUser() AddressBook Name: %s - Path: %s" % (addressbook.Name, addressbook.Uri))
-        for addressbook in user.getAddressbooks():
-            if self._canceled():
+            elif self._canceled():
                 break
-            if addressbook.isNew():
-                print("Replicator._syncUser() New AddressBook Path: %s" % addressbook.Uri)
-                mdfd += self._provider.firstPullCard(self._database, user, addressbook)
-            elif not self._canceled():
-                dltd, mdfd = self._provider.pullCard(self._database, user, addressbook, dltd, mdfd)
-        return dltd, mdfd
+            logger.logprb(INFO, 'Replicator', '_synchronize()', 112, user.Name)
+            for addressbook in user.getAddressbooks():
+                if self._canceled():
+                    break
+                if addressbook.isNew():
+                    print("Replicator._syncUser() New AddressBook Path: %s" % addressbook.Uri)
+                    pages, count = self._provider.firstPullCard(self._database, user, addressbook, pages, count)
+                else:
+                    pages, count = self._provider.pullCard(self._database, user, addressbook, pages, count)
+            logger.logprb(INFO, 'Replicator', '_synchronize()', 113, user.Name)
+        return pages, count
+
+    def _finalize(self, logger):
+        pages = count = 0
+        self._provider.parseCard(self._database)
+        for user in self._users.values():
+            if not user.hasSession():
+                continue
+            if user.isOffLine():
+                logger.logprb(INFO, 'Replicator', '_finalize()', 121)
+            elif self._canceled():
+                break
+            logger.logprb(INFO, 'Replicator', '_finalize()', 122, user.Name)
+            for addressbook in user.getAddressbooks():
+                if self._canceled():
+                    break
+                pages, count = self._provider.syncGroups(self._database, user, addressbook, pages, count)
+            logger.logprb(INFO, 'Replicator', '_finalize()', 123, user.Name)
+        self._database.syncGroups()
+        return pages, count
 

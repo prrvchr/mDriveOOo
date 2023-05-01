@@ -27,24 +27,11 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
+from .database import DataBase
 
-from com.sun.star.rest import XJsonParser
+from .datasource import DataSource
 
-from .unolib import KeyMap
+from .provider import Provider
 
-
-class JsonParser(unohelper.Base,
-                 XJsonParser):
-    def __init__(self, field, **kwargs):
-        self._field = field
-        self._keys = kwargs
-
-    def parse(self, data):
-        keymap = KeyMap()
-        for key, value in data:
-            if isinstance(value, list):
-                value = tuple(value)
-            keymap.insertValue(self._keys.get(key, key), value)
-        return keymap.getValue(self._field) if keymap.hasValue(self._field) else keymap
+from .provider import getSqlException
 

@@ -40,50 +40,51 @@ from com.sun.star.sdbc.DataType import INTEGER
 from com.sun.star.sdbc.DataType import TIMESTAMP
 from com.sun.star.sdbc.DataType import VARCHAR
 
-from .unolib import KeyMap
+from ..unolib import KeyMap
 
-from .unotool import parseDateTime
-from .unotool import createService
-from .unotool import getConfiguration
-from .unotool import getResourceLocation
-from .unotool import getSimpleFile
-from .unotool import getUrlPresentation
+from ..dbtool import Array
+from ..dbtool import checkDataBase
+from ..dbtool import createDataSource
+from ..dbtool import createStaticTable
+from ..dbtool import currentDateTimeInTZ
+from ..dbtool import getConnectionInfo
+from ..dbtool import getDataBaseConnection
+from ..dbtool import getDataBaseUrl
+from ..dbtool import executeSqlQueries
+from ..dbtool import getDataFromResult
+from ..dbtool import getDataSourceCall
+from ..dbtool import getDataSourceConnection
+from ..dbtool import executeQueries
+from ..dbtool import getDictFromResult
+from ..dbtool import getKeyMapFromResult
+from ..dbtool import getRowDict
+from ..dbtool import getSequenceFromResult
+from ..dbtool import getValueFromResult
+from ..dbtool import getKeyMapKeyMapFromResult
 
-from .configuration import g_identifier
-from .configuration import g_admin
-from .configuration import g_group
-from .configuration import g_host
+from ..unotool import parseDateTime
+from ..unotool import createService
+from ..unotool import getConfiguration
+from ..unotool import getResourceLocation
+from ..unotool import getSimpleFile
+from ..unotool import getUrlPresentation
 
-from .dbqueries import getSqlQuery
+from ..configuration import g_identifier
+from ..configuration import g_admin
+from ..configuration import g_group
+from ..configuration import g_host
 
-from .dbconfig import g_dba
-from .dbconfig import g_folder
-from .dbconfig import g_jar
-from .dbconfig import g_role
-from .dbconfig import g_schema
-from .dbconfig import g_user
-from .dbconfig import g_cardview
-from .dbconfig import g_bookmark
+from ..dbqueries import getSqlQuery
 
-from .dbtool import Array
-from .dbtool import checkDataBase
-from .dbtool import createDataSource
-from .dbtool import createStaticTable
-from .dbtool import currentDateTimeInTZ
-from .dbtool import getConnectionInfo
-from .dbtool import getDataBaseConnection
-from .dbtool import getDataBaseUrl
-from .dbtool import executeSqlQueries
-from .dbtool import getDataFromResult
-from .dbtool import getDataSourceCall
-from .dbtool import getDataSourceConnection
-from .dbtool import executeQueries
-from .dbtool import getDictFromResult
-from .dbtool import getKeyMapFromResult
-from .dbtool import getRowDict
-from .dbtool import getSequenceFromResult
-from .dbtool import getValueFromResult
-from .dbtool import getKeyMapKeyMapFromResult
+from ..dbconfig import g_dba
+from ..dbconfig import g_folder
+from ..dbconfig import g_jar
+from ..dbconfig import g_role
+from ..dbconfig import g_schema
+from ..dbconfig import g_user
+from ..dbconfig import g_cardview
+from ..dbconfig import g_bookmark
+from ..dbconfig import g_csv
 
 from .dbinit import getStaticTables
 from .dbinit import getQueries
@@ -91,8 +92,9 @@ from .dbinit import getTables
 from .dbinit import getViews
 
 from collections import OrderedDict
-import traceback
 from time import sleep
+import json
+import traceback
 
 
 class DataBase(unohelper.Base):
@@ -144,7 +146,7 @@ class DataBase(unohelper.Base):
         version, error = checkDataBase(self._ctx, connection)
         if error is None:
             statement = connection.createStatement()
-            createStaticTable(self._ctx, statement, getStaticTables(), True)
+            createStaticTable(self._ctx, statement, getStaticTables(), g_csv, True)
             tables = getTables(self._ctx, connection, version)
             executeSqlQueries(statement, tables)
             executeQueries(self._ctx, statement, getQueries())
@@ -156,16 +158,18 @@ class DataBase(unohelper.Base):
 
     def _getAddressbookColumns(self, connection):
         columns = OrderedDict()
-        call = getDataSourceCall(self._ctx, connection, 'getAddressbookColumns')
+        call = getDataSourceCall(self._ctx, connection, 'getColumns')
         result = call.executeQuery()
-        count = result.MetaData.ColumnCount +1
         while result.next():
-            row = getRowDict(result, None, count)
-            view = row.get("ViewName")
+            index = result.getInt(1)
+            name = result.getString(2)
+            view = result.getString(3)
+            print("DataBase._getAddressbookColumns() Index: %s - Name: %s - View: %s" % (index, name, view))
             if view is not None:
                 if view not in columns:
                     columns[view] = OrderedDict()
-                columns[view][row.get("ColumnName")] = row.get("ColumnId")
+                columns[view][name] = index
+        result.close()
         call.close()
         return columns
 
@@ -232,6 +236,93 @@ class DataBase(unohelper.Base):
             user = getKeyMapFromResult(result)
         call.close()
         return user
+
+    def getMetaData(self, default, tag, dot='.', sep=','):
+        try:
+            paths = self._getPaths(tag, dot)
+            maps = self._getMaps(tag, dot)
+            types = self._getTypes(tag, dot)
+            tmps = self._getTmps(tag, dot)
+            fields = self._getFields(default, sep)
+        except Exception as e:
+            msg = "Error: %s" % traceback.print_exc()
+            print(msg)
+        return paths, maps, types, tmps, fields
+
+    def getColumnIndexes(self):
+        indexes = {}
+        call = self._getCall('getColumns')
+        result = call.executeQuery()
+        while result.next():
+            index = result.getInt(1)
+            name = result.getString(2)
+            indexes[name] = index
+        result.close()
+        call.close()
+        return indexes
+
+    def _getPaths(self, tag, dot):
+        sep = dot + tag + dot
+        call = self._getCall('getPaths')
+        result = call.executeQuery()
+        while result.next():
+            key = result.getString(1) + sep + result.getString(2) + sep + result.getString(3)
+            yield key, result.getString(4)
+        result.close()
+        call.close()
+
+    def _getTypes(self, tag, dot):
+        sep = dot + tag + dot
+        call = self._getCall('getTypes')
+        result = call.executeQuery()
+        while result.next():
+            key = result.getString(1) + sep + result.getString(2) + sep + result.getString(3)
+            maps = {}
+            for map in result.getArray(4).getArray(None):
+                maps.update(json.loads(map))
+            print("DataBase._getTypes() key: '%s' - Dict: %s" % (key, maps))
+            yield key, maps
+        result.close()
+        call.close()
+
+    def _getMaps(self, tag, dot):
+        sep = dot + tag + dot
+        call = self._getCall('getMaps')
+        result = call.executeQuery()
+        while result.next():
+            key = result.getString(1) + sep + result.getString(2) + dot + tag
+            yield key, result.getArray(3).getArray(None)
+        result.close()
+        call.close()
+
+    def _getTmps(self, tag, dot):
+        sep = dot + tag + dot
+        call = self._getCall('getTmps')
+        result = call.executeQuery()
+        while result.next():
+            yield result.getString(1) + sep + result.getString(2) + sep + result.getString(3)
+        result.close()
+        call.close()
+
+    def _getFields(self, defaults, sep):
+        fields = defaults.split(sep)
+        call = self._getCall('getFields')
+        result = call.executeQuery()
+        while result.next():
+            fields.append(result.getString(1))
+        result.close()
+        call.close()
+        yield sep.join(fields)
+
+# Procedures called by the User
+    def getUserFields(self):
+        fields = []
+        call = self._getCall('getFieldNames')
+        result = call.executeQuery()
+        fields = getSequenceFromResult(result)
+        call.close()
+        return tuple(fields)
+
 
     def initAddressbooks(self, user):
         start = self._getLastAddressbookSync()
@@ -414,10 +505,11 @@ class DataBase(unohelper.Base):
         self._setBatchModeOn()
         call = self._getCall('mergeCard')
         call.setInt(1, aid)
-        for url, etag, data in iterator:
-            call.setString(2, url)
+        for cid, etag, deleted, data in iterator:
+            call.setString(2, cid)
             call.setString(3, etag)
-            call.setString(4, data)
+            call.setBoolean(4, deleted)
+            call.setString(5, data)
             call.addBatch()
             count += 1
         if count:
@@ -426,6 +518,95 @@ class DataBase(unohelper.Base):
         self.Connection.commit()
         self._setBatchModeOff()
         return count
+
+    def getLastUserSync(self):
+        call = self._getCall('getLastUserSync')
+        call.execute()
+        start = call.getObject(1, None)
+        call.close()
+        return start
+
+    def updateUserSync(self, timestamp):
+        call = self._getCall('updateUser')
+        call.setObject(1, timestamp)
+        call.execute()
+        call.close()
+
+    def getChangedCard(self, start, stop):
+        call = self._getCall('getChangedCards')
+        call.setObject(1, start)
+        call.setObject(2, stop)
+        result = call.executeQuery()
+        while result.next():
+            yield result.getInt(1), result.getInt(2), result.getString(3), result.getString(4)
+        result.close()
+        call.close()
+
+    def getGroups(self, aid):
+        call = self._getCall('getGroups')
+        call.setInt(1, aid)
+        result = call.executeQuery()
+        while result.next():
+            yield result.getInt(1), result.getString(2)
+        result.close()
+        call.close()
+
+    def mergeCardValue(self, iterator):
+        count = 0
+        self._setBatchModeOn()
+        call = self._getCall('mergeCardValue')
+        for cid, column, value in iterator:
+            call.setString(1, cid)
+            call.setInt(2, column)
+            call.setString(3, value)
+            call.addBatch()
+            count += 1
+        if count:
+            call.executeBatch()
+        call.close()
+        self.Connection.commit()
+        self._setBatchModeOff()
+        return count
+
+    def mergeGroup(self, aid, iterator):
+        count = 0
+        self._setBatchModeOn()
+        call = self._getCall('mergeGroup')
+        call.setString(1, aid)
+        for gid, deleted, name, timestamp in iterator:
+            print("DataBase.mergeGroup() GID: %s - Name: %s - Deleted: %s" % (gid, name, deleted))
+            call.setString(2, gid)
+            call.setBoolean(3, deleted)
+            call.setString(4, name)
+            call.setTimestamp(5, timestamp)
+            call.addBatch()
+            count += 1
+        if count:
+            call.executeBatch()
+        call.close()
+        self.Connection.commit()
+        self._setBatchModeOff()
+        return count
+
+    def mergeGroupData(self, gid, timestamp, iterator):
+        print("Provider.mergeGroupData() 1")
+        count = 0
+        self._setBatchModeOn()
+        call = self._getCall('mergeGroupMembers')
+        call.setInt(1, gid)
+        call.setTimestamp(2, timestamp)
+        for members in iterator:
+            call.setArray(3, Array('VARCHAR', members))
+            call.addBatch()
+            count += 1
+        if count:
+            call.executeBatch()
+        call.close()
+        self.Connection.commit()
+        self._setBatchModeOff()
+        return count
+
+
 
     def deleteCard(self, aid, urls):
         call = self._getCall('deleteCard')
@@ -523,7 +704,7 @@ class DataBase(unohelper.Base):
         call.addBatch()
         return 1
 
-    def mergeGroup(self, user, resource, name, timestamp, deleted):
+    def mergeGroup1(self, user, resource, name, timestamp, deleted):
         call = self._getBatchedCall('mergeGroup')
         call.setString(1, 'contactGroups/')
         call.setLong(2, user.People)

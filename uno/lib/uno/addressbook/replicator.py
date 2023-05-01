@@ -40,7 +40,6 @@ from .unotool import getConfiguration
 from .unotool import getDateTime
 
 from .database import DataBase
-from .dataparser import DataParser
 
 from .configuration import g_identifier
 from .configuration import g_filter
@@ -169,10 +168,7 @@ class Replicator(unohelper.Base):
         token = None
         pages = update = delete = 0
         parameter = self.Provider.getRequestParameter(user.Request, 'People', user)
-        response = user.Request.execute(parameter)
-        if not response.Ok:
-            pass
-        iterator = reponse.iterContent(g_chunk, False)
+        iterator = self.Provider.parsePeople(user.Request, parameter)
         map = self.DataBase.getFieldsMap('People', False)
         self.DataBase.mergePeopleData(iterator, timestamp)
         self._logger.logprb(INFO, 'Replicator', '_syncPeople()', 231, pages, update, delete)
@@ -190,7 +186,8 @@ class Replicator(unohelper.Base):
                   'Skip': ('Type', 'metadata')}
         pages = update = delete = 0
         parameter = self.Provider.getRequestParameter(user.Request, method['Name'], user)
-        parser = DataParser(self.DataBase, self.Provider, method['Name'])
+        parser = None
+        #parser = DataParser(self.DataBase, self.Provider, method['Name'])
         map = self.DataBase.getFieldsMap(method['Name'], False)
         enumerator = user.Request.getEnumeration(parameter, parser)
         while not self._canceled() and enumerator.hasMoreElements():

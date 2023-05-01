@@ -30,14 +30,13 @@
 import uno
 import unohelper
 
-from com.sun.star.auth import XRestDataParser
+#from com.sun.star.auth import XRestDataParser
 
 from .unolib import KeyMap
 from .unotool import getNamedValue
 
 
-class DataParser(unohelper.Base,
-                 XRestDataParser):
+class DataParser(unohelper.Base):
     def __init__(self, database, provider, method):
         self.provider = provider
         self.map = database.getFieldsMap(method, True)

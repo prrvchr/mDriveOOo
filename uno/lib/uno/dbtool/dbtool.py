@@ -558,12 +558,12 @@ def getRowValue1(row, dbtype, index=1, default=None):
         value = default
     return value
 
-def createStaticTable(ctx, statement, tables, readonly=False):
+def createStaticTable(ctx, statement, tables, csv, readonly=False):
     for table in tables:
         query = getSqlQuery(ctx, 'createTable' + table)
         statement.executeUpdate(query)
     for table in tables:
-        statement.executeUpdate(getSqlQuery(ctx, 'setTableSource', table))
+        statement.executeUpdate(getSqlQuery(ctx, 'setTableSource', (table, csv % table)))
         if readonly:
             statement.executeUpdate(getSqlQuery(ctx, 'setTableReadOnly', table))
 

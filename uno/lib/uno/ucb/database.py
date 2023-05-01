@@ -47,6 +47,7 @@ from .unotool import createService
 from .dbqueries import getSqlQuery
 from .dbconfig import g_role
 from .dbconfig import g_dba
+from .dbconfig import g_csv
 
 from .dbtool import Array
 
@@ -86,7 +87,7 @@ class DataBase():
             print("DataBase.createDataBase() 1")
             version, error = checkDataBase(self._ctx, self.Connection)
             if error is None:
-                createStaticTable(self._ctx, self._statement, getStaticTables(), True)
+                createStaticTable(self._ctx, self._statement, getStaticTables(), g_csv, True)
                 tables, statements = getTablesAndStatements(self._ctx, self._statement, version)
                 print("DataBase.createDataBase() 2")
                 executeSqlQueries(self._statement, tables)

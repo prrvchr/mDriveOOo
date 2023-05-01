@@ -35,41 +35,32 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.sdb.CommandType import QUERY
 
-
-from .configuration import g_identifier
-from .configuration import g_group
-from .configuration import g_compact
-
-from .database import DataBase
-
-from .user import User
-from .user import getUserUri
-
 from .addressbook import AddressBook
-from .provider import Provider
 from .replicator import Replicator
+from .user import User
 
 from .listener import EventListener
 from .listener import TerminateListener
 
-from .unotool import getDesktop
-from .unotool import getUrl
+from ..unotool import getDesktop
+from ..unotool import getUrl
 
-from .dbtool import getSqlException
-
-from .configuration import g_scheme
+from ..configuration import g_identifier
+from ..configuration import g_group
+from ..configuration import g_compact
+from ..configuration import g_scheme
 
 import traceback
 
 
 class DataSource(unohelper.Base):
-    def __init__(self, ctx):
+    def __init__(self, ctx, database, provider):
         self._ctx = ctx
         self._maps = {}
         self._users = {}
         self._listener = EventListener(self)
-        self._database = DataBase(ctx)
-        self._provider = Provider(ctx)
+        self._database = database
+        self._provider = provider
         self._replicator = Replicator(ctx, self._database, self._provider, self._users)
         listener = TerminateListener(self._replicator)
         getDesktop(ctx).addTerminateListener(listener)
@@ -89,7 +80,7 @@ class DataSource(unohelper.Base):
     def getConnection(self, scheme, server, account, password):
         try: 
             print("DataSource.getConnection () 1")
-            uri = getUserUri(server, account)
+            uri = self._provider.getUserUri(server, account)
             if uri in self._maps:
                 name = self._maps.get(uri)
                 user = self._users.get(name)

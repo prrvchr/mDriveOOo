@@ -29,30 +29,30 @@
 
 from com.sun.star.sdbc import SQLException
 
-from .unolib import KeyMap
+from ..unolib import KeyMap
 
-from .unotool import getResourceLocation
-from .unotool import getSimpleFile
+from ..unotool import getResourceLocation
+from ..unotool import getSimpleFile
 
-from .dbconfig import g_folder
-from .dbconfig import g_version
-from .dbconfig import g_superuser
-from .dbconfig import g_cardview
-from .dbconfig import g_dba
+from ..dbtool import getDataSourceCall
+from ..dbtool import getSequenceFromResult
+from ..dbtool import getDataFromResult
+from ..dbtool import getKeyMapFromResult
+from ..dbtool import registerDataSource
+from ..dbtool import executeQueries
+from ..dbtool import executeSqlQueries
+from ..dbtool import getDataSourceConnection
+from ..dbtool import createDataSource
+from ..dbtool import checkDataBase
+from ..dbtool import createStaticTable
 
-from .dbqueries import getSqlQuery
+from ..dbqueries import getSqlQuery
 
-from .dbtool import getDataSourceCall
-from .dbtool import getSequenceFromResult
-from .dbtool import getDataFromResult
-from .dbtool import getKeyMapFromResult
-from .dbtool import registerDataSource
-from .dbtool import executeQueries
-from .dbtool import executeSqlQueries
-from .dbtool import getDataSourceConnection
-from .dbtool import createDataSource
-from .dbtool import checkDataBase
-from .dbtool import createStaticTable
+from ..dbconfig import g_folder
+from ..dbconfig import g_version
+from ..dbconfig import g_superuser
+from ..dbconfig import g_cardview
+from ..dbconfig import g_dba
 
 import traceback
 
@@ -366,10 +366,9 @@ def getStaticTables():
     tables = ('Tables',
               'Columns',
               'TableColumn',
+              'Resources',
               'Properties',
-              'Parameters',
               'Types',
-              'PropertyParameter',
               'PropertyType')
     return tables
 
@@ -379,6 +378,8 @@ def getQueries():
             ('createInsertAddressbook', None),
             ('createUpdateAddressbookName', None),
             ('createMergeCard', None),
+            ('createMergeGroup', None),
+            ('createMergeGroupMembers', None),
             ('createDeleteCard', None),
             ('createUpdateUser', None),
             ('createGetLastUserSync', None),
@@ -388,12 +389,21 @@ def getQueries():
             ('insertSuperUser', g_superuser),
             ('insertSuperAdressbook', None),
             ('insertSuperGroup', None),
-            ('createSelectAddressbookColumns', None),
+            ('createSelectColumns', None),
+            ('createSelectColumnIds', None),
+            ('createSelectPaths', None),
+            ('createSelectTypes', None),
+            ('createSelectMaps', None),
+            ('createSelectTmps', None),
+            ('createSelectFields', None),
+            ('createSelectGroups', None),
             ('createSelectCardGroup', None),
             ('createInsertGroup', None),
             ('createMergeCardValue', None),
+            ('createMergeCardData', None),
             ('createMergeCardGroup', None),
             ('createSelectChangedAddressbooks', None),
             ('createSelectChangedGroups', None),
             ('createUpdateAddressbook', None),
-            ('createUpdateGroup', None))
+            ('createUpdateGroup', None),
+            ('createSelectCardProperties', None))
