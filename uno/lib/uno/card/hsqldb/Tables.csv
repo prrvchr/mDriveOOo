@@ -1,7 +1,8 @@
 Table|Name|Identity|View|Versioned
 0|Users|||false
-1|Addressbooks|||true
+1|Books|||true
 2|Groups|||true
 3|Cards|||true
-4|CardValues|||false
+4|BookCards|||false
 5|GroupCards|||false
+6|CardValues|||false

@@ -40,5 +40,22 @@ g_dba = 'SA'
 g_superuser = ('#', 'https://', 'localhost', '/', 'admin')
 g_schema = '%i'
 g_user = '%i'
+
+# View parameter
 g_cardview = 'CardView'
+g_bookview = 'BookView'
+g_usercolumn = 'User'
+g_view = {'UserTable': 'Users',
+          'UserColumn': g_usercolumn,
+          'BookCardTable': 'BookCards',
+          'CardTable': 'Cards',
+          'CardColumn': 'Card',
+          'CardUri': 'Uri',
+          'BookTable': 'Books',
+          'BookColumn': 'Book',
+          'DataTable': 'CardValues',
+          'DataColumn': 'Column',
+          'DataValue': 'Value',
+          'Admin': g_dba}
+
 g_bookmark = 'Bookmark'

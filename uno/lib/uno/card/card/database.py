@@ -82,6 +82,7 @@ from ..dbconfig import g_jar
 from ..dbconfig import g_role
 from ..dbconfig import g_schema
 from ..dbconfig import g_user
+from ..dbconfig import g_usercolumn
 from ..dbconfig import g_cardview
 from ..dbconfig import g_bookmark
 from ..dbconfig import g_csv
@@ -212,18 +213,14 @@ class DataBase(unohelper.Base):
     def createUserSchema(self, schema, name):
         view = self._getViewName()
         format = {'Schema': schema,
-                  'User': name,
-                  'Public': 'PUBLIC',
-                  'View': view,
-                  'Name': view,
-                  'OldName': view}
+                  'User': name}
         statement = self.Connection.createStatement()
         query = getSqlQuery(self._ctx, 'createUserSchema', format)
         statement.execute(query)
         query = getSqlQuery(self._ctx, 'setUserSchema', format)
         statement.execute(query)
-        self._deleteUserView(statement, format)
-        self._createUserView(statement, 'createUserSynonym', format)
+        #self._deleteUserView(statement, format)
+        #self._createUserView(statement, 'createUserBook', format)
         statement.close()
 
     def selectUser(self, server, name):
@@ -500,11 +497,11 @@ class DataBase(unohelper.Base):
         call.close()
 
 # Procedures called by the Replicator
-    def mergeCard(self, aid, iterator):
+    def mergeCard(self, book, iterator):
         count = 0
         self._setBatchModeOn()
         call = self._getCall('mergeCard')
-        call.setInt(1, aid)
+        call.setInt(1, book)
         for cid, etag, deleted, data in iterator:
             call.setString(2, cid)
             call.setString(3, etag)
@@ -608,10 +605,9 @@ class DataBase(unohelper.Base):
 
 
 
-    def deleteCard(self, aid, urls):
+    def deleteCard(self, urls):
         call = self._getCall('deleteCard')
-        call.setInt(1, aid)
-        call.setArray(2, Array('VARCHAR', urls))
+        call.setArray(1, Array('VARCHAR', urls))
         status = call.executeUpdate()
         call.close()
         return len(urls)
