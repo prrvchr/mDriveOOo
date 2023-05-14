@@ -78,7 +78,7 @@ def getSqlQuery(ctx, name, format=None):
     elif name == 'createTableResources':
         c1 = '"Resource" INTEGER NOT NULL PRIMARY KEY'
         c2 = '"Path" VARCHAR(100) NOT NULL'
-        c3 = '"Name" VARCHAR(100) NOT NULL'
+        c3 = '"Name" VARCHAR(100) DEFAULT NULL'
         c4 = '"View" VARCHAR(100) DEFAULT NULL'
         c5 = '"Method" SMALLINT DEFAULT NULL'
         c = (c1, c2, c3, c4, c5)
@@ -97,7 +97,7 @@ def getSqlQuery(ctx, name, format=None):
     elif name == 'createTableTypes':
         c1 = '"Type" INTEGER NOT NULL PRIMARY KEY'
         c2 = '"Path" VARCHAR(100) NOT NULL'
-        c3 = '"Name" VARCHAR(100) NOT NULL'
+        c3 = '"Name" VARCHAR(100) DEFAULT NULL'
         c = (c1, c2, c3)
         query = 'CREATE TEXT TABLE IF NOT EXISTS "Types"(%s)' % ','.join(c)
 
@@ -528,15 +528,15 @@ CREATE PROCEDURE "SelectAddressbook"(IN UID INTEGER,
     OPEN RSLT;
   END"""
 
-    elif name == 'createInsertAddressbook':
+    elif name == 'createInsertBook':
         query = """\
-CREATE PROCEDURE "InsertAddressbook"(IN UID INTEGER,
-                                     IN URI VARCHAR(256),
-                                     IN NAME VARCHAR(128),
-                                     IN TAG VARCHAR(128),
-                                     IN TOKEN VARCHAR(128),
-                                     OUT AID INTEGER)
-  SPECIFIC "InsertAddressbook_1"
+CREATE PROCEDURE "InsertBook"(IN UID INTEGER,
+                              IN URI VARCHAR(256),
+                              IN NAME VARCHAR(128),
+                              IN TAG VARCHAR(128),
+                              IN TOKEN VARCHAR(128),
+                              OUT AID INTEGER)
+  SPECIFIC "InsertBook_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
     INSERT INTO "Books" ("User","Uri","Name","Tag","Token") VALUES (UID,URI,NAME,TAG,TOKEN);
@@ -880,10 +880,45 @@ CREATE PROCEDURE "SelectPaths"()
   BEGIN ATOMIC
     DECLARE Rslt CURSOR WITH RETURN FOR 
       SELECT R."Path", R."Name", P."Path", P."Name" 
-      FROM "Resources" AS R
-      INNER JOIN "Properties" AS P ON R."Resource"=P."Resource"
-      LEFT JOIN "PropertyType" AS PT ON P."Property"=PT."Property"
+      FROM "Resources" AS R 
+      INNER JOIN "Properties" AS P ON R."Resource"=P."Resource" 
+      LEFT JOIN "PropertyType" AS PT ON P."Property"=PT."Property" 
       WHERE PT."Property" IS NULL AND P."Name" IS NOT NULL 
+      FOR READ ONLY;
+    OPEN Rslt;
+  END"""
+
+    # The getLits query allows to obtain all the JSON paths of the simple list properties (untyped)
+    elif name == 'createSelectLists':
+        query = """\
+CREATE PROCEDURE "SelectLists"()
+  SPECIFIC "SelectLists_1"
+  READS SQL DATA
+  DYNAMIC RESULT SETS 1
+  BEGIN ATOMIC
+    DECLARE Rslt CURSOR WITH RETURN FOR 
+      SELECT R."Path", R."Name", R."Name" 
+      FROM "Resources" AS R
+      WHERE R."View" IS NULL 
+      FOR READ ONLY;
+    OPEN Rslt;
+  END"""
+
+    # The getMaps query allows to start and stop buffers (tmp var) when parsing typed properties
+    elif name == 'createSelectMaps':
+        query = """\
+CREATE PROCEDURE "SelectMaps"()
+  SPECIFIC "SelectMaps_1"
+  READS SQL DATA
+  DYNAMIC RESULT SETS 1
+  BEGIN ATOMIC
+    DECLARE Rslt CURSOR WITH RETURN FOR 
+      SELECT R."Path", R."Name", 
+        ARRAY_AGG(DISTINCT P."Path") 
+      FROM "Resources" AS R 
+      INNER JOIN "Properties" AS P ON R."Resource"=P."Resource" 
+      INNER JOIN "PropertyType" AS PT ON P."Property"=PT."Property" 
+      GROUP BY R."Path", R."Name"
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -898,7 +933,7 @@ CREATE PROCEDURE "SelectTypes"()
   BEGIN ATOMIC
     DECLARE Rslt CURSOR WITH RETURN FOR 
       SELECT R."Path", R."Name", P."Path", 
-      ARRAY_AGG(JSON_OBJECT(T."Path" || P2."Path": T."Name" || P2."Name")) 
+      ARRAY_AGG(JSON_OBJECT(T."Path" || P2."Path": COALESCE(T."Name", '') || P2."Name")) 
       FROM "Resources" AS R 
       INNER JOIN "Properties" AS P ON R."Resource"=P."Resource" 
       INNER JOIN "Resources" AS R2 ON R."Resource"=R2."Resource" 
@@ -924,25 +959,7 @@ CREATE PROCEDURE "SelectTmps"()
       FROM "Resources" AS R 
       INNER JOIN "Properties" AS P ON R."Resource"=P."Resource" 
       INNER JOIN "PropertyType" AS PT ON P."Property"=PT."Property" 
-      FOR READ ONLY;
-    OPEN Rslt;
-  END"""
-
-    # The getMaps query allows to start and stop buffers (tmp var) when parsing typed properties
-    elif name == 'createSelectMaps':
-        query = """\
-CREATE PROCEDURE "SelectMaps"()
-  SPECIFIC "SelectMaps_1"
-  READS SQL DATA
-  DYNAMIC RESULT SETS 1
-  BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT R."Path", R."Name", 
-        ARRAY_AGG(DISTINCT P."Path") 
-      FROM "Resources" AS R 
-      INNER JOIN "Properties" AS P ON R."Resource"=P."Resource" 
-      INNER JOIN "PropertyType" AS PT ON P."Property"=PT."Property" 
-      GROUP BY R."Path", R."Name"
+      GROUP BY R."Path", R."Name", P."Path" 
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -955,7 +972,10 @@ CREATE PROCEDURE "SelectFields"()
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT "Name" FROM "Resources" ORDER BY "Resource" FOR READ ONLY;
+      SELECT COALESCE(R."Name", P."Path") 
+      FROM "Resources" AS R 
+      LEFT JOIN "Properties" AS P ON R."Resource"=P."Resource" AND R."Name" IS NULL 
+      FOR READ ONLY;
     OPEN Rslt;
   END"""
 
@@ -1080,6 +1100,33 @@ CREATE PROCEDURE "SelectCardGroup"()
     OPEN RSLT;
   END"""
 
+    elif name == 'createInitGroups':
+        query = """\
+CREATE PROCEDURE "InitGroups"(IN Book INTEGER,
+                              IN Uris VARCHAR(128) ARRAY,
+                              IN Names VARCHAR(128) ARRAY,
+                              OUT ViewToRemove VARCHAR(512),
+                              OUT ViewToAdd VARCHAR(512))
+  SPECIFIC "InitGroups_1"
+  MODIFIES SQL DATA
+  BEGIN ATOMIC
+    DECLARE Index INTEGER DEFAULT 1;
+    DECLARE TmpToRemove VARCHAR(512);
+    DECLARE TmpToAdd VARCHAR(512);
+    SELECT JSON_ARRAYAGG(JSON_OBJECT('OldName': "Name")) INTO TmpToRemove FROM "Groups" WHERE "Book"=Book AND "Uri" NOT IN(UNNEST(Uris));
+    DELETE FROM "Groups" WHERE "Book"=Book AND "Uri" NOT IN(UNNEST(Uris));
+    WHILE Index <= CARDINALITY(Uris) DO
+      MERGE INTO "Groups" USING (VALUES(Book,Uris[Index],Names[Index])) 
+        AS vals(x,y,z) ON "Groups"."Book"=vals.x AND "Groups"."Uri"=vals.y
+          WHEN NOT MATCHED THEN INSERT ("Book","Uri","Name")
+             VALUES vals.x,vals.y,vals.z;
+      SET Index = Index + 1;
+    END WHILE;
+    SELECT JSON_ARRAYAGG(JSON_OBJECT('Name': "Name", 'Group':"Group")) INTO TmpToAdd FROM "Groups" WHERE "Book"=Book AND "Uri" IN(UNNEST(Uris));
+    SET ViewToRemove = TmpToRemove;
+    SET ViewToAdd = TmpToAdd;
+  END"""
+
     elif name == 'createInsertGroup':
         query = """\
 CREATE PROCEDURE "InsertGroup"(IN AID INTEGER,
@@ -1102,6 +1149,26 @@ CREATE PROCEDURE "MergeCardGroup"(IN Cid INTEGER,
   BEGIN ATOMIC
     DELETE FROM "GroupCards" WHERE "Card"=Cid;
     INSERT INTO "GroupCards" ("Group","Card") VALUES (Gid,Cid);
+  END"""
+
+    elif name == 'createMergeCardGroups':
+        query = """\
+CREATE PROCEDURE "MergeCardGroups"(IN Book INTEGER,
+                                   IN Card INTEGER,
+                                   IN Names VARCHAR(100) ARRAY)
+  SPECIFIC "MergeCardGroups_1"
+  MODIFIES SQL DATA
+  BEGIN ATOMIC
+    DECLARE Index INTEGER DEFAULT 1;
+    DECLARE GroupId INTEGER DEFAULT NULL;
+    DELETE FROM "GroupCards" WHERE "Card"=Card;
+    WHILE Index <= CARDINALITY(Names) DO
+      SELECT "Group" INTO GroupId FROM "Groups" WHERE "Book"=Book AND "Name"=Names[Index];
+      IF GroupId IS NOT NULL THEN
+        INSERT INTO "GroupCards" ("Group","Card") VALUES (GroupId,Card);
+      END IF;
+      SET Index = Index + 1;
+    END WHILE;
   END"""
 
     elif name == 'createGetPeopleIndex':
@@ -1250,8 +1317,8 @@ CREATE PROCEDURE "MergeConnection"(IN "GroupPrefix" VARCHAR(50),
         query = 'CALL "InsertUser"(?,?,?,?,?,?)'
     elif name == 'selectAddressbook':
         query = 'CALL "SelectAddressbook"(?,?,?)'
-    elif name == 'insertAddressbook':
-        query = 'CALL "InsertAddressbook"(?,?,?,?,?,?)'
+    elif name == 'insertBook':
+        query = 'CALL "InsertBook"(?,?,?,?,?,?)'
     elif name == 'updateAddressbookName':
         query = 'CALL "UpdateAddressbookName"(?,?)'
     elif name == 'mergeCard':
@@ -1268,6 +1335,8 @@ CREATE PROCEDURE "MergeConnection"(IN "GroupPrefix" VARCHAR(50),
         query = 'CALL "SelectColumnIds"()'
     elif name == 'getPaths':
         query = 'CALL "SelectPaths"()'
+    elif name == 'getLists':
+        query = 'CALL "SelectLists"()'
     elif name == 'getTypes':
         query = 'CALL "SelectTypes"()'
     elif name == 'getMaps':
@@ -1302,12 +1371,14 @@ CREATE PROCEDURE "MergeConnection"(IN "GroupPrefix" VARCHAR(50),
 
     elif name == 'getCardGroup':
         query = 'CALL "SelectCardGroup"()'
+    elif name == 'initGroups':
+        query = 'CALL "InitGroups"(?,?,?,?,?)'
     elif name == 'insertGroup':
         query = 'CALL "InsertGroup"(?,?,?,?)'
     elif name == 'mergeCardGroup':
         query = 'CALL "MergeCardGroup"(?,?)'
-
-
+    elif name == 'mergeCardGroups':
+        query = 'CALL "MergeCardGroups"(?,?,?)'
 
 
     elif name == 'mergePeople':

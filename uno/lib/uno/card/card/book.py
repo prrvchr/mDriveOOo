@@ -30,80 +30,51 @@
 import uno
 import unohelper
 
-from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
-
-from ..unotool import createService
-
-from ..logger import getLogger
-
-from ..configuration import g_errorlog
-from ..configuration import g_basename
-
 from collections import OrderedDict
 import traceback
 
 
-class AddressBooks(unohelper.Base):
+class Books(unohelper.Base):
     def __init__(self, ctx, metadata, new):
         self._ctx = ctx
-        print("AddressBooks.__init__() 1")
-        self._addressbooks = self._getAddressbooks(metadata, new)
-        print("AddressBooks.__init__() 2")
+        print("Books.__init__() 1")
+        self._books = self._getBooks(metadata, new)
+        print("Books.__init__() 2")
 
-    def initAddressbooks(self, database, user, addressbooks):
-        count = 0
-        modified = False
-        for uri, name, tag, token in addressbooks:
-            print("AddressBooks.initAddressbooks() 1 Name: %s - Uri: %s - Tag: %s - Token: %s" % (name, uri, tag, token))
-            if self._hasAddressbook(uri):
-                addressbook = self._getAddressbook(uri)
-                if addressbook.hasNameChanged(name):
-                    database.updateAddressbookName(addressbook.Id, name)
-                    addressbook.setName(name)
-                    modified = True
-                    print("AddressBooks.initAddressbooks() 2 %s" % (name, ))
-            else:
-                aid = database.insertAddressbook(user, uri, name, tag, token)
-                addressbook = AddressBook(self._ctx, aid, uri, name, tag, token, True)
-                self._addressbooks[uri] = addressbook
-                modified = True
-                print("AddressBooks.initAddressbooks() 3 %s - %s - %s" % (aid, name, uri))
-            count += 1
-        print("AddressBooks.initAddressbooks() 4")
-        return count, modified
+    def getBooks(self):
+        return self._books.values()
 
-    def getAddressbooks(self):
-        return self._addressbooks.values()
+    def hasBook(self, uri):
+        return uri in self._books
+
+    def getBook(self, uri):
+        return self._books[uri]
+
+    def setBook(self, uri, book):
+        self._books[uri] = book
 
     # Private methods
-    def _hasAddressbook(self, uri):
-        return uri in self._addressbooks
-
-    def _getAddressbook(self, uri):
-        return self._addressbooks[uri]
-
-    def _getAddressbooks(self, metadata, new):
+    def _getBooks(self, metadata, new):
         i = 0
-        addressbooks = OrderedDict()
-        aids, names, tags, tokens = self._getAddressbookMetaData(metadata)
+        books = OrderedDict()
+        aids, names, tags, tokens = self._getBookMetaData(metadata)
         for uri in metadata.getValue('Uris'):
             # FIXME: If url is None we don't add this addressbook
             if uri is None:
                 continue
-            print("AddressBook._getAddressbooks() Url: %s - Name: %s - Index: %s - Tag: %s - Token: %s" % (uri, names[i], aids[i], tags[i], tokens[i]))
-            addressbooks[uri] = AddressBook(self._ctx, aids[i], uri, names[i], tags[i], tokens[i], new)
+            print("AddressBook._getBooks() Url: %s - Name: %s - Index: %s - Tag: %s - Token: %s" % (uri, names[i], aids[i], tags[i], tokens[i]))
+            books[uri] = Book(self._ctx, aids[i], uri, names[i], tags[i], tokens[i], new)
             i += 1
-        return addressbooks
+        return books
 
-    def _getAddressbookMetaData(self, data):
+    def _getBookMetaData(self, data):
         return data.getValue('Aids'), data.getValue('Names'), data.getValue('Tags'), data.getValue('Tokens')
 
 
-class AddressBook(unohelper.Base):
-    def __init__(self, ctx, aid, uri, name, tag, token, new=False):
+class Book(unohelper.Base):
+    def __init__(self, ctx, bid, uri, name, tag, token, new=False):
         self._ctx = ctx
-        self._aid = aid
+        self._id = bid
         self._uri = uri
         self._name = name
         self._tag = tag
@@ -112,7 +83,7 @@ class AddressBook(unohelper.Base):
 
     @property
     def Id(self):
-        return self._aid
+        return self._id
     @property
     def Uri(self):
         return self._uri

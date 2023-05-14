@@ -128,14 +128,14 @@ class Replicator(unohelper.Base):
             elif self._canceled():
                 break
             logger.logprb(INFO, 'Replicator', '_synchronize()', 112, user.Name)
-            for addressbook in user.getAddressbooks():
+            for book in user.getBooks():
                 if self._canceled():
                     break
-                if addressbook.isNew():
-                    print("Replicator._syncUser() New AddressBook Path: %s" % addressbook.Uri)
-                    pages, count = self._provider.firstPullCard(self._database, user, addressbook, pages, count)
+                if book.isNew():
+                    print("Replicator._syncUser() New AddressBook Path: %s" % book.Uri)
+                    pages, count = self._provider.firstPullCard(self._database, user, book, pages, count)
                 else:
-                    pages, count = self._provider.pullCard(self._database, user, addressbook, pages, count)
+                    pages, count = self._provider.pullCard(self._database, user, book, pages, count)
             logger.logprb(INFO, 'Replicator', '_synchronize()', 113, user.Name)
         return pages, count
 
@@ -150,10 +150,10 @@ class Replicator(unohelper.Base):
             elif self._canceled():
                 break
             logger.logprb(INFO, 'Replicator', '_finalize()', 122, user.Name)
-            for addressbook in user.getAddressbooks():
+            for book in user.getBooks():
                 if self._canceled():
                     break
-                pages, count = self._provider.syncGroups(self._database, user, addressbook, pages, count)
+                pages, count = self._provider.syncGroups(self._database, user, book, pages, count)
             logger.logprb(INFO, 'Replicator', '_finalize()', 123, user.Name)
         self._database.syncGroups()
         return pages, count

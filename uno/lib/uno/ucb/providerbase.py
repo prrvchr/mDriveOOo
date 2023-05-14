@@ -136,13 +136,11 @@ class ProviderBase(object):
     def getDocumentContent(self, content, url):
         print('ProviderBase.getDocumentContent() Url: %s' % url)
         data = self.getDocumentLocation(content)
-        if data is not None:
-            print('ProviderBase.getDocumentContent() Data: %s' % data)
-            parameter = self.getRequestParameter(content.User.Request, 'getDocumentContent', data)
-            response = content.User.Request.download(parameter, url, g_chunk, 3, 10)
-            response.close()
-            return response.Ok
-        return False
+        if data is None:
+            return False
+        print('ProviderBase.getDocumentContent() Data: %s' % data)
+        parameter = self.getRequestParameter(content.User.Request, 'getDocumentContent', data)
+        return content.User.Request.download(parameter, url, g_chunk, 3, 10)
 
     # Method called by Replicator
     def pullNewIdentifiers(self, user):
@@ -276,18 +274,15 @@ class ProviderBase(object):
         return self.mergeNewFolder(response, user, item)
 
     def uploadFile(self, user, data, new=False):
-        status = False
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
         parameter = self.getRequestParameter(user.Request, method, data)
         response = user.Request.execute(parameter)
         location = self.parseUploadLocation(response)
-        if location is not None:
-            parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
-            url = self.SourceURL + g_separator + data.get('Id')
-            response = user.Request.upload(parameter, url)
-            status = response.Ok
-            response.close()
-        return status
+        if location is None:
+            return False
+        parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
+        url = self.SourceURL + g_separator + data.get('Id')
+        return user.Request.upload(parameter, url, g_chunk, 3, 10)
 
     def updateTitle(self, request, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)

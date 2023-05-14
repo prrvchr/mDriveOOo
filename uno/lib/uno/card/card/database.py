@@ -35,9 +35,7 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.sdb.CommandType import QUERY
 
-from com.sun.star.sdbc.DataType import BIGINT
 from com.sun.star.sdbc.DataType import INTEGER
-from com.sun.star.sdbc.DataType import TIMESTAMP
 from com.sun.star.sdbc.DataType import VARCHAR
 
 from ..unolib import KeyMap
@@ -71,18 +69,12 @@ from ..unotool import getUrlPresentation
 
 from ..configuration import g_identifier
 from ..configuration import g_admin
-from ..configuration import g_group
 from ..configuration import g_host
 
 from ..dbqueries import getSqlQuery
 
-from ..dbconfig import g_dba
 from ..dbconfig import g_folder
 from ..dbconfig import g_jar
-from ..dbconfig import g_role
-from ..dbconfig import g_schema
-from ..dbconfig import g_user
-from ..dbconfig import g_usercolumn
 from ..dbconfig import g_cardview
 from ..dbconfig import g_bookmark
 from ..dbconfig import g_csv
@@ -191,6 +183,18 @@ class DataBase(unohelper.Base):
         statement.execute(query)
         statement.close()
 
+    def getColumnIndexes(self, default=None):
+        indexes = {} if default is None else default
+        call = self._getCall('getColumns')
+        result = call.executeQuery()
+        while result.next():
+            index = result.getInt(1)
+            name = result.getString(2)
+            indexes[name] = index
+        result.close()
+        call.close()
+        return indexes
+
     def getSessionId(self, connection):
         session = None
         call = getDataSourceCall(self._ctx, connection, 'getSessionId')
@@ -234,83 +238,6 @@ class DataBase(unohelper.Base):
         call.close()
         return user
 
-    def getMetaData(self, default, tag, dot='.', sep=','):
-        try:
-            paths = self._getPaths(tag, dot)
-            maps = self._getMaps(tag, dot)
-            types = self._getTypes(tag, dot)
-            tmps = self._getTmps(tag, dot)
-            fields = self._getFields(default, sep)
-        except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
-            print(msg)
-        return paths, maps, types, tmps, fields
-
-    def getColumnIndexes(self):
-        indexes = {}
-        call = self._getCall('getColumns')
-        result = call.executeQuery()
-        while result.next():
-            index = result.getInt(1)
-            name = result.getString(2)
-            indexes[name] = index
-        result.close()
-        call.close()
-        return indexes
-
-    def _getPaths(self, tag, dot):
-        sep = dot + tag + dot
-        call = self._getCall('getPaths')
-        result = call.executeQuery()
-        while result.next():
-            key = result.getString(1) + sep + result.getString(2) + sep + result.getString(3)
-            yield key, result.getString(4)
-        result.close()
-        call.close()
-
-    def _getTypes(self, tag, dot):
-        sep = dot + tag + dot
-        call = self._getCall('getTypes')
-        result = call.executeQuery()
-        while result.next():
-            key = result.getString(1) + sep + result.getString(2) + sep + result.getString(3)
-            maps = {}
-            for map in result.getArray(4).getArray(None):
-                maps.update(json.loads(map))
-            print("DataBase._getTypes() key: '%s' - Dict: %s" % (key, maps))
-            yield key, maps
-        result.close()
-        call.close()
-
-    def _getMaps(self, tag, dot):
-        sep = dot + tag + dot
-        call = self._getCall('getMaps')
-        result = call.executeQuery()
-        while result.next():
-            key = result.getString(1) + sep + result.getString(2) + dot + tag
-            yield key, result.getArray(3).getArray(None)
-        result.close()
-        call.close()
-
-    def _getTmps(self, tag, dot):
-        sep = dot + tag + dot
-        call = self._getCall('getTmps')
-        result = call.executeQuery()
-        while result.next():
-            yield result.getString(1) + sep + result.getString(2) + sep + result.getString(3)
-        result.close()
-        call.close()
-
-    def _getFields(self, defaults, sep):
-        fields = defaults.split(sep)
-        call = self._getCall('getFields')
-        result = call.executeQuery()
-        while result.next():
-            fields.append(result.getString(1))
-        result.close()
-        call.close()
-        yield sep.join(fields)
-
 # Procedures called by the User
     def getUserFields(self):
         fields = []
@@ -328,6 +255,24 @@ class DataBase(unohelper.Base):
             self._initUserAddressbookView(user, data)
         self._updateAddressbook(stop)
 
+    def initGroups(self, book, iterator):
+        uris = []
+        names = []
+        call = self._getCall('initGroups')
+        call.setInt(1, book.Id)
+        for uri, name in iterator:
+            uris.append(uri)
+            names.append(name)
+        call.setArray(2, Array('VARCHAR', uris))
+        call.setArray(3, Array('VARCHAR', names))
+        call.execute()
+        remove = json.loads(call.getString(4))
+        add = json.loads(call.getString(5))
+        #toadd = {'User': user.Id, 'Book': book, 'Schema': user.getSchema(), 'Names': names}
+        #toremove = {'User': user.Id, 'Book': book, 'Schema': user.getSchema(), 'Names': remove}
+        call.close()
+        return remove, add
+
     def insertGroups(self, user, iterator):
         call = self._getCall('insertGroup')
         call.setInt(1, user.Id)
@@ -336,7 +281,7 @@ class DataBase(unohelper.Base):
             call.setString(3, name)
             call.execute()
             gid = call.getInt(4)
-            yield {'Query': 'Inserted', 'Group': gid, 'Schema': user.getSchema(), 'Name': name}
+            yield {'Query': 'Inserted', 'User': user.Id, 'Group': gid, 'Schema': user.getSchema(), 'Name': name}
         call.close()
 
     def syncGroups(self):
@@ -413,6 +358,22 @@ class DataBase(unohelper.Base):
             self._createUserView(statement, 'createAddressbookView', format)
         statement.close()
 
+    def initGroupView(self, user, remove, add):
+        statement = self.Connection.createStatement()
+        format = {'Public': 'PUBLIC',
+                  'View': g_cardview,
+                  'User': user.Id,
+                  'Schema': user.getSchema()}
+        if remove:
+            for item in remove:
+                format.update(item)
+                self._deleteUserView(statement, format)
+        if add:
+            for item in add:
+                format.update(item)
+                self._createUserView(statement, 'createGroupView', format)
+        statement.close()
+
     def initUserGroupView(self, format):
         statement = self.Connection.createStatement()
         query = format.get('Query')
@@ -469,18 +430,18 @@ class DataBase(unohelper.Base):
         call.close()
         return user
 
-    def insertAddressbook(self, user, path, name, tag=None, token=None):
-        addressbook = None
-        call = self._getCall('insertAddressbook')
+    def insertBook(self, user, path, name, tag=None, token=None):
+        book = None
+        call = self._getCall('insertBook')
         call.setInt(1, user)
         call.setString(2, path)
         call.setString(3, name)
         call.setString(4, tag) if tag is not None else call.setNull(4, VARCHAR)
         call.setString(5, token) if token is not None else call.setNull(5, VARCHAR)
         call.executeUpdate()
-        addressbook = call.getInt(6)
+        book = call.getInt(6)
         call.close()
-        return addressbook
+        return book
 
     def updateAddressbookName(self, addressbook, name):
         call = self._getCall('updateAddressbookName')
@@ -549,18 +510,29 @@ class DataBase(unohelper.Base):
         call.close()
 
     def mergeCardValue(self, iterator):
-        count = 0
+        count = count2 = 0
         self._setBatchModeOn()
         call = self._getCall('mergeCardValue')
-        for cid, column, value in iterator:
-            call.setString(1, cid)
-            call.setInt(2, column)
-            call.setString(3, value)
-            call.addBatch()
-            count += 1
+        call2 = self._getCall('mergeCardGroups')
+        for book, card, column, value in iterator:
+            if column != -1:
+                call.setInt(1, card)
+                call.setInt(2, column)
+                call.setString(3, value)
+                call.addBatch()
+                count += 1
+            else:
+                call2.setInt(1, book)
+                call2.setInt(2, card)
+                call2.setArray(3, Array('VARCHAR', value))
+                call2.addBatch()
+                count2 += 1
         if count:
             call.executeBatch()
+        if count2:
+            call2.executeBatch()
         call.close()
+        call2.close()
         self.Connection.commit()
         self._setBatchModeOff()
         return count

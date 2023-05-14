@@ -30,25 +30,14 @@
 import uno
 import unohelper
 
-from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
-
-from com.sun.star.sdb.CommandType import QUERY
-
-from .addressbook import AddressBook
 from .replicator import Replicator
+
 from .user import User
 
 from .listener import EventListener
 from .listener import TerminateListener
 
 from ..unotool import getDesktop
-from ..unotool import getUrl
-
-from ..configuration import g_identifier
-from ..configuration import g_group
-from ..configuration import g_compact
-from ..configuration import g_scheme
 
 import traceback
 

@@ -32,6 +32,8 @@ import unohelper
 
 from com.sun.star.logging.LogLevel import SEVERE
 
+from .book import Book
+
 from ..dbtool import getDateTimeFromString
 from ..dbtool import getSqlException as getException
 
@@ -57,6 +59,37 @@ class Provider(unohelper.Base):
         raise NotImplementedError
 
     def initAddressbooks(self, database, user):
+        raise NotImplementedError
+
+    def initUserBooks(self, database, user, books):
+        count = 0
+        modified = False
+        for uri, name, tag, token in books:
+            print("Provider.initUserBooks() 1 Name: %s - Uri: %s - Tag: %s - Token: %s" % (name, uri, tag, token))
+            if user.Books.hasBook(uri):
+                book = user.Books.getBook(uri)
+                if book.hasNameChanged(name):
+                    database.updateAddressbookName(book.Id, name)
+                    book.setName(name)
+                    modified = True
+                    print("Provider.initUserBooks() 2 %s" % (name, ))
+            else:
+                newid = database.insertBook(user.Id, uri, name, tag, token)
+                book = Book(self._ctx, newid, uri, name, tag, token, True)
+                user.Books.setBook(uri, book)
+                modified = True
+                print("Provider.initUserBooks() 3 %s - %s - %s" % (book.Id, name, uri))
+            self.initUserGroups(database, user, book)
+            count += 1
+        print("Provider.initUserBooks() 4")
+        if not count:
+            #TODO: Raise SqlException with correct message!
+            print("Provider.initUserBooks() 1 %s" % (books, ))
+            raise self.getSqlException(1004, 1108, 'initUserBooks', '%s has no support of CardDAV!' % user.Server)
+        if modified:
+            database.initAddressbooks(user)
+
+    def initUserGroups(self, database, user, book):
         raise NotImplementedError
 
     def firstPullCard(self, database, user, addressbook, pages, count):
