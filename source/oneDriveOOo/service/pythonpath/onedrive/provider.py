@@ -30,7 +30,10 @@
 import uno
 import unohelper
 
+from com.sun.star.rest.ParameterType import JSON
 from com.sun.star.rest.ParameterType import REDIRECT
+
+from com.sun.star.rest.HTTPStatusCode import ACCEPTED
 
 from .providerbase import ProviderBase
 
@@ -378,6 +381,7 @@ class Provider(ProviderBase):
             parameter.Method = 'PUT'
             parameter.Url = data
             parameter.NoAuth = True
+            parameter.setNextRange(ACCEPTED, 'nextExpectedRanges', '([0-9]+)', 0, JSON)
 
         elif method == 'uploadFile':
             parameter.Method = 'PUT'
