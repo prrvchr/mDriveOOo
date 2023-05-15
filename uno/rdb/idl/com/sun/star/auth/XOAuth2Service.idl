@@ -72,21 +72,24 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
                                                     [in] boolean Decode)
                                      raises(com::sun::star::rest::RequestException);
 
-    com::sun::star::rest::XRequestResponse download([in] com::sun::star::rest::XRequestParameter Parameter,
-                                                    [in] string Url,
-                                                    [in] long Chunk,
-                                                    [in] short Retry,
-                                                    [in] short Delay)
-                                           raises(com::sun::star::rest::RequestException);
+    boolean download([in] com::sun::star::rest::XRequestParameter Parameter,
+                     [in] string Url,
+                     [in] long Chunk,
+                     [in] short Retry,
+                     [in] short Delay)
+            raises(com::sun::star::rest::RequestException);
 
-    com::sun::star::rest::XRequestResponse upload([in] com::sun::star::rest::XRequestParameter Parameter,
-                                                  [in] string Url)
-                                           raises(com::sun::star::rest::RequestException);
+    boolean upload([in] com::sun::star::rest::XRequestParameter Parameter,
+                   [in] string Url,
+                   [in] long Chunk,
+                   [in] short Retry,
+                   [in] short Delay)
+            raises(com::sun::star::rest::RequestException);
 
     [attribute, readonly] string ResourceUrl;
     [attribute, readonly] string ProviderName;
     [attribute, readonly] string UserName;
-    [attribute, readonly] any Timeout;
+    [attribute, readonly] sequence<short> Timeout;
 
 
 };

@@ -24,76 +24,48 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_rest_XRequestParameter_idl__
-#define __com_sun_star_rest_XRequestParameter_idl__
+#ifndef __com_sun_star_rest_UploadResponse_idl__
+#define __com_sun_star_rest_UploadResponse_idl__
 
-#include <com/sun/star/uno/XInterface.idl>
-#include <com/sun/star/io/XInputStream.idl>
-#include <com/sun/star/rest/UploadResponse.idl>
-#include <com/sun/star/rest/JSONDecodeException.idl>
-#include <com/sun/star/rest/RequestException.idl>
+#include <io/github/prrvchr/css/util/Duration.idl>
 
 
 module com { module sun { module star { module rest {
 
-interface XRequestParameter: com::sun::star::uno::XInterface
+struct UploadResponse
 {
+    /** is the upload finished.
+     */
+    boolean Uploaded;
 
-    void setNextRange([in] long StatusCode,
-                      [in] string Key,
-                      [in] string Pattern,
-                      [in] short Offset,
-                      [in] short ParameterType);
 
-    UploadResponse uploadRange([in] hyper Start,
-                               [in] hyper End,
-                               [in] hyper Size)
-                   raises(RequestException);
+    /** is the uploader has next range to upload.
+     */
+    boolean HasNextRange;
 
-    boolean hasNextPage();
 
-    void setNextPage([in] string Key,
-                     [in] string Value,
-                     [in] short ParameterType);
+    /** contains the next range to upload.
+     */
+    unsigned hyper NextRange;
 
-    boolean hasHeader([in] string Key);
 
-    string getHeader([in] string Key);
+    /** contains the Duration of the upload.
+     */
+    io::github::prrvchr::css::util::Duration Elapsed;
 
-    void setHeader([in] string Key,
-                   [in] string Value);
 
-    void setJson([in] string Key,
-                 [in] any Value);
+    /** contains the response text content.
+     */
+    string Text;
 
-    void setNesting([in] string Path,
-                    [in] any Value);
 
-    void setQuery([in] string Key,
-                  [in] string Value);
+    /** contains the response HTTP Status Code.
+     */
+    long StatusCode;
 
-    string toJson([in] boolean Stream)
-           raises(JSONDecodeException);
-
-    [attribute, readonly] string Name;
-    [attribute] string Method;
-    [attribute] string Url;
-    [attribute] string Headers;
-    [attribute] string Query;
-    [attribute] string Json;
-    [attribute] sequence<byte> Data;
-    [attribute] string Text;
-    [attribute] com::sun::star::io::XInputStream DataSink;
-    [attribute] boolean NoAuth;
-    [attribute] sequence<string> Auth;
-    [attribute] boolean NoRedirect;
-    [attribute] boolean NoVerify;
-    [attribute] boolean Stream;
-    [attribute] string NextUrl;
-    [attribute] string SyncToken;
-    [attribute, readonly] long PageCount;
-    [attribute] char Separator;
-
+    /** contains the request HTTP count needed for the upload.
+     */
+    long Count;
 
 };
 
@@ -101,3 +73,4 @@ interface XRequestParameter: com::sun::star::uno::XInterface
 }; }; }; };
 
 #endif
+
