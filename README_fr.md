@@ -99,22 +99,13 @@ Si vous êtes sous LibreOffice, il est important d'avoir au préalable [reconfig
 
 Dans: **Fichier -> Ouvrir** saisir dans la première liste déroulante:
 
-- Pour une Url nommée: **vnd-microsoft://votre_adresse_email**  
-  avec **votre_adresse_email** qui doit être située sur l'un des noms de domaine suivants:
-
-  - **votre_compte@outlook.com**  
-  ou
-  - **votre_compte@outlook.fr**  
-  ou
-  - **votre_compte@hotmail.com**  
-  ou
-  - **votre_compte@gmail.com**
+- Pour une Url nommée: **vnd-microsoft://votre_adresse@votre_fournisseur**  
 
 ou
 
 - Pour une url non nommée (anonyme): **vnd-microsoft:///**
 
-Si vous ne donnez pas **votre_adresse_email**, elle vous sera demandée...
+Si vous ne donnez pas **votre_adresse@votre_fournisseur**, elle vous sera demandée...
 
 Les Urls anonymes vous permettent de rester anonyme (votre compte n'apparaît pas dans l'Url) tandis que les Urls nommées vous permettent d'accéder à plusieurs comptes simultanément.
 

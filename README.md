@@ -99,22 +99,13 @@ If you are using LibreOffice, it is important to have reconfigured the [Open / S
 
 In **File -> Open** enter in the first drop-down list:
 
-- For a named Url: **vnd-microsoft://your_email_address**  
-  with **your_email_address** which must be located on one of the following domain names:
-
-  - **your_account@outlook.com**  
-  or
-  - **your_account@outlook.fr**  
-  or
-  - **your_account@hotmail.com**  
-  or
-  - **your_account@gmail.com**
+- For a named Url: **vnd-microsoft://your_email@your_provider**  
 
 or
 
 - For an unnamed Url (anonymous): **vnd-microsoft:///**
 
-If you don't give **your_email_address**, you will be asked for...
+If you don't give **your_email@your_provider**, you will be asked for...
 
 Anonymous Urls allow you to remain anonymous (your account does not appear in the Url) while named Urls allow you to access several accounts simultaneously.
 
