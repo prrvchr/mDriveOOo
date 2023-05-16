@@ -381,7 +381,7 @@ class Provider(ProviderBase):
             parameter.Method = 'PUT'
             parameter.Url = data
             parameter.NoAuth = True
-            parameter.setNextRange(ACCEPTED, 'nextExpectedRanges', '([0-9]+)', 0, JSON)
+            parameter.setUpload(ACCEPTED, 'nextExpectedRanges', '([0-9]+)', 0, JSON)
 
         elif method == 'uploadFile':
             parameter.Method = 'PUT'
