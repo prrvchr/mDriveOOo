@@ -39,16 +39,13 @@ module com { module sun { module star { module rest {
 interface XRequestParameter: com::sun::star::uno::XInterface
 {
 
-    void setNextRange([in] long StatusCode,
-                      [in] string Key,
-                      [in] string Pattern,
-                      [in] short Offset,
-                      [in] short ParameterType);
+    void setUpload([in] long StatusCode,
+                   [in] string Field,
+                   [in] string Pattern,
+                   [in] short Offset,
+                   [in] short ParameterType);
 
-    UploadResponse uploadRange([in] hyper Start,
-                               [in] hyper End,
-                               [in] hyper Size)
-                   raises(RequestException);
+    boolean isResumable();
 
     boolean hasNextPage();
 
@@ -93,6 +90,11 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     [attribute] string SyncToken;
     [attribute, readonly] long PageCount;
     [attribute] char Separator;
+    [attribute, readonly] long RangeStatus;
+    [attribute, readonly] string RangeField;
+    [attribute, readonly] string RangePattern;
+    [attribute, readonly] short RangeOffset;
+    [attribute, readonly] short RangeType;
 
 
 };
