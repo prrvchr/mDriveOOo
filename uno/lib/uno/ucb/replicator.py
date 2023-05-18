@@ -66,6 +66,7 @@ from .configuration import g_synclog
 
 g_basename = 'Replicator'
 
+from six import binary_type
 from collections import OrderedDict
 from threading import Thread
 import traceback
@@ -309,4 +310,9 @@ class Replicator(unohelper.Base,
 
     def _getSynchronizePolicy(self):
         policy = self._config.getByName('SynchronizePolicy')
-        return uno.Enum('com.sun.star.ucb.SynchronizePolicy', policy)
+        # FIXME: OpenOffice need uno.getConstantByName() vs uno.Enum()
+        try:
+            return uno.getConstantByName('com.sun.star.ucb.SynchronizePolicy.' + policy)
+        # FIXME: LibreOffice need uno.Enum()
+        except:
+            return uno.Enum('com.sun.star.ucb.SynchronizePolicy', policy)

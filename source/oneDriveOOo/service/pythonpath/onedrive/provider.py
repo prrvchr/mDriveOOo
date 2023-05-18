@@ -26,40 +26,46 @@
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
+try:
+    import uno
+    import unohelper
+    
+    from com.sun.star.rest.ParameterType import JSON
+    from com.sun.star.rest.ParameterType import REDIRECT
+    
+    from com.sun.star.rest.HTTPStatusCode import ACCEPTED
+    
+    from .providerbase import ProviderBase
+    
+    from .dbtool import currentUnoDateTime
+    from .dbtool import currentDateTimeInTZ
+    
+    from .unotool import getResourceLocation
+    
+    from .configuration import g_identifier
+    from .configuration import g_scheme
+    from .configuration import g_provider
+    from .configuration import g_host
+    from .configuration import g_url
+    from .configuration import g_userfields
+    from .configuration import g_drivefields
+    from .configuration import g_itemfields
+    from .configuration import g_chunk
+    from .configuration import g_pages
+    from .configuration import g_folder
+    from .configuration import g_office
+    from .configuration import g_link
+    from .configuration import g_doc_map
+    
+    from . import ijson
 
-import uno
-import unohelper
+except Exception as e:
+    import traceback
+    msg = "provider import Error: %s" % traceback.format_exc()
+    print(msg)
 
-from com.sun.star.rest.ParameterType import JSON
-from com.sun.star.rest.ParameterType import REDIRECT
-
-from com.sun.star.rest.HTTPStatusCode import ACCEPTED
-
-from .providerbase import ProviderBase
-
-from .dbtool import currentUnoDateTime
-from .dbtool import currentDateTimeInTZ
-
-from .unotool import getResourceLocation
-
-from .configuration import g_identifier
-from .configuration import g_scheme
-from .configuration import g_provider
-from .configuration import g_host
-from .configuration import g_url
-from .configuration import g_userfields
-from .configuration import g_drivefields
-from .configuration import g_itemfields
-from .configuration import g_chunk
-from .configuration import g_pages
-from .configuration import g_folder
-from .configuration import g_office
-from .configuration import g_link
-from .configuration import g_doc_map
-
-from . import ijson
-import traceback
-
+else:
+    import traceback
 
 class Provider(ProviderBase):
     def __init__(self, ctx, folder, link, logger):
@@ -316,7 +322,7 @@ class Provider(ProviderBase):
             parameter.setQuery('select', g_drivefields)
 
         elif method == 'getItem':
-            parameter.Url += f'/me/drive/items/{data.Id}'
+            parameter.Url += '/me/drive/items/'+ data.Id
             parameter.setQuery('select', g_itemfields)
 
         elif method == 'getFirstPull':
@@ -328,12 +334,12 @@ class Provider(ProviderBase):
             print("Provider. Name: %s - Url: %s" % (parameter.Name, parameter.Url))
 
         elif method == 'getFolderContent':
-            parameter.Url += f'/me/drive/items/{data.Id}/children'
+            parameter.Url += '/me/drive/items/%s/children' % data.Id
             parameter.setQuery('select', g_itemfields)
             parameter.setQuery('top', g_pages)
 
         elif method == 'getDocumentLocation':
-            parameter.Url += f'/me/drive/items/{data.Id}/content'
+            parameter.Url += '/me/drive/items/%s/content' % data.Id
             print("Provider.getRequestParameter() Name: %s - Url: %s" % (parameter.Name, parameter.Url))
             parameter.NoRedirect = True
 
@@ -343,16 +349,16 @@ class Provider(ProviderBase):
 
         elif method == 'updateTitle':
             parameter.Method = 'PATCH'
-            parameter.Url += f'/me/drive/items/{data.Id}'
+            parameter.Url += '/me/drive/items/' + data.Id
             parameter.setJson('name', data.get('name'))
 
         elif method == 'updateTrashed':
             parameter.Method = 'DELETE'
-            parameter.Url += f'/me/drive/items/{data.Id}'
+            parameter.Url += '/me/drive/items/' + data.Id
 
         elif method == 'updateParents':
             parameter.Method = 'PATCH'
-            parameter.Url += f'/files/{data.get("Id")}'
+            parameter.Url += '/files/' + data.get('Id')
             toadd = data.get('ParentToAdd')
             toremove = data.get('ParentToRemove')
             if len(toadd) > 0:
@@ -362,7 +368,7 @@ class Provider(ProviderBase):
 
         elif method == 'createNewFolder':
             parameter.Method = 'POST'
-            parameter.Url += f'/me/drive/items/{data.get("ParentId")}/children'
+            parameter.Url += '/me/drive/items/%s/children' % data.get('ParentId')
             parameter.setJson('name', data.get('Title'))
             parameter.setJson('folder', None)
             parameter.setJson('@microsoft.graph.conflictBehavior', 'replace')
@@ -370,7 +376,7 @@ class Provider(ProviderBase):
 
         elif method in ('getUploadLocation', 'getNewUploadLocation'):
             parameter.Method = 'POST'
-            parameter.Url += f'/me/drive/items/{data.get("ParentId")}:/{data.get("Title")}:/createUploadSession'
+            parameter.Url += '/me/drive/items/%s:/%s:/createUploadSession' % (data.get('ParentId'), data.get('Title'))
             parameter.setNesting('item/folder', None)
             parameter.setNesting('item/@odata.type', 'microsoft.graph.driveItemUploadableProperties')
             parameter.setNesting('item/@microsoft.graph.conflictBehavior', 'replace')
@@ -385,10 +391,10 @@ class Provider(ProviderBase):
 
         elif method == 'uploadFile':
             parameter.Method = 'PUT'
-            parameter.Url = f'/me/drive/items/{data.get("ItemId")}/content'
+            parameter.Url = '/me/drive/items/%s/content' % data.get('ItemId')
 
         elif method == 'uploadNewFile':
             parameter.Method = 'PUT'
-            parameter.Url = f'/me/drive/items/{data.get("ParentId")}:/{data.get("Title")}:/content'
+            parameter.Url = '/me/drive/items/%s:/%s:/content' % (data.get('ParentId'), data.get('Title'))
         return parameter
 

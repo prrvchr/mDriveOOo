@@ -33,6 +33,7 @@ import unohelper
 from com.sun.star.lang import XServiceInfo
 
 from com.sun.star.ucb import XContentProvider
+from com.sun.star.ucb import XContentProviderSupplier
 from com.sun.star.ucb import XContentIdentifierFactory
 from com.sun.star.ucb import XParameterizedContentProvider
 
@@ -50,47 +51,42 @@ import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.ContentProvider' % g_identifier
+g_ImplementationName = '%s.UnamedProvider' % g_identifier
 
 
-class ContentProvider(unohelper.Base,
-                      XServiceInfo,
-                      XContentProvider,
-                      XContentIdentifierFactory,
-                      XParameterizedContentProvider):
+class UnamedProvider(unohelper.Base,
+                     XServiceInfo,
+                     XContentProvider,
+                     XContentProviderSupplier,
+                     XContentIdentifierFactory):
     def __init__(self, ctx):
         print('ContentProvider.__init__()')
         self._ctx = ctx
+        self._provider = None
         self._logger = getLogger(ctx, g_defaultlog, g_basename)
         self._logger.logprb(INFO, 'ContentProvider', '__init__()', 101, g_ImplementationName)
 
-    # XParameterizedContentProvider
-    def registerInstance(self, template, arguments, replace):
-        print('ContentProvider.registerInstance() 1')
-        try:
-            provider = ParameterizedProvider(self._ctx, self._logger, arguments)
-            print('ContentProvider.registerInstance() 2')
-            self._logger.logprb(INFO, 'ContentProvider', 'registerInstance()', 111, arguments)
-            return provider
-        except Exception as e:
-            msg = "ContentProvider.registerInstance() Error: %s" % traceback.print_exc()
-            print(msg)
-
-    def deregisterInstance(self, scheme, authority):
-        print('ContentProvider.deregisterInstance()')
+    # XContentProvider
+    def queryContent(self, identifier):
+        return self.getContentProvider().queryContent(identifier)
+    def compareContentIds(self, identifier1, identifier2):
+        return self.getContentProvider().compareContentIds(identifier1, identifier2)
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, identifier):
-        print('ContentProvider.createContentIdentifier()')
-        return None
+        return self.getContentProvider().createContentIdentifier(identifier)
 
-    # XContentProvider
-    def queryContent(self, identifier):
-        print('ContentProvider.queryContent()')
+    # XContentProviderSupplier
+    def getContentProvider(self):
+        if self._provider is None:
+            self._provider = ParameterizedProvider(self._ctx, self._logger, False, 'Unamed')
+        return self._provider
+
+    # XParameterizedContentProvider
+    def registerInstance(self, template, arguments, replace):
         return None
-    def compareContentIds(self, identifier1, identifier2):
-        print('ContentProvider.compareContentIds()')
-        return None
+    def deregisterInstance(self, scheme, authority):
+        pass
 
     # XServiceInfo
     def supportsService(self, service):
@@ -101,8 +97,8 @@ class ContentProvider(unohelper.Base,
         return g_ImplementationHelper.getSupportedServiceNames(g_ImplementationName)
 
 
-g_ImplementationHelper.addImplementation(ContentProvider,
+g_ImplementationHelper.addImplementation(UnamedProvider,
                                          g_ImplementationName,
                                          (g_ImplementationName,
-                                         'com.sun.star.ucb.ContentProvider'))
+                                         'com.sun.star.ucb.ContentProviderProxy'))
 

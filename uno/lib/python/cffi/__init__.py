@@ -1,14 +1,37 @@
-__all__ = ['FFI', 'VerificationError', 'VerificationMissing', 'CDefError',
-           'FFIError']
+#!
+# -*- coding: utf-8 -*-
 
-from .api import FFI
-from .error import CDefError, FFIError, VerificationError, VerificationMissing
-from .error import PkgConfigError
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
 
-__version__ = "1.15.1"
-__version_info__ = (1, 15, 1)
-
-# The verifier module file names are based on the CRC32 of a string that
-# contains the following version number.  It may be older than __version__
-# if nothing is clearly incompatible.
-__version_verifier_modules__ = "0.8.6"
+try:
+    print("Pythonpath.cffi 1 PY3")
+    from cffi import *
+    print("Pythonpath.cffi 2 PY3")
+except:
+    from .cffi import FFI
+    from .cffi import CDefError, FFIError, VerificationError, VerificationMissing
+    from .cffi import PkgConfigError

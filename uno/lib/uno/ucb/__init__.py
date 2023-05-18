@@ -27,7 +27,7 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .ucp import ParameterizedProvider
+from .parameterizedprovider import ParameterizedProvider
 
 from .options import OptionsManager
 

@@ -24,17 +24,15 @@
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 -->
-<oor:component-data
-  xml:lang="en-US"
-  xmlns:oor="http://openoffice.org/2001/registry"
+<oor:component-data oor:name="oneDriveOOo" oor:package="io.github.prrvchr"
+  xsi:schemaLocation="http://openoffice.org/2001/registry/component-update.xsd"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  oor:package="io.github.prrvchr"
-  oor:name="oneDriveOOo">
-    <prop oor:name="ReplicateTimeout">
-        <value>600</value>
-    </prop>
-    <prop oor:name="SynchronizePolicy">
-        <value>CLIENT_IS_MASTER</value>
-    </prop>
+  xmlns:oor="http://openoffice.org/2001/registry"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <prop oor:name="ReplicateTimeout">
+    <value>600</value>
+  </prop>
+  <prop oor:name="SynchronizePolicy">
+    <value>CLIENT_IS_MASTER</value>
+  </prop>
 </oor:component-data>

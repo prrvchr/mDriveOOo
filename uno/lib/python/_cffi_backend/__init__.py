@@ -1,5 +1,7 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!--
+#!
+# -*- coding: utf-8 -*-
+
+"""
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
 ║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
@@ -23,38 +25,9 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
--->
-<oor:component-data oor:name="OptionsDialog" oor:package="org.openoffice.Office"
-  xsi:schemaLocation="http://openoffice.org/2001/registry/component-update.xsd"
-  xmlns:xs="http://www.w3.org/2001/XMLSchema"
-  xmlns:oor="http://openoffice.org/2001/registry"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <node oor:name="Nodes">
-    <node oor:name="io.github.prrvchr.oneDriveOOo" oor:op="fuse">
-      <prop oor:name="Label">
-        <value xml:lang="en-US">Internet</value>
-        <value xml:lang="fr-FR">Internet</value>
-      </prop>
-      <prop oor:name="AllModules">
-        <value>true</value>
-      </prop>
-      <node oor:name="Leaves">
-        <node oor:name="io.github.prrvchr.oneDriveOOo" oor:op="fuse">
-          <prop oor:name="Id">
-            <value>io.github.prrvchr.oneDriveOOo</value>
-          </prop>
-          <prop oor:name="Label">
-            <value xml:lang="en-US">oneDriveOOo</value>
-            <value xml:lang="fr-FR">oneDriveOOo</value>
-          </prop>
-          <prop oor:name="OptionsPage">
-            <value>%origin%/oneDriveOOo/OptionsDialog.xdl</value>
-          </prop>
-          <prop oor:name="EventHandlerService">
-            <value>io.github.prrvchr.oneDriveOOo.OptionsHandler</value>
-          </prop>
-        </node>
-      </node>
-    </node>
-  </node>
-</oor:component-data>
+"""
+
+try:
+    import _cffi_backend
+except:
+    from . import _cffi_backend

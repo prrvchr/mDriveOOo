@@ -33,22 +33,25 @@ import unohelper
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from com.sun.star.lang import XServiceInfo
+
 from com.sun.star.ucb import XContentIdentifierFactory
 from com.sun.star.ucb import XContentProvider
 from com.sun.star.ucb import XParameterizedContentProvider
 from com.sun.star.ucb import IllegalIdentifierException
 
-from .contentidentifier import ContentIdentifier
+from .ucp import ContentIdentifier
 
-from ..unotool import createService
-from ..unotool import parseUrl
+from .unotool import createService
+from .unotool import parseUrl
 
-from ..datasource import DataSource
+from .datasource import DataSource
 
-from ..logger import getLogger
+from .logger import getLogger
 
-from ..configuration import g_defaultlog
-from ..configuration import g_scheme
+from .configuration import g_identifier
+from .configuration import g_defaultlog
+from .configuration import g_scheme
 
 import traceback
 from threading import Event
@@ -56,13 +59,15 @@ from threading import Lock
 
 
 class ParameterizedProvider(unohelper.Base,
+                            XServiceInfo,
                             XContentIdentifierFactory,
                             XContentProvider):
-    def __init__(self, ctx, logger, arguments):
+    def __init__(self, ctx, logger, authority,  arguments):
         print("ParameterizedProvider.__init__() 1 Scheme: %s" % g_scheme)
         self._ctx = ctx
-        self._authority = True if arguments == 'WithAuthority' else False
-        self._clazz = 'ParameterizedProvider%s' % arguments
+        self._authority = authority
+        self._clazz = '%sProvider' % arguments
+        self._services = ('com.sun.star.ucb.ContentProvider', g_identifier + '.ContentProvider')
         self._sync = Event()
         self._lock = Lock()
         self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
@@ -107,6 +112,14 @@ class ParameterizedProvider(unohelper.Base,
             self._logger.logprb(INFO, self._clazz, 'compareContentIds()', 232, url1, url2)
             compare = -1
         return compare
+
+    # XServiceInfo
+    def supportsService(self, service):
+        return service in self._services
+    def getImplementationName(self):
+        return self._services[1]
+    def getSupportedServiceNames(self):
+        return self._services
 
     # Private methods
     def _getContentIdentifierUrl(self, url):

@@ -29,5 +29,5 @@
 
 from .contentuser import ContentUser
 
-from .parameterizedprovider import ParameterizedProvider
+from .contentidentifier import ContentIdentifier
 
