@@ -313,6 +313,6 @@ class Replicator(unohelper.Base,
         # FIXME: OpenOffice need uno.getConstantByName() vs uno.Enum()
         try:
             return uno.getConstantByName('com.sun.star.ucb.SynchronizePolicy.' + policy)
-        # FIXME: LibreOffice need uno.Enum()
+        # FIXME: LibreOffice raise exception on uno.getConstantByName() on Enum...
         except:
             return uno.Enum('com.sun.star.ucb.SynchronizePolicy', policy)
