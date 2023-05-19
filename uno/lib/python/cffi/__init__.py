@@ -27,11 +27,12 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+# FIXME: For OpenOffice with python 2.7.x we need to be able to do absolute import
+# FIXME: ie: import from PYTHONPATH module before inner modules
+from __future__ import absolute_import
 try:
-    print("Pythonpath.cffi 1 PY3")
+    # FIXME: We try to load the cffi module from the PYTHONPATH
     from cffi import *
-    print("Pythonpath.cffi 2 PY3")
 except:
-    from .cffi import FFI
-    from .cffi import CDefError, FFIError, VerificationError, VerificationMissing
-    from .cffi import PkgConfigError
+    # FIXME: If cffi if not fount we load the embedded inner cffi module
+    from .cffi import *
