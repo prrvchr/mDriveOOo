@@ -523,7 +523,7 @@ class DataBase():
     def _mergeParent(self, call, item, timestamp):
         call.setString(1, item[0])
         self._setPath(call, 2, item[-2])
-        call.setArray(3, Array('VARCHAR', tuple(item[-1])))
+        call.setArray(3, Array('VARCHAR', item[-1]))
         call.setObject(4, timestamp)
         call.addBatch()
 

@@ -38,6 +38,8 @@ class Array(unohelper.Base,
             XArray):
     def __init__(self, sqltype, data=()):
         self._type = sqltype
+        if not isinstance(data, tuple):
+            data = tuple(data)
         self._data = data
 
     # XArray
