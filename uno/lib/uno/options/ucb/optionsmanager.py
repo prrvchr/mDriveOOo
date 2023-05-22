@@ -40,6 +40,7 @@ from ..logger import LogManager
 from ..configuration import g_identifier
 from ..configuration import g_defaultlog
 
+from collections import OrderedDict
 import os
 import sys
 import traceback
@@ -51,10 +52,7 @@ class OptionsManager(unohelper.Base):
         self._model = OptionsModel(ctx)
         index, timeout, exist = self._model.getViewData()
         self._view = OptionsView(window, index, timeout, exist)
-        version  = ' '.join(sys.version.split())
-        path = os.pathsep.join(sys.path)
-        infos = {111: version, 112: path}
-        self._logger = LogManager(self._ctx, window.Peer, infos, g_identifier, g_defaultlog)
+        self._logger = LogManager(ctx, window.Peer, self._getInfos(), g_identifier, g_defaultlog)
 
     def saveSetting(self):
         self._model.setSynchronizePolicy(self._view.getSynchronizePolicy())
@@ -72,4 +70,19 @@ class OptionsManager(unohelper.Base):
     def viewData(self):
         url = self._model.getDatasourceUrl()
         getDesktop(self._ctx).loadComponentFromURL(url, '_blank', 0, ())
+
+    def _getInfos(self):
+        infos = OrderedDict()
+        version  = ' '.join(sys.version.split())
+        infos[111] = version
+        path = os.pathsep.join(sys.path)
+        infos[112] = path
+        # Required modules for ijson
+        try:
+            import cffi
+        except Exception as e:
+            infos[113] = self._getExceptionMessage(e)
+        else:
+            infos[114] = cffi.__version__
+        return infos
 

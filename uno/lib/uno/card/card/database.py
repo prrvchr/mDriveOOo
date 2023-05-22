@@ -565,7 +565,7 @@ class DataBase(unohelper.Base):
         call.setInt(1, gid)
         call.setTimestamp(2, timestamp)
         for members in iterator:
-            call.setArray(3, Array('VARCHAR', members))
+            call.setArray(3, Array('VARCHAR', tuple(members)))
             call.addBatch()
             count += 1
         if count:

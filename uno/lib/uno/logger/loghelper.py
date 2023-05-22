@@ -141,9 +141,9 @@ class LogWrapper(object):
 
     def _resolveErrorMessage(self, resolver, resource):
         if self._localized:
-            msg = resolver.resolveString(141) % (resource, self._url, self._basename)
+            msg = resolver.resolveString(151) % (resource, self._url, self._basename)
         else:
-            msg = resolver.resolveString(142)
+            msg = resolver.resolveString(152)
         return msg
 
 
@@ -175,7 +175,7 @@ class LogController(LogWrapper):
     def logInfos(self, level, infos, clazz, method):
         for resource, info in infos.items():
             msg = self._resolver.resolveString(resource) % info
-            self._logger.logp(level, msg, clazz, method)
+            self._logger.logp(level, clazz, method, msg)
 
     def clearLogger(self):
         url = getRollerHandlerUrl(self._ctx, self.Name)
@@ -183,7 +183,7 @@ class LogController(LogWrapper):
         if sf.exists(url):
             sf.kill(url)
             print("LogController.clearLogger() 1")
-            msg = self._resolver.resolveString(131)
+            msg = self._resolver.resolveString(161)
             handler = RollerHandler(self._ctx, self.Name)
             self.addRollerHandler(handler)
             self._logMessage(SEVERE, msg, 'Logger', 'clearLogger()')

@@ -50,6 +50,9 @@ from .unotool import parseUrl
 from .configuration import g_cache
 
 from .dbconfig import g_folder
+from .dbconfig import g_protocol
+from .dbconfig import g_options
+from .dbconfig import g_shutdown
 
 from .dbtool import getDataSourceLocation
 from .dbtool import getDataSourceInfo
@@ -77,7 +80,6 @@ import traceback
 class DataSource(unohelper.Base,
                  XCloseListener):
     def __init__(self, ctx, logger, sync, lock):
-        print("DataSource.__init__() 1")
         self._ctx = ctx
         self._default = ''
         self._users = {}
@@ -86,21 +88,17 @@ class DataSource(unohelper.Base,
         self._sync = sync
         self._lock = lock
         self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
-        datasource, url, created = self._getDataSource(True)
+        datasource, url, created = self._getDataSource(False)
         self.DataBase = DataBase(self._ctx, datasource)
         if created:
-            print("DataSource.__init__() 2")
             self.Error = self.DataBase.createDataBase()
             if self.Error is None:
                 self.DataBase.storeDataBase(url)
-                print("DataSource.__init__() 3")
         self.DataBase.addCloseListener(self)
         folder, link = self.DataBase.getContentType()
-        print("DataSource.__init__() Folder: %s - Link: %s" % (folder, link))
         self._provider = Provider(ctx, folder, link, logger)
         self.Replicator = Replicator(ctx, datasource, self._provider, self._users, self._sync, self._lock)
         self._logger.logprb(INFO, 'DataSource', '__init__()', 301)
-        print("DataSource.__init__() 4")
 
     # DataSource
     def getDefaultUser(self):
@@ -163,20 +161,37 @@ class DataSource(unohelper.Base,
         return name
 
     def _getDataSource(self, register):
-        location = getResourceLocation(self._ctx, g_identifier, g_folder)
-        location = getUrlPresentation(self._ctx, location)
-        url = '%s/%s.odb' % (location, g_scheme)
+        print("DataSource._getDataSource() 1")
+        path = '%s/%s.odb' % (g_folder, g_scheme)
+        location = getResourceLocation(self._ctx, g_identifier, path)
+        url = getUrlPresentation(self._ctx, location)
         dbcontext = createService(self._ctx, 'com.sun.star.sdb.DatabaseContext')
+        print("DataSource._getDataSource() 2")
         if getSimpleFile(self._ctx).exists(url):
-            odb = g_scheme if dbcontext.hasByName(g_scheme) else url
-            datasource = dbcontext.getByName(odb)
+            if dbcontext.hasByName(g_scheme):
+                print("DataSource._getDataSource() 3")
+                datasource = dbcontext.getByName(g_scheme)
+            else:
+                print("DataSource._getDataSource() 4")
+                datasource = dbcontext.getByName(url)
             created = False
         else:
+            print("DataSource._getDataSource() 5")
             datasource = dbcontext.createInstance()
-            datasource.URL = getDataSourceLocation(location, g_scheme, False)
-            datasource.Info = getDataSourceInfo() + getDataSourceJavaInfo(location)
+            print("DataSource._getDataSource() 6")
+            datasource.URL = self._getDataSourceLocation(url, True)
+            print("DataSource._getDataSource() 7")
+            datasource.Info = getDataSourceInfo()
             created = True
-        if register:
+        if register and created:
+            print("DataSource._getDataSource() 8")
             registerDataSource(dbcontext, g_scheme, url)
+        print("DataSource._getDataSource() 9")
         return datasource, url, created
+
+    def _getDataSourceLocation(self, url, shutdown):
+        url = g_protocol + url + g_options
+        if shutdown:
+            url += g_shutdown
+        return url
 
