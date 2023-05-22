@@ -50,12 +50,14 @@ oneDriveOOo uses a local [HsqlDB][11] database version 2.7.1.
 HsqlDB being a database written in Java, its use requires the [installation and configuration][12] in LibreOffice / OpenOffice of a **JRE version 11 or later**.  
 I recommend [Adoptium][13] as your Java installation source.
 
-If you are using **LibreOffice on Linux**, then you are subject to [bug 139538][14].  
-To work around the problem, please uninstall the packages:
-- libreoffice-sdbc-hsqldb
-- libhsqldb1.8.0-java
-
-If you still want to use the Embedded HsqlDB functionality provided by LibreOffice, then install the [HsqlDBembeddedOOo][15] extension.  
+If you are using **LibreOffice on Linux**, you need to make sure of two things:
+  - You are subject to [bug 139538][14]. To work around the problem, please **uninstall the packages** with commands:
+    - `sudo apt remove libreoffice-sdbc-hsqldb`
+    - `sudo apt remove libhsqldb1.8.0-java`
+  If you still want to use the Embedded HsqlDB functionality provided by LibreOffice, then install the [HsqlDBembeddedOOo][15] extension.  
+  - If the python3-cffi-backend package is installed then you need to **install the python3-cffi package** with the command:
+    - `dpkg -s python3-cffi-backend` (to know if the package is installed)
+    - `sudo apt install python3-cffi`
 OpenOffice and LibreOffice on Windows are not subject to this malfunction.
 
 ## Installation:
