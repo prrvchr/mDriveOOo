@@ -149,7 +149,7 @@ class DataSource(unohelper.Base,
                                self._provider, name, self._sync, self._lock)
             self._users[name] = user
             # FIXME: if the user has been instantiated then we can consider it as the default user
-            if authority or default:
+            if default:
                 self._default = name
         return user, uri.getPath()
 

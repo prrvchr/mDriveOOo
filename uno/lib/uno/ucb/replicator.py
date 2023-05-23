@@ -33,10 +33,6 @@ import unohelper
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from com.sun.star.ucb.SynchronizePolicy import SERVER_IS_MASTER
-from com.sun.star.ucb.SynchronizePolicy import CLIENT_IS_MASTER
-from com.sun.star.ucb.SynchronizePolicy import NONE_IS_MASTER
-
 from com.sun.star.ucb.ChangeAction import INSERT
 from com.sun.star.ucb.ChangeAction import UPDATE
 from com.sun.star.ucb.ChangeAction import MOVE
@@ -123,18 +119,18 @@ class Replicator(unohelper.Base,
             print(msg)
 
     def _synchronize(self):
-        policy = self._getSynchronizePolicy()
-        if policy == NONE_IS_MASTER:
+        policy = self._getPolicy()
+        if policy == self._getSynchronizePolicy('NONE_IS_MASTER'):
             return
         self._logger.logprb(INFO, 'Replicator', '_synchronize()', 101, getDateTimeInTZToString(currentDateTimeInTZ()))
         if self.Provider.isOffLine():
             self._logger.logprb(INFO, 'Replicator', '_synchronize()', 102)
-        elif policy == SERVER_IS_MASTER:
+        elif policy == self._getSynchronizePolicy('SERVER_IS_MASTER'):
             if not self._canceled:
                 self._pullUsers()
             if not self._canceled:
                 self._pushUsers()
-        elif policy == CLIENT_IS_MASTER:
+        elif policy == self._getSynchronizePolicy('CLIENT_IS_MASTER'):
             if not self._canceled:
                 self._pushUsers()
             if not self._canceled:
@@ -143,9 +139,7 @@ class Replicator(unohelper.Base,
 
     def _pullUsers(self):
         try:
-            print("Replicator._pullUsers() 1")
             for user in self._users.values():
-                print("Replicator._pullUsers() 2")
                 if self._canceled:
                     break
                 self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 111, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
@@ -155,10 +149,8 @@ class Replicator(unohelper.Base,
                 #if not user.Token:
                 if self._isNewUser(user):
                     self._initUser(user)
-                    print("Replicator._pullUsers() 3")
                 else:
                     self._pullUser(user)
-                    print("Replicator._pullUsers() 4")
                 self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 112, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
         except Exception as e:
             print("Replicator._pullUsers() ERROR: %s - %s" % (e, traceback.print_exc()))
@@ -206,7 +198,6 @@ class Replicator(unohelper.Base,
                         break
                 if items:
                     self.DataBase.updatePushItems(user, items)
-                print("Replicator._pushUsers() 4")
                 self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 133, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
         except Exception as e:
             print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
@@ -308,11 +299,14 @@ class Replicator(unohelper.Base,
         timeout = self._config.getByName('ReplicateTimeout')
         return timeout
 
-    def _getSynchronizePolicy(self):
+    def _getPolicy(self):
         policy = self._config.getByName('SynchronizePolicy')
+        return self._getSynchronizePolicy(policy)
+
+    def _getSynchronizePolicy(self, policy):
         # FIXME: OpenOffice need uno.getConstantByName() vs uno.Enum()
         try:
-            return uno.getConstantByName('com.sun.star.ucb.SynchronizePolicy.' + policy)
+            return uno.getConstantByName('com.sun.star.ucb.SynchronizePolicy.%s' % policy)
         # FIXME: LibreOffice raise exception on uno.getConstantByName() on Enum...
         except:
             return uno.Enum('com.sun.star.ucb.SynchronizePolicy', policy)
