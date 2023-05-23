@@ -148,9 +148,9 @@ class DataSource(unohelper.Base,
             user = ContentUser(self._ctx, self._logger, source, self.DataBase,
                                self._provider, name, self._sync, self._lock)
             self._users[name] = user
-            # FIXME: if the user has been instantiated then we can consider it as the default user
-            if default:
-                self._default = name
+        # FIXME: if the user has been instantiated then we can consider it as the default user
+        if default:
+            self._default = name
         return user, uri.getPath()
 
     def _getUserName(self, source, url):
@@ -168,7 +168,7 @@ class DataSource(unohelper.Base,
         dbcontext = createService(self._ctx, 'com.sun.star.sdb.DatabaseContext')
         print("DataSource._getDataSource() 2")
         if getSimpleFile(self._ctx).exists(url):
-            if dbcontext.hasByName(g_scheme):
+            if register and dbcontext.hasByName(g_scheme):
                 print("DataSource._getDataSource() 3")
                 datasource = dbcontext.getByName(g_scheme)
             else:

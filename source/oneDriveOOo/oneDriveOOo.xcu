@@ -50,7 +50,7 @@
                 <value>io.github.prrvchr.oneDriveOOo.UnamedProvider</value>
               </prop>
               <prop oor:name="URLTemplate">
-                <value>"vnd-microsoft://"([/?#].*)?</value>
+                <value>"vnd-microsoft:///".*</value>
               </prop>
               <prop oor:name="Arguments">
                 <value>Unamed</value>
