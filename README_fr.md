@@ -52,16 +52,16 @@ Je vous recommande [Adoptium][13] comme source d'installation de Java.
 
 Si vous utilisez **LibreOffice sous Linux**, vous devez vous assurez de deux choses:
   - Vous êtes sujet au [dysfonctionnement 139538][14]. Pour contourner le problème, veuillez **désinstaller les paquets** avec les commandes:
-    - `sudo apt remove libreoffice-sdbc-hsqldb`
-    - `sudo apt remove libhsqldb1.8.0-java`
+    - `sudo apt remove libreoffice-sdbc-hsqldb` (pour désinstaller le paquet libreoffice-sdbc-hsqldb)
+    - `sudo apt remove libhsqldb1.8.0-java` (pour désinstaller le paquet libhsqldb1.8.0-java)
 
 Si vous souhaitez quand même utiliser la fonctionnalité HsqlDB intégré fournie par LibreOffice, alors installez l'extension [HsqlDBembeddedOOo][15].  
 
-  - Si le paquet python3-cffi-backend est installé alors vous devez **installer le paquet python3-cffi** avec la commande:
-    - `dpkg -s python3-cffi-backend` (pour savoir si le paquet est installé)
-    - `sudo apt install python3-cffi`
+  - Si le paquet python3-cffi-backend est installé alors vous devez **installer le paquet python3-cffi** avec les commandes:
+    - `dpkg -s python3-cffi-backend` (pour savoir si le paquet python3-cffi-backend est installé)
+    - `sudo apt install python3-cffi` (pour installer le paquet python3-cffi si nécessaire)
 
-OpenOffice et LibreOffice sous Windows ne sont pas soumis à ces dysfonctionnements.
+OpenOffice quelle que soit la plate-forme et LibreOffice sous Windows ne sont pas sujets à ces dysfonctionnements.
 
 ## Installation:
 
@@ -118,17 +118,15 @@ Après avoir autorisé l'application [OAuth2OOo][22] à accéder à vos fichiers
 
 ## A été testé avec:
 
-* LibreOffice 6.4.4.2 - Ubuntu 20.04 -  LxQt 0.14.1
+* LibreOffice 7.3.7.2 - Lubuntu 22.04 - OpenJDK-11-JRE (amd64)
 
-* LibreOffice 7.0.0.0.alpha1 - Ubuntu 20.04 -  LxQt 0.14.1
+* LibreOffice 7.4.3.2(x64) - Windows 10(x64) - Adoptium JDK Hotspot 11.0.17 (x64) (sous Lubuntu 22.04 / VirtualBox 6.1.38)
 
-* OpenOffice 4.1.8 x86_64 - Ubuntu 20.04 - LxQt 0.14.1
+* OpenOffice 4.1.13 - Lubuntu 22.04 - OpenJDK-11-JRE (amd64) (sous Lubuntu 22.04 / VirtualBox 6.1.38)
 
-* OpenOffice 4.2.0.Build:9820 x86_64 - Ubuntu 20.04 - LxQt 0.14.1
+* OpenOffice 4.1.14 - Windows 10(x64) - Adoptium JDK Hotspot 11.0.19 (x32) (sous Lubuntu 22.04 / VirtualBox 6.1.38)
 
-* LibreOffice 6.1.5.2 - Raspbian 10 buster - Raspberry Pi 4 Model B
-
-* LibreOffice 6.4.4.2 (x64) - Windows 7 SP1
+* OpenOffice 4.1.13 - Windows 10(x32) - Adoptium JDK Hotspot 11.0.19 (x32) (sous Lubuntu 22.04 / VirtualBox 6.1.38)
 
 Je vous encourage en cas de problème :-(  
 de créer un [dysfonctionnement][10]  

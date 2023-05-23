@@ -52,16 +52,16 @@ I recommend [Adoptium][13] as your Java installation source.
 
 If you are using **LibreOffice on Linux**, you need to make sure of two things:
   - You are subject to [bug 139538][14]. To work around the problem, please **uninstall the packages** with commands:
-    - `sudo apt remove libreoffice-sdbc-hsqldb`
-    - `sudo apt remove libhsqldb1.8.0-java`
+    - `sudo apt remove libreoffice-sdbc-hsqldb` (to uninstall the libreoffice-sdbc-hsqldb package)
+    - `sudo apt remove libhsqldb1.8.0-java` (to uninstall the libhsqldb1.8.0-java package)
 
 If you still want to use the Embedded HsqlDB functionality provided by LibreOffice, then install the [HsqlDBembeddedOOo][15] extension.  
 
   - If the python3-cffi-backend package is installed then you need to **install the python3-cffi package** with the command:
-    - `dpkg -s python3-cffi-backend` (to know if the package is installed)
-    - `sudo apt install python3-cffi`
+    - `dpkg -s python3-cffi-backend` (to know if the python3-cffi-backend package is installed)
+    - `sudo apt install python3-cffi` (to install the python3-cffi package if needed)
 
-OpenOffice and LibreOffice on Windows are not subject to this malfunction.
+OpenOffice whatever the platform and LibreOffice under Windows are not subject to these malfunctions.
 
 ## Installation:
 
@@ -118,17 +118,15 @@ After authorizing the [OAuth2OOo][22] application to access your Microsoft OneDr
 
 ## Has been tested with:
 
-* LibreOffice 6.4.4.2 - Ubuntu 20.04 -  LxQt 0.14.1
+* LibreOffice 7.3.7.2 - Lubuntu 22.04 - OpenJDK-11-JRE (amd64)
 
-* LibreOffice 7.0.0.0.alpha1 - Ubuntu 20.04 -  LxQt 0.14.1
+* LibreOffice 7.4.3.2(x64) - Windows 10(x64) - Adoptium JDK Hotspot 11.0.17 (x64) (under Lubuntu 22.04 / VirtualBox 6.1.38)
 
-* OpenOffice 4.1.8 x86_64 - Ubuntu 20.04 - LxQt 0.14.1
+* OpenOffice 4.1.13 - Lubuntu 22.04 - OpenJDK-11-JRE (amd64) (under Lubuntu 22.04 / VirtualBox 6.1.38)
 
-* OpenOffice 4.2.0.Build:9820 x86_64 - Ubuntu 20.04 - LxQt 0.14.1
+* OpenOffice 4.1.14 - Windows 10(x64) - Adoptium JDK Hotspot 11.0.19 (x32) (under Lubuntu 22.04 / VirtualBox 6.1.38)
 
-* LibreOffice 6.1.5.2 - Raspbian 10 buster - Raspberry Pi 4 Model B
-
-* LibreOffice 6.4.4.2 (x64) - Windows 7 SP1
+* OpenOffice 4.1.13 - Windows 10(x32) - Adoptium JDK Hotspot 11.0.19 (x32) (under Lubuntu 22.04 / VirtualBox 6.1.38)
 
 I encourage you in case of problem :-(  
 to create an [issue][10]  
