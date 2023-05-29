@@ -63,7 +63,7 @@ If you still want to use the Embedded HsqlDB functionality provided by LibreOffi
     - `dpkg -s python3-cffi-backend` (to know if the python3-cffi-backend package is installed)
     - `sudo apt install python3-cffi` (to install the python3-cffi package if needed)
 
-OpenOffice whatever the platform and LibreOffice under Windows are not subject to these malfunctions.
+OpenOffice on Linux and LibreOffice on Windows are not subject to these malfunctions.
 
 ## Installation:
 

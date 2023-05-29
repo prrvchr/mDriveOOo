@@ -63,7 +63,7 @@ Si vous souhaitez quand même utiliser la fonctionnalité HsqlDB intégré fourn
     - `dpkg -s python3-cffi-backend` (pour savoir si le paquet python3-cffi-backend est installé)
     - `sudo apt install python3-cffi` (pour installer le paquet python3-cffi si nécessaire)
 
-OpenOffice quelle que soit la plate-forme et LibreOffice sous Windows ne sont pas sujets à ces dysfonctionnements.
+OpenOffice sous Linux et LibreOffice sous Windows ne sont pas sujets à ces dysfonctionnements.
 
 ## Installation:
 
