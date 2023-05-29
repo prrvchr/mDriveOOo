@@ -81,8 +81,13 @@ class OptionsManager(unohelper.Base):
         try:
             import cffi
         except Exception as e:
-            infos[113] = self._getExceptionMessage(e)
+            infos[113] = self._getExceptionMsg(e)
         else:
-            infos[114] = cffi.__version__
+            infos[114] = cffi.__version__, cffi.__file__
         return infos
+
+    def _getExceptionMsg(self, e):
+        error = repr(e)
+        trace = repr(traceback.format_exc())
+        return error, trace
 

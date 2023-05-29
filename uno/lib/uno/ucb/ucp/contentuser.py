@@ -120,6 +120,7 @@ class ContentUser():
         except Exception as e:
             msg = "ContentUser.__init__() Error: %s" % traceback.format_exc()
             print(msg)
+            raise IllegalIdentifierException(msg, source)
 
     @property
     def Name(self):
