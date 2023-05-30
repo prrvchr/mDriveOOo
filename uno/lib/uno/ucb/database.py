@@ -40,8 +40,6 @@ from com.sun.star.sdbc.DataType import ARRAY
 
 from io.github.prrvchr.css.util import DateTimeWithTimezone
 
-from .unolib import KeyMap
-
 from .unotool import createService
 
 from .dbqueries import getSqlQuery

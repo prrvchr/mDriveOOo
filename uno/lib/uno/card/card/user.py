@@ -68,22 +68,22 @@ class User(unohelper.Base):
 
     @property
     def Id(self):
-        return self._metadata.getValue('User')
+        return self._metadata.get('User')
     @property
     def Uri(self):
-        return self._metadata.getValue('Uri')
+        return self._metadata.get('Uri')
     @property
     def Scheme(self):
-        return self._metadata.getValue('Scheme')
+        return self._metadata.get('Scheme')
     @property
     def Server(self):
-        return self._metadata.getValue('Server')
+        return self._metadata.get('Server')
     @property
     def Path(self):
-        return self._metadata.getValue('Path')
+        return self._metadata.get('Path')
     @property
     def Name(self):
-        return self._metadata.getValue('Name')
+        return self._metadata.get('Name')
     @property
     def Password(self):
         return self._password

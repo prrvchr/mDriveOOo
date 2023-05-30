@@ -335,7 +335,6 @@ def getKeyMapFromResult(result, keymap=None, provider=None):
 def getDataFromResult(result, provider=None):
     data = {}
     for i in range(1, result.MetaData.ColumnCount +1):
-        #name = result.MetaData.getColumnName(i)
         name = result.MetaData.getColumnLabel(i)
         value = getResultValue(result, i)
         if provider:

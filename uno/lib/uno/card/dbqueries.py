@@ -145,36 +145,6 @@ def getSqlQuery(ctx, name, format=None):
         query = ' WITH SYSTEM VERSIONING'
 
 # Create Dynamic View Queries
-    elif name == 'getAddressBookView':
-        query = '''\
-CREATE VIEW "%(View)s" ("%(Columns)s") AS SELECT %(Select)s FROM "Card" %(Table)s
-''' % format
-
-    elif name == 'createCardColumnsView':
-        query = 'CREATE VIEW "Book" (%(Columns)s) AS SELECT %(Select)s FROM %(Table)s' % format
-
-    elif name == 'createView':
-        query = 'CREATE VIEW "%s"(%s) AS SELECT %s FROM %s' % format
-
-    elif name == 'getPrimaryColumnName':
-        query = 'Resource'
-
-    elif name == 'getBookmarkColumnName':
-        query = 'Bookmark'
-
-    elif name == 'getBookmarkColumn':
-        query = 'ROW_NUMBER() OVER() AS "Bookmark"'
-
-    elif name == 'getAddressBookTable':
-        query = '''"Peoples"
-JOIN "Connections" ON "Peoples"."People"="Connections"."People"
-JOIN "Groups" ON "Connections"."Group"="Groups"."Group" AND "Groups"."GroupSync"=FALSE
-JOIN "Peoples" AS P ON "Groups"."People"=P."People"
-'''
-
-    elif name == 'getAddressBookPredicate':
-        query = '''WHERE P."Account"=CURRENT_USER OR CURRENT_USER='SA' ORDER BY "Peoples"."People"'''
-
     elif name == 'createBookView':
         view = '''\
 CREATE VIEW IF NOT EXISTS "%(Name)s" AS
@@ -192,7 +162,6 @@ CREATE VIEW IF NOT EXISTS "%(Schema)s"."%(Name)s" AS
   SELECT %(Public)s."%(View)s".* FROM %(Public)s."%(View)s" 
   WHERE %(Public)s."%(View)s"."%(UserColumn)s" = "%(UserId)s";
 '''
-
         query = synonym % format
 
     elif name == 'createAddressbookView':
@@ -282,10 +251,6 @@ GRANT SELECT ON "%(Schema)s"."%(Name)s" TO "%(User)s";
         p = (', '.join(s), ' '.join(f), w)
         query = 'SELECT %s FROM %s WHERE %s' % p
 
-
-    elif name == 'getViewNames':
-        query = 'SELECT "Name" FROM "Tables" WHERE "View"=TRUE ORDER BY "Table"'
-
     elif name == 'getViews':
         s1 = '"T1"."Table" AS "TableId"'
         s2 = '"TL"."Label" AS "LabelId"'
@@ -316,98 +281,9 @@ SELECT F."Name" FROM "Fields" AS F
 UNION 
 SELECT "Name" FROM "Fields" WHERE "Table"='Loop' AND "Column"=1;'''
 
-    elif name == 'getDefaultType':
-        s1 = '"Tables"."Name" AS "Table"'
-        s2 = '"Types"."Name" AS "Type"'
-        s = (s1, s2)
-        f1 = '"Tables"'
-        f2 = 'JOIN "TableType" ON "Tables"."Table"="TableType"."Table"'
-        f3 = 'JOIN "Types" ON "TableType"."Type"="Types"."Type"'
-        w = '"TableType"."Default"=TRUE'
-        f = (f1, f2 , f3 )
-        p = (','.join(s), ' '.join(f), w)
-        query = 'SELECT %s FROM %s WHERE %s' % p
-
-    elif name == 'getFieldsMap':
-        s1 = '"F"."Name" AS "Value"'
-        s2 = 'COALESCE("Tables"."Name","Columns"."Name","Labels"."Name","Fields"."Name") AS "Name"'
-        s3 = '"F"."Type"'
-        s4 = '"F"."Table"'
-        s = (s1, s2, s3, s4)
-        f1 = '"Fields" AS "F"'
-        f2 = 'LEFT JOIN "Tables" ON "F"."Table"=%s AND "F"."Column"="Tables"."Table"'
-        f3 = 'LEFT JOIN "Columns" ON "F"."Table"=%s AND "F"."Column"="Columns"."Column"'
-        f4 = 'LEFT JOIN "Labels" ON "F"."Table"=%s AND "F"."Column"="Labels"."Label"'
-        f5 = 'LEFT JOIN "Fields" ON "F"."Table"=%s AND "F"."Field"="Fields"."Field"'
-        f = (f1, f2 % "'Tables'", f3 % "'Columns'", f4 % "'Labels'", f5 % "'Loop'")
-        p = (','.join(s), ' '.join(f))
-        query = 'SELECT %s FROM %s WHERE "F"."Method"=? ORDER BY "F"."Field"' % p
-
-    elif name == 'getPrimaryTable':
-        s = 'COALESCE("Tables"."Name","Columns"."Name","Labels"."Name","Fields"."Name") AS "Name"'
-        f1 = '"Fields" AS "F"'
-        f2 = 'LEFT JOIN "Tables" ON "F"."Table"=%s AND "F"."Column"="Tables"."Table"'
-        f3 = 'LEFT JOIN "Columns" ON "F"."Table"=%s AND "F"."Column"="Columns"."Column"'
-        f4 = 'LEFT JOIN "Labels" ON "F"."Table"=%s AND "F"."Column"="Labels"."Label"'
-        f5 = 'LEFT JOIN "Fields" ON "F"."Table"=%s AND "F"."Field"="Fields"."Field"'
-        f = (f1, f2 % "'Tables'", f3 % "'Columns'", f4 % "'Labels'", f5 % "'Loop'")
-        w = '"F"."Type"=%s AND "F"."Table"=%s' % ("'Primary'","'Tables'")
-        p = (s, ' '.join(f), w)
-        query = 'SELECT %s FROM %s WHERE %s' % p
-
-
-    elif name == 'getUpdatedGroup':
-        query = 'SELECT "Resource" FROM "Groups" FOR SYSTEM_TIME AS OF CURRENT_TIMESTAMP - 1 YEAR'
-
 # Update Queries
     elif name == 'updateAddressbookToken':
         query = 'UPDATE "Books" SET "Token"=?,"Modified"=DEFAULT WHERE "Book"=?'
-
-    elif name == 'updateUser1':
-        query = 'UPDATE "Users" SET "Scheme"=?,"Password"=? WHERE "User"=?'
-
-    elif name == 'updateUserScheme':
-        query = 'UPDATE "Users" SET "Scheme"=? WHERE "User"=?'
-
-    elif name == 'updateUserPassword':
-        query = 'UPDATE "Users" SET "Password"=? WHERE "User"=?'
-
-
-    elif name == 'updatePeoples':
-        query = 'UPDATE "Peoples" SET "TimeStamp"=? WHERE "Resource"=?'
-
-    elif name == 'updatePeopleSync':
-        query = 'UPDATE "Peoples" SET "PeopleSync"=?,"TimeStamp"=? WHERE "People"=?'
-
-    elif name == 'updateGroupSync':
-        query = 'UPDATE "Peoples" SET "GroupSync"=?,"TimeStamp"=? WHERE "People"=?'
-
-# Get DataBase Version Query
-    elif name == 'getVersion':
-        query = 'Select DISTINCT DATABASE_VERSION() as "HSQL Version" From INFORMATION_SCHEMA.SYSTEM_TABLES'
-
-# Create Trigger Query
-    elif name == 'createTriggerGroupInsert':
-        query = """\
-CREATE TRIGGER "GroupInsert" AFTER INSERT ON "Groups"
-  REFERENCING NEW ROW AS "NewRow"
-  FOR EACH ROW
-  BEGIN ATOMIC
-    CALL "GroupView" ("NewRow"."Name", "NewRow"."Group")
-  END"""
-
-    elif name == 'selectUpdatedGroup':
-        c1 = '?||"Resource" AS "Resource"'
-        c2 = '"Group"'
-        c3 = '"Name"'
-        q = '\
-SELECT %s FROM "Groups" WHERE "GroupSync"=FALSE AND "People"=? AND "Resource"<>?'
-        query = q % ','.join((c1, c2, c3))
-
-    elif name == 'truncatGroup':
-        q = """\
-TRUNCATE TABLE "Groups" VERSIONING TO TIMESTAMP'%(TimeStamp)s'"""
-        query = q % format
 
 # Insert Queries
     elif name == 'insertSuperUser':
@@ -427,30 +303,6 @@ INSERT INTO "Groups" ("Book","Uri","Name") VALUES (0,'/','#');
 """
 
 # Create Procedure Query
-    elif name == 'createSelectGroup':
-        query = """\
-CREATE PROCEDURE "SelectGroup"(IN "Prefix" VARCHAR(50),
-                               IN "PeopleId" INTEGER,
-                               IN "ResourceName" VARCHAR(100))
-  SPECIFIC "SelectGroup_1"
-  READS SQL DATA
-  DYNAMIC RESULT SETS 1
-  BEGIN ATOMIC
-    DECLARE "StartTime","EndTime","Format" VARCHAR(30);
-    DECLARE "TmpTime" TIMESTAMP(6);
-    DECLARE "Result" CURSOR WITH RETURN FOR
-      SELECT "Prefix"||"Resource" FROM "Groups" FOR SYSTEM_TIME FROM 
-      TO_TIMESTAMP('%(Start)s','%(Format)s') TO TO_TIMESTAMP('%(End)s','%(Format)s')
-      WHERE "People"="PeopleId" AND "Resource"<>"ResourceName" FOR READ ONLY;
-    SET "Time" = LOCALTIMESTAMP(6);
-    SET "TmpTime" = "Time" - 10 MINUTE;
-    SET "Format" = 'YYYY-MM-DDTHH24:MI:SS.FFFZ';
-    SET "EndTime" = TO_CHAR("Time","Format");
-    SET "StartTime" = TO_CHAR("TmpTime","Format");
-    SET "Time" = "EndTime";
-    OPEN "Result";
-  END"""
-
     elif name == 'createSelectUser':
         query = """\
 CREATE PROCEDURE "SelectUser"(IN SERVER VARCHAR(128),
@@ -503,28 +355,6 @@ CREATE PROCEDURE "InsertUser"(IN URI VARCHAR(256),
     IF ADDRESSBOOK IS NOT NULL THEN
       INSERT INTO "Books" ("User","Uri","Name","Tag") VALUES (IDENTITY(),'/',ADDRESSBOOK,'#');
     END IF;
-    OPEN RSLT;
-  END"""
-
-    elif name == 'createSelectAddressbook':
-        query = """\
-CREATE PROCEDURE "SelectAddressbook"(IN UID INTEGER,
-                                     IN AID INTEGER,
-                                     IN NAME VARCHAR(128))
-  SPECIFIC "SelectAddressbook_1"
-  READS SQL DATA
-  DYNAMIC RESULT SETS 1
-  BEGIN ATOMIC
-    DECLARE RSLT CURSOR WITH RETURN FOR
-      SELECT A."Book", A."Uri" AS "Path", A."Name",A."Tag",
-      A."Token" AS "AdrSync",
-      A."Created"=A."Modified" AS "New"
-      FROM "Users" AS U
-      JOIN "Books" AS A ON U."User"=A."User"
-      WHERE U."User"=UID AND (A."Book"=AID OR
-        (((NAME IS NULL AND A."Book"=U."Default") OR
-        (NAME IS NOT NULL AND A."Name"=NAME))))
-      FOR READ ONLY;
     OPEN RSLT;
   END"""
 
@@ -1014,33 +844,6 @@ CREATE PROCEDURE "MergeGroup"(IN AID VARCHAR(100),
     END IF;
   END"""
 
-    elif name == 'createSelectAddressbookColumns1':
-        query = """\
-CREATE PROCEDURE "SelectAddressbookColumns"()
-  SPECIFIC "SelectAddressbookColumns_1"
-  READS SQL DATA
-  DYNAMIC RESULT SETS 1
-  BEGIN ATOMIC
-    DECLARE RSLT CURSOR WITH RETURN FOR
-      SELECT ROWNUM() AS "ColumnId",
-        C."Value" AS "PropertyName",
-        C."View" AS "ViewName",
-        C."Getter" AS "PropertyGetter",
-        P."Getter" AS "ParameterGetter",
-        C."Method",
-        COALESCE(GROUP_CONCAT(T."Column" ORDER BY T."Order" SEPARATOR ''),'') ||
-        COALESCE(PP."Column",'') AS "ColumnName",
-        ARRAY_AGG(T."Value") AS "TypeValues"
-      FROM "Properties" AS C
-      JOIN "PropertyParameter" AS PP ON C."Property"=PP."Property"
-      JOIN "Parameters" AS P ON PP."Parameter"=P."Parameter"
-      LEFT JOIN "PropertyType" AS PT ON C."Property"=PT."Property"
-      LEFT JOIN "Types" AS T ON PT."Type"=T."Type"
-      GROUP BY C."Value",C."View",C."Getter",P."Getter",C."Method",PP."Column",PT."Group"
-      FOR READ ONLY;
-    OPEN RSLT;
-  END"""
-
     elif name == 'createMergeGroupMembers':
         query = """\
 CREATE PROCEDURE "MergeGroupMembers"(IN Gid INTEGER,
@@ -1064,7 +867,6 @@ CREATE PROCEDURE "MergeGroupMembers"(IN Gid INTEGER,
       SET Index = Index + 1;
     END WHILE;
   END"""
-
 
     elif name == 'createMergeCardValue':
         query = """\
@@ -1171,152 +973,11 @@ CREATE PROCEDURE "MergeCardGroups"(IN Book INTEGER,
     END WHILE;
   END"""
 
-    elif name == 'createGetPeopleIndex':
-        query = """\
-CREATE FUNCTION "GetPeopleIndex"("Prefix" VARCHAR(50),"ResourceName" VARCHAR(100))
-  RETURNS INTEGER
-  SPECIFIC "GetPeopleIndex_1"
-  READS SQL DATA
-  RETURN (SELECT "People" FROM "Peoples" WHERE "Prefix"||"Resource"="ResourceName");
-"""
-
-    elif name == 'createGetLabelIndex':
-        query = """\
-CREATE FUNCTION "GetLabelIndex"("LabelName" VARCHAR(100))
-  RETURNS INTEGER
-  SPECIFIC "GetLabelIndex_1"
-  READS SQL DATA
-  RETURN (SELECT "Label" FROM "Labels" WHERE "Name"="LabelName");
-"""
-
-    elif name == 'createGetTypeIndex':
-        query = """\
-CREATE PROCEDURE "GetTypeIndex"(IN "TableName" VARCHAR(100),
-                                IN "TypeName" VARCHAR(100),
-                                OUT "TypeId" INTEGER)
-  SPECIFIC "GetTypeIndex_1"
-  MODIFIES SQL DATA
-  BEGIN ATOMIC
-    DECLARE "TypeIndex" INTEGER DEFAULT NULL;
-    SET "TypeIndex" = SELECT "Type" FROM "Types" WHERE "Name"="TypeName";
-    IF "TypeIndex" IS NULL THEN
-      SET "TypeIndex" = SELECT "Type" FROM "TableType" JOIN "Tables"
-        ON "TableType"."Table"="Tables"."Table"
-          WHERE "TableType"."Default"=TRUE AND "Tables"."Name"="TableName";
-      IF "TypeIndex" IS NULL THEN 
-        INSERT INTO "Types" ("Name","Value") VALUES ("TypeName","TypeName");
-        SET "TypeIndex" = IDENTITY();
-      END IF;
-    END IF;
-    SET "TypeId" = "TypeIndex";
-  END"""
-
-    elif name == 'createMergePeople':
-        query = """\
-CREATE PROCEDURE "MergePeople"(IN "Prefix" VARCHAR(50),
-                               IN "ResourceName" VARCHAR(100),
-                               IN "GroupId" INTEGER,
-                               IN "Time" TIMESTAMP(6),
-                               IN "Deleted" BOOLEAN)
-  SPECIFIC "MergePeople_1"
-  MODIFIES SQL DATA
-  BEGIN ATOMIC
-    DECLARE "PeopleResource" VARCHAR(100);
-    SET "PeopleResource" = REPLACE("ResourceName", "Prefix");
-    IF "Deleted"=TRUE THEN
-      DELETE FROM "Peoples" WHERE "Resource"="PeopleResource";
-    ELSEIF NOT EXISTS(SELECT "People" FROM "Peoples" WHERE "Resource"="PeopleResource") THEN 
-      INSERT INTO "Peoples" ("Resource","TimeStamp") VALUES ("PeopleResource","Time");
-      INSERT INTO "Connections" ("Group","People","TimeStamp") VALUES ("GroupId",IDENTITY(),"Time");
-    END IF;
-  END"""
-
-    elif name == 'createUnTypedDataMerge':
-        q = """\
-CREATE PROCEDURE "Merge%(Table)s"(IN "Prefix" VARCHAR(50),
-                                  IN "ResourceName" VARCHAR(100),
-                                  IN "LabelName" VARCHAR(100),
-                                  IN "Value" VARCHAR(100),
-                                  IN "Time" TIMESTAMP(6))
-  SPECIFIC "Merge%(Table)s_1"
-  MODIFIES SQL DATA
-  BEGIN ATOMIC
-    DECLARE "PeopleIndex","LabelIndex" INTEGER DEFAULT NULL;
-    SET "PeopleIndex" = "GetPeopleIndex"("Prefix","ResourceName");
-    SET "LabelIndex" = "GetLabelIndex"("LabelName");
-    MERGE INTO "%(Table)s" USING
-      (VALUES("PeopleIndex","LabelIndex","Value","Time")) AS vals(w,x,y,z)
-      ON "%(Table)s"."People"=vals.w AND "%(Table)s"."Label"=vals.x
-        WHEN MATCHED THEN UPDATE SET "Value"=vals.y, "TimeStamp"=vals.z
-        WHEN NOT MATCHED THEN INSERT ("People","Label","Value","TimeStamp")
-          VALUES vals.w, vals.x, vals.y, vals.z;
-  END"""
-        query = q % format
-
-    elif name == 'createTypedDataMerge':
-        q = """\
-CREATE PROCEDURE "Merge%(Table)s"(IN "Prefix" VARCHAR(50),
-                                  IN "ResourceName" VARCHAR(100),
-                                  IN "LabelName" VARCHAR(100),
-                                  IN "Value" VARCHAR(100),
-                                  IN "Time" TIMESTAMP(6),
-                                  IN "Table" VARCHAR(50),
-                                  IN "TypeName" VARCHAR(100))
-  SPECIFIC "Merge%(Table)s_1"
-  MODIFIES SQL DATA
-  BEGIN ATOMIC
-    DECLARE "PeopleIndex","TypeIndex","LabelIndex" INTEGER DEFAULT NULL;
-    SET "PeopleIndex" = "GetPeopleIndex"("Prefix","ResourceName");
-    CALL "GetTypeIndex"("Table","TypeName","TypeIndex");
-    SET "LabelIndex" = "GetLabelIndex"("LabelName");
-    MERGE INTO "%(Table)s" USING
-      (VALUES("PeopleIndex","TypeIndex","LabelIndex","Value","Time")) AS vals(v,w,x,y,z)
-      ON "%(Table)s"."People"=vals.v AND "%(Table)s"."Type"=vals.w AND "%(Table)s"."Label"=vals.x
-        WHEN MATCHED THEN UPDATE SET "Value"=vals.y, "TimeStamp"=vals.z
-        WHEN NOT MATCHED THEN INSERT ("People","Type","Label","Value","TimeStamp")
-          VALUES vals.v, vals.w, vals.x, vals.y, vals.z;
-  END"""
-        query = q % format
-
-    elif name == 'createMergeConnection':
-        q = """\
-CREATE PROCEDURE "MergeConnection"(IN "GroupPrefix" VARCHAR(50),
-                                   IN "PeoplePrefix" VARCHAR(50),
-                                   IN "ResourceName" VARCHAR(100),
-                                   IN "Time" TIMESTAMP(6),
-                                   IN "Separator" VARCHAR(1),
-                                   IN "MembersList" VARCHAR(15000))
-  SPECIFIC "MergeConnection_1"
-  MODIFIES SQL DATA
-  BEGIN ATOMIC
-    DECLARE "Index" INTEGER DEFAULT 1;
-    DECLARE "Pattern" VARCHAR(5) DEFAULT '[^$]+';
-    DECLARE "GroupId", "PeopleId" INTEGER;
-    DECLARE "GroupResource", "PeopleResource" VARCHAR(100);
-    DECLARE "MembersArray" VARCHAR(100) ARRAY[%s];
-    SET "GroupResource" = REPLACE("ResourceName", "GroupPrefix");
-    SELECT "Group" INTO "GroupId" FROM "Groups" WHERE "Resource"="GroupResource";
-    DELETE FROM "Connections" WHERE "Group"="GroupId";
-    SET "Pattern" = REPLACE("Pattern", '$', "Separator");
-    SET "MembersArray" = REGEXP_SUBSTRING_ARRAY("MembersList", "Pattern");
-    WHILE "Index" <= CARDINALITY("MembersArray") DO
-      SET "PeopleResource" = REPLACE("MembersArray"["Index"], "PeoplePrefix");
-      SELECT "People" INTO "PeopleId" FROM "Peoples" WHERE "Resource"="PeopleResource";
-      INSERT INTO "Connections" ("Group","People","TimeStamp")
-        VALUES ("GroupId","PeopleId","Time");
-      SET "Index" = "Index" + 1;
-    END WHILE;
-    UPDATE "Groups" SET "GroupSync"=TRUE WHERE "Group"="GroupId";
-  END"""
-        query = q % g_member
-
 # Get Procedure Query
     elif name == 'selectUser':
         query = 'CALL "SelectUser"(?,?)'
     elif name == 'insertUser':
         query = 'CALL "InsertUser"(?,?,?,?,?,?)'
-    elif name == 'selectAddressbook':
-        query = 'CALL "SelectAddressbook"(?,?,?)'
     elif name == 'insertBook':
         query = 'CALL "InsertBook"(?,?,?,?,?,?)'
     elif name == 'updateAddressbookName':
@@ -1367,8 +1028,6 @@ CREATE PROCEDURE "MergeConnection"(IN "GroupPrefix" VARCHAR(50),
         query = 'CALL "UpdateUser"(?)'
     elif name == 'getSessionId':
         query = 'CALL SESSION_ID()'
-
-
     elif name == 'getCardGroup':
         query = 'CALL "SelectCardGroup"()'
     elif name == 'initGroups':
@@ -1379,20 +1038,8 @@ CREATE PROCEDURE "MergeConnection"(IN "GroupPrefix" VARCHAR(50),
         query = 'CALL "MergeCardGroup"(?,?)'
     elif name == 'mergeCardGroups':
         query = 'CALL "MergeCardGroups"(?,?,?)'
-
-
-    elif name == 'mergePeople':
-        query = 'CALL "MergePeople"(?,?,?,?,?)'
     elif name == 'mergeGroup':
         query = 'CALL "MergeGroup"(?,?,?,?,?)'
-    elif name == 'mergeConnection':
-        query = 'CALL "MergeConnection"(?,?,?,?,?,?)'
-    elif name == 'mergePeopleData':
-        if format['Type'] is None:
-            q = 'CALL "Merge%(Table)s"(?,?,?,?,?)'
-        else:
-            q = 'CALL "Merge%(Table)s"(?,?,?,?,?,?,?)'
-        query = q % format
 
 # Logging Changes Queries
     elif name == 'loggingChanges':

@@ -58,7 +58,7 @@ class Books(unohelper.Base):
         i = 0
         books = OrderedDict()
         aids, names, tags, tokens = self._getBookMetaData(metadata)
-        for uri in metadata.getValue('Uris'):
+        for uri in metadata.get('Uris'):
             # FIXME: If url is None we don't add this addressbook
             if uri is None:
                 continue
@@ -68,7 +68,7 @@ class Books(unohelper.Base):
         return books
 
     def _getBookMetaData(self, data):
-        return data.getValue('Aids'), data.getValue('Names'), data.getValue('Tags'), data.getValue('Tokens')
+        return data.get('Aids'), data.get('Names'), data.get('Tags'), data.get('Tokens')
 
 
 class Book(unohelper.Base):

@@ -39,22 +39,20 @@ from ..logger import LogManager
 from ..configuration import g_identifier
 from ..configuration import g_defaultlog
 
+from collections import OrderedDict
 import os
 import sys
 import traceback
 
 
 class OptionsManager(unohelper.Base):
-    def __init__(self, ctx, window):
+    def __init__(self, ctx, window, ijson=True):
         self._ctx = ctx
         self._model = OptionsModel(ctx)
         timeout = self._model.getTimeout()
         enabled = self._model.hasDatasource()
         self._view = OptionsView(window, timeout, enabled)
-        version  = ' '.join(sys.version.split())
-        path = os.pathsep.join(sys.path)
-        infos = {111: version, 112: path}
-        self._logger = LogManager(self._ctx, window.Peer, infos, g_identifier, g_defaultlog)
+        self._logger = LogManager(self._ctx, window.Peer, self._getInfos(ijson), g_identifier, g_defaultlog)
 
     def saveSetting(self):
         self._model.setTimeout(self._view.getTimeout())
@@ -67,3 +65,25 @@ class OptionsManager(unohelper.Base):
     def viewData(self):
         url = self._model.getDatasourceUrl()
         getDesktop(self._ctx).loadComponentFromURL(url, '_default', 0, ())
+
+    def _getInfos(self, ijson):
+        infos = OrderedDict()
+        version  = ' '.join(sys.version.split())
+        infos[111] = version
+        path = os.pathsep.join(sys.path)
+        infos[112] = path
+        if ijson:
+            # Required modules for ijson
+            try:
+                import cffi
+            except Exception as e:
+                infos[113] = self._getExceptionMsg(e)
+            else:
+                infos[114] = (cffi.__version__, cffi.__file__)
+        return infos
+
+    def _getExceptionMsg(self, e):
+        error = repr(e)
+        trace = repr(traceback.format_exc())
+        return error, trace
+

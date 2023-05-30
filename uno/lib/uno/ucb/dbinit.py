@@ -31,8 +31,6 @@ from com.sun.star.sdbc import SQLException
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .unolib import KeyMap
-
 from .unotool import createService
 from .unotool import getResourceLocation
 from .unotool import getSimpleFile
@@ -48,7 +46,7 @@ from .dbtool import executeSqlQueries
 from .dbtool import getDataSourceConnection
 from .dbtool import getDataSourceCall
 from .dbtool import getSequenceFromResult
-from .dbtool import getKeyMapFromResult
+from .dbtool import getDataFromResult
 from .dbtool import createDataSource
 from .dbtool import checkDataBase
 from .dbtool import createStaticTable
@@ -105,26 +103,26 @@ def getTablesAndStatements(ctx, statement, version=g_version):
         call.setString(1, table)
         result = call.executeQuery()
         while result.next():
-            data = getKeyMapFromResult(result, KeyMap())
-            view = data.getValue('View')
-            versioned = data.getValue('Versioned')
-            column = data.getValue('Column')
+            data = getDataFromResult(result)
+            view = data.get('View')
+            versioned = data.get('Versioned')
+            column = data.get('Column')
             definition = '"%s"' % column
-            definition += ' %s' % data.getValue('Type')
-            default = data.getValue('Default')
+            definition += ' %s' % data.get('Type')
+            default = data.get('Default')
             definition += ' DEFAULT %s' % default if default else ''
-            options = data.getValue('Options')
+            options = data.get('Options')
             definition += ' %s' % options if options else ''
             columns.append(definition)
-            if data.getValue('Primary'):
+            if data.get('Primary'):
                 primary.append('"%s"' % column)
-            if data.getValue('Unique'):
+            if data.get('Unique'):
                 unique.append({'Table': table, 'Column': column})
-            if data.getValue('ForeignTable') and data.getValue('ForeignColumn'):
+            if data.get('ForeignTable') and data.get('ForeignColumn'):
                 constraint.append({'Table': table,
                                    'Column': column,
-                                   'ForeignTable': data.getValue('ForeignTable'),
-                                   'ForeignColumn': data.getValue('ForeignColumn')})
+                                   'ForeignTable': data.get('ForeignTable'),
+                                   'ForeignColumn': data.get('ForeignColumn')})
         if primary:
             columns.append(getSqlQuery(ctx, 'getPrimayKey', primary))
         for format in unique:

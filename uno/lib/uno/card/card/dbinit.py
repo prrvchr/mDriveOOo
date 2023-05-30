@@ -27,12 +27,9 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-
-from ..unolib import KeyMap
-
 from ..dbtool import getDataSourceCall
 from ..dbtool import getSequenceFromResult
-from ..dbtool import getKeyMapFromResult
+from ..dbtool import getDataFromResult
 
 from ..dbqueries import getSqlQuery
 
@@ -48,14 +45,8 @@ import traceback
 
 def getTables(ctx, connection, version=g_version):
     tables = []
-    statement = connection.createStatement()
-    query = getSqlQuery(ctx, 'getTableNames')
-    result = statement.executeQuery(query)
-    sequence = getSequenceFromResult(result)
-    result.close()
-    statement.close()
     call = getDataSourceCall(ctx, connection, 'getTables')
-    for table in sequence:
+    for table in _getTableNames(ctx, connection):
         view = False
         versioned = False
         columns = []
@@ -65,27 +56,27 @@ def getTables(ctx, connection, version=g_version):
         call.setString(1, table)
         result = call.executeQuery()
         while result.next():
-            data = getKeyMapFromResult(result, KeyMap())
-            view = data.getValue('View')
-            versioned = data.getValue('Versioned')
-            column = data.getValue('Column')
-            definition = '"%s" %s' % (column, data.getValue('Type'))
-            default = data.getValue('Default')
+            data = getDataFromResult(result)
+            view = data.get('View')
+            versioned = data.get('Versioned')
+            column = data.get('Column')
+            definition = '"%s" %s' % (column, data.get('Type'))
+            default = data.get('Default')
             if default:
                 definition += ' DEFAULT %s' % default
-            options = data.getValue('Options')
+            options = data.get('Options')
             if options:
                 definition += ' %s' % options
             columns.append(definition)
-            if data.getValue('Primary'):
+            if data.get('Primary'):
                 primary.append('"%s"' % column)
-            if data.getValue('Unique'):
+            if data.get('Unique'):
                 unique.append({'Table': table, 'Column': column})
-            if data.getValue('ForeignTable') and data.getValue('ForeignColumn'):
+            if data.get('ForeignTable') and data.get('ForeignColumn'):
                 constraint.append({'Table': table,
                                    'Column': column,
-                                   'ForeignTable': data.getValue('ForeignTable'),
-                                   'ForeignColumn': data.getValue('ForeignColumn')})
+                                   'ForeignTable': data.get('ForeignTable'),
+                                   'ForeignColumn': data.get('ForeignColumn')})
         if primary:
             columns.append(getSqlQuery(ctx, 'getPrimayKey', primary))
         for format in unique:
@@ -99,65 +90,64 @@ def getTables(ctx, connection, version=g_version):
         if version >= '2.5.0' and versioned:
             query += getSqlQuery(ctx, 'getSystemVersioning')
         tables.append(query)
+        result.close()
     call.close()
     return tables
 
+def _getTableNames(ctx, connection):
+    statement = connection.createStatement()
+    query = getSqlQuery(ctx, 'getTableNames')
+    result = statement.executeQuery(query)
+    tables = getSequenceFromResult(result)
+    result.close()
+    statement.close()
+    return tables
+
 def getViews(ctx, result, name):
-    try:
-        print("dbinit.getViews() 1")
-        sel1 = []
-        tab1 = []
-        queries = []
-        format = g_view
-    
-        q = 'CREATE VIEW IF NOT EXISTS "%(ViewName)s" AS SELECT %(ViewSelect)s FROM "%(CardTable)s" %(ViewTable)s'
-    
-        t1 = 'LEFT JOIN "%(ViewName)s" ON "%(CardTable)s"."%(CardColumn)s"="%(ViewName)s"."%(CardColumn)s"'
-        t2 = 'LEFT JOIN "%(DataTable)s" AS "%(AliasNum)s" ON "%(CardTable)s"."%(CardColumn)s"="%(AliasNum)s"."%(CardColumn)s" '
-        t2 += 'AND "%(AliasNum)s"."%(DataColumn)s"=%(ColumnId)s'
-    
-        s1 = '"%(ViewName)s"."%(ColumnName)s"'
-        s2 = '"%(AliasNum)s"."%(DataValue)s" AS "%(ColumnName)s"'
-        s3 = '"%(CardTable)s"."%(CardColumn)s"'
-        s4 = '"%(CardTable)s"."Created","%(CardTable)s"."Modified"'
-        s5 = '"%(CardTable)s"."%(CardUri)s"'
-        print("dbinit.getViews() 2")
-    
-        for view, columns in result.items():
-            i = 0
-            col2 = columns.keys()
-            sel2 = []
-            tab2 = []
-            format['ViewName'] = view
-            for column, index in columns.items():
-                format['ColumnName'] = column
-                format['ColumnId'] = index
-                format['AliasNum'] = i
-                sel1.append(s1 % format)
-                tab2.append(t2 % format)
-                sel2.append(s2 % format)
-                i += 1
-            sel2.append(s3 % format)
-            format['ViewSelect'] = ','.join(sel2)
-            format['ViewTable'] = ' '.join(tab2)
-            tab1.append(t1 % format)
-            queries.append(q % format)
-        print("dbinit.getViews() 3")
-        sel1.append(s3 % format)
-        sel1.append(s4 % format)
-        sel1.append(s5 % format)
-        format['ViewName'] = g_cardview
-        format['ViewSelect'] = ','.join(sel1)
-        format['ViewTable'] = ' '.join(tab1)
+    sel1 = []
+    tab1 = []
+    queries = []
+    format = g_view
+
+    q = 'CREATE VIEW IF NOT EXISTS "%(ViewName)s" AS SELECT %(ViewSelect)s FROM "%(CardTable)s" %(ViewTable)s'
+
+    t1 = 'LEFT JOIN "%(ViewName)s" ON "%(CardTable)s"."%(CardColumn)s"="%(ViewName)s"."%(CardColumn)s"'
+    t2 = 'LEFT JOIN "%(DataTable)s" AS "%(AliasNum)s" ON "%(CardTable)s"."%(CardColumn)s"="%(AliasNum)s"."%(CardColumn)s" '
+    t2 += 'AND "%(AliasNum)s"."%(DataColumn)s"=%(ColumnId)s'
+
+    s1 = '"%(ViewName)s"."%(ColumnName)s"'
+    s2 = '"%(AliasNum)s"."%(DataValue)s" AS "%(ColumnName)s"'
+    s3 = '"%(CardTable)s"."%(CardColumn)s"'
+    s4 = '"%(CardTable)s"."Created","%(CardTable)s"."Modified"'
+    s5 = '"%(CardTable)s"."%(CardUri)s"'
+
+    for view, columns in result.items():
+        i = 0
+        col2 = columns.keys()
+        sel2 = []
+        tab2 = []
+        format['ViewName'] = view
+        for column, index in columns.items():
+            format['ColumnName'] = column
+            format['ColumnId'] = index
+            format['AliasNum'] = i
+            sel1.append(s1 % format)
+            tab2.append(t2 % format)
+            sel2.append(s2 % format)
+            i += 1
+        sel2.append(s3 % format)
+        format['ViewSelect'] = ','.join(sel2)
+        format['ViewTable'] = ' '.join(tab2)
+        tab1.append(t1 % format)
         queries.append(q % format)
-        #format['Name'] = g_bookview
-        #query = getSqlQuery(ctx, 'createBookView', format)
-        #print("dbinit.getViews() 4 %s" % query)
-        #queries.append(query)
-        return queries
-    except Exception as e:
-        msg = "Error: %s" % traceback.print_exc()
-        print(msg)
+    sel1.append(s3 % format)
+    sel1.append(s4 % format)
+    sel1.append(s5 % format)
+    format['ViewName'] = g_cardview
+    format['ViewSelect'] = ','.join(sel1)
+    format['ViewTable'] = ' '.join(tab1)
+    queries.append(q % format)
+    return queries
 
 def getStaticTables():
     tables = ('Tables',

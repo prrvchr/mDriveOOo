@@ -48,8 +48,6 @@ from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
 from com.sun.star.ucb import IllegalIdentifierException
 
-from .unolib import KeyMap
-
 from .unotool import getConnectionMode
 
 from .dbtool import currentDateTimeInTZ
