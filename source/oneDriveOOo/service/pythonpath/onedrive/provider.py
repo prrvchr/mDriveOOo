@@ -301,11 +301,13 @@ class Provider(ProviderBase):
         return url
 
     def updateItemId(self, database, oldid, response):
-        if response is not None and response.Ok:
-            newid = self._parseNewId(response)
-            if newid and oldid != newid:
-                database.updateItemId(newid, oldid)
-            return True
+        if response is not None:
+            if response.Ok:
+                newid = self._parseNewId(response)
+                if newid and oldid != newid:
+                    database.updateItemId(newid, oldid)
+                return True
+            response.close()
         return False
 
     def _parseNewId(self, response):
