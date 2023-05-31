@@ -492,14 +492,12 @@ class DataBase():
         metadata.insertValue('ParentToAdd', set(new) - set(old))
         metadata.insertValue('ParentToRemove', set(old) - set(new))
 
-    def updateItemId(self, provider, itemid, response):
-        newid = provider.getResponseId(response, itemid)
-        if newid != itemid:
-            update = self._getCall('updateItemId')
-            update.setString(1, newid)
-            update.setString(2, itemid)
-            update.executeUpdate()
-            update.close()
+    def updateItemId(self, newid, oldid):
+        update = self._getCall('updateItemId')
+        update.setString(1, newid)
+        update.setString(2, oldid)
+        update.executeUpdate()
+        update.close()
 
 # Procedures called internally
     def _mergeItem(self, call1, call2, item, timestamp):

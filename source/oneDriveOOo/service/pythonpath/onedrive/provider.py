@@ -300,6 +300,29 @@ class Provider(ProviderBase):
         response.close()
         return url
 
+    def updateItemId(self, database, oldid, response):
+        if response.Ok:
+            newid = self._parseNewId(response)
+            if newid and oldid != newid:
+                database.updateItemId(newid, oldid)
+            return True
+        return False
+
+    def _parseNewId(self, response):
+        newid = None
+        events = ijson.sendable_list()
+        parser = ijson.parse_coro(events)
+        iterator = response.iterContent(g_chunk, False)
+        while iterator.hasMoreElements():
+            parser.send(iterator.nextElement().value)
+            for prefix, event, value in events:
+                if (prefix, event) == ('id', 'string'):
+                    newid = value
+            del events[:]
+        parser.close()
+        response.close()
+        return newid
+
     def updateDrive(self, database, user, token):
         if database.updateToken(user.get('UserId'), token):
             user['Token'] = token

@@ -84,14 +84,6 @@ class Replicator(unohelper.Base,
         sync.clear()
         self.start()
 
-    # TODO: Need to update the item id after creation if needed
-    def callBack(self, itemid, response):
-        if response.IsPresent:
-            self.DataBase.updateItemId(self._provider, itemid, response.Value)
-            return True
-        return False
-
-
     def fullPull(self):
         return self._fullPull
 
@@ -253,7 +245,7 @@ class Replicator(unohelper.Base,
                 elif self._provider.isLink(mediatype):
                     pass
                 elif self._provider.isDocument(mediatype):
-                    status = self._provider.uploadFile(self.DataBase, user, itemid, metadata, True)
+                    status = self._provider.uploadFile(self.DataBase, user.Request, itemid, metadata, True)
                     if status:
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 142, metadata.get('Title'), created)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
@@ -267,7 +259,7 @@ class Replicator(unohelper.Base,
                         status = self._provider.updateTitle(user.Request, metadata)
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 143, metadata.get('Title'), modified)
                     elif properties & CONTENT:
-                        status = self._provider.uploadFile(self.DataBase, user, itemid, metadata, False)
+                        status = self._provider.uploadFile(self.DataBase, user.Request, itemid, metadata, False)
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 144, metadata.get('Title'), modified, metadata.get('Size'))
                     elif properties & TRASHED:
                         status = self._provider.updateTrashed(user.Request, metadata)
