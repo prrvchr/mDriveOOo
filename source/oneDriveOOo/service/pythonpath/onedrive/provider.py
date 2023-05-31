@@ -301,7 +301,7 @@ class Provider(ProviderBase):
         return url
 
     def updateItemId(self, database, oldid, response):
-        if response.Ok:
+        if response is not None and response.Ok:
             newid = self._parseNewId(response)
             if newid and oldid != newid:
                 database.updateItemId(newid, oldid)
