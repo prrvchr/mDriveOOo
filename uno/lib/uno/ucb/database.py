@@ -182,19 +182,15 @@ class DataBase():
         metadata['AtRoot'] = atroot
         return metadata
 
-    def updateNewItemId(self, item, newitem):
-        newid, created, modified = newitem
-        print("DataBase.mergeNewFolder() 1 Item Id: %s - New Item Id: %s" % (item.get('Id'), newid))
+    def updateNewItemId(self, oldid, newid, created, modified):
+        print("DataBase.mergeNewFolder() 1 Item Id: %s - New Item Id: %s" % (oldid, newid))
         call = self._getCall('updateNewItemId')
-        call.setString(1, item.get('Id'))
+        call.setString(1, oldid)
         call.setString(2, newid)
         call.setTimestamp(3, created)
         call.setTimestamp(4, modified)
         call.close()
-        print("DataBase.mergeNewFolder() 1 Item Id: %s - New Item Id: %s" % (item.get('Id'), newid))
-        item['Id'] = newid
-        print("DataBase.mergeNewFolder() 2 Item Id: %s - New Item Id: %s" % (item.get('Id'), newid))
-        return True
+        return newid
 
 # Procedures called by the Content
         #TODO: Can't have a simple SELECT ResultSet with a Procedure,

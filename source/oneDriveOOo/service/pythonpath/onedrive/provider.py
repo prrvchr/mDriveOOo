@@ -205,8 +205,11 @@ class Provider(ProviderBase):
         print("Provider.getDocumentContent() Url: %s" % url)
         return url
 
-    def mergeNewFolder(self, response, user, item):
-        return user.DataBase.updateNewItemId(item, self._parseNewFolder(response))
+    def mergeNewFolder(self, oldid, response):
+        item = self._parseNewFolder(response)
+        if all(item):
+            return user.DataBase.updateNewItemId(oldid, *item)
+        return None
 
     def _parseNewFolder(self, response):
         newid = created = modified = None
@@ -306,9 +309,9 @@ class Provider(ProviderBase):
                 newid = self._parseNewId(response)
                 if newid and oldid != newid:
                     database.updateItemId(newid, oldid)
-                return True
+                return newid
             response.close()
-        return False
+        return None
 
     def _parseNewId(self, response):
         newid = None
@@ -368,12 +371,12 @@ class Provider(ProviderBase):
 
         elif method == 'updateTitle':
             parameter.Method = 'PATCH'
-            parameter.Url += '/me/drive/items/' + data.Id
-            parameter.setJson('name', data.get('name'))
+            parameter.Url += '/me/drive/items/' + data.get('Id')
+            parameter.setJson('name', data.get('Title'))
 
         elif method == 'updateTrashed':
             parameter.Method = 'DELETE'
-            parameter.Url += '/me/drive/items/' + data.Id
+            parameter.Url += '/me/drive/items/' + data.get('Id')
 
         elif method == 'updateParents':
             parameter.Method = 'PATCH'

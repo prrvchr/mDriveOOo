@@ -269,10 +269,10 @@ class ProviderBase(object):
         parameter = self.getRequestParameter(request, 'getItem', identifier)
         return request.execute(parameter)
 
-    def createFolder(self, user, item):
+    def createFolder(self, user, itemid, item):
         parameter = self.getRequestParameter(user.Request, 'createNewFolder', item)
         response = user.Request.execute(parameter)
-        return self.mergeNewFolder(response, user, item)
+        return self.mergeNewFolder(itemid, response)
 
     def uploadFile(self, database, request, item, data, new=False):
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
@@ -286,18 +286,21 @@ class ProviderBase(object):
         response = request.upload(parameter, url, g_chunk, 3, 10)
         return self.updateItemId(database, item, response)
 
-    def updateTitle(self, request, item):
+    def updateTitle(self, request, itemid, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)
         response = request.execute(parameter)
-        return response.IsPresent
+        response.close()
+        return itemid
 
-    def updateTrashed(self, request, item):
+    def updateTrashed(self, request, itemid, item):
         parameter = self.getRequestParameter(request, 'updateTrashed', item)
         response = request.execute(parameter)
-        return response.IsPresent
+        response.close()
+        return itemid
 
-    def updateParents(self, request, item):
+    def updateParents(self, request, itemid, item):
         parameter = self.getRequestParameter(request, 'updateParents', item)
         response = request.execute(parameter)
-        return response.IsPresent
+        response.close()
+        return itemid
 
