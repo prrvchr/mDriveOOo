@@ -234,7 +234,7 @@ class ProviderBase(object):
     def getDocumentLocation(self, user):
         raise NotImplementedError
 
-    def mergeNewFolder(self, itemid, response):
+    def mergeNewFolder(self, user, itemid, response):
         raise NotImplementedError
 
     def createNewFile(self, user, data):
@@ -272,19 +272,19 @@ class ProviderBase(object):
     def createFolder(self, user, itemid, item):
         parameter = self.getRequestParameter(user.Request, 'createNewFolder', item)
         response = user.Request.execute(parameter)
-        return self.mergeNewFolder(itemid, response)
+        return self.mergeNewFolder(user, itemid, response)
 
-    def uploadFile(self, database, request, item, data, new=False):
+    def uploadFile(self, user, item, data, new=False):
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
-        parameter = self.getRequestParameter(request, method, data)
-        response = request.execute(parameter)
+        parameter = self.getRequestParameter(user.Request, method, data)
+        response = user.Request.execute(parameter)
         location = self.parseUploadLocation(response)
         if location is None:
             return False
-        parameter = self.getRequestParameter(request, 'getUploadStream', location)
+        parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
         url = self.SourceURL + g_separator + item
-        response = request.upload(parameter, url, g_chunk, 3, 10)
-        return self.updateItemId(database, item, response)
+        response = user.Request.upload(parameter, url, g_chunk, 3, 10)
+        return self.updateItemId(user.DataBase, item, response)
 
     def updateTitle(self, request, itemid, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)

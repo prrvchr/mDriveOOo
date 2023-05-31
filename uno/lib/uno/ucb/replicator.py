@@ -246,7 +246,7 @@ class Replicator(unohelper.Base,
                 elif self._provider.isLink(mediatype):
                     pass
                 elif self._provider.isDocument(mediatype):
-                    newid = self._provider.uploadFile(self.DataBase, user.Request, itemid, metadata, True)
+                    newid = self._provider.uploadFile(user, itemid, metadata, True)
                     if newid:
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 142, metadata.get('Title'), created)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
@@ -259,7 +259,7 @@ class Replicator(unohelper.Base,
                         newid = self._provider.updateTitle(user.Request, itemid, metadata)
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 143, metadata.get('Title'), modified)
                     elif properties & CONTENT:
-                        newid = self._provider.uploadFile(self.DataBase, user.Request, itemid, metadata, False)
+                        newid = self._provider.uploadFile(user, itemid, metadata, False)
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 144, metadata.get('Title'), modified, metadata.get('Size'))
                     elif properties & TRASHED:
                         newid = self._provider.updateTrashed(user.Request, itemid, metadata)

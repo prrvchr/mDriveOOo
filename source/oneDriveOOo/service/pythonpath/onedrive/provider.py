@@ -205,7 +205,7 @@ class Provider(ProviderBase):
         print("Provider.getDocumentContent() Url: %s" % url)
         return url
 
-    def mergeNewFolder(self, oldid, response):
+    def mergeNewFolder(self, user, oldid, response):
         item = self._parseNewFolder(response)
         if all(item):
             return user.DataBase.updateNewItemId(oldid, *item)
