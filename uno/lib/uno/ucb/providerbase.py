@@ -234,7 +234,7 @@ class ProviderBase(object):
     def getDocumentLocation(self, user):
         raise NotImplementedError
 
-    def mergeNewFolder(self, response, user, item):
+    def mergeNewFolder(self, itemid, response):
         raise NotImplementedError
 
     def createNewFile(self, user, data):
