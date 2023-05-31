@@ -243,7 +243,7 @@ class ProviderBase(object):
     def parseRootFolder(self, parameter, content):
         raise NotImplementedError
 
-    def updateItemIdentifier(self, user, item, response):
+    def updateItemIdentifier(self, database, user, itemid, new, response):
         raise NotImplementedError
 
     def initUser(self, database, user, token):
@@ -274,18 +274,17 @@ class ProviderBase(object):
         response = user.Request.execute(parameter)
         return self.mergeNewFolder(response, user, item)
 
-    def uploadFile(self, user, data, new=False):
+    def uploadFile(self, database, user, itemid, data, new=False):
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
         parameter = self.getRequestParameter(user.Request, method, data)
         response = user.Request.execute(parameter)
         location = self.parseUploadLocation(response)
         if location is None:
             return False
-        item = data.get('Id')
         parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
-        url = self.SourceURL + g_separator + item
+        url = self.SourceURL + g_separator + itemid
         response = user.Request.upload(parameter, url, g_chunk, 3, 10)
-        return self.updateItemIdentifier(user, item, response)
+        return self.updateItemIdentifier(database, user, itemid, new, response)
 
     def updateTitle(self, request, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)
