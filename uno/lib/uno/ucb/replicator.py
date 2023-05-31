@@ -45,8 +45,6 @@ from com.sun.star.ucb.ContentProperties import TRASHED
 from com.sun.star.rest import HTTPException
 from com.sun.star.rest.HTTPStatusCode import BAD_REQUEST
 
-from com.sun.star.ucb import XRestReplicator
-
 from .unotool import getConfiguration
 
 from .dbtool import currentDateTimeInTZ
@@ -70,7 +68,6 @@ import time
 
 
 class Replicator(unohelper.Base,
-                 XRestReplicator,
                  Thread):
     def __init__(self, ctx, datasource, provider, users, sync, lock):
         Thread.__init__(self)
@@ -87,7 +84,7 @@ class Replicator(unohelper.Base,
         sync.clear()
         self.start()
 
-    # XRestReplicator
+    # TODO: Need to update the item id after creation if needed
     def callBack(self, itemid, response):
         if response.IsPresent:
             self.DataBase.updateItemId(self.Provider, itemid, response.Value)
