@@ -243,6 +243,9 @@ class ProviderBase(object):
     def parseRootFolder(self, parameter, content):
         raise NotImplementedError
 
+    def updateItemIdentifier(self, user, item, response):
+        raise NotImplementedError
+
     def initUser(self, database, user, token):
         pass
 
@@ -278,9 +281,11 @@ class ProviderBase(object):
         location = self.parseUploadLocation(response)
         if location is None:
             return False
+        item = data.get('Id')
         parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
-        url = self.SourceURL + g_separator + data.get('Id')
-        return user.Request.upload(parameter, url, g_chunk, 3, 10)
+        url = self.SourceURL + g_separator + item
+        response = user.Request.upload(parameter, url, g_chunk, 3, 10)
+        return self.updateItemIdentifier(user, item, response)
 
     def updateTitle(self, request, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)

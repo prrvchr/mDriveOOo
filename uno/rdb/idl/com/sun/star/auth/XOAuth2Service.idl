@@ -41,9 +41,11 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
 {
 
     boolean isOnLine();
+
     boolean isOffLine([in] string Host);
 
     boolean initializeUrl([in] string ResourceUrl);
+
     boolean initializeSession([in] string ResourceUrl,
                               [in] string UserName);
 
@@ -76,12 +78,12 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
                      [in] short Delay)
             raises(com::sun::star::rest::RequestException);
 
-    boolean upload([in] com::sun::star::rest::XRequestParameter Parameter,
-                   [in] string Url,
-                   [in] long Chunk,
-                   [in] short Retry,
-                   [in] short Delay)
-            raises(com::sun::star::rest::RequestException);
+    com::sun::star::rest::XRequestResponse upload([in] com::sun::star::rest::XRequestParameter Parameter,
+                                                  [in] string Url,
+                                                  [in] long Chunk,
+                                                  [in] short Retry,
+                                                  [in] short Delay)
+                                           raises(com::sun::star::rest::RequestException);
 
     [attribute, readonly] string ResourceUrl;
     [attribute, readonly] string ProviderName;
