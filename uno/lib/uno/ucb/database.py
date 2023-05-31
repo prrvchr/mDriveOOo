@@ -493,6 +493,7 @@ class DataBase():
         metadata.insertValue('ParentToRemove', set(old) - set(new))
 
     def updateItemId(self, newid, oldid):
+        print("DataBase.updateItemId () NewId: %s - OldId: %s" % (newid, oldid))
         update = self._getCall('updateItemId')
         update.setString(1, newid)
         update.setString(2, oldid)
