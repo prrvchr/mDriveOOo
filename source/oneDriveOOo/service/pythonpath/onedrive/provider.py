@@ -213,20 +213,21 @@ class Provider(ProviderBase):
 
     def _parseNewFolder(self, response):
         newid = created = modified = None
-        events = ijson.sendable_list()
-        parser = ijson.parse_coro(events)
-        iterator = response.iterContent(g_chunk, False)
-        while iterator.hasMoreElements():
-            parser.send(iterator.nextElement().value)
-            for prefix, event, value in events:
-                if (prefix, event) == ('id', 'string'):
-                    newid = value
-                elif (prefix, event) == ('createdDateTime', 'string'):
-                    created = self.parseDateTime(value)
-                elif (prefix, event) == ('lastModifiedDateTime', 'string'):
-                    modified = self.parseDateTime(value)
-            del events[:]
-        parser.close()
+        if response.Ok:
+            events = ijson.sendable_list()
+            parser = ijson.parse_coro(events)
+            iterator = response.iterContent(g_chunk, False)
+            while iterator.hasMoreElements():
+                parser.send(iterator.nextElement().value)
+                for prefix, event, value in events:
+                    if (prefix, event) == ('id', 'string'):
+                        newid = value
+                    elif (prefix, event) == ('createdDateTime', 'string'):
+                        created = self.parseDateTime(value)
+                    elif (prefix, event) == ('lastModifiedDateTime', 'string'):
+                        modified = self.parseDateTime(value)
+                del events[:]
+            parser.close()
         response.close()
         return newid, created, modified
 
