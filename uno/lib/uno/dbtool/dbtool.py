@@ -69,8 +69,6 @@ from com.sun.star.sdbc.DataType2 import BOOLEAN
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from ..unolib import KeyMap
-
 from .object import Object
 
 from ..unotool import createService
@@ -139,61 +137,11 @@ def getConnectionInfo(user, password, path):
     info = getPropertyValueSet(values)
     return info
 
-def getDataSource1(ctx, name, identifier, register, shutdown=False):
-    location = getResourceLocation(ctx, identifier, g_folder)
-    url = '%s/%s.odb' % (location, name)
-    dbcontext = createService(ctx, 'com.sun.star.sdb.DatabaseContext')
-    if getSimpleFile(ctx).exists(url):
-        if dbcontext.hasByName(name):
-            datasource = dbcontext.getByName(name)
-        else:
-            datasource = dbcontext.getByName(url)
-        created = False
-    else:
-        datasource = createDataSource1(dbcontext, location, name, shutdown)
-        created = True
-    #datasource = createDataSource1(dbcontext, location, name, shutdown)
-    if register:
-       if not dbcontext.hasByName(name) or dbcontext.getDatabaseLocation(name) != url:
-        registerDataSource(dbcontext, name, url)
-    return datasource, url, created
-
-def createDataSource1(dbcontext, location, dbname, shutdown):
-    datasource = dbcontext.createInstance()
-    datasource.URL = getDataSourceLocation(location, dbname, shutdown)
-    return datasource
-
 def getDataSourceLocation(location, dbname, shutdown):
     url = '%s%s/%s%s' % (g_protocol, location, dbname, g_options)
     if shutdown:
         url += g_shutdown
     return url
-
-def getDataSourceConnection1(ctx, url, dbname, name='', password=''):
-    dbcontext = createService(ctx, 'com.sun.star.sdb.DatabaseContext')
-    odb = dbname if dbcontext.hasByName(dbname) else '%s/%s.odb' % (url, dbname)
-    datasource = dbcontext.getByName(odb)
-    connection, error = None, None
-    try:
-        connection = datasource.getConnection(name, password)
-    except SQLException as e:
-        error = e
-    return connection, error
-
-def getDataBaseConnection1(ctx, url, dbname, name='', password='', shutdown=False):
-    info = getDataSourceJavaInfo(url)
-    if name != '':
-        info += getPropertyValueSet({'user': name})
-        if password != '':
-            info += getPropertyValueSet({'password': password})
-    path = getDataSourceLocation(url, dbname, shutdown)
-    manager = ctx.ServiceManager.createInstance('com.sun.star.sdbc.DriverManager')
-    connection, error = None, None
-    try:
-        connection = manager.getConnectionWithInfo(path, info)
-    except SQLException as e:
-        error = e
-    return connection, error
 
 def getDataSourceCall(ctx, connection, name, format=None):
     query = getSqlQuery(ctx, name, format)
@@ -321,17 +269,6 @@ def registerDataSource(dbcontext, dbname, url):
     elif dbcontext.getDatabaseLocation(dbname) != url:
         dbcontext.changeDatabaseLocation(dbname, url)
 
-def getKeyMapFromResult(result, keymap=None, provider=None):
-    keymap = KeyMap() if keymap is None else keymap
-    for i in range(1, result.MetaData.ColumnCount +1):
-        #name = result.MetaData.getColumnName(i)
-        name = result.MetaData.getColumnLabel(i)
-        value = getResultValue(result, i)
-        if provider:
-            value = provider.transform(name, value)
-        keymap.insertValue(name, value)
-    return keymap
-
 def getDataFromResult(result, provider=None):
     data = {}
     for i in range(1, result.MetaData.ColumnCount +1):
@@ -368,35 +305,6 @@ def getObjectSequenceFromResult(result, default=None):
     while result.next():
         obj = getObjectFromResult(result, default, count)
         sequence.append(obj)
-    return sequence
-
-def getKeyMapSequenceFromResult(result, provider=None):
-    sequence = []
-    count = result.MetaData.ColumnCount +1
-    while result.next():
-        keymap = KeyMap()
-        for i in range(1, count):
-            #name = result.MetaData.getColumnName(i)
-            name = result.MetaData.getColumnLabel(i)
-            value = getResultValue(result, i)
-            if provider:
-                value = provider.transform(name, value)
-            keymap.insertValue(name, value)
-        sequence.append(keymap)
-    return sequence
-
-def getKeyMapKeyMapFromResult(result):
-    sequence = KeyMap()
-    count = result.MetaData.ColumnCount +1
-    while result.next():
-        keymap = KeyMap()
-        name = getResultValue(result, 1)
-        for i in range(2, count):
-            v = getResultValue(result, i)
-            #n = result.MetaData.getColumnName(i)
-            n = result.MetaData.getColumnLabel(i)
-            keymap.insertValue(n, v)
-        sequence.insertValue(name, keymap)
     return sequence
 
 def getSequenceFromResult(result, index=1, default=None, transformer=None):
@@ -509,45 +417,6 @@ def getRowValue(row, dbtype, index=1, default=None):
         if not row.wasNull():
             value = value.value
     elif dbtype == ARRAY:
-        value = row.getArray(index)
-        if not row.wasNull():
-            value = value.getArray(None)
-    else:
-        value = default
-    if row.wasNull():
-        value = default
-    return value
-
-def getRowValue1(row, dbtype, index=1, default=None):
-    if dbtype == 'VARCHAR':
-        value = row.getString(index)
-    elif dbtype == 'CHARACTER':
-        value = row.getString(index)
-    elif dbtype == 'BOOLEAN':
-        value = row.getBoolean(index)
-    elif dbtype == 'TINYINT':
-        value = row.getByte(index)
-    elif dbtype == 'SMALLINT':
-        value = row.getShort(index)
-    elif dbtype == 'INTEGER':
-        value = row.getInt(index)
-    elif dbtype == 'BIGINT':
-        value = row.getLong(index)
-    elif dbtype == 'FLOAT':
-        value = row.getFloat(index)
-    elif dbtype == 'DOUBLE':
-        value = row.getDouble(index)
-    elif dbtype.startswith('TIMESTAMP'):
-        value = row.getTimestamp(index)
-    elif dbtype == 'TIME':
-        value = row.getTime(index)
-    elif dbtype == 'DATE':
-        value = row.getDate(index)
-    elif dbtype == 'BINARY':
-        value = row.getBytes(index)
-        if not row.wasNull():
-            value = value.value
-    elif dbtype.endswith('ARRAY'):
         value = row.getArray(index)
         if not row.wasNull():
             value = value.getArray(None)

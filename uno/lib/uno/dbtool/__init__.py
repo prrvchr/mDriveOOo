@@ -52,9 +52,6 @@ from .dbtool import getDateTimeFromString
 from .dbtool import getDictFromResult
 from .dbtool import getDriverPropertyInfo
 from .dbtool import getDriverPropertyInfos
-from .dbtool import getKeyMapFromResult
-from .dbtool import getKeyMapKeyMapFromResult
-from .dbtool import getKeyMapSequenceFromResult
 from .dbtool import getObjectFromResult
 from .dbtool import getObjectSequenceFromResult
 from .dbtool import getResultValue

@@ -29,7 +29,6 @@
 
 #include <com/sun/star/uno/XInterface.idl>
 #include <com/sun/star/auth/RefreshTokenException.idl>
-#include <com/sun/star/auth/XRestKeyMap.idl>
 #include <com/sun/star/rest/RequestException.idl>
 #include <com/sun/star/rest/XRequestResponse.idl>
 #include <com/sun/star/rest/XRequestParameter.idl>
@@ -59,8 +58,6 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
     short getSessionMode([in] string Host);
 
     string unquoteUrl([in] string Url);
-
-    com::sun::star::auth::XRestKeyMap getKeyMap();
 
     com::sun::star::rest::XRequestParameter getRequestParameter([in] string Name);
 
