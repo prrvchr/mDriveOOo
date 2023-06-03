@@ -35,4 +35,31 @@
   <prop oor:name="SynchronizePolicy">
     <value>CLIENT_IS_MASTER</value>
   </prop>
+  <prop oor:name="ResumableUpload">
+    <value>true</value>
+  </prop>
+  <node oor:name="Settings">
+    <node oor:name="Download" oor:op="fuse">
+      <prop oor:name="Chunk">
+        <value>327680</value>
+      </prop>
+      <prop oor:name="Delay">
+        <value>30</value>
+      </prop>
+      <prop oor:name="Retry">
+        <value>3</value>
+      </prop>
+    </node>
+    <node oor:name="Upload" oor:op="fuse">
+      <prop oor:name="Chunk">
+        <value>327680</value>
+      </prop>
+      <prop oor:name="Delay">
+        <value>30</value>
+      </prop>
+      <prop oor:name="Retry">
+        <value>3</value>
+      </prop>
+    </node>
+  </node>
 </oor:component-data>

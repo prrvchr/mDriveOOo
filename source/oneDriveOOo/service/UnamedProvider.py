@@ -39,7 +39,7 @@ from com.sun.star.ucb import XParameterizedContentProvider
 
 from com.sun.star.logging.LogLevel import INFO
 
-from onedrive import ParameterizedProvider
+from onedrive import ContentProvider
 
 from onedrive import getLogger
 
@@ -79,7 +79,7 @@ class UnamedProvider(unohelper.Base,
     # XContentProviderSupplier
     def getContentProvider(self):
         if self._provider is None:
-            self._provider = ParameterizedProvider(self._ctx, self._logger, False, 'Unamed')
+            self._provider = ContentProvider(self._ctx, self._logger, False, 'Unamed')
         return self._provider
 
     # XParameterizedContentProvider

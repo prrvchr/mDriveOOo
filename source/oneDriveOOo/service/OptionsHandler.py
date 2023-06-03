@@ -74,6 +74,12 @@ class OptionsHandler(unohelper.Base,
             elif method == 'ViewData':
                 self._manager.viewData()
                 handled = True
+            elif method == 'Download':
+                self._manager.download()
+                handled = True
+            elif method == 'Upload':
+                self._manager.upload()
+                handled = True
             return handled
         except Exception as e:
             msg = "OptionsHandler.callHandlerMethod() Error: %s" % traceback.format_exc()
@@ -83,7 +89,9 @@ class OptionsHandler(unohelper.Base,
         return ('external_event',
                 'EnabledSync',
                 'DisableSync',
-                'ViewData')
+                'ViewData',
+                'Download',
+                'Upload')
 
     # XServiceInfo
     def supportsService(self, service):

@@ -35,7 +35,7 @@ from com.sun.star.rest.ParameterType import REDIRECT
 
 from com.sun.star.rest.HTTPStatusCode import ACCEPTED
 
-from .providerbase import ProviderBase
+from .ucp import Provider as ProviderBase
 
 from .dbtool import currentUnoDateTime
 from .dbtool import currentDateTimeInTZ
@@ -63,13 +63,7 @@ import traceback
 
 class Provider(ProviderBase):
     def __init__(self, ctx, folder, link, logger):
-        self._ctx = ctx
-        self._folder = folder
-        self._link = link
-        self._logger = logger
-        self.Scheme = g_scheme
-        self.SourceURL = getResourceLocation(ctx, g_identifier, g_scheme)
-        self._folders = []
+        super(Provider, self).__init__(ctx, folder, link, logger)
 
     @property
     def Name(self):

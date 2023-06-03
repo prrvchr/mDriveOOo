@@ -29,8 +29,17 @@
   xmlns:oor="http://openoffice.org/2001/registry"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <templates>
+    <group oor:name="SettingSet">
+      <prop oor:name="Chunk" oor:type="xs:int" />
+      <prop oor:name="Delay" oor:type="xs:int" />
+      <prop oor:name="Retry" oor:type="xs:int" />
+    </group>
+  </templates>
   <component>
-    <prop oor:name="ReplicateTimeout" oor:type="xs:short"/>
-    <prop oor:name="SynchronizePolicy" oor:type="xs:string"/>
+    <prop oor:name="ReplicateTimeout" oor:type="xs:short" />
+    <prop oor:name="SynchronizePolicy" oor:type="xs:string" />
+    <prop oor:name="ResumableUpload" oor:type="xs:boolean" />
+    <set oor:name="Settings" oor:node-type="SettingSet" />
   </component>
 </oor:component-schema>
