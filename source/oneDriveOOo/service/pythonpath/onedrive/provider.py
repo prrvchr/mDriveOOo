@@ -62,8 +62,6 @@ import traceback
 
 
 class Provider(ProviderBase):
-    def __init__(self, ctx, folder, link, logger):
-        super(Provider, self).__init__(ctx, folder, link, logger)
 
     @property
     def Name(self):
@@ -145,8 +143,8 @@ class Provider(ProviderBase):
                         mimetype = value
                     elif (prefix, event) == ('value.item.trashed', 'boolean'):
                         trashed = value
-                    elif (prefix, event) == ('value.item.size', 'string'):
-                        size = int(value)
+                    elif (prefix, event) == ('value.item.size', 'number'):
+                        size = value
                     elif (prefix, event) == ('value.item.parentReference.id', 'string'):
                         parents.append(value)
                     elif (prefix, event) == ('value.item', 'end_map'):
@@ -332,19 +330,19 @@ class Provider(ProviderBase):
         parameter.Url = self.BaseUrl
         if method == 'getUser':
             parameter.Url += '/me'
-            parameter.setQuery('select', g_userfields)
+            parameter.setQuery('$select', g_userfields)
 
         elif method == 'getRoot':
             parameter.Url += '/me/drive/root'
-            parameter.setQuery('select', g_drivefields)
+            parameter.setQuery('$select', g_drivefields)
 
         elif method == 'getItem':
             parameter.Url += '/me/drive/items/'+ data.Id
-            parameter.setQuery('select', g_itemfields)
+            parameter.setQuery('$select', g_itemfields)
 
         elif method == 'getFirstPull':
             parameter.Url += '/me/drive/root/delta'
-            parameter.setQuery('select', g_itemfields)
+            parameter.setQuery('$select', g_itemfields)
 
         elif method == 'getPull':
             parameter.Url = data.Token
@@ -352,8 +350,8 @@ class Provider(ProviderBase):
 
         elif method == 'getFolderContent':
             parameter.Url += '/me/drive/items/%s/children' % data.Id
-            parameter.setQuery('select', g_itemfields)
-            parameter.setQuery('top', g_pages)
+            parameter.setQuery('$select', g_itemfields)
+            parameter.setQuery('$top', g_pages)
 
         elif method == 'getDocumentLocation':
             parameter.Url += '/me/drive/items/%s/content' % data.Id
