@@ -12,5 +12,7 @@
     <dlg:button dlg:id="CommandButton1" dlg:tab-index="4" dlg:disabled="true" dlg:left="100" dlg:top="100" dlg:width="100" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton1.HelpText" dlg:value="&amp;OptionsDialog.CommandButton1.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ViewData" script:language="UNO"/>
     </dlg:button>
+    <dlg:text dlg:id="Label3" dlg:tab-index="5" dlg:left="10" dlg:top="120" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label3.HelpText" dlg:value="&amp;OptionsDialog.Label3.Label" dlg:valign="center"/>
+    <dlg:textfield dlg:id="TextField1" dlg:tab-index="6" dlg:left="100" dlg:top="120" dlg:width="100" dlg:height="15" dlg:help-text="&amp;OptionsDialog.TextField1.HelpText" dlg:value="&amp;OptionsDialog.TextField1.Text"/>
   </dlg:bulletinboard>
 </dlg:window>

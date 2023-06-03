@@ -226,6 +226,7 @@ class Replicator(unohelper.Base,
             newid = None
             timestamp = item.get('TimeStamp')
             action = item.get('ChangeAction')
+            chunk, retry, delay = self._getUploadSetting()
             print("Replicator._pushItem() 3 Insert/Update Title: %s Id: %s - Action: %s" % (metadata.get('Title'),
                                                                                  itemid,
                                                                                  action))
@@ -246,7 +247,7 @@ class Replicator(unohelper.Base,
                 elif self._provider.isLink(mediatype):
                     pass
                 elif self._provider.isDocument(mediatype):
-                    newid = self._provider.uploadFile(user, itemid, metadata, True)
+                    newid = self._provider.uploadFile(user, itemid, metadata, chunk, retry, delay, True)
                     if newid:
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 142, metadata.get('Title'), created)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
@@ -259,7 +260,7 @@ class Replicator(unohelper.Base,
                         newid = self._provider.updateTitle(user.Request, itemid, metadata)
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 143, metadata.get('Title'), modified)
                     elif properties & CONTENT:
-                        newid = self._provider.uploadFile(user, itemid, metadata, False)
+                        newid = self._provider.uploadFile(user, itemid, metadata, chunk, retry, delay, False)
                         self._logger.logprb(INFO, 'Replicator', '_pushItem()', 144, metadata.get('Title'), modified, metadata.get('Size'))
                     elif properties & TRASHED:
                         newid = self._provider.updateTrashed(user.Request, itemid, metadata)
@@ -297,3 +298,7 @@ class Replicator(unohelper.Base,
         # FIXME: LibreOffice raise exception on uno.getConstantByName() on Enum...
         except:
             return uno.Enum('com.sun.star.ucb.SynchronizePolicy', policy)
+
+    def _getUploadSetting(self):
+        config = self._config.getByHierarchicalName('Settings/Upload')
+        return config.getByName('Chunk'), config.getByName('Retry'), config.getByName('Delay')

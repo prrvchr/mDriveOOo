@@ -41,6 +41,8 @@ g_superuser = ('#', 'https://', 'localhost', '/', 'admin')
 g_schema = '%i'
 g_user = '%i'
 
+g_dotcode = 183
+
 # View parameter
 g_cardview = 'CardView'
 g_bookview = 'BookView'
@@ -57,5 +59,6 @@ g_view = {'UserTable': 'Users',
           'DataColumn': 'Column',
           'DataValue': 'Value',
           'Admin': g_dba}
+
 
 g_bookmark = 'Bookmark'

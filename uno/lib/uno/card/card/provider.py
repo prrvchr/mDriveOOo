@@ -51,6 +51,9 @@ class Provider(unohelper.Base):
     def DateTimeFormat(self):
         return '%Y-%m-%dT%H:%M:%SZ'
 
+    def supportAddressBook(self):
+        return False
+
     def parseDateTime(self, timestamp):
         return getDateTimeFromString(timestamp, self.DateTimeFormat)
 
@@ -75,7 +78,7 @@ class Provider(unohelper.Base):
                     print("Provider.initUserBooks() 2 %s" % (name, ))
             else:
                 newid = database.insertBook(user.Id, uri, name, tag, token)
-                book = Book(self._ctx, newid, uri, name, tag, token, True)
+                book = Book(self._ctx, True, Book=newid, Uri=uri, Name=name, Tag=tag, Token=token)
                 user.Books.setBook(uri, book)
                 modified = True
                 print("Provider.initUserBooks() 3 %s - %s - %s" % (book.Id, name, uri))
@@ -86,7 +89,7 @@ class Provider(unohelper.Base):
             #TODO: Raise SqlException with correct message!
             print("Provider.initUserBooks() 1 %s" % (books, ))
             raise self.getSqlException(1004, 1108, 'initUserBooks', '%s has no support of CardDAV!' % user.Server)
-        if modified:
+        if modified and self.supportAddressBook():
             database.initAddressbooks(user)
 
     def initUserGroups(self, database, user, book):

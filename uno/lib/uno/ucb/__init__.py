@@ -27,7 +27,7 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .parameterizedprovider import ParameterizedProvider
+from .contentprovider import ContentProvider
 
 from .options import OptionsManager
 

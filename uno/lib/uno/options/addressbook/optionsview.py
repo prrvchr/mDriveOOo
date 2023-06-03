@@ -33,18 +33,29 @@ import traceback
 
 
 class OptionsView(unohelper.Base):
-    def __init__(self, window, timeout, enabled):
+    def __init__(self, window, timeout, view, enabled):
         self._window = window
         self._getTimeout().Value = timeout
         self._getDatasource().Model.Enabled = enabled
+        self._setViewName(view, not enabled)
 
 # OptionsView getter methods
-    def getTimeout(self):
-        return int(self._getTimeout().Value)
+    def getViewData(self):
+        return int(self._getTimeout().Value), self._getViewName().Text
 
 # OptionsView setter methods
     def setTimeout(self, timeout):
         self._getTimeout().Value = timeout
+
+    def setViewName(self, view):
+        self._getViewName().Text = view
+
+# OptionsView private setter methods
+    def _setViewName(self, view, disabled):
+        self._getViewLabel().Model.Enabled = disabled
+        control = self._getViewName()
+        control.Model.Enabled = disabled
+        control.Text = view
 
 # OptionsView private control methods
     def _getTimeout(self):
@@ -52,3 +63,9 @@ class OptionsView(unohelper.Base):
 
     def _getDatasource(self):
         return self._window.getControl('CommandButton1')
+
+    def _getViewLabel(self):
+        return self._window.getControl('Label3')
+
+    def _getViewName(self):
+        return self._window.getControl('TextField1')

@@ -27,6 +27,8 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from .provider import Provider
+
 from .contentuser import ContentUser
 
 from .contentidentifier import ContentIdentifier

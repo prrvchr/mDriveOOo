@@ -58,58 +58,58 @@ from threading import Event
 from threading import Lock
 
 
-class ParameterizedProvider(unohelper.Base,
+class ContentProvider(unohelper.Base,
                             XServiceInfo,
                             XContentIdentifierFactory,
                             XContentProvider):
     def __init__(self, ctx, logger, authority,  arguments):
-        print("ParameterizedProvider.__init__() 1 Scheme: %s" % g_scheme)
+        print("ContentProvider.__init__() 1 Scheme: %s" % g_scheme)
         self._ctx = ctx
         self._authority = authority
-        self._clazz = '%sProvider' % arguments
+        self._cls = '%sContentProvider' % arguments
         self._services = ('com.sun.star.ucb.ContentProvider', g_identifier + '.ContentProvider')
         self._sync = Event()
         self._lock = Lock()
         self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
         if self._datasource is None:
-            print("ParameterizedProvider.__init__() 2 Scheme: %s" % g_scheme)
-            ParameterizedProvider.__datasource = DataSource(ctx, logger, self._sync, self._lock)
+            print("ContentProvider.__init__() 2 Scheme: %s" % g_scheme)
+            ContentProvider.__datasource = DataSource(ctx, logger, self._sync, self._lock)
         self._logger = logger
-        self._logger.logprb(INFO, self._clazz, '__init__()', 201, arguments)
+        self._logger.logprb(INFO, self._cls, '__init__()', 201, arguments)
 
     __datasource = None
 
     @property
     def _datasource(self):
-        return ParameterizedProvider.__datasource
+        return ContentProvider.__datasource
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, url):
         identifier = ContentIdentifier(self._getContentIdentifierUrl(url))
-        self._logger.logprb(INFO, self._clazz, 'createContentIdentifier()', 211, url, identifier.getContentIdentifier())
+        self._logger.logprb(INFO, self._cls, 'createContentIdentifier()', 211, url, identifier.getContentIdentifier())
         return identifier
 
     # XContentProvider
     def queryContent(self, identifier):
         try:
             content = self._datasource.queryContent(self, self._authority, identifier)
-            self._logger.logprb(INFO, self._clazz, 'queryContent()', 221, identifier.getContentIdentifier())
+            self._logger.logprb(INFO, self._cls, 'queryContent()', 221, identifier.getContentIdentifier())
             return content
         except IllegalIdentifierException as e:
-            self._logger.logprb(INFO, self._clazz, 'queryContent()', 222, e.Message)
+            self._logger.logprb(INFO, self._cls, 'queryContent()', 222, e.Message)
             raise e
         except Exception as e:
             msg = self._logger.resolveString(223, traceback.format_exc())
-            self._logger.logp(SEVERE, self._clazz, 'queryContent()', msg)
+            self._logger.logp(SEVERE, self._cls, 'queryContent()', msg)
             print(msg)
 
     def compareContentIds(self, id1, id2):
         url1, url2 = id1.getContentIdentifier(), id2.getContentIdentifier()
         if url1 == url2:
-            self._logger.logprb(INFO, self._clazz, 'compareContentIds()', 231, url1, url2)
+            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 231, url1, url2)
             compare = 0
         else:
-            self._logger.logprb(INFO, self._clazz, 'compareContentIds()', 232, url1, url2)
+            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 232, url1, url2)
             compare = -1
         return compare
 

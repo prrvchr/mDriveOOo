@@ -50,18 +50,20 @@ class OptionsManager(unohelper.Base):
     def __init__(self, ctx, window):
         self._ctx = ctx
         self._model = OptionsModel(ctx)
-        index, timeout, exist = self._model.getViewData()
-        self._view = OptionsView(window, index, timeout, exist)
+        exist = self._model.hasData()
+        resumable = self._model.isResumable()
+        index, timeout, download, upload = self._model.getViewData()
+        self._view = OptionsView(window, exist, resumable, index, timeout, download, upload)
         self._logger = LogManager(ctx, window.Peer, self._getInfos(), g_identifier, g_defaultlog)
 
     def saveSetting(self):
-        self._model.setSynchronizePolicy(self._view.getSynchronizePolicy())
-        self._model.setTimeout(self._view.getTimeout())
+        index, timeout, download, upload = self._view.getViewData()
+        self._model.setViewData(index, timeout, download, upload)
         self._logger.saveSetting()
 
     def loadSetting(self):
-        self._view.setSynchronizePolicy(self._model.getSynchronizePolicy())
-        self._view.setTimeout(self._model.getTimeout())
+        index, timeout, download, upload = self._model.getViewData()
+        self._view.setViewData(index, timeout, download, upload)
         self._logger.loadSetting()
 
     def enableTimeout(self, enabled):
@@ -70,6 +72,12 @@ class OptionsManager(unohelper.Base):
     def viewData(self):
         url = self._model.getDatasourceUrl()
         getDesktop(self._ctx).loadComponentFromURL(url, '_blank', 0, ())
+
+    def download(self):
+        self._view.setStep(1)
+
+    def upload(self):
+        self._view.setStep(2)
 
     def _getInfos(self):
         infos = OrderedDict()

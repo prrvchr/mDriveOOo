@@ -30,9 +30,6 @@
 import uno
 import unohelper
 
-from com.sun.star.lang import XServiceInfo
-
-from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb.ConnectionMode import OFFLINE
@@ -48,23 +45,34 @@ from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
 from com.sun.star.ucb import IllegalIdentifierException
 
-from .unotool import getConnectionMode
+from ..unotool import getConnectionMode
+from ..unotool import getConfiguration
+from ..unotool import getResourceLocation
 
-from .dbtool import currentDateTimeInTZ
-from .dbtool import getDateTimeFromString
+from ..dbtool import currentDateTimeInTZ
+from ..dbtool import getDateTimeFromString
 
-from .logger import getLogger
+from ..logger import getLogger
 
-from .configuration import g_identifier
-from .configuration import g_scheme
-from .configuration import g_separator
-from .configuration import g_chunk
+from ..configuration import g_identifier
+from ..configuration import g_scheme
+from ..configuration import g_separator
+from ..configuration import g_chunk
 
 from collections import OrderedDict
 import traceback
 
 
-class ProviderBase(object):
+class Provider(object):
+    def __init__(self, ctx, folder, link, logger):
+        self._ctx = ctx
+        self._folder = folder
+        self._link = link
+        self._logger = logger
+        self.Scheme = g_scheme
+        self.SourceURL = getResourceLocation(ctx, g_identifier, g_scheme)
+        self._folders = []
+        self._config = getConfiguration(ctx, g_identifier, False)
 
     # Base properties
     @property
@@ -132,13 +140,14 @@ class ProviderBase(object):
         return count
 
     def getDocumentContent(self, content, url):
-        print('ProviderBase.getDocumentContent() Url: %s' % url)
+        print('Provider.getDocumentContent() Url: %s' % url)
         data = self.getDocumentLocation(content)
         if data is None:
             return False
-        print('ProviderBase.getDocumentContent() Data: %s' % data)
+        print('Provider.getDocumentContent() Data: %s' % data)
         parameter = self.getRequestParameter(content.User.Request, 'getDocumentContent', data)
-        return content.User.Request.download(parameter, url, g_chunk, 3, 10)
+        chunk, retry, delay = self._getDownloadSetting()
+        return content.User.Request.download(parameter, url, chunk, retry, delay)
 
     # Method called by Replicator
     def pullNewIdentifiers(self, user):
@@ -274,7 +283,7 @@ class ProviderBase(object):
         response = user.Request.execute(parameter)
         return self.mergeNewFolder(user, itemid, response)
 
-    def uploadFile(self, user, item, data, new=False):
+    def uploadFile(self, user, item, data, chunk, retry, delay, new=False):
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
         parameter = self.getRequestParameter(user.Request, method, data)
         response = user.Request.execute(parameter)
@@ -283,7 +292,7 @@ class ProviderBase(object):
             return False
         parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
         url = self.SourceURL + g_separator + item
-        response = user.Request.upload(parameter, url, g_chunk, 3, 10)
+        response = user.Request.upload(parameter, url, chunk, retry, delay)
         return self.updateItemId(user.DataBase, item, response)
 
     def updateTitle(self, request, itemid, item):
@@ -304,3 +313,6 @@ class ProviderBase(object):
         response.close()
         return itemid
 
+    def _getDownloadSetting(self):
+        config = self._config.getByHierarchicalName('Settings/Download')
+        return config.getByName('Chunk'), config.getByName('Retry'), config.getByName('Delay')

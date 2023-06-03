@@ -55,31 +55,23 @@ class Books(unohelper.Base):
 
     # Private methods
     def _getBooks(self, metadata, new):
-        i = 0
         books = OrderedDict()
-        aids, names, tags, tokens = self._getBookMetaData(metadata)
-        for uri in metadata.get('Uris'):
-            # FIXME: If url is None we don't add this addressbook
-            if uri is None:
-                continue
-            print("AddressBook._getBooks() Url: %s - Name: %s - Index: %s - Tag: %s - Token: %s" % (uri, names[i], aids[i], tags[i], tokens[i]))
-            books[uri] = Book(self._ctx, aids[i], uri, names[i], tags[i], tokens[i], new)
-            i += 1
+        for kwargs in metadata:
+            book = Book(self._ctx, new, **kwargs)
+            print("AddressBook._getBooks() Url: %s" % book.Uri)
+            books[book.Uri] = book
         return books
-
-    def _getBookMetaData(self, data):
-        return data.get('Aids'), data.get('Names'), data.get('Tags'), data.get('Tokens')
 
 
 class Book(unohelper.Base):
-    def __init__(self, ctx, bid, uri, name, tag, token, new=False):
+    def __init__(self, ctx, new, **kwargs):
         self._ctx = ctx
-        self._id = bid
-        self._uri = uri
-        self._name = name
-        self._tag = tag
-        self._token = token
         self._new = new
+        self._id = kwargs.get('Book')
+        self._uri = kwargs.get('Uri')
+        self._name = kwargs.get('Name')
+        self._tag = kwargs.get('Tag')
+        self._token = kwargs.get('Token')
 
     @property
     def Id(self):

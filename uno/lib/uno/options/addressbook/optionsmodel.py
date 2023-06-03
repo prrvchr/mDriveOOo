@@ -51,19 +51,28 @@ class OptionsModel(unohelper.Base):
         self._factor = 60
 
 # OptionsModel getter methods
+    def getViewData(self):
+        return self.getTimeout(), self.getViewName(), self._hasDatasource()
+
     def getTimeout(self):
         timeout = self._configuration.getByName('ReplicateTimeout')
         return timeout / self._factor
 
-    def hasDatasource(self):
-        return getSimpleFile(self._ctx).exists(self._url)
+    def getViewName(self):
+        return self._configuration.getByName('AddressBookName')
 
     def getDatasourceUrl(self):
         return self._url
 
 # OptionsModel setter methods
-    def setTimeout(self, timeout):
+    def setViewData(self, timeout, view):
         timeout = timeout * self._factor
         self._configuration.replaceByName('ReplicateTimeout', timeout)
+        self._configuration.replaceByName('AddressBookName', view)
         if self._configuration.hasPendingChanges():
             self._configuration.commitChanges()
+
+# OptionsModel private getter methods
+    def _hasDatasource(self):
+        return getSimpleFile(self._ctx).exists(self._url)
+

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
-<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="OptionsDialog" dlg:left="0" dlg:top="0" dlg:width="260" dlg:height="225" dlg:help-text="&amp;OptionsDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;OptionsDialog.Title" dlg:withtitlebar="false">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="OptionsDialog" dlg:page="1" dlg:left="0" dlg:top="0" dlg:width="260" dlg:height="225" dlg:help-text="&amp;OptionsDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;OptionsDialog.Title" dlg:withtitlebar="false">
   <dlg:styles>
     <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
   </dlg:styles>
@@ -19,9 +19,27 @@
       </dlg:radio>
     </dlg:radiogroup>
     <dlg:text dlg:id="Label2" dlg:tab-index="5" dlg:left="10" dlg:top="100" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label2.HelpText" dlg:value="&amp;OptionsDialog.Label2.Label" dlg:valign="center"/>
-    <dlg:numericfield dlg:id="NumericField1" dlg:tab-index="6" dlg:left="140" dlg:top="100" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField1.HelpText" dlg:decimal-accuracy="0" dlg:value-min="5" dlg:value-max="1440"/>
+    <dlg:numericfield dlg:id="NumericField1" dlg:tab-index="6" dlg:left="100" dlg:top="100" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField1.HelpText" dlg:decimal-accuracy="0" dlg:value-min="5" dlg:value-max="1440"/>
     <dlg:text dlg:id="Label3" dlg:tab-index="7" dlg:left="10" dlg:top="120" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label3.HelpText" dlg:value="&amp;OptionsDialog.Label3.Label" dlg:valign="center"/>
-    <dlg:button dlg:id="CommandButton1" dlg:tab-index="8" dlg:disabled="true" dlg:left="100" dlg:top="120" dlg:width="100" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton1.HelpText" dlg:value="&amp;OptionsDialog.CommandButton1.Label">
+    <dlg:radiogroup>
+      <dlg:radio dlg:id="OptionButton4" dlg:tab-index="8" dlg:left="100" dlg:top="120" dlg:width="75" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton4.HelpText" dlg:value="&amp;OptionsDialog.OptionButton4.Label" dlg:valign="center" dlg:checked="true">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:Download" script:language="UNO"/>
+      </dlg:radio>
+      <dlg:radio dlg:id="OptionButton5" dlg:tab-index="9" dlg:left="200" dlg:top="120" dlg:width="50" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton5.HelpText" dlg:value="&amp;OptionsDialog.OptionButton5.Label" dlg:valign="center">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:Upload" script:language="UNO"/>
+      </dlg:radio>
+    </dlg:radiogroup>
+    <dlg:text dlg:id="Label4" dlg:tab-index="10" dlg:left="10" dlg:top="140" dlg:width="40" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label4.HelpText" dlg:value="&amp;OptionsDialog.Label4.Label" dlg:align="right" dlg:valign="center"/>
+    <dlg:numericfield dlg:id="NumericField2" dlg:tab-index="11" dlg:page="1" dlg:left="55" dlg:top="140" dlg:width="25" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField2.HelpText" dlg:decimal-accuracy="0" dlg:value-min="256" dlg:value-max="4096"/>
+    <dlg:numericfield dlg:id="NumericField3" dlg:tab-index="12" dlg:page="2" dlg:left="55" dlg:top="140" dlg:width="25" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField3.HelpText" dlg:decimal-accuracy="0" dlg:value-min="256" dlg:value-max="4096"/>
+    <dlg:text dlg:id="Label5" dlg:tab-index="13" dlg:left="95" dlg:top="140" dlg:width="45" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label5.HelpText" dlg:value="&amp;OptionsDialog.Label5.Label" dlg:align="right" dlg:valign="center"/>
+    <dlg:numericfield dlg:id="NumericField4" dlg:tab-index="14" dlg:page="1" dlg:left="145" dlg:top="140" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField4.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="900"/>
+    <dlg:numericfield dlg:id="NumericField5" dlg:tab-index="15" dlg:page="2" dlg:left="145" dlg:top="140" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField5.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="900"/>
+    <dlg:text dlg:id="Label6" dlg:tab-index="16" dlg:left="180" dlg:top="140" dlg:width="45" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label6.HelpText" dlg:value="&amp;OptionsDialog.Label6.Label" dlg:align="right" dlg:valign="center"/>
+    <dlg:numericfield dlg:id="NumericField6" dlg:tab-index="17" dlg:page="1" dlg:left="230" dlg:top="140" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField6.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="10"/>
+    <dlg:numericfield dlg:id="NumericField7" dlg:tab-index="18" dlg:page="2" dlg:left="230" dlg:top="140" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField7.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="10"/>
+    <dlg:text dlg:id="Label7" dlg:tab-index="19" dlg:left="10" dlg:top="160" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label7.HelpText" dlg:value="&amp;OptionsDialog.Label7.Label" dlg:valign="center"/>
+    <dlg:button dlg:id="CommandButton1" dlg:tab-index="20" dlg:disabled="true" dlg:left="100" dlg:top="160" dlg:width="100" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton1.HelpText" dlg:value="&amp;OptionsDialog.CommandButton1.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ViewData" script:language="UNO"/>
     </dlg:button>
   </dlg:bulletinboard>

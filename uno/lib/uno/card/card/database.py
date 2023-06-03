@@ -74,6 +74,7 @@ from ..dbconfig import g_jar
 from ..dbconfig import g_cardview
 from ..dbconfig import g_bookmark
 from ..dbconfig import g_csv
+from ..dbconfig import g_dotcode
 
 from .dbinit import getStaticTables
 from .dbinit import getQueries
@@ -200,39 +201,67 @@ class DataBase(unohelper.Base):
         call.close()
         return session
 
-    def createUser(self, name, password):
-        statement = self.Connection.createStatement()
-        format = {'User': name,
+    def insertUser(self, uri, scheme, server, path, name):
+        books = []
+        call = self._getCall('insertUser')
+        call.setString(1, uri)
+        call.setString(2, scheme)
+        call.setString(3, server)
+        call.setString(4, path)
+        call.setString(5, name)
+        result = call.executeQuery()
+        user = {'User': call.getInt(6),
+                'Uri': uri,
+                'Scheme': scheme,
+                'Server': server,
+                'Path': path,
+                'Name': name}
+        while result.next():
+            books.append(getDataFromResult(result))
+        result.close()
+        call.close()
+        return user, books
+
+    def createUser(self, schema, userid, name, password):
+        format = {'Public': 'PUBLIC',
+                  'Schema': schema,
+                  'User': userid,
+                  'Name': name,
                   'Password': password,
+                  'CardView': g_cardview,
+                  'View': self._getViewName(),
                   'Admin': g_admin}
+        statement = self.Connection.createStatement()
         query = getSqlQuery(self._ctx, 'createUser', format)
         status = statement.executeUpdate(query)
-        statement.close()
-        return status == 0
-
-    def createUserSchema(self, schema, name):
-        view = self._getViewName()
-        format = {'Schema': schema,
-                  'User': name}
-        statement = self.Connection.createStatement()
         query = getSqlQuery(self._ctx, 'createUserSchema', format)
         statement.execute(query)
         query = getSqlQuery(self._ctx, 'setUserSchema', format)
         statement.execute(query)
-        #self._deleteUserView(statement, format)
-        #self._createUserView(statement, 'createUserBook', format)
+        query = getSqlQuery(self._ctx, 'createUserView', format)
+        statement.execute(query)
         statement.close()
 
     def selectUser(self, server, name):
-        user = None
+        books = []
+        metadata = None
         call = self._getCall('selectUser')
         call.setString(1, server)
         call.setString(2, name)
         result = call.executeQuery()
-        if result.next():
-            user = getDataFromResult(result)
+        user = call.getInt(3)
+        if not call.wasNull():
+            metadata = {'User': user,
+                        'Uri': call.getString(4),
+                        'Scheme': call.getString(5),
+                        'Server': server,
+                        'Path': call.getString(6),
+                        'Name': name}
+        while result.next():
+            books.append(getDataFromResult(result))
+        result.close()
         call.close()
-        return user
+        return metadata, books
 
 # Procedures called by the User
     def getUserFields(self):
@@ -324,6 +353,7 @@ class DataBase(unohelper.Base):
         call = self._getCall('selectChangedGroups')
         call.setObject(1, start)
         call.setObject(2, stop)
+        call.setInt(3, g_dotcode)
         result = call.executeQuery()
         while result.next():
             groups.append(getDataFromResult(result))
@@ -343,14 +373,13 @@ class DataBase(unohelper.Base):
         format['Schema'] = user.getSchema()
         format['Public'] = 'PUBLIC'
         format['View'] = g_cardview
-        format['Bookmark'] = g_bookmark
         if query == 'Deleted':
             self._deleteUserView(statement, format)
         elif query == 'Inserted':
-            self._createUserView(statement, 'createAddressbookView', format)
+            self._createUserView(statement, 'createBookView', format)
         elif query == 'Updated':
             self._deleteUserView(statement, format)
-            self._createUserView(statement, 'createAddressbookView', format)
+            self._createUserView(statement, 'createBookView', format)
         statement.close()
 
     def initGroupView(self, user, remove, add):
@@ -391,21 +420,6 @@ class DataBase(unohelper.Base):
     def _deleteUserView(self, statement, format):
         query = getSqlQuery(self._ctx, 'deleteView', format)
         statement.execute(query)
-
-    def insertUser(self, uri, scheme, server, path, name, addressbook=None):
-        user = None
-        call = self._getCall('insertUser')
-        call.setString(1, uri)
-        call.setString(2, scheme)
-        call.setString(3, server)
-        call.setString(4, path)
-        call.setString(5, name)
-        call.setString(6, addressbook) if addressbook is not None else call.setNull(6, VARCHAR)
-        result = call.executeQuery()
-        if result.next():
-            user = getDataFromResult(result)
-        call.close()
-        return user
 
     def insertBook(self, user, path, name, tag=None, token=None):
         book = None

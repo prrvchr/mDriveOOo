@@ -49,17 +49,18 @@ class OptionsManager(unohelper.Base):
     def __init__(self, ctx, window, ijson=True):
         self._ctx = ctx
         self._model = OptionsModel(ctx)
-        timeout = self._model.getTimeout()
-        enabled = self._model.hasDatasource()
-        self._view = OptionsView(window, timeout, enabled)
+        timeout, view, enabled = self._model.getViewData()
+        self._view = OptionsView(window, timeout, view, enabled)
         self._logger = LogManager(self._ctx, window.Peer, self._getInfos(ijson), g_identifier, g_defaultlog)
 
     def saveSetting(self):
-        self._model.setTimeout(self._view.getTimeout())
+        timeout, view = self._view.getViewData()
+        self._model.setViewData(timeout, view)
         self._logger.saveSetting()
 
     def loadSetting(self):
         self._view.setTimeout(self._model.getTimeout())
+        self._view.setViewName(self._model.getViewName())
         self._logger.loadSetting()
 
     def viewData(self):

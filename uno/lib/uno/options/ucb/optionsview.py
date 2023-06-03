@@ -33,36 +33,53 @@ import traceback
 
 
 class OptionsView(unohelper.Base):
-    def __init__(self, window, index, timeout, exist):
+    def __init__(self, window, exist, resumable, index, timeout, download, upload):
         self._window = window
-        self.setSynchronizePolicy(index)
-        self.setTimeout(timeout)
         self._getDatasource().Model.Enabled = exist
+        self.setViewData(index, timeout, download, upload)
+        self._getUpload().Model.Enabled = resumable
 
 # OptionsView getter methods
-    def getSynchronizePolicy(self):
-        return self._getOptionIndex()
-
-    def getTimeout(self):
-        return int(self._getTimeout().Value)
+    def getViewData(self):
+        index = self._getOptionIndex()
+        timeout = int(self._getTimeout().Value)
+        download = self._getSetting(0)
+        upload = self._getSetting(1)
+        return index, timeout, download, upload
 
 # OptionsView setter methods
-    def setSynchronizePolicy(self, index):
+    def setStep(self, step):
+        self._window.Model.Step = step
+
+    def setViewData(self, index, timeout, download, upload):
         self._getOption(index).State = 1
         self.enableTimeout(index != 3)
-
-    def setTimeout(self, timeout):
         self._getTimeout().Value = timeout
+        self._setSetting(download, 0)
+        self._setSetting(upload, 1)
 
     def enableTimeout(self, enabled):
         self._getTimeoutLabel().Model.Enabled = enabled
         self._getTimeout().Model.Enabled = enabled
 
-# OptionsView private methods
+# OptionsView private getter methods
     def _getOptionIndex(self):
         for index in range(1,4):
             if self._getOption(index).State:
                 return index
+
+    def _getSetting(self, offset):
+        setting = {}
+        setting['Chunk'] = int(self._getChunk(2 + offset).Value)
+        setting['Delay'] = int(self._getDelay(4 + offset).Value)
+        setting['Retry'] = int(self._getRetry(6 + offset).Value)
+        return setting
+
+# OptionsView private setter methods
+    def _setSetting(self, setting, offset):
+        self._getChunk(2 + offset).Value = setting.get('Chunk')
+        self._getDelay(4 + offset).Value = setting.get('Delay')
+        self._getRetry(6 + offset).Value = setting.get('Retry')
 
 # OptionsView private control methods
     def _getOption(self, index):
@@ -76,4 +93,16 @@ class OptionsView(unohelper.Base):
 
     def _getDatasource(self):
         return self._window.getControl('CommandButton1')
+
+    def _getUpload(self):
+        return self._window.getControl('OptionButton5')
+
+    def _getChunk(self, index):
+        return self._window.getControl('NumericField%s' % index)
+
+    def _getDelay(self, index):
+        return self._window.getControl('NumericField%s' % index)
+
+    def _getRetry(self, index):
+        return self._window.getControl('NumericField%s' % index)
 
