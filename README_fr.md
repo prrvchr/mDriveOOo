@@ -82,25 +82,7 @@ Vous devez installer cette extension, si elle n'est pas déjà installée.
 
 Redémarrez LibreOffice / OpenOffice après l'installation.
 
-## Configuration:
-
-Configurer les boîtes de dialogue Ouvrir / Enregistrer de LibreOffice (non nécessaire sous OpenOffice):
-
-- **Pour LibreOffice V5.x et avant:**
-
-Dans le menu: Outils - Options - LibreOffice - General: cocher utiliser les boîtes de dialogue LibreOffice.
-
-- **Pour LibreOffice V6.x et aprés:**
-
-Dans le menu: Outils - Options - LibreOffice - Advancé - Ouvrir la configuration avancée
-
-Rechercher: UseSystemFileDialog (Trouvé sous: org.openoffice.Office.Common > Misc)
-
-Editer ou changer "true" par "false" (réglez-le sur "false")
-
 ## Utilisation:
-
-Si vous êtes sous LibreOffice, il est important d'avoir au préalable [reconfiguré les boîtes de dialogue][22] Ouvrir / Enregistrer.
 
 **Ouvrir votre OneDrive Microsoft:**
 
@@ -213,7 +195,6 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [19]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.png>
 [20]: <https://github.com/prrvchr/jdbcDriverOOo/raw/master/source/jdbcDriverOOo/dist/jdbcDriverOOo.oxt>
 [21]: <https://github.com/prrvchr/oneDriveOOo/raw/master/source/oneDriveOOo/dist/oneDriveOOo.oxt>
-[22]: <https://prrvchr.github.io/oneDriveOOo/README_fr#configuration>
 [23]: <https://prrvchr.github.io/OAuth2OOo/README_fr>
 [24]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [25]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/database.py>

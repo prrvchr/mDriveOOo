@@ -30,7 +30,7 @@
   xmlns:oor="http://openoffice.org/2001/registry"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <node oor:name="Misc">
-    <prop oor:name="UseSystemFileDialog">
+    <prop oor:name="UseSystemFileDialog" oor:finalized="true">
       <value>false</value>
     </prop>
   </node>

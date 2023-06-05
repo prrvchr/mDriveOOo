@@ -82,25 +82,7 @@ You must install this extension, if it is not already installed.
 
 Restart LibreOffice / OpenOffice after installation.
 
-## Configuration:
-
-Configure LibreOffice Open / Save dialogs (not necessary with OpenOffice):
-
-- **For LibreOffice V5.x and before:**
-
-In menu Tools - Options - LibreOffice - General: check use LibreOffice dialogs.
-
-- **For LibreOffice V6.x and above:**
-
-In menu Tools - Options - LibreOffice - Advanced - Open Expert Configuration
-
-Search for: UseSystemFileDialog (Found under: org.openoffice.Office.Common > Misc)
-
-Edit or change "true" to "false" (set it to "false")
-
 ## Use:
-
-If you are using LibreOffice, it is important to have reconfigured the [Open / Save dialog boxes][22] beforehand.
 
 **Open your Microsoft OneDrive:**
 
@@ -213,7 +195,6 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [19]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.png>
 [20]: <https://github.com/prrvchr/jdbcDriverOOo/raw/master/source/jdbcDriverOOo/dist/jdbcDriverOOo.oxt>
 [21]: <https://github.com/prrvchr/oneDriveOOo/raw/master/source/oneDriveOOo/dist/oneDriveOOo.oxt>
-[22]: <https://prrvchr.github.io/oneDriveOOo/#configuration>
 [23]: <https://prrvchr.github.io/OAuth2OOo>
 [24]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [25]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
