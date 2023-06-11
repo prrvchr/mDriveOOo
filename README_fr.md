@@ -130,7 +130,7 @@ J'essaierai de le résoudre ;-)
 
 - Ecriture d'une nouvelle interface [DataBase][25], responsable de tous les appels à la base de données.
 
-- Mise en place d'un cache sur les identifiants, voir la méthode: [getIdentifier()][26], autorisant l'accès à un Contenu (fichier ou dossier) sans accès à la base de données pour les appels ultérieurs.
+- Mise en place d'un cache sur les identifiants, voir la méthode: [_getUser()][26], autorisant l'accès à un Contenu (fichier ou dossier) sans accès à la base de données pour les appels ultérieurs.
 
 - Gestion des doublons des noms des fichiers / dossiers par [Vues SQL][27]: Child, Twin, Uri, et Title générant des noms uniques s'il existe des doublons.  
 Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est implémentée globalement...
@@ -147,7 +147,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
   - Une vue [**Title**][31] générant des nom uniques pour chaque doublon.
   - Une vue récursive [**Path**][32] pour générer un chemin unique pour chaque fichier/dossier.
 
-- Création d'un [ParameterizedContentProvider][33] capable de répondre aux deux types d'Urls supportées (nommées et anonymes).  
+- Création d'un [Provider][33] capable de répondre aux deux types d'Urls supportées (nommées et anonymes).  
   Des expressions régulières (regex), déclarées dans le [fichier de configuration de l'UCB][34], sont maintenant utilisées par OpenOffice/LibreOffice pour envoyer les Urls au ContentProvider approprié.
 
 - Utilisation de la nouvelle struct UNO [DateTimeWithTimezone][35] fournie par l'extension [jdbcDriverOOo][36] depuis sa version 0.0.4.  
@@ -198,19 +198,19 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [23]: <https://prrvchr.github.io/OAuth2OOo/README_fr>
 [24]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [25]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
-[26]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py>
-[27]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py>
-[28]: <https://datatracker.ietf.org/doc/html/draft-king-vnd-urlscheme-00>
-[29]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L165>
-[30]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L175>
-[31]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L195>
-[32]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L215>
-[33]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/ucp/parameterizedprovider.py>
+[26]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py#L127>
+[27]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L154>
+[28]: <https://datatracker.ietf.org/doc/html/draft-king-vnd-urlscheme-03>
+[29]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L163>
+[30]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L173>
+[31]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L193>
+[32]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L213>
+[33]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/ucp/provider.py>
 [34]: <https://github.com/prrvchr/oneDriveOOo/blob/master/source/oneDriveOOo/oneDriveOOo.xcu#L19>
 [35]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/rdb/idl/io/github/prrvchr/css/util/DateTimeWithTimezone.idl>
 [36]: <https://prrvchr.github.io/jdbcDriverOOo/README_fr>
 [37]: <https://bz.apache.org/ooo/show_bug.cgi?id=128560>
-[38]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L481>
-[39]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L524>
-[40]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L463>
+[38]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L512>
+[39]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L557>
+[40]: <https://github.com/prrvchr/oneDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L494>
 [41]: <https://github.com/prrvchr/oneDriveOOo/tree/master/uno/lib/uno/options/ucb>
