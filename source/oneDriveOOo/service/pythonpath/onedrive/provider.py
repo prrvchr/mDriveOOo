@@ -35,6 +35,8 @@ from com.sun.star.rest.ParameterType import REDIRECT
 
 from com.sun.star.rest.HTTPStatusCode import ACCEPTED
 
+from com.sun.star.ucb import IllegalIdentifierException
+
 from .ucp import Provider as ProviderBase
 
 from .dbtool import currentUnoDateTime
@@ -187,14 +189,18 @@ class Provider(ProviderBase):
             response.close()
 
     def getDocumentLocation(self, content):
-        url = None
         parameter = self.getRequestParameter(content.User.Request, 'getDocumentLocation', content)
         response = content.User.Request.execute(parameter)
         print("Provider.getDocumentContent() Status: %s - IsOk: %s - Reason: %s" % (response.StatusCode, response.Ok, response.Reason))
+        url = self._parseDocumentLocation(response)
+        print("Provider.getDocumentContent() Url: %s" % url)
+        return url
+
+    def _parseDocumentLocation(self, response):
+        url = None
         if response.Ok and response.hasHeader('Location'):
             url = response.getHeader('Location')
         response.close()
-        print("Provider.getDocumentContent() Url: %s" % url)
         return url
 
     def mergeNewFolder(self, user, oldid, response):
