@@ -24,74 +24,19 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-#ifndef __com_sun_star_rest_XRequestParameter_idl__
-#define __com_sun_star_rest_XRequestParameter_idl__
+#ifndef __com_sun_star_json_XJsonValue_idl__
+#define __com_sun_star_json_XJsonValue_idl__
 
+#include <com/sun/star/json/JsonValueType.idl>
 #include <com/sun/star/uno/XInterface.idl>
-#include <com/sun/star/io/XInputStream.idl>
-#include <com/sun/star/rest/JSONDecodeException.idl>
-#include <com/sun/star/rest/RequestException.idl>
 
 
-module com { module sun { module star { module rest {
+module com { module sun { module star { module json {
 
-interface XRequestParameter: com::sun::star::uno::XInterface
+interface XJsonValue: com::sun::star::uno::XInterface
 {
 
-    void setUpload([in] long StatusCode,
-                   [in] string Field,
-                   [in] string Pattern,
-                   [in] short Offset,
-                   [in] short ParameterType);
-
-    boolean isResumable();
-
-    boolean hasNextPage();
-
-    void setNextPage([in] string Key,
-                     [in] string Value,
-                     [in] short ParameterType);
-
-    boolean hasHeader([in] string Key);
-
-    string getHeader([in] string Key);
-
-    void setHeader([in] string Key,
-                   [in] string Value);
-
-    void setJson([in] string Path,
-                 [in] any Value);
-
-    void setQuery([in] string Key,
-                  [in] string Value);
-
-    string toJson([in] boolean Stream)
-           raises(JSONDecodeException);
-
-    [attribute, readonly] string Name;
-    [attribute] string Method;
-    [attribute] string Url;
-    [attribute] string Headers;
-    [attribute] string Query;
-    [attribute] string Json;
-    [attribute] sequence<byte> Data;
-    [attribute] string Text;
-    [attribute] com::sun::star::io::XInputStream DataSink;
-    [attribute] boolean NoAuth;
-    [attribute] sequence<string> Auth;
-    [attribute] boolean NoRedirect;
-    [attribute] boolean NoVerify;
-    [attribute] boolean Stream;
-    [attribute] string NextUrl;
-    [attribute] string SyncToken;
-    [attribute, readonly] long PageCount;
-    [attribute] char Separator;
-    [attribute, readonly] long RangeStatus;
-    [attribute, readonly] string RangeField;
-    [attribute, readonly] string RangePattern;
-    [attribute, readonly] short RangeOffset;
-    [attribute, readonly] short RangeType;
-
+    JsonValueType getValueType();
 
 };
 
