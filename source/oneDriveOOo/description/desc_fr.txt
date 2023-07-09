@@ -1,1 +1,0 @@
-oneDriveOOo est une implementation de Microsoft OneDrive pour LibreOffice / OpenOffice.
