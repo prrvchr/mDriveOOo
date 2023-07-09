@@ -13,15 +13,15 @@ Top-level ``ijson`` module exposes method from the pure Python backend. There's
 also two other backends using the C library yajl in ``ijson.backends`` that have
 the same API and are faster under CPython.
 '''
-from .common import JSONError, IncompleteJSONError, ObjectBuilder, compat
+from ijson.common import JSONError, IncompleteJSONError, ObjectBuilder, compat
 
-from .utils import coroutine, sendable_list
+from ijson.utils import coroutine, sendable_list
 from .version import __version__
 
 def get_backend(backend):
     """Import the backend named ``backend``"""
     import importlib
-    return importlib.import_module('.backends.' + backend, __name__)
+    return importlib.import_module('ijson.backends.' + backend)
 
 def _default_backend():
     import os

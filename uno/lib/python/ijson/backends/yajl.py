@@ -4,8 +4,8 @@ Wrapper for YAJL C library version 1.x.
 
 from ctypes import Structure, c_uint, byref
 
-from .. import common, utils
-from ..backends import _yajl2_ctypes_common
+from ijson import common, utils
+from ijson.backends import _yajl2_ctypes_common
 
 
 yajl = _yajl2_ctypes_common.get_yajl(1)

@@ -67,20 +67,20 @@ class OptionsManager(unohelper.Base):
         url = self._model.getDatasourceUrl()
         getDesktop(self._ctx).loadComponentFromURL(url, '_default', 0, ())
 
-    def _getInfos(self, ijson):
+    def _getInfos(self, hasijson):
         infos = OrderedDict()
         version  = ' '.join(sys.version.split())
         infos[111] = version
         path = os.pathsep.join(sys.path)
         infos[112] = path
-        if ijson:
+        if hasijson:
             # Required modules for ijson
             try:
-                import cffi
+                import ijson
             except Exception as e:
-                infos[113] = self._getExceptionMsg(e)
+                infos[136] = self._getExceptionMsg(e)
             else:
-                infos[114] = (cffi.__version__, cffi.__file__)
+                infos[137] = (ijson.__version__, ijson.__file__)
         return infos
 
     def _getExceptionMsg(self, e):

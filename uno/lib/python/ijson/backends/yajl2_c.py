@@ -9,7 +9,7 @@
 Wrapper for _yajl2 C extension module
 '''
 
-from .. import common, compat, utils
+from ijson import common, compat, utils
 from . import _yajl2
 
 

@@ -32,6 +32,8 @@
 #include <com/sun/star/container/XEnumeration.idl>
 #include <com/sun/star/rest/HTTPException.idl>
 #include <com/sun/star/rest/XRequestParameter.idl>
+#include <com/sun/star/rest/JSONDecodeException.idl>
+#include <com/sun/star/json/XJsonStructure.idl>
 #include <io/github/prrvchr/css/util/Duration.idl>
 
 
@@ -46,7 +48,10 @@ interface XRequestResponse: com::sun::star::uno::XInterface
 
     string getHeader([in] string Key);
 
-    void raiseForStatus([in] boolean AllowRedirect)
+    com::sun::star::json::XJsonStructure getJson()
+                                         raises(JSONDecodeException);
+
+    void raiseForStatus()
          raises(HTTPException);
 
     com::sun::star::container::XEnumeration iterContent([in] long ChunkSize,

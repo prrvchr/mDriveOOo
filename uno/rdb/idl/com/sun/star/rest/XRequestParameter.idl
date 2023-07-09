@@ -31,6 +31,7 @@
 #include <com/sun/star/io/XInputStream.idl>
 #include <com/sun/star/rest/JSONDecodeException.idl>
 #include <com/sun/star/rest/RequestException.idl>
+#include <com/sun/star/json/XJsonBuilder.idl>
 
 
 module com { module sun { module star { module rest {
@@ -59,11 +60,15 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     void setHeader([in] string Key,
                    [in] string Value);
 
+    void setQuery([in] string Key,
+                  [in] string Value);
+
     void setJson([in] string Path,
                  [in] any Value);
 
-    void setQuery([in] string Key,
-                  [in] string Value);
+    com::sun::star::json::XJsonBuilder getJsonBuilder();
+
+    void setJsonStructure([in] com::sun::star::json::XJsonStructure Json);
 
     string toJson([in] boolean Stream)
            raises(JSONDecodeException);

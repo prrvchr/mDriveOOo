@@ -5,8 +5,8 @@ Common ctypes routines for yajl library handling
 from ctypes import Structure, c_uint, c_char, c_ubyte, c_int, c_long, c_longlong, c_double,\
                    c_void_p, c_char_p, CFUNCTYPE, POINTER, string_at, cast
 
-from .. import common, backends
-from ..compat import b2s
+from ijson import common, backends
+from ijson.compat import b2s
 
 
 C_EMPTY = CFUNCTYPE(c_int, c_void_p)

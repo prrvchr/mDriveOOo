@@ -27,8 +27,10 @@
 #ifndef __com_sun_star_json_XJsonArray_idl__
 #define __com_sun_star_json_XJsonArray_idl__
 
+#include <com/sun/star/json/JsonType.idl>
 #include <com/sun/star/json/XJsonStructure.idl>
 #include <com/sun/star/json/XJsonNumber.idl>
+#include <com/sun/star/container/XEnumeration.idl>
 
 
 module com { module sun { module star { module json {
@@ -40,11 +42,17 @@ interface XJsonArray: com::sun::star::json::XJsonStructure
 
     string getString([in] long Index);
 
-    XJsonNumber getJsonNumber([in] long Index);
+    XJsonNumber getNumber([in] long Index);
 
-    XJsonStructure getJsonStructure([in] long Index);
+    XJsonStructure getStructure([in] long Index);
 
     boolean isNull([in] long Index);
+
+    JsonType getElementType([in] long Index);
+
+    com::sun::star::container::XEnumeration createEnumeration();
+
+    [attribute, readonly] long Count;
 
 };
 

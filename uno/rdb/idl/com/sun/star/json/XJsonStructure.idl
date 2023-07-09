@@ -28,7 +28,6 @@
 #define __com_sun_star_json_XJsonStructure_idl__
 
 #include <com/sun/star/json/XJsonValue.idl>
-#include <com/sun/star/container/XEnumeration.idl>
 
 
 module com { module sun { module star { module json {
@@ -36,10 +35,10 @@ module com { module sun { module star { module json {
 interface XJsonStructure: com::sun::star::json::XJsonValue
 {
 
-    com::sun::star::container::XEnumeration createEnumeration();
+    string toJson();
+
 
 };
-
 
 }; }; }; };
 

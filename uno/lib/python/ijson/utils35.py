@@ -3,7 +3,7 @@ Python3.5+ specific utilities
 '''
 import collections
 
-from . import utils, common, compat
+from ijson import utils, common, compat
 
 
 class utf8reader_async(compat.utf8reader):

@@ -50,20 +50,16 @@ import traceback
 
 class User(unohelper.Base):
     def __init__(self, ctx, database, provider, scheme, server, name, pwd=''):
-        try:
-            self._ctx = ctx
-            self._password = pwd
-            self.Request = getRequest(ctx, server, name)
-            self._sessions = []
-            self._metadata, books = database.selectUser(server, name)
-            new = self._metadata is None
-            if new:
-                self._metadata, books = self._getNewUser(database, provider, scheme, server, name, pwd)
-                database.createUser(self.getSchema(), self.Id, name, '')
-            self._books = Books(ctx, books, new)
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+        self._ctx = ctx
+        self._password = pwd
+        self.Request = getRequest(ctx, server, name)
+        self._sessions = []
+        self._metadata, books = database.selectUser(server, name)
+        new = self._metadata is None
+        if new:
+            self._metadata, books = self._getNewUser(database, provider, scheme, server, name, pwd)
+            database.createUser(self.getSchema(), self.Id, name, '')
+        self._books = Books(ctx, books, new)
 
     @property
     def Id(self):

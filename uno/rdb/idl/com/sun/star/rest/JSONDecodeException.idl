@@ -34,7 +34,8 @@ module com {  module sun {  module star {  module rest {
 exception JSONDecodeException: com::sun::star::rest::RequestException
 {
 
-    string Json;
+    long StatusCode;
+    string Content;
 
 };
 

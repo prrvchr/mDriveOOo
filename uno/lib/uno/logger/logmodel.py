@@ -37,10 +37,11 @@ from ..unotool import getFileSequence
 from ..unotool import getResourceLocation
 from ..unotool import getStringResourceWithLocation
 
+from .loggerpool import LoggerPool
+
 from .loghelper import LogWrapper
 from .loghelper import LogController
 from .loghelper import LogConfig
-from .loghelper import getPool
 
 from ..configuration import g_identifier
 from ..configuration import g_resource
@@ -51,7 +52,7 @@ class LogModel(LogController):
     def __init__(self, ctx, name, listener):
         self._ctx = ctx
         self._basename = g_basename
-        self._pool, self._localized = getPool(ctx)
+        self._pool = LoggerPool(ctx)
         self._url = getResourceLocation(ctx, g_identifier, g_resource)
         self._logger = None
         self._listener = listener
@@ -59,26 +60,19 @@ class LogModel(LogController):
         self._setting = None
         self._default = name
         self._config = getConfiguration(ctx, '/org.openoffice.Office.Logging/Settings', True)
-        if self._localized:
-            self._pool.addModifyListener(listener)
+        self._pool.addModifyListener(listener)
 
     # Public getter method
     def getLoggerNames(self, filter=None):
-        if self._localized:
-            names = self._pool.getLoggerNames() if filter is None else self._pool.getFilteredLoggerNames(filter)
-            if self._default not in names:
-                names = list(names)
-                names.insert(0, self._default)
-                names = tuple(names)
-        else:
-            names = (self._default, )
+        names = self._pool.getLoggerNames() if filter is None else self._pool.getFilteredLoggerNames(filter)
+        if self._default not in names:
+            names = list(names)
+            names.insert(0, self._default)
+            names = tuple(names)
         return names
 
     def getLoggerSetting(self, name):
-        if self._localized:
-            self._logger = self._pool.getLocalizedLogger(name, self._url, g_basename)
-        else:
-            self._logger = self._pool.getNamedLogger(name)
+        self._logger = self._pool.getLocalizedLogger(name, self._url, g_basename)
         return self._getLoggerSetting()
 
     def loadSetting(self):
@@ -93,8 +87,7 @@ class LogModel(LogController):
 
 # Public setter method
     def dispose(self):
-        if self._localized:
-            self._pool.removeModifyListener(self._listener)
+        self._pool.removeModifyListener(self._listener)
 
     def setLogSetting(self, setting):
         config = self._getLogConfig()

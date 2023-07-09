@@ -27,6 +27,7 @@
 #ifndef __com_sun_star_json_XJsonObject_idl__
 #define __com_sun_star_json_XJsonObject_idl__
 
+#include <com/sun/star/json/JsonType.idl>
 #include <com/sun/star/json/XJsonStructure.idl>
 #include <com/sun/star/json/XJsonNumber.idl>
 
@@ -40,11 +41,15 @@ interface XJsonObject: com::sun::star::json::XJsonStructure
 
     string getString([in] string Key);
 
-    XJsonNumber getJsonNumber([in] string Key);
+    XJsonNumber getNumber([in] string Key);
 
-    XJsonStructure getJsonStructure([in] string Key);
+    XJsonStructure getStructure([in] string Key);
 
     boolean isNull([in] string Key);
+
+    JsonType getElementType([in] string Key);
+
+    sequence<string> getElementNames();
 
 };
 

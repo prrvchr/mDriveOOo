@@ -5,7 +5,7 @@ import decimal
 import inspect
 import warnings
 
-from . import compat, utils
+from ijson import compat, utils
 
 
 class JSONError(Exception):

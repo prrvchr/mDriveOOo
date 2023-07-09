@@ -27,7 +27,7 @@
 #ifndef __com_sun_star_json_XJsonValue_idl__
 #define __com_sun_star_json_XJsonValue_idl__
 
-#include <com/sun/star/json/JsonValueType.idl>
+#include <com/sun/star/json/JsonType.idl>
 #include <com/sun/star/uno/XInterface.idl>
 
 
@@ -36,7 +36,7 @@ module com { module sun { module star { module json {
 interface XJsonValue: com::sun::star::uno::XInterface
 {
 
-    JsonValueType getValueType();
+    JsonType getValueType();
 
 };
 

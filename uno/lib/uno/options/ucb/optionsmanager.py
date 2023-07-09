@@ -87,11 +87,11 @@ class OptionsManager(unohelper.Base):
         infos[112] = path
         # Required modules for ijson
         try:
-            import cffi
+            import ijson
         except Exception as e:
-            infos[113] = self._getExceptionMsg(e)
+            infos[136] = self._getExceptionMsg(e)
         else:
-            infos[114] = cffi.__version__, cffi.__file__
+            infos[137] = ijson.__version__, ijson.__file__
         return infos
 
     def _getExceptionMsg(self, e):
