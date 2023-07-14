@@ -29,6 +29,8 @@
 
 from .logger import Logger
 
+from .loggerpool import LoggerPool
+
 from .logmanager import LogManager
 
 from .logmodel import LogModel
