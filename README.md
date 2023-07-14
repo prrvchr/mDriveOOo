@@ -96,7 +96,7 @@ If you don't give **your_email@your_provider**, you will be asked for...
 
 Anonymous Urls allow you to remain anonymous (your account does not appear in the Url) while named Urls allow you to access several accounts simultaneously.
 
-After authorizing the [OAuth2OOo][23] application to access your Microsoft OneDrive files, your OneDrive files should appear!!! normally  ;-)
+After authorizing the [OAuth2OOo][23] application to access your Microsoft OneDrive files, your OneDrive files should appear!!! normally  :wink:
 
 ___
 ## Has been tested with:

@@ -96,7 +96,7 @@ Si vous ne donnez pas **votre_adresse@votre_fournisseur**, elle vous sera demand
 
 Les Urls anonymes vous permettent de rester anonyme (votre compte n'apparaît pas dans l'Url) tandis que les Urls nommées vous permettent d'accéder à plusieurs comptes simultanément.
 
-Après avoir autorisé l'application [OAuth2OOo][23] à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  ;-)
+Après avoir autorisé l'application [OAuth2OOo][23] à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  :wink:
 
 ___
 ## A été testé avec:
