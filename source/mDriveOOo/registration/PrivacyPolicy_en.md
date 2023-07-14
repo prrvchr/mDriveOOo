@@ -1,10 +1,10 @@
 # Data Protection Policy
 
-**Ce [document][2] en français.**
+**Ce [document][1] en français.**
 
-**Use of this software also subjects you to our [Terms Of Use][3].**
+**Use of this software also subjects you to our [Terms Of Use][2].**
 
-Regarding installation, configuration and use, please consult the **[documentation][4]**.
+Regarding installation, configuration and use, please consult the **[documentation][3]**.
 
 ## Introduction:
 
@@ -61,7 +61,6 @@ Use of the `Supplier` services via `mDriveOOo` may subject you to the data prote
 
 `Supplier` is solely responsible for the expiration of the data it collects as described in its Policy.
 
-[1]: <https://prrvchr.github.io/mDriveOOo/img/mDriveOOo.png>
-[2]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_fr>
-[3]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_en>
-[4]: <https://prrvchr.github.io/mDriveOOo>
+[1]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_fr>
+[2]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_en>
+[3]: <https://prrvchr.github.io/mDriveOOo>

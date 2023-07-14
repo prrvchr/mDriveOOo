@@ -1,10 +1,10 @@
 # Politique de protection des données
 
-**This [document][2] in English.**
+**This [document][1] in English.**
 
-**L'utilisation de ce logiciel vous soumet également à nos [Conditions d'utilisation][3].**
+**L'utilisation de ce logiciel vous soumet également à nos [Conditions d'utilisation][2].**
 
-Concernant l'installation, la configuration et l'utilisation, veuillez consulter la **[documentation][4]**.
+Concernant l'installation, la configuration et l'utilisation, veuillez consulter la **[documentation][3]**.
 
 ## Introduction:
 
@@ -61,7 +61,6 @@ L'utilisation des services du `Fournisseur` via `mDriveOOo` peut vous soumettre 
 
 Le `Fournisseur` est seul responsable de l'expiration des données qu'il collecte comme décrit dans sa politique de protection des données.
 
-[1]: <https://prrvchr.github.io/mDriveOOo/img/mDriveOOo.png>
-[2]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_en>
-[3]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_fr>
-[4]: <https://prrvchr.github.io/mDriveOOo/README_fr>
+[1]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_en>
+[2]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_fr>
+[3]: <https://prrvchr.github.io/mDriveOOo/README_fr>

@@ -30,8 +30,8 @@
         <name lang="en-US">mDriveOOo</name>
     </display-name>
     <icon>
-        <default xlink:href="mDriveOOo/mDriveOOo.png"/>
-        <high-contrast xlink:href="mDriveOOo/mDriveOOo.png"/>
+        <default xlink:href="mDriveOOo/mDriveOOo.svg"/>
+        <high-contrast xlink:href="mDriveOOo/mDriveOOo.svg"/>
     </icon>
     <extension-description>
         <src xlink:href="description/desc_en.txt" lang="en-US"/>

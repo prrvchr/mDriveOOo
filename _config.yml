@@ -5,8 +5,10 @@ plugins:
   - jekyll-seo-tag
   - jemoji
 favicon: true
-logo: /img/mDriveOOo.png
+logo: /img/drive.svg
+email: prrvchr@gmail.com
 title: mDriveOOo
+blank_title: true
 description: Your Microsoft oneDrive data available in LibreOffice even offline
 sidebar:
   - name: Download
