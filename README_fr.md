@@ -48,7 +48,7 @@ ___
 ## Prérequis:
 
 Afin de profiter des dernières versions des bibliothèques Python utilisées dans OAuth2OOo, la version 2 de Python a été abandonnée au profit de **Python 3.8 minimum**.  
-Cela signifie que **OAuth2OOo ne supporte plus OpenOffice et LibreOffice 6.x sous Windows depuis sa version 1.1.0**.
+Cela signifie que **mDriveOOo ne supporte plus OpenOffice et LibreOffice 6.x sous Windows depuis sa version 1.0.0**.
 Je ne peux que vous conseiller **de migrer vers LibreOffice 7.x**.
 
 mDriveOOo utilise une base de données locale [HsqlDB][12] version 2.7.1.  
