@@ -51,7 +51,7 @@ Afin de profiter des dernières versions des bibliothèques Python utilisées da
 Cela signifie que **mDriveOOo ne supporte plus OpenOffice et LibreOffice 6.x sous Windows depuis sa version 1.0.0**.
 Je ne peux que vous conseiller **de migrer vers LibreOffice 7.x**.
 
-mDriveOOo utilise une base de données locale [HsqlDB][12] version 2.7.1.  
+mDriveOOo utilise une base de données locale [HsqlDB][12] version 2.7.2.  
 HsqlDB étant une base de données écrite en Java, son utilisation nécessite [l'installation et la configuration][13] dans LibreOffice / OpenOffice d'un **JRE version 11 ou ultérieure**.  
 Je vous recommande [Adoptium][14] comme source d'installation de Java.
 
