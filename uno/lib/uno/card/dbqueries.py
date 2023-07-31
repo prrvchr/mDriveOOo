@@ -214,7 +214,7 @@ GRANT SELECT ON "%(Schema)s"."%(Name)s" TO "%(User)s";
 # Select Queries
     # DataBase creation Select Queries
     elif name == 'getTableNames':
-        query = 'SELECT "Name" FROM "Tables" ORDER BY "Table";'
+        query = 'SELECT "Name" FROM PUBLIC."Tables" ORDER BY "Table";'
 
     elif name == 'getTables':
         s1 = '"T"."Table" AS "TableId"'
@@ -280,18 +280,18 @@ SELECT "Name" FROM "Fields" WHERE "Table"='Loop' AND "Column"=1;'''
 # Insert Queries
     elif name == 'insertSuperUser':
         q = """\
-INSERT INTO "Users" ("Uri","Scheme","Server","Path","Name") VALUES ('%s','%s','%s','%s','%s');
+INSERT INTO PUBLIC."Users" ("Uri","Scheme","Server","Path","Name") VALUES ('%s','%s','%s','%s','%s');
 """
         query = q % format
 
     elif name == 'insertSuperAdressbook':
         query = """\
-INSERT INTO "Books" ("User","Uri","Name","Tag","Token") VALUES (0,'/','admin','#','#');
+INSERT INTO PUBLIC."Books" ("User","Uri","Name","Tag","Token") VALUES (0,'/','admin','#','#');
 """
 
     elif name == 'insertSuperGroup':
         query = """\
-INSERT INTO "Groups" ("Book","Uri","Name") VALUES (0,'/','#');
+INSERT INTO PUBLIC."Groups" ("Book","Uri","Name") VALUES (0,'/','#');
 """
 
 # Create Procedure Query
@@ -401,7 +401,7 @@ CREATE PROCEDURE "MergeCard"(IN Book INTEGER,
                              IN Uri VARCHAR(256),
                              IN Tag VARCHAR(128),
                              IN Deleted BOOLEAN,
-                             IN Data VARCHAR(10000))
+                             IN Data VARCHAR(100000))
   SPECIFIC "MergeCard_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC

@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf-8 -*-
+# -*- coding: utf_8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -27,62 +27,23 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
+from . import sdbc
+from . import sdbcx
 
-from com.sun.star.awt import XDialogEventHandler
-from com.sun.star.awt import XItemListener
+from .unotool import createService
+from .unotool import getConfiguration
+from .unotool import getDialog
+from .unotool import getDocument
+from .unotool import getFileSequence
+from .unotool import getPropertyValueSet
+from .unotool import getResourceLocation
+from .unotool import getSimpleFile
+from .unotool import getStringResource
 
-import traceback
+from .configuration import g_extension
+from .configuration import g_identifier
 
+from .options import OptionsManager
 
-class DialogHandler(unohelper.Base,
-                    XDialogEventHandler):
-    def __init__(self, manager):
-        self._manager = manager
+from .logger import getLogger
 
-# XDialogEventHandler
-    def callHandlerMethod(self, dialog, event, method):
-        try:
-            handled = False
-            if method == 'Help':
-                handled = True
-            elif method == 'Previous':
-                self._manager.travelPrevious()
-                handled = True
-            elif method == 'Next':
-                self._manager.travelNext()
-                handled = True
-            elif method == 'Finish':
-                self._manager.doFinish()
-                handled = True
-            elif method == 'Cancel':
-                self._manager.doCancel()
-                handled = True
-            return handled
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
-
-    def getSupportedMethodNames(self):
-        return ('Help',
-                'Previous',
-                'Next',
-                'Finish',
-                'Cancel')
-
-
-class ItemListener(unohelper.Base,
-                   XItemListener):
-    def __init__(self, manager):
-        self._manager = manager
-
-# XItemListener
-    def itemStateChanged(self, event):
-        try:
-            self._manager.changeRoadmapStep(event.ItemId)
-        except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
-            print(msg)
-
-    def disposing(self, event):
-        pass

@@ -256,7 +256,7 @@ def getContainerWindow(ctx, parent, handler, library, xdl):
     try:
         window = provider.createContainerWindow(url, '', parent, handler)
     except WrappedTargetRuntimeException as e:
-        print("unotool.getContainerWindow() ERROR: %s - %s" % (e, traceback.print_exc()))
+        print("unotool.getContainerWindow() ERROR: %s - %s" % (e, traceback.format_exc()))
     return window
 
 def getFileUrl(ctx, title, path, filters=(), multi=False):

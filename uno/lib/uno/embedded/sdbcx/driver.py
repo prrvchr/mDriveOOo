@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf-8 -*-
+# -*- coding: utf_8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -27,62 +27,48 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
+from com.sun.star.logging.LogLevel import INFO
+from com.sun.star.logging.LogLevel import SEVERE
 
-from com.sun.star.awt import XDialogEventHandler
-from com.sun.star.awt import XItemListener
+from com.sun.star.sdbcx import XDataDefinitionSupplier
+from com.sun.star.sdbcx import XCreateCatalog
+from com.sun.star.sdbcx import XDropCatalog
+
+from ..driver import Driver as DriverBase
 
 import traceback
 
 
-class DialogHandler(unohelper.Base,
-                    XDialogEventHandler):
-    def __init__(self, manager):
-        self._manager = manager
+class Driver(DriverBase,
+             XDataDefinitionSupplier,
+             XCreateCatalog,
+             XDropCatalog):
 
-# XDialogEventHandler
-    def callHandlerMethod(self, dialog, event, method):
+    def __init__(self, ctx, lock, service, name):
+        DriverBase.__init__(self, ctx, lock, service, name)
+        self._services = ('com.sun.star.sdbc.Driver', 'com.sun.star.sdbcx.Driver')
+        self._logger.logprb(INFO, 'Driver', '__init__()', 101)
+
+    # XDataDefinitionSupplier
+    def getDataDefinitionByConnection(self, connection):
         try:
-            handled = False
-            if method == 'Help':
-                handled = True
-            elif method == 'Previous':
-                self._manager.travelPrevious()
-                handled = True
-            elif method == 'Next':
-                self._manager.travelNext()
-                handled = True
-            elif method == 'Finish':
-                self._manager.doFinish()
-                handled = True
-            elif method == 'Cancel':
-                self._manager.doCancel()
-                handled = True
-            return handled
+            self._logger.logprb(INFO, 'Driver', 'getDataDefinitionByConnection()', 141)
+            driver = self._getDriver()
+            return driver.getDataDefinitionByConnection(connection)
+        except SQLException as e:
+            raise e
         except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+            self._logger.logprb(SEVERE, 'Driver', 'getDataDefinitionByConnection()', 142, e, traceback.format_exc())
 
-    def getSupportedMethodNames(self):
-        return ('Help',
-                'Previous',
-                'Next',
-                'Finish',
-                'Cancel')
+    def getDataDefinitionByURL(self, url, infos):
+        self._logger.logprb(INFO, 'Driver', 'getDataDefinitionByURL()', 151, url)
+        return self.getDataDefinitionByConnection(connect(url, infos))
 
+    # XCreateCatalog
+    def createCatalog(self, info):
+        self._logger.logprb(INFO, 'Driver', 'createCatalog()', 161)
 
-class ItemListener(unohelper.Base,
-                   XItemListener):
-    def __init__(self, manager):
-        self._manager = manager
+    # XDropCatalog
+    def dropCatalog(self, name, info):
+        self._logger.logprb(INFO, 'Driver', 'dropCatalog()', 171, name)
 
-# XItemListener
-    def itemStateChanged(self, event):
-        try:
-            self._manager.changeRoadmapStep(event.ItemId)
-        except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
-            print(msg)
-
-    def disposing(self, event):
-        pass

@@ -386,7 +386,7 @@ class DataBase(unohelper.Base):
         statement = self.Connection.createStatement()
         format = {'Public': 'PUBLIC',
                   'View': g_cardview,
-                  'User': user.Id,
+                  'User': user.getName(),
                   'Schema': user.getSchema()}
         if remove:
             for item in remove:

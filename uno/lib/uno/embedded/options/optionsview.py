@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -27,15 +27,60 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-# DataSource configuration
-g_folder = 'hsqldb'
-g_protocol = 'xdbc:hsqldb:'
-g_path = 'hsqldb'
-g_jar = 'hsqldb.jar'
-g_class = 'org.hsqldb.jdbcDriver'
-g_options = ';hsqldb.default_table_type=cached;get_column_name=false;ifexists=false'
-g_shutdown = ';shutdown=true'
-g_csv = '%s.csv;fs=|;ignore_first=true;encoding=UTF-8;quoted=true'
-g_version = '2.5.1'
-g_role = 'FrontOffice'
-g_dba = 'AD'
+import uno
+import unohelper
+
+from ..unotool import getContainerWindow
+
+from ..configuration import g_extension
+
+import traceback
+
+
+class OptionsView(unohelper.Base):
+    def __init__(self, window, driver, connection, updated, enabled, version, reboot):
+        self._window = window
+        self.initView(driver, connection, updated, enabled, version, reboot)
+
+# OptionsView setter methods
+    def initView(self, driver, connection, updated, enabled, version, reboot):
+        self._getVersion().Text = version
+        self._getDriverService(driver).State = 1
+        if updated:
+            self.disableDriverLevel()
+        self._getConnectionService(connection).State = 1
+        self._getConnectionService(0).Model.Enabled = enabled
+        self._getReboot().setVisible(reboot)
+
+    def setDriverVersion(self, version):
+        self._getVersion().Text = version
+
+    def setDriverLevel(self, level, updated):
+        self._getDriverService(level).State = 1
+        if updated:
+            self.disableDriverLevel()
+
+    def setConnectionLevel(self, level, enabled):
+        self._getConnectionService(level).State = 1
+        self._getConnectionService(0).Model.Enabled = enabled
+
+    def disableDriverLevel(self):
+        self._getDriverService(0).Model.Enabled = False
+        self._getDriverService(1).Model.Enabled = False
+
+    def setReboot(self, state):
+        self._getReboot().setVisible(state)
+
+# OptionsView private control methods
+    def _getDriverService(self, index):
+        return self._window.getControl('OptionButton%s' % (index + 1))
+
+    def _getConnectionService(self, index):
+        return self._window.getControl('OptionButton%s' % (index + 3))
+
+    def _getVersion(self):
+        return self._window.getControl('Label2')
+
+    def _getReboot(self):
+        return self._window.getControl('Label5')
+

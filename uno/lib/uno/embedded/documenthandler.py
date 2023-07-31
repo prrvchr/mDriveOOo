@@ -32,6 +32,9 @@ import unohelper
 from com.sun.star.embed.ElementModes import SEEKABLEREAD
 from com.sun.star.embed.ElementModes import READWRITE
 
+from com.sun.star.logging.LogLevel import INFO
+from com.sun.star.logging.LogLevel import SEVERE
+
 from com.sun.star.document import XStorageChangeListener
 
 from com.sun.star.util import XCloseListener
@@ -44,9 +47,12 @@ from .unotool import getUrlTransformer
 from .unotool import hasInterface
 from .unotool import parseUrl
 
-from .dbconfig import g_protocol
-from .dbconfig import g_options
-from .dbconfig import g_shutdown
+from .configuration import g_protocol
+from .configuration import g_options
+from .configuration import g_shutdown
+
+from .configuration import g_errorlog
+from .configuration import g_basename
 
 import traceback
 
@@ -54,15 +60,17 @@ import traceback
 class DocumentHandler(unohelper.Base,
                       XCloseListener,
                       XStorageChangeListener):
-    def __init__(self, ctx, lock, url):
+    def __init__(self, ctx, lock, logger, url):
         self._ctx = ctx
         self._folder = 'database'
         self._prefix = '.'
         self._suffix = '.lck'
         self._lock = lock
+        self._logger = logger
         self._listening = False
         self._path, self._name = self._getDataBaseInfo(url)
         self._url = url
+        self._errorlog = None
 
     @property
     def URL(self):
@@ -70,23 +78,25 @@ class DocumentHandler(unohelper.Base,
 
     # XCloseListener
     def queryClosing(self, event, owner):
+        url = self._url
+        self._logger.logprb(INFO, 'DocumentHandler', 'queryClosing()', 201, url)
         with self._lock:
-            print("DocumentHandler.queryClosing() ******************************")
             document = event.Source
             if self._closeDataBase(document):
                 sf = getSimpleFile(self._ctx)
                 if sf.isFolder(self._path):
                     sf.kill(self._path)
             self._url = None
+        self._logger.logprb(INFO, 'DocumentHandler', 'queryClosing()', 202, url)
 
     def notifyClosing(self, event):
         pass
 
     # XStorageChangeListener
     def notifyStorageChange(self, document, storage):
+        url = document.getLocation()
+        self._logger.logprb(INFO, 'DocumentHandler', 'notifyStorageChange()', 211, url)
         with self._lock:
-            print("DocumentHandler.notifyStorageChange() ******************************")
-            url = document.getLocation()
             newpath, newname = self._getDataBaseInfo(url)
             if self._switchDataBase(document, storage, newname):
                 sf = getSimpleFile(self._ctx)
@@ -96,25 +106,29 @@ class DocumentHandler(unohelper.Base,
             self._name = newname
             self._url = url
             document.removeCloseListener(self)
+        self._logger.logprb(INFO, 'DocumentHandler', 'notifyStorageChange()', 212, url)
 
     # XEventListener
     def disposing(self, event):
-        #mri = createService(self._ctx, 'mytools.Mri')
-        #mri.inspect(event.Source)
+        url = self._url
+        self._logger.logprb(INFO, 'DocumentHandler', 'disposing()', 221, url)
         document = event.Source
         document.removeCloseListener(self)
         document.removeStorageChangeListener(self)
         self._url = None
-        print("DocumentHandler.disposing() ******************************")
-        #pass
+        self._logger.logprb(INFO, 'DocumentHandler', 'disposing()', 222, url)
 
     # DocumentHandler getter methods
-    def getDocumentInfo(self, document, storage, url):
+    def getConnectionUrl(self, document, storage, url):
         with self._lock:
-            # FIXME: With OpenOffice getElementNames() return a String
-            # FIXME: if storage has no elements.
-            if storage.hasElements():
-                self._openDataBase(storage)
+            sf = getSimpleFile(self._ctx)
+            if not sf.exists(self._path):
+                if storage.hasElements():
+                    # FIXME: With OpenOffice getElementNames() return a String
+                    # FIXME: if storage has no elements.
+                    self._openDataBase(sf, storage)
+                else:
+                    sf.createFolder(self._path)
             # FIXME: With OpenOffice there is no Document in the info
             # FIXME: parameter provided during the connection
             if document is None:
@@ -125,7 +139,9 @@ class DocumentHandler(unohelper.Base,
                 self._listening = True
             # FIXME: If storage has been changed the closeListener has been removed
             document.addCloseListener(self)
-            return document.DataSource, self._getConnectionUrl()
+            #mri = createService(self._ctx, 'mytools.Mri')
+            #mri.inspect(document)
+            return self._getConnectionUrl()
 
     # DocumentHandler private getter methods
     def _getDataBaseInfo(self, location):
@@ -179,51 +195,65 @@ class DocumentHandler(unohelper.Base,
         return name.replace(oldname, newname)
 
     def _closeDataBase(self, document):
-        target = document.getDocumentSubStorage(self._folder, READWRITE)
-        service = 'com.sun.star.embed.FileSystemStorageFactory'
-        args = (self._path, READWRITE)
-        source = createService(self._ctx, service).createInstanceWithArguments(args)
-        # FIXME: With OpenOffice getElementNames() return a String
-        # FIXME: if storage has no elements.
-        if source.hasElements():
-            for name in source.getElementNames():
-                if source.isStreamElement(name):
-                    if target.hasByName(name):
-                        target.removeElement(name)
-                    source.moveElementTo(name, target, name)
-            # FIXME: We need to clean the odb file if Save As as been used with a closed connection
-            if target.hasElements():
-                for name in target.getElementNames():
-                    if not name.startswith(self._name):
-                        target.removeElement(name)
-        empty = not source.hasElements()
-        target.commit()
-        target.dispose()
-        source.dispose()
-        document.store()
-        return empty
+        try:
+            target = document.getDocumentSubStorage(self._folder, READWRITE)
+            service = 'com.sun.star.embed.FileSystemStorageFactory'
+            args = (self._path, READWRITE)
+            source = createService(self._ctx, service).createInstanceWithArguments(args)
+            # FIXME: With OpenOffice getElementNames() return a String
+            # FIXME: if storage has no elements.
+            if source.hasElements():
+                for name in source.getElementNames():
+                    if source.isStreamElement(name):
+                        if target.hasByName(name):
+                            target.removeElement(name)
+                        self._logger.logprb(INFO, 'DocumentHandler', '_closeDataBase()', 231, name)
+                        source.moveElementTo(name, target, name)
+                        self._logger.logprb(INFO, 'DocumentHandler', '_closeDataBase()', 232, name)
+                # FIXME: We need to clean the odb file if Save As as been used with a closed connection
+                if target.hasElements():
+                    for name in target.getElementNames():
+                        if not name.startswith(self._name):
+                            target.removeElement(name)
+            empty = not source.hasElements()
+            target.commit()
+            target.dispose()
+            source.dispose()
+            document.store()
+            return empty
+        except Exception as e:
+            self._getErrorLog().logprb(SEVERE, 'DocumentHandler', '_closeDataBase()', 233, self._url, traceback.format_exc())
 
     def _switchDataBase(self, document, storage, newname):
-        target = storage.openStorageElement(self._folder, READWRITE)
-        service = 'com.sun.star.embed.FileSystemStorageFactory'
-        args = (self._path, READWRITE)
-        source = createService(self._ctx, service).createInstanceWithArguments(args)
-        # FIXME: With OpenOffice getElementNames() return a String
-        # FIXME: if storage has no elements.
-        if source.hasElements():
-            for name in source.getElementNames():
-                if source.isStreamElement(name):
-                    self._moveStorage(source, target, name, newname)
-        empty = not source.hasElements()
-        target.commit()
-        target.dispose()
-        source.dispose()
-        document.store()
-        return empty
+        try:
+            target = storage.openStorageElement(self._folder, READWRITE)
+            service = 'com.sun.star.embed.FileSystemStorageFactory'
+            args = (self._path, READWRITE)
+            source = createService(self._ctx, service).createInstanceWithArguments(args)
+            # FIXME: With OpenOffice getElementNames() return a String
+            # FIXME: if storage has no elements.
+            if source.hasElements():
+                for name in source.getElementNames():
+                    if source.isStreamElement(name):
+                        self._logger.logprb(INFO, 'DocumentHandler', '_switchDataBase()', 241, name)
+                        self._moveStorage(source, target, name, newname)
+                        self._logger.logprb(INFO, 'DocumentHandler', '_switchDataBase()', 242, name)
+            empty = not source.hasElements()
+            target.commit()
+            target.dispose()
+            source.dispose()
+            document.store()
+            return empty
+        except Exception as e:
+            self._getErrorLog().logprb(SEVERE, 'DocumentHandler', '_switchDataBase()', 243, self._url, traceback.format_exc())
+
+    def _getErrorLog(self):
+        if self._errorlog is None:
+            self._errorlog = getLogger(self._ctx, g_errorlog, g_basename)
+        return self._errorlog
 
     # DocumentHandler private setter methods
-    def _openDataBase(self, source):
-        sf = getSimpleFile(self._ctx)
+    def _openDataBase(self, sf, source):
         for name in source.getElementNames():
             url = self._getFileUrl(name)
             if not sf.exists(url):
@@ -240,4 +270,3 @@ class DocumentHandler(unohelper.Base,
         if target.hasByName(name):
             target.removeElement(name)
         source.moveElementTo(oldname, target, name)
-

@@ -79,6 +79,8 @@ published constants DataType2
 
     const long SQLNULL                  =     0;
 
+    const long ROWID                    =    -8;
+
 
     /** indicates that the SQL type is database-specific and
              gets mapped to an object that can be accessed via

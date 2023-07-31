@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf-8 -*-
+# -*- coding: utf_8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -27,62 +27,18 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
+from com.sun.star.logging.LogLevel import INFO
+from com.sun.star.logging.LogLevel import SEVERE
 
-from com.sun.star.awt import XDialogEventHandler
-from com.sun.star.awt import XItemListener
+from ..driver import Driver as DriverBase
 
 import traceback
 
 
-class DialogHandler(unohelper.Base,
-                    XDialogEventHandler):
-    def __init__(self, manager):
-        self._manager = manager
+class Driver(DriverBase):
 
-# XDialogEventHandler
-    def callHandlerMethod(self, dialog, event, method):
-        try:
-            handled = False
-            if method == 'Help':
-                handled = True
-            elif method == 'Previous':
-                self._manager.travelPrevious()
-                handled = True
-            elif method == 'Next':
-                self._manager.travelNext()
-                handled = True
-            elif method == 'Finish':
-                self._manager.doFinish()
-                handled = True
-            elif method == 'Cancel':
-                self._manager.doCancel()
-                handled = True
-            return handled
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+    def __init__(self, ctx, lock, service, name):
+        DriverBase.__init__(self, ctx, lock, service, name)
+        self._services = ('com.sun.star.sdbc.Driver', )
+        self._logger.logprb(INFO, 'Driver', '__init__()', 101)
 
-    def getSupportedMethodNames(self):
-        return ('Help',
-                'Previous',
-                'Next',
-                'Finish',
-                'Cancel')
-
-
-class ItemListener(unohelper.Base,
-                   XItemListener):
-    def __init__(self, manager):
-        self._manager = manager
-
-# XItemListener
-    def itemStateChanged(self, event):
-        try:
-            self._manager.changeRoadmapStep(event.ItemId)
-        except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
-            print(msg)
-
-    def disposing(self, event):
-        pass

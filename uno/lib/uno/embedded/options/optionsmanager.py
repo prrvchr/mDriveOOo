@@ -30,38 +30,51 @@
 import uno
 import unohelper
 
+from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
+
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .logmodel import LogModel
-from .logview import LogWindow
-from .logview import LogDialog
-from .loghandler import WindowHandler
-from .loghandler import DialogHandler
-from .loghandler import PoolListener
-from .loghandler import LoggerListener
+from .optionsmodel import OptionsModel
+from .optionsview import OptionsView
+from .optionshandler import OptionsListener
+from .optionshandler import Tab1Handler
+from .optionshandler import Tab2Handler
 
-from ..unotool import getDialog
-from ..unotool import getFileSequence
+from ..unotool import createService
+from ..unotool import getFilePicker
+from ..unotool import getSimpleFile
+from ..unotool import getUrl
 
-from .loghelper import getLoggerName
+from ..logger import LogManager
 
 from ..configuration import g_extension
 from ..configuration import g_identifier
+from ..configuration import g_defaultlog
 
+import os
+import sys
 import traceback
 
 
-class LogManager(unohelper.Base):
-    def __init__(self, ctx, parent, infos, filter, default):
+class OptionsManager(unohelper.Base):
+    def __init__(self, ctx, window):
         self._ctx = ctx
-        self._model = LogModel(ctx, default, PoolListener(self))
-        self._view = LogWindow(ctx, WindowHandler(self), parent)
-        self._infos = infos
-        self._filter = filter
-        self._dialog = None
+        self._disposed = False
         self._disabled = False
-        self._view.initLogger(self._model.getLoggerNames(filter))
+        self._model = OptionsModel(ctx)
+        print("OptionsManager.__init__() 1")
+        window.addEventListener(OptionsListener(self))
+        self._view = OptionsView(window, *self._model.getViewData())
+        version  = ' '.join(sys.version.split())
+        path = os.pathsep.join(sys.path)
+        infos = {111: version, 112: path}
+        self._logger = LogManager(ctx, window.getPeer(), infos, g_identifier, g_defaultlog)
+        print("OptionsManager.__init__() 2")
+
+    def dispose(self):
+        self._logger.dispose()
+        self._disposed = True
 
     # TODO: One shot disabler handler
     def isHandlerEnabled(self):
@@ -69,65 +82,32 @@ class LogManager(unohelper.Base):
             self._disabled = False
             return False
         return True
-    def disableHandler(self):
-        self._disabled = True
 
-# LogManager setter methods
-    def dispose(self):
-        self._model.dispose()
+# OptionsManager setter methods
+    def updateView(self, versions):
+        with self._lock:
+            self.updateVersion(versions)
 
-    # LogManager setter methods called by OptionsHandler
+    def updateVersion(self, versions):
+        with self._lock:
+            if not self._disposed:
+                protocol = self._view.getSelectedProtocol()
+                if protocol in versions:
+                    self._view.setVersion(versions[protocol])
+
     def saveSetting(self):
-        self._model.saveSetting()
+        self._logger.saveSetting()
+        if self._model.saveSetting() and self._model.isUpdated():
+            self._view.disableDriverLevel()
 
     def loadSetting(self):
-        self.disableHandler()
-        self._view.setLogSetting(self._model.loadSetting())
+        self._logger.loadSetting()
+        self._view.initView(*self._model.loadSetting())
 
-    # LogManager setter methods called by PoolListener
-    def updateLoggers(self):
-        logger = self._view.getLogger()
-        loggers = self._model.getLoggerNames(self._filter)
-        self._view.updateLoggers(loggers)
-        if logger in loggers:
-            self._view.setLogger(logger)
+    def setDriverService(self, driver):
+        print("OptionsManager.setDriverService() ************************")
+        self._view.setConnectionLevel(*self._model.setDriverService(driver))
 
-    # LogManager setter methods called by WindowHandler
-    def setLogger(self, name):
-        logger = name if self._filter is None else getLoggerName(name)
-        self.disableHandler()
-        self._view.setLogSetting(self._model.getLoggerSetting(logger))
+    def setConnectionService(self, level):
+        self._model.setConnectionService(level)
 
-    def enableLogger(self, enabled):
-        self._model.setLogSetting(self._view.getLogSetting())
-        self._view.enableLogger(enabled)
-
-    def toggleHandler(self, enabled):
-        self._model.setLogSetting(self._view.getLogSetting())
-        self._view.toggleHandler(enabled)
-
-    def viewLog(self):
-        handler = DialogHandler(self)
-        parent = self._view.getParent()
-        writable = True
-        data = self._model.getLoggerData()
-        self._dialog = LogDialog(self._ctx, handler, parent, g_extension, True, *data)
-        listener = LoggerListener(self)
-        self._model.addModifyListener(listener)
-        dialog = self._dialog.getDialog()
-        dialog.execute()
-        dialog.dispose()
-        self._model.removeModifyListener(listener)
-        self._dialog = None
-
-    def setLevel(self):
-        self._model.setLogSetting(self._view.getLogSetting())
-
-    # LogManager setter methods called by DialogHandler
-    def logInfos(self):
-        self._model.logInfos(INFO, self._infos, 'LogManager', 'logInfos()')
-
-    # LogManager setter methods called by LoggerListener
-    def updateLogger(self):
-        text, length = self._model.getLogContent()
-        self._dialog.updateLogger(text, length)
