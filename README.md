@@ -59,7 +59,7 @@ If you are using **LibreOffice on Linux**, you are subject to [bug 139538][15]. 
 - `sudo apt remove libreoffice-sdbc-hsqldb` (to uninstall the libreoffice-sdbc-hsqldb package)
 - `sudo apt remove libhsqldb1.8.0-java` (to uninstall the libhsqldb1.8.0-java package)
 
-If you still want to use the Embedded HsqlDB functionality provided by LibreOffice, then install the [HsqlDriverOOo][16] extension.  
+If you still want to use the Embedded HsqlDB functionality provided by LibreOffice, then install the [HyperSQLOOo][16] extension.  
 
 ___
 ## Installation:
@@ -189,7 +189,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [13]: <https://wiki.documentfoundation.org/Documentation/HowTo/Install_the_correct_JRE_-_LibreOffice_on_Windows_10>
 [14]: <https://adoptium.net/releases.html?variant=openjdk11>
 [15]: <https://bugs.documentfoundation.org/show_bug.cgi?id=139538>
-[16]: <https://prrvchr.github.io/HsqlDriverOOo/>
+[16]: <https://prrvchr.github.io/HyperSQLOOo/>
 [17]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.svg>
 [18]: <https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt>
 [19]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.svg>
