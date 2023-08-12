@@ -71,7 +71,7 @@ If necessary, rename it before installing it.
 
 You must first install this extension, if it is not already installed.
 
-- Install ![jdbcDriverOOo logo][19] **[jdbcDriverOOo.oxt][20]** extension version 1.0.0.
+- Install ![jdbcDriverOOo logo][19] **[jdbcDriverOOo.oxt][20]** extension version 1.0.3.
 
 You must install this extension, if it is not already installed.
 
