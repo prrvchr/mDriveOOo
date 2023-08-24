@@ -337,7 +337,9 @@ class Provider(ProviderBase):
 
     def parseUploadLocation(self, response):
         url =  None
-        if response.Ok:
+        if not response.Ok:
+            print("Provider.parseUploadLocation() Text: %s" % response.Text)
+        else:
             events = ijson.sendable_list()
             parser = ijson.parse_coro(events)
             iterator = response.iterContent(g_chunk, False)
@@ -462,18 +464,26 @@ class Provider(ProviderBase):
             parameter.setJson('@microsoft.graph.conflictBehavior', 'replace')
             print("Provider.createNewFolder() Parameter.Json: '%s'" % parameter.Json)
 
-        elif method in ('getUploadLocation', 'getNewUploadLocation'):
+        elif method == 'getUploadLocation':
+            parameter.Method = 'POST'
+            if data.get('Link') is None:
+                url = '/me/drive/items/%s/createUploadSession' % data.get('Id')
+            else:
+                url = '/drives/%s/items/%s/createUploadSession' % (data.get('Link'), data.get('Id'))
+            parameter.Url += url
+            print("Provider.getUploadLocation() Parameter.Json: '%s'" % parameter.Json)
+
+        elif method == 'getNewUploadLocation':
             parameter.Method = 'POST'
             if data.get('Link') is None:
                 url = '/me/drive/items/%s:/%s:/createUploadSession' % (data.get('ParentId'), data.get('Title'))
             else:
                 url = '/drives/%s/items/%s:/%s:/createUploadSession' % (data.get('Link'), data.get('ParentId'), data.get('Title'))
             parameter.Url += url
-            parameter.setJson('item/folder', None)
             parameter.setJson('item/@odata.type', 'microsoft.graph.driveItemUploadableProperties')
             parameter.setJson('item/@microsoft.graph.conflictBehavior', 'replace')
             parameter.setJson('item/name', data.get('Title'))
-            print("Provider.getUploadLocation() Parameter.Json: '%s'" % parameter.Json)
+            print("Provider.getNewUploadLocation() Parameter.Json: '%s'" % parameter.Json)
 
         elif method == 'getUploadStream':
             parameter.Method = 'PUT'
@@ -484,9 +494,9 @@ class Provider(ProviderBase):
         elif method == 'uploadFile':
             parameter.Method = 'PUT'
             if data.get('Link') is None:
-                url = '/me/drive/items/%s/content' % data.get('ItemId')
+                url = '/me/drive/items/%s/content' % data.get('Id')
             else:
-                url = '/drives/%s/items/%s/content' % (data.get('Link'), data.get('ItemId'))
+                url = '/drives/%s/items/%s/content' % (data.get('Link'), data.get('Id'))
             parameter.Url += url
 
         elif method == 'uploadNewFile':

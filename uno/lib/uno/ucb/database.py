@@ -197,7 +197,7 @@ class DataBase():
 
 # Procedures called by the Replicator
     def getMetaData(self, user, item):
-        itemid = item.get('ItemId')
+        itemid = item.get('Id')
         metadata = self.getItem(user, itemid, False)
         atroot = metadata.get('ParentId') == user.RootId
         metadata['AtRoot'] = atroot
@@ -463,17 +463,15 @@ class DataBase():
 
     # Procedure to retrieve all the UPDATE AND INSERT in the 'Capabilities' table
     def getPushItems(self, userid, start, end):
-        items = []
         select = self._getCall('getPushItems')
         select.setString(1, userid)
         select.setObject(2, start)
         select.setObject(3, end)
         result = select.executeQuery()
         while result.next():
-            items.append(getDataFromResult(result))
+            yield getDataFromResult(result)
         result.close()
         select.close()
-        return items
 
     def getPushProperties(self, userid, itemid, start, end):
         properties = []

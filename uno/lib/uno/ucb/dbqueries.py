@@ -557,31 +557,31 @@ CREATE PROCEDURE "GetPushItems"(IN USERID VARCHAR(100),
   BEGIN ATOMIC
     DECLARE "Result" CURSOR WITH RETURN FOR
       -- com.sun.star.ucb.ChangeAction.INSERT
-      (SELECT I."ItemId", 1 AS "ChangeAction", I."RowStart" AS "TimeStamp" 
+      (SELECT I."ItemId" AS "Id", 1 AS "ChangeAction", I."RowStart" AS "TimeStamp" 
         FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
         LEFT JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
           ON I."ItemId" = I2."ItemId" AND I."RowStart" = I2."RowEnd" 
         WHERE I2."ItemId" IS NULL AND I."SyncMode"=1 AND I."UserId" = USERID) 
       UNION
-      (SELECT "ItemId", SUM("ChangeAction"), MAX("TimeStamp") FROM (
+      (SELECT "Id", SUM("ChangeAction"), MAX("TimeStamp") FROM (
         -- com.sun.star.ucb.ChangeAction.UPDATE
-        SELECT I."ItemId", 2 AS "ChangeAction", MAX(I."RowEnd") AS "TimeStamp" 
+        SELECT I."ItemId" AS "Id", 2 AS "ChangeAction", MAX(I."RowEnd") AS "TimeStamp" 
           FROM "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I 
           INNER JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
             ON I."ItemId" = I2."ItemId" AND I2."RowStart" = I."RowEnd" 
           WHERE I2."SyncMode"=2 AND I."UserId" = USERID GROUP BY "ItemId", "ChangeAction" 
        UNION
         -- com.sun.star.ucb.ChangeAction.MOVE
-        SELECT P."ChildId" AS "ItemId", 4 AS "ChangeAction", MAX(I."RowEnd") AS "TimeStamp" 
+        SELECT P."ChildId" AS "Id", 4 AS "ChangeAction", MAX(I."RowEnd") AS "TimeStamp" 
           FROM "Parents" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS P 
           INNER JOIN "Items" AS I ON P."ChildId" = I."ItemId"
           INNER JOIN "Parents" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS P2 
             ON P."ChildId" = P2."ChildId" AND P2."RowStart"=P."RowEnd" 
           WHERE P2."SyncMode"=2 AND I."UserId" = USERID GROUP BY "ChildId", "ChangeAction") 
-      GROUP BY "ItemId")
+      GROUP BY "Id")
       UNION
       -- com.sun.star.ucb.ChangeAction.DELETE
-      (SELECT I."ItemId", 8 AS "ChangeAction", I."RowEnd" AS "TimeStamp" 
+      (SELECT I."ItemId" AS "Id", 8 AS "ChangeAction", I."RowEnd" AS "TimeStamp" 
         FROM "Items" FOR SYSTEM_TIME AS OF STARTTIME AS I 
         LEFT JOIN "Items" FOR SYSTEM_TIME FROM STARTTIME TO STOPTIME AS I2 
           ON I."ItemId" = I2."ItemId" 
