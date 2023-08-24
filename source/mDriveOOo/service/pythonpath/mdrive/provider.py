@@ -129,6 +129,8 @@ class Provider(ProviderBase):
                 for prefix, event, value in events:
                     if (prefix, event) == ('value.item', 'start_map'):
                         itemid = link = name = None
+                        created = modified = timestamp
+                        mimetype = g_folder
                         size = 0
                     elif (prefix, event) == ('value.item.remoteItem.id', 'string'):
                         itemid = value
@@ -138,8 +140,14 @@ class Provider(ProviderBase):
                         name = value
                     elif (prefix, event) == ('value.item.remoteItem.size', 'number'):
                         size = value
+                    elif (prefix, event) == ('value.item.createdDateTime', 'string'):
+                        created = self.parseDateTime(value)
+                    elif (prefix, event) == ('value.item.lastModifiedDateTime', 'string'):
+                        modified = self.parseDateTime(value)
+                    elif (prefix, event) == ('value.item.remoteItem.file.mimeType', 'string'):
+                        mimetype = value
                     elif (prefix, event) == ('value.item', 'end_map'):
-                        yield itemid, name, timestamp, timestamp, g_folder, size, link, False, True, False, False, False, None, parents
+                        yield itemid, name, created, modified, mimetype, size, link, False, True, False, False, False, None, parents
                 del events[:]
             parser.close()
             response.close()
