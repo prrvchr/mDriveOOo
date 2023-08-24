@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][3] et à notre [Politique de protection des données][4].**
 
-# version [1.0.0][5]
+# version [1.0.1][5]
 
 ## Introduction:
 
@@ -67,15 +67,15 @@ ___
 Il semble important que le fichier n'ait pas été renommé lors de son téléchargement.  
 Si nécessaire, renommez-le avant de l'installer.
 
-- Installer l'extension ![OAuth2OOo logo][17] **[OAuth2OOo.oxt][18]** version 1.1.0.
+- Installer l'extension ![OAuth2OOo logo][17] **[OAuth2OOo.oxt][18]** version 1.1.1.
 
 Vous devez d'abord installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![jdbcDriverOOo logo][19] **[jdbcDriverOOo.oxt][20]** version 1.0.3.
+- Installer l'extension ![jdbcDriverOOo logo][19] **[jdbcDriverOOo.oxt][20]** version 1.0.4.
 
 Vous devez installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** version 1.0.0.
+- Installer l'extension ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** version 1.0.1.
 
 Redémarrez LibreOffice / OpenOffice après l'installation.
 
@@ -91,6 +91,8 @@ Dans: **Fichier -> Ouvrir** saisir dans la première liste déroulante:
 ou
 
 - Pour une url non nommée (anonyme): **vnd-microsoft:///**
+
+Et validez non pas par le bouton **Ouvrir** mais par la touche **Entrée**.
 
 Si vous ne donnez pas **votre_adresse@votre_fournisseur**, elle vous sera demandée...
 
@@ -168,7 +170,19 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 
 - Beaucoup d'autres correctifs...
 
-### Que reste-t-il à faire pour la version 0.0.6:
+### Ce qui a été fait pour la version 1.0.0:
+
+- Renommage de l'extension OneDriveOOo en mDriveOOo.
+
+### Ce qui a été fait pour la version 1.0.1:
+
+- Mise en place de la gestion des fichiers partagés comme réclamé dans la demande d'amélioration, voir [dysfonctionnement 9][42].
+
+- Le nom du dossier partagé peut être défini avant toute connexion dans: **Outils -> Options -> Internet -> mDriveOOo -> Gérer les documents partagés dans le dossier:**
+
+- Beaucoup d'autres correctifs...
+
+### Que reste-t-il à faire pour la version 1.0.1:
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 
@@ -214,3 +228,4 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [39]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L557>
 [40]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L494>
 [41]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/options/ucb>
+[42]: <https://github.com/prrvchr/mDriveOOo/issues/9>

@@ -130,6 +130,12 @@ class Provider(object):
     @property
     def SupportDuplicate(self):
         return False
+    @property
+    def SupportSharedDocuments(self):
+        return self._config.getByName('SupportShare') and self._config.getByName('SharedDocuments')
+    @property
+    def SharedFolderName(self):
+        return self._config.getByName('SharedFolderName')
 
     # Method called by Content
     def updateFolderContent(self, content):
@@ -162,14 +168,19 @@ class Provider(object):
         response.close()
 
     def firstPull(self, user):
-        timestamp = currentDateTimeInTZ()
+        datetime = currentDateTimeInTZ()
         page = count = 0
+        if self.SupportSharedDocuments:
+            self.initSharedDocuments(user, datetime)
         for root in self.getFirstPullRoots(user):
             parameter = self.getRequestParameter(user.Request, 'getFirstPull', root)
             iterator = self.parseItems(user.Request, parameter)
-            count +=  user.DataBase.pullItems(iterator, user.Id, timestamp)
+            count +=  user.DataBase.pullItems(iterator, user.Id, datetime)
             page += parameter.PageCount
         return page, count, parameter.SyncToken
+
+    def initSharedDocuments(self, user, datetime):
+        pass # You must implement this method in Provider to be able to handle Shared Documents
 
     def pullUser(self, user):
         timestamp = currentDateTimeInTZ()

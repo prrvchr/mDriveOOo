@@ -65,7 +65,10 @@ class OptionsHandler(unohelper.Base,
                 elif event == 'back':
                     self._manager.loadSetting()
                     handled = True
-            elif method == 'EnabledSync':
+            elif method == 'EnableShare':
+                self._manager.enableShare(bool(event.Source.State))
+                handled = True
+            elif method == 'EnableSync':
                 self._manager.enableTimeout(True)
                 handled = True
             elif method == 'DisableSync':
@@ -87,7 +90,8 @@ class OptionsHandler(unohelper.Base,
 
     def getSupportedMethodNames(self):
         return ('external_event',
-                'EnabledSync',
+                'EnableShare',
+                'EnableSync',
                 'DisableSync',
                 'ViewData',
                 'Download',

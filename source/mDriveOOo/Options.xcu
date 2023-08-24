@@ -29,6 +29,16 @@
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:oor="http://openoffice.org/2001/registry"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <prop oor:name="SupportShare">
+    <value>true</value>
+  </prop>
+  <prop oor:name="SharedDocuments">
+    <value>true</value>
+  </prop>
+  <prop oor:name="SharedFolderName">
+    <value xml:lang="en">Shared documents</value>
+    <value xml:lang="fr">Documents partagés</value>
+  </prop>
   <prop oor:name="ReplicateTimeout">
     <value>600</value>
   </prop>

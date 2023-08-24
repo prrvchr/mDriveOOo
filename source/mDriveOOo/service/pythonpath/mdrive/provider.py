@@ -107,14 +107,52 @@ class Provider(ProviderBase):
         root = self._getRoot(source, request, name)
         return user, root
 
-    def parseRootFolder(self, parameter, content):
-        return self.parseItems(content.User.Request, parameter)
+    def initSharedDocuments(self, user, datetime):
+        itemid = '123456789'
+        timestamp = currentUnoDateTime()
+        user.DataBase.createSharedFolder(user, itemid, self.SharedFolderName, g_folder, datetime, timestamp)
+        parameter = self.getRequestParameter(user.Request, 'getSharedFolderContent')
+        iterator = self._parseSharedFolder(user.Request, parameter, itemid, timestamp)
+        user.DataBase.pullItems(iterator, user.Id, datetime, 0)
 
-    def parseItems(self, request, parameter):
+    def _parseSharedFolder(self, request, parameter, itemid, timestamp):
+        parents = [itemid, ]
         while parameter.hasNextPage():
             response = request.execute(parameter)
             if not response.Ok:
                 break
+            events = ijson.sendable_list()
+            parser = ijson.parse_coro(events)
+            iterator = response.iterContent(g_chunk, False)
+            while iterator.hasMoreElements():
+                parser.send(iterator.nextElement().value)
+                for prefix, event, value in events:
+                    if (prefix, event) == ('value.item', 'start_map'):
+                        itemid = link = name = None
+                        size = 0
+                    elif (prefix, event) == ('value.item.remoteItem.id', 'string'):
+                        itemid = value
+                    elif (prefix, event) == ('value.item.remoteItem.parentReference.driveId', 'string'):
+                        link = value
+                    elif (prefix, event) == ('value.item.remoteItem.name', 'string'):
+                        name = value
+                    elif (prefix, event) == ('value.item.remoteItem.size', 'number'):
+                        size = value
+                    elif (prefix, event) == ('value.item', 'end_map'):
+                        yield itemid, name, timestamp, timestamp, g_folder, size, link, False, True, False, False, False, None, parents
+                del events[:]
+            parser.close()
+            response.close()
+
+    def parseRootFolder(self, parameter, content):
+        return self.parseItems(content.User.Request, parameter, content.Link)
+
+    def parseItems(self, request, parameter, link=None):
+        while parameter.hasNextPage():
+            response = request.execute(parameter)
+            if not response.Ok:
+                break
+            timestamp = currentUnoDateTime()
             events = ijson.sendable_list()
             parser = ijson.parse_coro(events)
             iterator = response.iterContent(g_chunk, False)
@@ -127,7 +165,7 @@ class Provider(ProviderBase):
                         parameter.setNextPage('', value, REDIRECT)
                     elif (prefix, event) == ('value.item', 'start_map'):
                         itemid = name = None
-                        created = modified = currentUnoDateTime()
+                        created = modified = timestamp
                         mimetype = g_folder
                         size = 0
                         addchild = canrename = True
@@ -150,7 +188,7 @@ class Provider(ProviderBase):
                     elif (prefix, event) == ('value.item.parentReference.id', 'string'):
                         parents.append(value)
                     elif (prefix, event) == ('value.item', 'end_map'):
-                        yield itemid, name, created, modified, mimetype, size, trashed, True, True, False, False, None, parents
+                        yield itemid, name, created, modified, mimetype, size, link, trashed, True, True, False, False, None, parents
                 del events[:]
             parser.close()
             response.close()
@@ -204,29 +242,32 @@ class Provider(ProviderBase):
         return url
 
     def mergeNewFolder(self, user, oldid, response):
-        item = self._parseNewFolder(response)
-        if all(item):
-            return user.DataBase.updateNewItemId(oldid, *item)
-        return None
+        newid = None
+        if response.Ok:
+            items = self._parseNewFolder(response)
+            if all(items):
+                newid = user.DataBase.updateNewItemId(oldid, *items)
+        else:
+            print("Provider.mergeNewFolder() %s" % response.Text)
+        response.close()
+        return newid
 
     def _parseNewFolder(self, response):
         newid = created = modified = None
-        if response.Ok:
-            events = ijson.sendable_list()
-            parser = ijson.parse_coro(events)
-            iterator = response.iterContent(g_chunk, False)
-            while iterator.hasMoreElements():
-                parser.send(iterator.nextElement().value)
-                for prefix, event, value in events:
-                    if (prefix, event) == ('id', 'string'):
-                        newid = value
-                    elif (prefix, event) == ('createdDateTime', 'string'):
-                        created = self.parseDateTime(value)
-                    elif (prefix, event) == ('lastModifiedDateTime', 'string'):
-                        modified = self.parseDateTime(value)
-                del events[:]
-            parser.close()
-        response.close()
+        events = ijson.sendable_list()
+        parser = ijson.parse_coro(events)
+        iterator = response.iterContent(g_chunk, False)
+        while iterator.hasMoreElements():
+            parser.send(iterator.nextElement().value)
+            for prefix, event, value in events:
+                if (prefix, event) == ('id', 'string'):
+                    newid = value
+                elif (prefix, event) == ('createdDateTime', 'string'):
+                    created = self.parseDateTime(value)
+                elif (prefix, event) == ('lastModifiedDateTime', 'string'):
+                    modified = self.parseDateTime(value)
+            del events[:]
+        parser.close()
         return newid, created, modified
 
     def _getUser(self, source, request, name):
@@ -354,13 +395,25 @@ class Provider(ProviderBase):
             parameter.Url = data.Token
             print("Provider. Name: %s - Url: %s" % (parameter.Name, parameter.Url))
 
+        elif method == 'getSharedFolderContent':
+            parameter.Url += '/me/drive/sharedWithMe'
+
         elif method == 'getFolderContent':
-            parameter.Url += '/me/drive/items/%s/children' % data.Id
+            if data.Link is None:
+                url = '/me/drive/items/%s/children' % data.Id
+            else:
+                url = '/drives/%s/items/%s/children' % (data.Link, data.Id)
+            print("Provider.getFolderContent() Url: %s" % url)
+            parameter.Url += url
             parameter.setQuery('$select', g_itemfields)
             parameter.setQuery('$top', g_pages)
 
         elif method == 'getDocumentLocation':
-            parameter.Url += '/me/drive/items/%s/content' % data.Id
+            if data.Link is None:
+                url = '/me/drive/items/%s/content' % data.Id
+            else:
+                url = '/drives/%s/items/%s/content' % (data.Link, data.Id)
+            parameter.Url += url
             print("Provider.getRequestParameter() Name: %s - Url: %s" % (parameter.Name, parameter.Url))
             parameter.NoRedirect = True
 
@@ -389,15 +442,25 @@ class Provider(ProviderBase):
 
         elif method == 'createNewFolder':
             parameter.Method = 'POST'
-            parameter.Url += '/me/drive/items/%s/children' % data.get('ParentId')
+            if data.get('Link') is None:
+                url = '/me/drive/items/%s/children' % data.get('ParentId')
+            else:
+                url = '/drives/%s/items/%s/children' % (data.get('Link'), data.get('ParentId'))
+            parameter.Url += url
             parameter.setJson('name', data.get('Title'))
-            parameter.setJson('folder', None)
+            # FIXME: We need to bee able to construct a JSON object like:
+            # FIXME: {folder:{}, } then it's done by a trailing slash...
+            parameter.setJson('folder/', None)
             parameter.setJson('@microsoft.graph.conflictBehavior', 'replace')
             print("Provider.createNewFolder() Parameter.Json: '%s'" % parameter.Json)
 
         elif method in ('getUploadLocation', 'getNewUploadLocation'):
             parameter.Method = 'POST'
-            parameter.Url += '/me/drive/items/%s:/%s:/createUploadSession' % (data.get('ParentId'), data.get('Title'))
+            if data.get('Link') is None:
+                url = '/me/drive/items/%s:/%s:/createUploadSession' % (data.get('ParentId'), data.get('Title'))
+            else:
+                url = '/drives/%s/items/%s:/%s:/createUploadSession' % (data.get('Link'), data.get('ParentId'), data.get('Title'))
+            parameter.Url += url
             parameter.setJson('item/folder', None)
             parameter.setJson('item/@odata.type', 'microsoft.graph.driveItemUploadableProperties')
             parameter.setJson('item/@microsoft.graph.conflictBehavior', 'replace')
@@ -412,10 +475,18 @@ class Provider(ProviderBase):
 
         elif method == 'uploadFile':
             parameter.Method = 'PUT'
-            parameter.Url = '/me/drive/items/%s/content' % data.get('ItemId')
+            if data.get('Link') is None:
+                url = '/me/drive/items/%s/content' % data.get('ItemId')
+            else:
+                url = '/drives/%s/items/%s/content' % (data.get('Link'), data.get('ItemId'))
+            parameter.Url += url
 
         elif method == 'uploadNewFile':
             parameter.Method = 'PUT'
-            parameter.Url = '/me/drive/items/%s:/%s:/content' % (data.get('ParentId'), data.get('Title'))
+            if data.get('Link') is None:
+                url = '/me/drive/items/%s:/%s:/content' % (data.get('ParentId'), data.get('Title'))
+            else:
+                url = '/drives/%s/items/%s:/%s:/content' % (data.get('Link'), data.get('ParentId'), data.get('Title'))
+            parameter.Url += url
         return parameter
 

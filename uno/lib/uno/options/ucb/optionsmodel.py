@@ -64,13 +64,17 @@ class OptionsModel(unohelper.Base):
         return self._config.getByName('ResumableUpload')
 
     def getViewData(self):
-        return self._getPolicy(), self._getTimeout(), self._getDownload(), self._getUpload()
+        return (self._supportShare(), self._isShared(), self._getShare(),
+                self._getPolicy(), self._getTimeout(),
+                self._getDownload(), self._getUpload())
 
     def getDatasourceUrl(self):
         return self._url
 
 # OptionsModel setter methods
-    def setViewData(self, index, timeout, download, upload):
+    def setViewData(self, share, name, index, timeout, download, upload):
+        self._setShared(share)
+        self._setShare(name)
         self._setPolicy(index)
         self._setTimeout(timeout)
         self._setDownload(download)
@@ -79,6 +83,15 @@ class OptionsModel(unohelper.Base):
             self._config.commitChanges()
 
 # OptionsModel private getter methods
+    def _supportShare(self):
+        return self._config.getByName('SupportShare')
+
+    def _isShared(self):
+        return self._config.getByName('SharedDocuments')
+
+    def _getShare(self):
+        return self._config.getByName('SharedFolderName')
+
     def _getPolicy(self):
         policy = self._config.getByName('SynchronizePolicy')
         return self._policies.get(policy)
@@ -110,6 +123,13 @@ class OptionsModel(unohelper.Base):
         return setting
 
 # OptionsModel private setter methods
+    def _setShared(self, enabled):
+        self._config.replaceByName('SharedDocuments', enabled)
+
+    def _setShare(self, name):
+        if name:
+            self._config.replaceByName('SharedFolderName', name)
+
     def _setPolicy(self, index):
         policy = self._getSynchronizePolicy(index)
         self._config.replaceByName('SynchronizePolicy', policy)

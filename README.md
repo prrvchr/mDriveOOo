@@ -29,7 +29,7 @@
 
 **The use of this software subjects you to our [Terms Of Use][3] and [Data Protection Policy][4].**
 
-# version [1.0.0][5]
+# version [1.0.1][5]
 
 ## Introduction:
 
@@ -67,15 +67,15 @@ ___
 It seems important that the file was not renamed when it was downloaded.
 If necessary, rename it before installing it.
 
-- Install ![OAuth2OOo logo][17] **[OAuth2OOo.oxt][18]** extension version 1.1.0.
+- Install ![OAuth2OOo logo][17] **[OAuth2OOo.oxt][18]** extension version 1.1.1.
 
 You must first install this extension, if it is not already installed.
 
-- Install ![jdbcDriverOOo logo][19] **[jdbcDriverOOo.oxt][20]** extension version 1.0.3.
+- Install ![jdbcDriverOOo logo][19] **[jdbcDriverOOo.oxt][20]** extension version 1.0.4.
 
 You must install this extension, if it is not already installed.
 
-- Install ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** extension version 1.0.0.
+- Install ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** extension version 1.0.1.
 
 Restart LibreOffice / OpenOffice after installation.
 
@@ -91,6 +91,8 @@ In **File -> Open** enter in the first drop-down list:
 or
 
 - For an unnamed Url (anonymous): **vnd-microsoft:///**
+
+And validate not by the **Open** button but by the **Enter** key.
 
 If you don't give **your_email@your_provider**, you will be asked for...
 
@@ -168,7 +170,19 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 
 - Many other fix...
 
-### What remains to be done for version 0.0.6:
+### What has been done for version 1.0.0:
+
+- Renamed OneDriveOOo extension to mDriveOOo.
+
+### What has been done for version 1.0.1:
+
+- Implementation of the management of shared files as requested in the request for improvement, see [issue 9][42].
+
+- The name of the shared folder can be defined before any connection in: **Tools -> Options -> Internet -> mDriveOOo -> Handle shared documents in folder:**
+
+- Many other fix...
+
+### What remains to be done for version 1.0.1:
 
 - Add new language for internationalization...
 
@@ -214,3 +228,4 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [39]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L557>
 [40]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L494>
 [41]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/options/ucb>
+[42]: <https://github.com/prrvchr/mDriveOOo/issues/9>

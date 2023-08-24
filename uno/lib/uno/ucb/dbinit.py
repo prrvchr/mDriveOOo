@@ -186,6 +186,7 @@ def getQueries():
             ('createGetPushProperties',{'Role': g_role}),
             ('createGetItemParentIds',{'Role': g_role}),
             ('createInsertUser',{'Role': g_role}),
+            ('createInsertSharedFolder',{'Role': g_role}),
             ('createMergeItem',{'Role': g_role}),
             ('createMergeParent',{'Role': g_role}),
             ('createInsertItem',{'Role': g_role}),

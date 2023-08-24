@@ -4,8 +4,8 @@ Table|Column|Type|Default|Options|Primary|Unique|ForeignTable|ForeignColumn
 0|2|VARCHAR(100)|||false|false||
 0|3|VARCHAR(100)||NOT NULL|false|false||
 0|4|VARCHAR(1000)|''|NOT NULL|false|false||
-0|14|SMALLINT|0|NOT NULL|false|false||
-0|19|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
+0|15|SMALLINT|0|NOT NULL|false|false||
+0|20|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
 1|0|VARCHAR(100)||NOT NULL|false|false|0|0
 1|5|VARCHAR(100)||NOT NULL|true|false||
 1|6|VARCHAR(100)|||false|false||
@@ -13,21 +13,22 @@ Table|Column|Type|Default|Options|Primary|Unique|ForeignTable|ForeignColumn
 1|8|TIMESTAMP(6)|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
 1|9|VARCHAR(100)|'application/octet-stream'|NOT NULL|false|false||
 1|10|BIGINT|0|NOT NULL|false|false||
-1|11|BOOLEAN|FALSE|NOT NULL|false|false||
-1|12|SMALLINT|0|NOT NULL|false|false||
-1|14|SMALLINT|0|NOT NULL|false|false||
-1|19|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
+1|11|VARCHAR(256)|NULL||false|false||
+1|12|BOOLEAN|FALSE|NOT NULL|false|false||
+1|13|SMALLINT|0|NOT NULL|false|false||
+1|15|SMALLINT|0|NOT NULL|false|false||
+1|20|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
 2|5|VARCHAR(100)||NOT NULL|false|false|1|5
-2|13|VARCHAR(100)||NOT NULL|false|false|1|5
-2|14|SMALLINT|0|NOT NULL|false|false||
-2|19|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
+2|14|VARCHAR(100)||NOT NULL|false|false|1|5
+2|15|SMALLINT|0|NOT NULL|false|false||
+2|20|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
 3|0|VARCHAR(100)||NOT NULL|true|false|0|0
 3|5|VARCHAR(100)||NOT NULL|true|false|1|5
-3|15|BOOLEAN|TRUE|NOT NULL|false|false||
 3|16|BOOLEAN|TRUE|NOT NULL|false|false||
-3|17|BOOLEAN|FALSE|NOT NULL|false|false||
+3|17|BOOLEAN|TRUE|NOT NULL|false|false||
 3|18|BOOLEAN|FALSE|NOT NULL|false|false||
-3|19|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
+3|19|BOOLEAN|FALSE|NOT NULL|false|false||
+3|20|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
 4|0|VARCHAR(100)||NOT NULL|false|false|0|0
 4|5|VARCHAR(100)||NOT NULL|true|false||
-4|19|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
+4|20|TIMESTAMP(6) WITH TIME ZONE|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||

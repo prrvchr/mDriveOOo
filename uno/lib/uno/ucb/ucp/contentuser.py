@@ -188,8 +188,8 @@ class ContentUser():
         # FIXME: We need to remove all the child of a resource (if it's a folder)
          self._expired = identifier.getContentIdentifier()
 
-    def createNewContent(self, id, path, authority, contentype):
-        data = self._getNewContent(id, path, contentype)
+    def createNewContent(self, id, link, path, authority, contentype):
+        data = self._getNewContent(id, link, path, contentype)
         content = Content(self._ctx, self, authority, path, data)
         return content
 
@@ -237,7 +237,7 @@ class ContentUser():
         name = self.Name if authority else ''
         return '%s://%s' % (g_scheme, name)
 
-    def _getNewContent(self, parentid, path, contentype):
+    def _getNewContent(self, parentid, link, path, contentype):
         timestamp = currentUnoDateTime()
         isfolder = self.Provider.isFolder(contentype)
         isdocument = self.Provider.isDocument(contentype)
@@ -254,6 +254,7 @@ class ContentUser():
         data['ContentType'] = contentype
         mediatype = '' if isdocument else contentype
         data['MediaType'] = mediatype
+        data['Link'] = link
         data['Size'] = 0
         data['Trashed'] = False
         data['IsRoot'] = False

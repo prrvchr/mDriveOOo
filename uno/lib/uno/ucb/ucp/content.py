@@ -119,6 +119,9 @@ class Content(unohelper.Base,
     def IsFolder(self):
         return self.MetaData.get('IsFolder')
     @property
+    def IsLink(self):
+        return self.MetaData.get('IsLink')
+    @property
     def IsDocument(self):
         return self.MetaData.get('IsDocument')
     @property
@@ -137,6 +140,12 @@ class Content(unohelper.Base,
     @property
     def Path(self):
         return self.MetaData.get('Path')
+    @property
+    def Size(self):
+        return self.MetaData.get('Size')
+    @property
+    def Link(self):
+        return self.MetaData.get('Link')
     @property
     def Title(self):
         return self.MetaData.get('Title')
@@ -197,7 +206,7 @@ class Content(unohelper.Base,
         return self._user.getCreatableContentsInfo(self.CanAddChild)
     def createNewContent(self, info):
         path = self._user.getContentPath(self.Path, self.Title, self.IsRoot)
-        return self._user.createNewContent(self.Id, path, self._authority, info.Type)
+        return self._user.createNewContent(self.Id, self.Link, path, self._authority, info.Type)
 
     # XContent
     def getIdentifier(self):
@@ -555,9 +564,11 @@ class Content(unohelper.Base,
 
     def _updateFolderContent(self, properties):
         updated = False
+        print("Content._updateFolderContent() 1 ConnectionMode: %s - SessionMode: %s" % (self.ConnectionMode,self._user.SessionMode))
         if ONLINE == self.ConnectionMode == self._user.SessionMode:
             url = self._user.getContentPath(self.Path, self.Title, self.IsRoot)
             self._logger.logprb(INFO, 'Content', '_updateFolderContent()', 411, url)
+            print("Content._updateFolderContent() 2 Url: %s" % url)
             updated = self._user.Provider.updateFolderContent(self)
         mode = self._user.SessionMode
         scheme = self._user.getContentScheme(self._authority)

@@ -52,19 +52,22 @@ class OptionsManager(unohelper.Base):
         self._model = OptionsModel(ctx)
         exist = self._model.hasData()
         resumable = self._model.isResumable()
-        index, timeout, download, upload = self._model.getViewData()
-        self._view = OptionsView(window, exist, resumable, index, timeout, download, upload)
+        data = self._model.getViewData()
+        self._view = OptionsView(window, exist, resumable, data)
         self._logger = LogManager(ctx, window.Peer, self._getInfos(), g_identifier, g_defaultlog)
 
     def saveSetting(self):
-        index, timeout, download, upload = self._view.getViewData()
-        self._model.setViewData(index, timeout, download, upload)
+        share, name, index, timeout, download, upload = self._view.getViewData()
+        self._model.setViewData(share, name, index, timeout, download, upload)
         self._logger.saveSetting()
 
     def loadSetting(self):
-        index, timeout, download, upload = self._model.getViewData()
-        self._view.setViewData(index, timeout, download, upload)
+        data = self._model.getViewData()
+        self._view.setViewData(*data)
         self._logger.loadSetting()
+
+    def enableShare(self, enabled):
+        self._view.enableShare(enabled)
 
     def enableTimeout(self, enabled):
         self._view.enableTimeout(enabled)
