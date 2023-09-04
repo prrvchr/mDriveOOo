@@ -158,6 +158,10 @@ def hasInterface(component, interface):
             return True
     return False
 
+def hasService(ctx, name):
+    service = createService(ctx, name)
+    return service is not None
+
 def getComponentTypes(component):
     try:
         types = component.getTypes()

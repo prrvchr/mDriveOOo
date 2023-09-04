@@ -117,20 +117,21 @@ class OptionsModel(unohelper.Base):
         return '%d' % level
 
     def _getDriverVersion(self):
+        version = 'N/A'
         try:
             service = self._config.getByName('DriverService')
             driver = createService(self._ctx, service)
-            connection = driver.connect(self._url, ())
-            version = connection.getMetaData().getDriverVersion()
-            connection.close()
-            driver.dispose()
-            return version
+            # FIXME: If jdbcDriverOOo extension has not been installed then driver is None
+            if driver is not None:
+                connection = driver.connect(self._url, ())
+                version = connection.getMetaData().getDriverVersion()
+                connection.close()
+                driver.dispose()
         except UnoException as e:
-            print("OptionsModel._getDriverVersion() Error: %s" % e.Message)
-            logger = getLogger(self._ctx, g_defaultlog, g_basename)
-            logger.logprb(SEVERE, 'OptionsModel', '_getDriverVersion()', 141, e.Message)
+            self._getLogger().logprb(SEVERE, 'OptionsModel', '_getDriverVersion()', 141, e.Message)
         except Exception as e:
-            print("OptionsModel._getDriverVersion() Error: %s - Traceback: %s" % (e, traceback.format_exc()))
-            logger = getLogger(self._ctx, g_defaultlog, g_basename)
-            logger.logprb(SEVERE, 'OptionsModel', '_getDriverVersion()', 142, str(e), traceback.format_exc())
+            self._getLogger().logprb(SEVERE, 'OptionsModel', '_getDriverVersion()', 142, str(e), traceback.format_exc())
+        return version
 
+    def _getLogger(self):
+        return getLogger(self._ctx, g_defaultlog, g_basename)

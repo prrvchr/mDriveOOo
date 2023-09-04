@@ -67,6 +67,7 @@ from .unotool import getUrl
 from .unotool import getUrlPresentation
 from .unotool import getUrlTransformer
 from .unotool import hasInterface
+from .unotool import hasService
 from .unotool import parseDateTime
 from .unotool import parseUrl
 from .unotool import unparseDateTime

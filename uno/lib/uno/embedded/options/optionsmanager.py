@@ -63,14 +63,12 @@ class OptionsManager(unohelper.Base):
         self._disposed = False
         self._disabled = False
         self._model = OptionsModel(ctx)
-        print("OptionsManager.__init__() 1")
         window.addEventListener(OptionsListener(self))
         self._view = OptionsView(window, *self._model.getViewData())
         version  = ' '.join(sys.version.split())
         path = os.pathsep.join(sys.path)
         infos = {111: version, 112: path}
         self._logger = LogManager(ctx, window.getPeer(), infos, g_identifier, g_defaultlog)
-        print("OptionsManager.__init__() 2")
 
     def dispose(self):
         self._logger.dispose()
@@ -105,7 +103,6 @@ class OptionsManager(unohelper.Base):
         self._view.initView(*self._model.loadSetting())
 
     def setDriverService(self, driver):
-        print("OptionsManager.setDriverService() ************************")
         self._view.setConnectionLevel(*self._model.setDriverService(driver))
 
     def setConnectionService(self, level):

@@ -51,9 +51,6 @@ from .configuration import g_protocol
 from .configuration import g_options
 from .configuration import g_shutdown
 
-from .configuration import g_errorlog
-from .configuration import g_basename
-
 import traceback
 
 
@@ -70,7 +67,6 @@ class DocumentHandler(unohelper.Base,
         self._listening = False
         self._path, self._name = self._getDataBaseInfo(url)
         self._url = url
-        self._errorlog = None
 
     @property
     def URL(self):
@@ -208,21 +204,21 @@ class DocumentHandler(unohelper.Base,
                         if target.hasByName(name):
                             target.removeElement(name)
                         self._logger.logprb(INFO, 'DocumentHandler', '_closeDataBase()', 231, name)
-                        source.moveElementTo(name, target, name)
+                        source.copyElementTo(name, target, name)
                         self._logger.logprb(INFO, 'DocumentHandler', '_closeDataBase()', 232, name)
                 # FIXME: We need to clean the odb file if Save As as been used with a closed connection
                 if target.hasElements():
                     for name in target.getElementNames():
                         if not name.startswith(self._name):
                             target.removeElement(name)
-            empty = not source.hasElements()
             target.commit()
             target.dispose()
             source.dispose()
             document.store()
-            return empty
+            return True
         except Exception as e:
-            self._getErrorLog().logprb(SEVERE, 'DocumentHandler', '_closeDataBase()', 233, self._url, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'DocumentHandler', '_closeDataBase()', 233, self._url, traceback.format_exc())
+            return False
 
     def _switchDataBase(self, document, storage, newname):
         try:
@@ -238,19 +234,14 @@ class DocumentHandler(unohelper.Base,
                         self._logger.logprb(INFO, 'DocumentHandler', '_switchDataBase()', 241, name)
                         self._moveStorage(source, target, name, newname)
                         self._logger.logprb(INFO, 'DocumentHandler', '_switchDataBase()', 242, name)
-            empty = not source.hasElements()
             target.commit()
             target.dispose()
             source.dispose()
             document.store()
-            return empty
+            return True
         except Exception as e:
-            self._getErrorLog().logprb(SEVERE, 'DocumentHandler', '_switchDataBase()', 243, self._url, traceback.format_exc())
-
-    def _getErrorLog(self):
-        if self._errorlog is None:
-            self._errorlog = getLogger(self._ctx, g_errorlog, g_basename)
-        return self._errorlog
+            self._logger.logprb(SEVERE, 'DocumentHandler', '_switchDataBase()', 243, self._url, traceback.format_exc())
+            return False
 
     # DocumentHandler private setter methods
     def _openDataBase(self, sf, source):
@@ -269,4 +260,4 @@ class DocumentHandler(unohelper.Base,
         name = self._getStorageName(oldname, self._name, newname)
         if target.hasByName(name):
             target.removeElement(name)
-        source.moveElementTo(oldname, target, name)
+        source.copyElementTo(oldname, target, name)
