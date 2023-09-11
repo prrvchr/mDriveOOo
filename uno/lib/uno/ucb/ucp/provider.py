@@ -64,11 +64,11 @@ import traceback
 
 
 class Provider(object):
-    def __init__(self, ctx, folder, link, logger):
+    def __init__(self, ctx, logger, folder, link):
         self._ctx = ctx
+        self._logger = logger
         self._folder = folder
         self._link = link
-        self._logger = logger
         self.Scheme = g_scheme
         self.SourceURL = getResourceLocation(ctx, g_identifier, g_scheme)
         self._folders = []

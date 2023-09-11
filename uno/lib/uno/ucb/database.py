@@ -49,7 +49,6 @@ from .dbconfig import g_csv
 
 from .dbtool import Array
 
-from .dbtool import checkDataBase
 from .dbtool import createStaticTable
 from .dbtool import currentDateTimeInTZ
 from .dbtool import currentUnoDateTime
@@ -63,17 +62,22 @@ from .dbinit import getStaticTables
 from .dbinit import getQueries
 from .dbinit import getTablesAndStatements
 
+from .dbconfig import g_version
+
 from .configuration import g_admin
 from .configuration import g_scheme
 
+from packaging import version
 import traceback
 
 
 class DataBase():
-    def __init__(self, ctx, datasource, name='', password='', sync=None):
+    def __init__(self, ctx, logger, datasource, name='', password='', sync=None):
         self._ctx = ctx
+        self._logger = logger
         self._statement = datasource.getIsolatedConnection(name, password).createStatement()
         self._sync = sync
+        self._logger.logprb(INFO, 'DataBase', '__init__()', 401)
 
     @property
     def Connection(self):
@@ -81,21 +85,17 @@ class DataBase():
 
 # Procedures called by the DataSource
     def createDataBase(self):
-        try:
-            print("DataBase.createDataBase() 1")
-            version, error = checkDataBase(self._ctx, self.Connection)
-            if error is None:
-                createStaticTable(self._ctx, self._statement, getStaticTables(), g_csv, True)
-                tables, statements = getTablesAndStatements(self._ctx, self._statement, version)
-                print("DataBase.createDataBase() 2")
-                executeSqlQueries(self._statement, tables)
-                executeQueries(self._ctx, self._statement, getQueries())
-                print("DataBase.createDataBase() 3")
-            print("DataBase.createDataBase() 4")
-            return error
-        except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
-            print(msg)
+        ver = self.Connection.getMetaData().getDriverVersion()
+        self._logger.logprb(INFO, 'DataBase', 'createDataBase()', 411, ver)
+        if version.parse(ver) >= version.parse(g_version):
+            createStaticTable(self._ctx, self._statement, getStaticTables(), g_csv, True)
+            tables, statements = getTablesAndStatements(self._ctx, self._statement, ver)
+            executeSqlQueries(self._statement, tables)
+            executeQueries(self._ctx, self._statement, getQueries())
+            self._logger.logprb(INFO, 'DataBase', 'createDataBase()', 412)
+            return True
+        self._logger.logprb(SEVERE, 'DataBase', 'createDataBase()', 413, ver, g_version)
+        return False
 
     def getDataSource(self):
         return self.Connection.getParent().DatabaseDocument.DataSource
@@ -315,7 +315,7 @@ class DataBase():
             update.setString(3, itemid)
             updated = update.execute() == 0
             update.close()
-        if updated:
+        if updated and self._sync:
             # Start Replicator for pushing changes…
             self._sync.set()
 
@@ -352,7 +352,7 @@ class DataBase():
         content['Title'] = call.getString(18)
         content['TitleOnServer'] = call.getString(19)
         call.close()
-        if status:
+        if status and self._sync:
             # Start Replicator for pushing changes…
             self._sync.set()
 

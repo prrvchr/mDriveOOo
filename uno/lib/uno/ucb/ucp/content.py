@@ -113,7 +113,7 @@ class Content(unohelper.Base,
         self.MetaData = data if self._new else self._getMetaData(url)
         self._commandInfo = self._getCommandInfo()
         self._propertySetInfo = self._getPropertySetInfo()
-        self._logger.logprb(INFO, 'Content', '__init__()', 501)
+        self._logger.logprb(INFO, 'Content', '__init__()', 601)
 
     @property
     def IsFolder(self):
@@ -372,11 +372,11 @@ class Content(unohelper.Base,
         else:
             itemid = self._user.DataBase.getIdentifier(self._user, url)
         if itemid is None:
-            msg = self._logger.resolveString(511, url)
+            msg = self._logger.resolveString(611, url)
             raise IllegalIdentifierException(msg, self)
         data = self._user.DataBase.getItem(self._user, itemid)
         if data is None:
-            msg = self._logger.resolveString(512, itemid, url)
+            msg = self._logger.resolveString(612, itemid, url)
             raise IllegalIdentifierException(msg, self)
         return data
 
@@ -567,7 +567,7 @@ class Content(unohelper.Base,
         print("Content._updateFolderContent() 1 ConnectionMode: %s - SessionMode: %s" % (self.ConnectionMode,self._user.SessionMode))
         if ONLINE == self.ConnectionMode == self._user.SessionMode:
             url = self._user.getContentPath(self.Path, self.Title, self.IsRoot)
-            self._logger.logprb(INFO, 'Content', '_updateFolderContent()', 411, url)
+            self._logger.logprb(INFO, 'Content', '_updateFolderContent()', 621, url)
             print("Content._updateFolderContent() 2 Url: %s" % url)
             updated = self._user.Provider.updateFolderContent(self)
         mode = self._user.SessionMode

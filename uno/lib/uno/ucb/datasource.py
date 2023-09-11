@@ -88,15 +88,13 @@ class DataSource(unohelper.Base,
         self._sync = sync
         self._lock = lock
         self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
-        datasource, url, created = self._getDataSource(False)
-        self.DataBase = DataBase(self._ctx, datasource)
-        if created:
-            self.Error = self.DataBase.createDataBase()
-            if self.Error is None:
-                self.DataBase.storeDataBase(url)
+        datasource, url, new = self._getDataSource(False)
+        self.DataBase = DataBase(self._ctx, logger, datasource)
+        if new and self.DataBase.createDataBase():
+            self.DataBase.storeDataBase(url)
         self.DataBase.addCloseListener(self)
         folder, link = self.DataBase.getContentType()
-        self._provider = Provider(ctx, folder, link, logger)
+        self._provider = Provider(ctx, logger, folder, link)
         self.Replicator = Replicator(ctx, datasource, self._provider, self._users, self._sync, self._lock)
         self._logger.logprb(INFO, 'DataSource', '__init__()', 301)
 
@@ -119,7 +117,7 @@ class DataSource(unohelper.Base,
             self.Replicator.cancel()
             self.Replicator.join()
         self.DataBase.shutdownDataBase(self.Replicator.fullPull())
-        self._logger.logprb(INFO, 'DataSource', 'queryClosing()', 331, self._provider.Scheme)
+        self._logger.logprb(INFO, 'DataSource', 'queryClosing()', 341, self._provider.Scheme)
     def notifyClosing(self, source):
         pass
 
@@ -128,13 +126,13 @@ class DataSource(unohelper.Base,
         default = False
         uri = self._factory.parse(url)
         if uri is None:
-            msg = self._logger.resolveString(311, url)
+            msg = self._logger.resolveString(321, url)
             raise IllegalIdentifierException(msg, source)
         if authority:
             if uri.hasAuthority() and uri.getAuthority() != '':
                 name = uri.getAuthority()
             else:
-                msg = self._logger.resolveString(312, url)
+                msg = self._logger.resolveString(322, url)
                 raise IllegalIdentifierException(msg, source)
         elif self._default:
             name = self._default
@@ -156,38 +154,35 @@ class DataSource(unohelper.Base,
     def _getUserName(self, source, url):
         name = getOAuth2UserName(self._ctx, self, self._provider.Scheme)
         if not name:
-            msg = self._logger.resolveString(321, url)
+            msg = self._logger.resolveString(331, url)
             raise IllegalIdentifierException(msg, source)
         return name
 
     def _getDataSource(self, register):
-        print("DataSource._getDataSource() 1")
         path = '%s/%s.odb' % (g_folder, g_scheme)
         location = getResourceLocation(self._ctx, g_identifier, path)
         url = getUrlPresentation(self._ctx, location)
         dbcontext = createService(self._ctx, 'com.sun.star.sdb.DatabaseContext')
-        print("DataSource._getDataSource() 2")
         if getSimpleFile(self._ctx).exists(url):
+            self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 311, url)
             if register and dbcontext.hasByName(g_scheme):
-                print("DataSource._getDataSource() 3")
                 datasource = dbcontext.getByName(g_scheme)
+                self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 312, g_scheme)
             else:
-                print("DataSource._getDataSource() 4")
                 datasource = dbcontext.getByName(url)
-            created = False
+                self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 313, url)
+            new = False
         else:
-            print("DataSource._getDataSource() 5")
+            self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 314, url)
             datasource = dbcontext.createInstance()
-            print("DataSource._getDataSource() 6")
             datasource.URL = self._getDataSourceLocation(url, True)
-            print("DataSource._getDataSource() 7")
             datasource.Info = getDataSourceInfo()
-            created = True
-        if register and created:
-            print("DataSource._getDataSource() 8")
+            new = True
+            self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 315, url)
+        if register and new:
             registerDataSource(dbcontext, g_scheme, url)
-        print("DataSource._getDataSource() 9")
-        return datasource, url, created
+            self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 316, url, g_scheme)
+        return datasource, url, new
 
     def _getDataSourceLocation(self, url, shutdown):
         url = g_protocol + url + g_options

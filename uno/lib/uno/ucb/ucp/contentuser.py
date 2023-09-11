@@ -93,27 +93,27 @@ class ContentUser():
             new = metadata is None
             if new:
                 if self.Request is None:
-                    msg = self._logger.resolveString(401, g_oauth2)
+                    msg = self._logger.resolveString(501, g_oauth2)
                     raise IllegalIdentifierException(msg, source)
                 elif not self.Provider.isOnLine():
-                    msg = self._logger.resolveString(402, name)
+                    msg = self._logger.resolveString(502, name)
                     raise IllegalIdentifierException(msg, source)
                 user, root = self.Provider.getUser(source, self.Request, name)
                 metadata = database.insertUser(user, root)
                 if metadata is None:
-                    msg = self._logger.resolveString(403, name)
+                    msg = self._logger.resolveString(503, name)
                     raise IllegalIdentifierException(msg, source)
                 if not database.createUser(name, password):
-                    msg = self._logger.resolveString(404, name)
+                    msg = self._logger.resolveString(504, name)
                     raise IllegalIdentifierException(msg, source)
             self.MetaData = metadata
-            self.DataBase = DataBase(ctx, database.getDataSource(), name, password, sync)
+            self.DataBase = DataBase(ctx, logger, database.getDataSource(), name, password, sync)
             self._identifiers = {}
             self._contents = {}
             self._contents[self.RootId] = Content(ctx, self)
             if new:
                 self._sync.set()
-            self._logger.logprb(INFO, 'ContentUser', '__init__()', 405)
+            self._logger.logprb(INFO, 'ContentUser', '__init__()', 505)
         except Exception as e:
             msg = "ContentUser.__init__() Error: %s" % traceback.format_exc()
             print(msg)
@@ -215,7 +215,7 @@ class ContentUser():
             try:
                 sf.writeFile(url, stream)
             except Exception as e:
-                self._logger.logprb(SEVERE, 'ContentUser', 'getDocumentContent()', 421, e, traceback.format_exc())
+                self._logger.logprb(SEVERE, 'ContentUser', 'getDocumentContent()', 511, e, traceback.format_exc())
             else:
                 size = sf.getSize(url)
                 loaded = self.DataBase.updateConnectionMode(self.Id, itemid, OFFLINE, ONLINE)

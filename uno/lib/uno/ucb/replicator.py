@@ -77,10 +77,10 @@ class Replicator(unohelper.Base,
         self._lock = lock
         self._canceled = False
         self._fullPull = False
-        self.DataBase = DataBase(ctx, datasource)
         self._provider = provider
         self._config = getConfiguration(ctx, g_identifier, False)
         self._logger = getLogger(ctx, g_synclog, g_basename)
+        self.DataBase = DataBase(ctx, self._logger, datasource)
         sync.clear()
         self.start()
 
