@@ -42,7 +42,7 @@ from .ucp import Provider as ProviderBase
 from .dbtool import currentUnoDateTime
 from .dbtool import currentDateTimeInTZ
 
-from .unotool import getResourceLocation
+from .unotool import generateUuid
 
 from .configuration import g_identifier
 from .configuration import g_scheme
@@ -108,130 +108,132 @@ class Provider(ProviderBase):
         return user, root
 
     def initSharedDocuments(self, user, datetime):
-        itemid = '123456789'
+        itemid = generateUuid()
         timestamp = currentUnoDateTime()
         user.DataBase.createSharedFolder(user, itemid, self.SharedFolderName, g_folder, datetime, timestamp)
         parameter = self.getRequestParameter(user.Request, 'getSharedFolderContent')
         iterator = self._parseSharedFolder(user.Request, parameter, itemid, timestamp)
         user.DataBase.pullItems(iterator, user.Id, datetime, 0)
 
-    def _parseSharedFolder(self, request, parameter, itemid, timestamp):
-        parents = [itemid, ]
+    def _parseSharedFolder(self, request, parameter, parent, timestamp):
+        parents = [parent, ]
+        trashed = rename = readonly = versionable = False
+        addchild = True
+        path = None
         while parameter.hasNextPage():
             response = request.execute(parameter)
-            if not response.Ok:
-                break
-            events = ijson.sendable_list()
-            parser = ijson.parse_coro(events)
-            iterator = response.iterContent(g_chunk, False)
-            while iterator.hasMoreElements():
-                parser.send(iterator.nextElement().value)
-                for prefix, event, value in events:
-                    if (prefix, event) == ('value.item', 'start_map'):
-                        itemid = link = name = None
-                        created = modified = timestamp
-                        mimetype = g_folder
-                        size = 0
-                    elif (prefix, event) == ('value.item.remoteItem.id', 'string'):
-                        itemid = value
-                    elif (prefix, event) == ('value.item.remoteItem.parentReference.driveId', 'string'):
-                        link = value
-                    elif (prefix, event) == ('value.item.remoteItem.name', 'string'):
-                        name = value
-                    elif (prefix, event) == ('value.item.remoteItem.size', 'number'):
-                        size = value
-                    elif (prefix, event) == ('value.item.createdDateTime', 'string'):
-                        created = self.parseDateTime(value)
-                    elif (prefix, event) == ('value.item.lastModifiedDateTime', 'string'):
-                        modified = self.parseDateTime(value)
-                    elif (prefix, event) == ('value.item.remoteItem.file.mimeType', 'string'):
-                        mimetype = value
-                    elif (prefix, event) == ('value.item', 'end_map'):
-                        yield itemid, name, created, modified, mimetype, size, link, False, True, False, False, False, None, parents
-                del events[:]
-            parser.close()
+            if response.Ok:
+                events = ijson.sendable_list()
+                parser = ijson.parse_coro(events)
+                iterator = response.iterContent(g_chunk, False)
+                while iterator.hasMoreElements():
+                    parser.send(iterator.nextElement().value)
+                    for prefix, event, value in events:
+                        if (prefix, event) == ('value.item', 'start_map'):
+                            itemid = link = name = None
+                            created = modified = timestamp
+                            mimetype = g_folder
+                            size = 0
+                        elif (prefix, event) == ('value.item.remoteItem.id', 'string'):
+                            itemid = value
+                        elif (prefix, event) == ('value.item.remoteItem.parentReference.driveId', 'string'):
+                            link = value
+                        elif (prefix, event) == ('value.item.remoteItem.name', 'string'):
+                            name = value
+                        elif (prefix, event) == ('value.item.remoteItem.size', 'number'):
+                            size = value
+                        elif (prefix, event) == ('value.item.createdDateTime', 'string'):
+                            created = self.parseDateTime(value)
+                        elif (prefix, event) == ('value.item.lastModifiedDateTime', 'string'):
+                            modified = self.parseDateTime(value)
+                        elif (prefix, event) == ('value.item.remoteItem.file.mimeType', 'string'):
+                            mimetype = value
+                        elif (prefix, event) == ('value.item', 'end_map'):
+                            yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, path, parents
+                    del events[:]
+                parser.close()
             response.close()
 
     def parseRootFolder(self, parameter, content):
         return self.parseItems(content.User.Request, parameter, content.Link)
 
     def parseItems(self, request, parameter, link=None):
+        readonly = versionable = False
+        addchild = rename = True
+        path = None
         while parameter.hasNextPage():
             response = request.execute(parameter)
-            if not response.Ok:
-                break
-            timestamp = currentUnoDateTime()
-            events = ijson.sendable_list()
-            parser = ijson.parse_coro(events)
-            iterator = response.iterContent(g_chunk, False)
-            while iterator.hasMoreElements():
-                parser.send(iterator.nextElement().value)
-                for prefix, event, value in events:
-                    if (prefix, event) == ('@odata.deltaLink', 'string'):
-                        parameter.SyncToken = value
-                    elif (prefix, event) == ('@odata.nextLink', 'string'):
-                        parameter.setNextPage('', value, REDIRECT)
-                    elif (prefix, event) == ('value.item', 'start_map'):
-                        itemid = name = None
-                        created = modified = timestamp
-                        mimetype = g_folder
-                        size = 0
-                        addchild = canrename = True
-                        trashed = readonly = versionable = False
-                        parents = []
-                    elif (prefix, event) == ('value.item.id', 'string'):
-                        itemid = value
-                    elif (prefix, event) == ('value.item.name', 'string'):
-                        name = value
-                    elif (prefix, event) == ('value.item.createdDateTime', 'string'):
-                        created = self.parseDateTime(value)
-                    elif (prefix, event) == ('value.item.lastModifiedDateTime', 'string'):
-                        modified = self.parseDateTime(value)
-                    elif (prefix, event) == ('value.item.file.mimeType', 'string'):
-                        mimetype = value
-                    elif (prefix, event) == ('value.item.trashed', 'boolean'):
-                        trashed = value
-                    elif (prefix, event) == ('value.item.size', 'number'):
-                        size = value
-                    elif (prefix, event) == ('value.item.parentReference.id', 'string'):
-                        parents.append(value)
-                    elif (prefix, event) == ('value.item', 'end_map'):
-                        yield itemid, name, created, modified, mimetype, size, link, trashed, True, True, False, False, None, parents
-                del events[:]
-            parser.close()
+            if response.Ok:
+                timestamp = currentUnoDateTime()
+                events = ijson.sendable_list()
+                parser = ijson.parse_coro(events)
+                iterator = response.iterContent(g_chunk, False)
+                while iterator.hasMoreElements():
+                    parser.send(iterator.nextElement().value)
+                    for prefix, event, value in events:
+                        if (prefix, event) == ('@odata.deltaLink', 'string'):
+                            parameter.SyncToken = value
+                        elif (prefix, event) == ('@odata.nextLink', 'string'):
+                            parameter.setNextPage('', value, REDIRECT)
+                        elif (prefix, event) == ('value.item', 'start_map'):
+                            itemid = name = None
+                            created = modified = timestamp
+                            mimetype = g_folder
+                            size = 0
+                            trashed = False
+                            parents = []
+                        elif (prefix, event) == ('value.item.id', 'string'):
+                            itemid = value
+                        elif (prefix, event) == ('value.item.name', 'string'):
+                            name = value
+                        elif (prefix, event) == ('value.item.createdDateTime', 'string'):
+                            created = self.parseDateTime(value)
+                        elif (prefix, event) == ('value.item.lastModifiedDateTime', 'string'):
+                            modified = self.parseDateTime(value)
+                        elif (prefix, event) == ('value.item.file.mimeType', 'string'):
+                            mimetype = value
+                        elif (prefix, event) == ('value.item.trashed', 'boolean'):
+                            trashed = value
+                        elif (prefix, event) == ('value.item.size', 'number'):
+                            size = value
+                        elif (prefix, event) == ('value.item.parentReference.id', 'string'):
+                            parents.append(value)
+                        elif (prefix, event) == ('value.item', 'end_map'):
+                            yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, path, parents
+                    del events[:]
+                parser.close()
             response.close()
 
     def parseChanges(self, request, parameter):
         while parameter.hasNextPage():
             response = request.execute(parameter)
-            if not response.Ok:
-                break
-            events = ijson.sendable_list()
-            parser = ijson.parse_coro(events)
-            iterator = response.iterContent(g_chunk, False)
-            while iterator.hasMoreElements():
-                parser.send(iterator.nextElement().value)
-                for prefix, event, value in events:
-                    if (prefix, event) == ('@odata.nextLink', 'string'):
-                        parameter.setNextPage('', value, REDIRECT)
-                    elif (prefix, event) == ('@odata.deltaLink', 'string'):
-                        parameter.SyncToken = value
-                    elif (prefix, event) == ('value.item', 'start_map'):
-                        itemid = name = modified = None
-                        trashed = False
-                    elif (prefix, event) == ('value.item.removed', 'boolean'):
-                        trashed = value
-                    elif (prefix, event) == ('value.item.fileId', 'string'):
-                        itemid = value
-                    elif (prefix, event) == ('value.item.time', 'string'):
-                        modified = self.parseDateTime(value)
-                    elif (prefix, event) == ('value.item.file.name', 'string'):
-                        name = value
-                    elif (prefix, event) == ('value.item', 'end_map'):
-                        pass
-                        #yield itemid, trashed, name, modified
-                del events[:]
-            parser.close()
+            if response.Ok:
+                events = ijson.sendable_list()
+                parser = ijson.parse_coro(events)
+                iterator = response.iterContent(g_chunk, False)
+                while iterator.hasMoreElements():
+                    parser.send(iterator.nextElement().value)
+                    for prefix, event, value in events:
+                        if (prefix, event) == ('@odata.nextLink', 'string'):
+                            parameter.setNextPage('', value, REDIRECT)
+                        elif (prefix, event) == ('@odata.deltaLink', 'string'):
+                            parameter.SyncToken = value
+                        elif (prefix, event) == ('value.item', 'start_map'):
+                            itemid = name = modified = None
+                            trashed = False
+                        elif (prefix, event) == ('value.item.removed', 'boolean'):
+                            trashed = value
+                        elif (prefix, event) == ('value.item.fileId', 'string'):
+                            itemid = value
+                        elif (prefix, event) == ('value.item.time', 'string'):
+                            modified = self.parseDateTime(value)
+                        elif (prefix, event) == ('value.item.file.name', 'string'):
+                            name = value
+                        elif (prefix, event) == ('value.item', 'end_map'):
+                            pass
+                            #yield itemid, trashed, name, modified
+                    del events[:]
+                parser.close()
             response.close()
 
     def getDocumentLocation(self, content):
