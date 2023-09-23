@@ -53,6 +53,7 @@ import com.sun.star.logging.XLogHandler;
 import com.sun.star.logging.XLogger;
 import com.sun.star.logging.XLoggerPool;
 import com.sun.star.uno.DeploymentException;
+import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 import com.sun.star.uno.XComponentContext;
 
@@ -60,12 +61,14 @@ import com.sun.star.uno.XComponentContext;
 public class EventLogger
 {
     protected XComponentContext m_xContext;
+    private static XLoggerPool m_xPool;
     private static String m_service = "io.github.prrvchr.jdbcDriverOOo.LoggerPool";
     private String m_name;
     private XLogger m_xLogger;
     
     // The constructor method:
     public EventLogger(XComponentContext context)
+        throws com.sun.star.uno.Exception
     {
         this(context, "");
     }
@@ -77,34 +80,23 @@ public class EventLogger
      *    the component context to create services.
      * @param name
      *    the name of the logger to create. If empty, the office-wide default logger will be used.
+     * @throws com.sun.star.uno.Exception 
+     * @throws com.sun.star.uno.Exception 
      */
     public EventLogger(XComponentContext context,
                        String name)
     {
-        this.m_xContext = context;
-        this.m_name = name;
-        try {
-            XLoggerPool loggerPool = getLoggerPool(context);
-            if (!name.isEmpty()) {
-                m_xLogger = loggerPool.getNamedLogger(name);
-            }
-            else {
-                m_xLogger = loggerPool.getDefaultLogger();
-            }
+        m_xContext = context;
+        m_name = name;
+        if (m_xPool == null) {
+            m_xPool = _getLoggerPool();
         }
-        catch (com.sun.star.uno.RuntimeException e) {
+        if (!name.isEmpty()) {
+            m_xLogger = m_xPool.getNamedLogger(name);
         }
-    }
-
-    public static XLoggerPool getLoggerPool(XComponentContext context)
-    {
-        Object object = UnoHelper.createService(context, m_service);
-        XLoggerPool pool = UnoRuntime.queryInterface(XLoggerPool.class, object);
-        if (pool == null) {
-            throw new DeploymentException("component context fails to supply singleton com.sun.star.logging.LoggerPool of type com.sun.star.logging.XLoggerPool",
-                                          context);
+        else {
+            m_xLogger = m_xPool.getDefaultLogger();
         }
-        return pool;
     }
 
     /**
@@ -208,8 +200,9 @@ public class EventLogger
                        String message,
                        Object... arguments)
     {
-        if (isLoggable(level))
+        if (isLoggable(level)) {
             return _log(level, null, null, message, arguments);
+        }
         return false;
     }
 
@@ -243,7 +236,7 @@ public class EventLogger
             message += "\n" + stringWriter.getBuffer().toString();
             return _log(level, null, null, message);
         }
-        return true;
+        return false;
     }
 
     /**
@@ -259,9 +252,7 @@ public class EventLogger
                         Object...arguments)
     {
         if (isLoggable(level)) {
-            System.out.println("EventLogger.logp() 1");
             StackTraceElement caller = Thread.currentThread().getStackTrace()[2];
-            System.out.println("EventLogger.logp() 2 Class: " + caller.getClassName() + " - Method: " + caller.getMethodName());
             return _log(level, caller.getClassName(), caller.getMethodName(), message, arguments);
         }
         return false;
@@ -298,7 +289,7 @@ public class EventLogger
             StackTraceElement caller = Thread.currentThread().getStackTrace()[2];
             return _log(level, caller.getClassName(), caller.getMethodName(), message);
         }
-        return true;
+        return false;
     }
 
     protected boolean _log(int level,
@@ -310,10 +301,9 @@ public class EventLogger
         if (m_xLogger == null) {
             return false;
         }
-        try {
+        if (arguments.length > 0) {
             message = String.format(message, arguments);
         }
-        catch (Exception e) { }
         if (clazz != null && method != null) {
             m_xLogger.logp(level, clazz, method, message);
         }
@@ -321,6 +311,21 @@ public class EventLogger
             m_xLogger.log(level, message);
         }
         return true;
+    }
+
+    private XLoggerPool _getLoggerPool()
+    {
+        XLoggerPool pool = null;
+        try {
+            Object object = m_xContext.getServiceManager().createInstanceWithContext(m_service, m_xContext);
+            pool = UnoRuntime.queryInterface(XLoggerPool.class, object);
+        }
+        catch (Exception e) {}
+        if (pool == null) {
+            throw new DeploymentException("component context fails to supply singleton com.sun.star.logging.LoggerPool of type com.sun.star.logging.XLoggerPool",
+                                          m_xContext);
+        }
+        return pool;
     }
 
 }

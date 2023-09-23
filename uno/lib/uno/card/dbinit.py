@@ -27,18 +27,20 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from ..dbtool import getDataSourceCall
-from ..dbtool import getSequenceFromResult
-from ..dbtool import getDataFromResult
+from .unotool import checkVersion
 
-from ..dbqueries import getSqlQuery
+from .dbtool import getDataSourceCall
+from .dbtool import getSequenceFromResult
+from .dbtool import getDataFromResult
 
-from ..dbconfig import g_version
-from ..dbconfig import g_superuser
-from ..dbconfig import g_view
-from ..dbconfig import g_cardview
-from ..dbconfig import g_bookview
-from ..dbconfig import g_dba
+from .dbqueries import getSqlQuery
+
+from .dbconfig import g_version
+from .dbconfig import g_superuser
+from .dbconfig import g_view
+from .dbconfig import g_cardview
+from .dbconfig import g_bookview
+from .dbconfig import g_dba
 
 import traceback
 
@@ -83,11 +85,11 @@ def getTables(ctx, connection, version=g_version):
             columns.append(getSqlQuery(ctx, 'getUniqueConstraint', format))
         for format in constraint:
             columns.append(getSqlQuery(ctx, 'getForeignConstraint', format))
-        if version >= '2.5.0' and versioned:
+        if checkVersion(version, g_version) and versioned:
             columns.append(getSqlQuery(ctx, 'getPeriodColumns'))
         format = (table, ','.join(columns))
         query = getSqlQuery(ctx, 'createTable', format)
-        if version >= '2.5.0' and versioned:
+        if checkVersion(version, g_version) and versioned:
             query += getSqlQuery(ctx, 'getSystemVersioning')
         tables.append(query)
         result.close()

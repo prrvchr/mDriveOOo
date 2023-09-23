@@ -76,6 +76,7 @@ from ..unotool import getPropertyValue
 from ..unotool import getPropertyValueSet
 from ..unotool import getResourceLocation
 from ..unotool import getSimpleFile
+from ..unotool import getUrlPresentation
 
 from ..dbqueries import getSqlQuery
 
@@ -89,6 +90,8 @@ from ..dbconfig import g_version
 from ..logger import getLogger
 
 from ..configuration import g_errorlog
+from ..configuration import g_identifier
+
 g_basename = 'dbtool'
 
 import time
@@ -96,12 +99,19 @@ from datetime import datetime
 import traceback
 
 
-def getDataSourceConnection(ctx, url, name='', password='', create=True):
+def getConnectionUrl(ctx, path):
+    location = getResourceLocation(ctx, g_identifier, path)
+    return getUrlPresentation(ctx, location)
+
+def getDataSourceConnection(ctx, url, name='', password='', create=True, isolated=True):
     if create:
         datasource = createDataSource(ctx, url)
     else:
         datasource = getDataSource(ctx, url)
-    connection = datasource.getIsolatedConnection(name, password)
+    if isolated:
+        connection = datasource.getIsolatedConnection(name, password)
+    else:
+        connection = datasource.getConnection(name, password)
     return connection
 
 def createDataSource(ctx, url, path=None):

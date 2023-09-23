@@ -36,6 +36,7 @@ from .dbtool import currentUnoDateTime
 from .dbtool import executeQueries
 from .dbtool import executeSqlQueries
 from .dbtool import getConnectionInfo
+from .dbtool import getConnectionUrl
 from .dbtool import getDataBaseConnection
 from .dbtool import getDataBaseInfo
 from .dbtool import getDataBaseUrl

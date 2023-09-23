@@ -44,9 +44,10 @@ from com.sun.star.ucb.ConnectionMode import OFFLINE
 
 from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
 
-from six import binary_type, string_types
-import datetime
 import binascii
+import datetime
+from packaging import version
+from six import binary_type, string_types
 import traceback
 
 
@@ -152,6 +153,9 @@ def _getSequence(inputstream, length):
     inputstream.closeInput()
     return length, sequence
 
+def checkVersion(ver, minimum):
+    return version.parse(ver) >= version.parse(minimum)
+
 def hasInterface(component, interface):
     for t in getComponentTypes(component):
         if t.typeName == interface:
@@ -183,6 +187,14 @@ def getProperty(name, type=None, attributes=None, handle=-1):
     if attributes is not None:
         property.Attributes = attributes
     return property
+
+def getExtensionVersion(ctx, extension):
+    service = '/singletons/com.sun.star.deployment.PackageInformationProvider'
+    provider = ctx.getValueByName(service)
+    for name, version in provider.getExtensionList():
+        if name == extension:
+            return version
+    return None
 
 def getResourceLocation(ctx, identifier, path=None):
     service = '/singletons/com.sun.star.deployment.PackageInformationProvider'

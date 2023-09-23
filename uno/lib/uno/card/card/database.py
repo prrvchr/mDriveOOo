@@ -35,8 +35,8 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.sdb.CommandType import QUERY
 
-from com.sun.star.sdbc.DataType import INTEGER
-from com.sun.star.sdbc.DataType import VARCHAR
+from com.sun.star.sdbc.DataType2 import INTEGER
+from com.sun.star.sdbc.DataType2 import VARCHAR
 
 from ..dbtool import Array
 from ..dbtool import checkDataBase
@@ -56,12 +56,11 @@ from ..dbtool import getRowDict
 from ..dbtool import getSequenceFromResult
 from ..dbtool import getValueFromResult
 
-from ..unotool import parseDateTime
+from ..unotool import checkVersion
 from ..unotool import createService
 from ..unotool import getConfiguration
-from ..unotool import getResourceLocation
 from ..unotool import getSimpleFile
-from ..unotool import getUrlPresentation
+from ..unotool import parseDateTime
 
 from ..configuration import g_identifier
 from ..configuration import g_admin
@@ -69,17 +68,17 @@ from ..configuration import g_host
 
 from ..dbqueries import getSqlQuery
 
-from ..dbconfig import g_folder
 from ..dbconfig import g_jar
 from ..dbconfig import g_cardview
 from ..dbconfig import g_bookmark
 from ..dbconfig import g_csv
 from ..dbconfig import g_dotcode
+from ..dbconfig import g_version
 
-from .dbinit import getStaticTables
-from .dbinit import getQueries
-from .dbinit import getTables
-from .dbinit import getViews
+from ..dbinit import getStaticTables
+from ..dbinit import getQueries
+from ..dbinit import getTables
+from ..dbinit import getViews
 
 from collections import OrderedDict
 from time import sleep
@@ -88,28 +87,20 @@ import traceback
 
 
 class DataBase(unohelper.Base):
-    def __init__(self, ctx):
+    def __init__(self, ctx, url, user='', pwd=''):
         self._ctx = ctx
         self._statement = None
-        self._embedded = False
         self._fieldsMap = {}
         self._batchedCalls = OrderedDict()
         self._addressbook = None
-        location = getResourceLocation(ctx, g_identifier, g_folder)
-        url = getUrlPresentation(ctx, location)
-        self._url = url + '/' + g_host
-        if self._embedded:
-            self._path = url + '/' + g_jar
-        else:
-            self._path = None
-        odb = self._url + '.odb'
-        exist = getSimpleFile(ctx).exists(odb)
-        if not exist:
-            connection = getDataSourceConnection(ctx, self._url)
-            error = self._createDataBase(connection)
-            if error is None:
-                connection.getParent().DatabaseDocument.storeAsURL(odb, ())
-            connection.close()
+        self._url = url
+        odb = url + '.odb'
+        new = not getSimpleFile(ctx).exists(odb)
+        connection = getDataSourceConnection(ctx, url, user, pwd, new)
+        self._version = connection.getMetaData().getDriverVersion()
+        if new and self.isUptoDate():
+            self._createDataBase(connection, odb)
+        connection.close()
 
     @property
     def Connection(self):
@@ -118,8 +109,17 @@ class DataBase(unohelper.Base):
             self._statement = connection.createStatement()
         return self._statement.getConnection()
 
+    @property
+    def Url(self):
+        return self._url
+    @property
+    def Version(self):
+        return self._version
+
+    def isUptoDate(self):
+        return checkVersion(self._version, g_version)
+
     def getConnection(self, user='', password=''):
-        #info = getConnectionInfo(user, password, self._path)
         return getDataSourceConnection(self._ctx, self._url, user, password, False)
 
     def dispose(self):
@@ -132,19 +132,17 @@ class DataBase(unohelper.Base):
             print("gContact.DataBase.dispose() ***************** database: %s closed!!!" % g_host)
 
 # Procedures called by Initialization
-    def _createDataBase(self, connection):
-        version, error = checkDataBase(self._ctx, connection)
-        if error is None:
-            statement = connection.createStatement()
-            createStaticTable(self._ctx, statement, getStaticTables(), g_csv, True)
-            tables = getTables(self._ctx, connection, version)
-            executeSqlQueries(statement, tables)
-            executeQueries(self._ctx, statement, getQueries())
-            columns = self._getAddressbookColumns(connection)
-            views = getViews(self._ctx, columns, self._getViewName())
-            executeSqlQueries(statement, views)
-            statement.close()
-        return error
+    def _createDataBase(self, connection, odb):
+        statement = connection.createStatement()
+        createStaticTable(self._ctx, statement, getStaticTables(), g_csv, True)
+        tables = getTables(self._ctx, connection, self._version)
+        executeSqlQueries(statement, tables)
+        executeQueries(self._ctx, statement, getQueries())
+        columns = self._getAddressbookColumns(connection)
+        views = getViews(self._ctx, columns, self._getViewName())
+        executeSqlQueries(statement, views)
+        statement.close()
+        connection.getParent().DatabaseDocument.storeAsURL(odb, ())
 
     def _getAddressbookColumns(self, connection):
         columns = OrderedDict()

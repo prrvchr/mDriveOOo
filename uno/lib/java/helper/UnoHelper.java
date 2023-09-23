@@ -14,6 +14,7 @@ import com.sun.star.beans.Property;
 import com.sun.star.beans.NamedValue;
 import com.sun.star.beans.PropertyAttribute;
 import com.sun.star.beans.PropertyValue;
+import com.sun.star.beans.XIntrospection;
 import com.sun.star.beans.XPropertySet;
 import com.sun.star.beans.XPropertySetInfo;
 import com.sun.star.container.NoSuchElementException;
@@ -866,5 +867,12 @@ public class UnoHelper
         return buffer.toString();
     }
 
+    public static void inspect(XComponentContext context, XInterface descriptor)
+    {
+        String service = "mytools.Mri";
+        Object object = UnoHelper.createService(context, service);
+        XIntrospection mri = (XIntrospection) UnoRuntime.queryInterface(XIntrospection.class, object);
+        mri.inspect(descriptor);
+    }
 
 }

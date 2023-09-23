@@ -29,9 +29,7 @@
 
 from .database import DataBase
 
-from .datasource import DataSource
-
 from .provider import Provider
 
-from .provider import getSqlException
+from .user import User
 

@@ -30,17 +30,9 @@
 import uno
 import unohelper
 
-from com.sun.star.logging.LogLevel import SEVERE
-
 from .book import Book
 
 from ..dbtool import getDateTimeFromString
-from ..dbtool import getSqlException as getException
-
-from ..logger import getLogger
-
-from ..configuration import g_errorlog
-from ..configuration import g_basename
 
 import traceback
 
@@ -88,7 +80,7 @@ class Provider(unohelper.Base):
         if not count:
             #TODO: Raise SqlException with correct message!
             print("Provider.initUserBooks() 1 %s" % (books, ))
-            raise self.getSqlException(1004, 1108, 'initUserBooks', '%s has no support of CardDAV!' % user.Server)
+            #raise getSqlException(self._ctx, self, 1004, 1108, 'initUserBooks', '%s has no support of CardDAV!' % user.Server)
         if modified and self.supportAddressBook():
             database.initAddressbooks(user)
 
@@ -107,12 +99,4 @@ class Provider(unohelper.Base):
     # Can be overwritten method
     def syncGroups(self, database, user, addressbook, pages, count):
         pass
-
-def getSqlException(ctx, source, state, code, method, *args):
-    logger = getLogger(ctx, g_errorlog, g_basename)
-    state = logger.resolveString(state)
-    msg = logger.resolveString(code, *args)
-    logger.logp(SEVERE, g_basename, method, msg)
-    error = getException(state, code, msg, source)
-    return error
 

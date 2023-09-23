@@ -96,8 +96,9 @@ public class ResourceBasedEventLogger
                        int id,
                        Object... arguments)
     {
-        if (isLoggable(level))
+        if (isLoggable(level)) {
             return _log(level, null, null, loadStringMessage(id), arguments);
+        }
         return false;
     }
 
@@ -110,8 +111,9 @@ public class ResourceBasedEventLogger
     public boolean log(int level,
                        String message)
     {
-        if (isLoggable(level))
+        if (isLoggable(level)) {
             return _log(level, null, null, message);
+        }
         return false;
     }
 

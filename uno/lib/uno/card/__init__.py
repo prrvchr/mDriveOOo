@@ -27,34 +27,47 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .configuration import g_identifier
-from .configuration import g_extension
-from .configuration import g_defaultlog
-from .configuration import g_scheme
-from .configuration import g_host
-
-from .card import DataSource
-
-from .provider import Provider
-
 from .database import DataBase
+
+from .datasource import DataSource
 
 from .options import OptionsManager
 
+from .oauth2 import getOAuth2Version
+
 from .logger import getLogger
 
+from .dbtool import getConnectionUrl
 from .dbtool import getDriverPropertyInfos
+from .dbtool import getSqlException
 
-from .card import getSqlException
-
+from .unotool import checkVersion
 from .unotool import createMessageBox
 from .unotool import createService
 from .unotool import getDesktop
 from .unotool import getDialog
+from .unotool import getExtensionVersion
 from .unotool import getFileSequence
 from .unotool import getResourceLocation
 from .unotool import getSimpleFile
 from .unotool import getStringResource
 # FIXME Import necessary exclusively for vCardOOo
 from .unotool import getUrl
+
+from .oauth2 import g_extension as g_oauth2ext
+from .oauth2 import g_version as g_oauth2ver
+
+from .jdbcdriver import g_extension as g_jdbcext
+from .jdbcdriver import g_identifier as g_jdbcid
+from .jdbcdriver import g_version as g_jdbcver
+
+from .configuration import g_identifier
+from .configuration import g_extension
+from .configuration import g_protocol
+from .configuration import g_defaultlog
+from .configuration import g_scheme
+from .configuration import g_host
+
+from .dbconfig import g_folder
+from .dbconfig import g_version
 

@@ -27,67 +27,11 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
-import unohelper
+# OAuth2 configuration
+g_extension = 'OAuth2OOo'
+g_identifier = 'io.github.prrvchr.%s' % g_extension
+g_service = '%s.OAuth2Service' % g_identifier
+g_version = '1.1.1'
 
-from .replicator import Replicator
+g_oauth2 = g_service
 
-from .user import User
-
-from .listener import EventListener
-from .listener import TerminateListener
-
-from ..unotool import getDesktop
-
-import traceback
-
-
-class DataSource(unohelper.Base):
-    def __init__(self, ctx, database, provider):
-        self._ctx = ctx
-        self._maps = {}
-        self._users = {}
-        self._listener = EventListener(self)
-        self._database = database
-        self._provider = provider
-        self._replicator = Replicator(ctx, self._database, self._provider, self._users)
-        listener = TerminateListener(self._replicator)
-        getDesktop(ctx).addTerminateListener(listener)
-
-# Procedures called by EventListener
-    def closeConnection(self, connection):
-        name = connection.getMetaData().getUserName()
-        if name in self._users:
-            user = self._users.get(name)
-            user.removeSession(self._database.getSessionId(connection))
-            print("DataSource.closeConnection() 1: %s - %s" % (len(self._users), name))
-        if not self._hasSession():
-            self._replicator.stop()
-        print("DataSource.closeConnection() 2")
-
-# Procedures called by Driver
-    def getConnection(self, scheme, server, account, password):
-        uri = self._provider.getUserUri(server, account)
-        if uri in self._maps:
-            name = self._maps.get(uri)
-            user = self._users.get(name)
-        else:
-            user = User(self._ctx, self._database, self._provider, scheme, server, account, password)
-            name = user.getName()
-            self._users[name] = user
-            self._maps[uri] = name
-        if user.isOnLine():
-            self._provider.initAddressbooks(self._database, user)
-        connection = self._database.getConnection(name, user.getPassword())
-        user.addSession(self._database.getSessionId(connection))
-        # User and/or AddressBooks has been initialized and the connection to the database is done...
-        # We can start the database replication in a background task.
-        self._replicator.start()
-        connection.addEventListener(self._listener)
-        return connection
-
-    def _hasSession(self):
-        for user in self._users.values():
-            if user.hasSession():
-                return True
-        return False

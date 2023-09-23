@@ -35,15 +35,16 @@ from com.sun.star.ucb.ConnectionMode import ONLINE
 
 from .book import Books
 
-from .provider import getSqlException
+from ..cardtool import getSqlException
 
 from ..dbconfig import g_user
 from ..dbconfig import g_schema
 from ..dbconfig import g_dotcode
 
 from ..unotool import getConnectionMode
+
 from ..oauth2 import getRequest
-from ..oauth2 import g_oauth2
+from ..oauth2 import g_service
 
 import traceback
 
@@ -127,7 +128,7 @@ class User(unohelper.Base):
         if self._isOffLine(server):
             raise getSqlException(self._ctx, self, 1004, 1108, '_getNewUser', name)
         if self.Request is None:
-            raise getSqlException(self._ctx, self, 1003, 1105, '_getNewUser', g_oauth2)
+            raise getSqlException(self._ctx, self, 1003, 1105, '_getNewUser', g_service)
         data = provider.insertUser(database, self.Request, scheme, server, name, pwd)
         if data is None:
             raise getSqlException(self._ctx, self, 1006, 1107, '_getNewUser', name)

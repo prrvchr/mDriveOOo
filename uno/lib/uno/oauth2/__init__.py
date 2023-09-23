@@ -27,7 +27,12 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .oauth2config import g_oauth2
+from .configuration import g_extension
+from .configuration import g_identifier
+from .configuration import g_service
+from .configuration import g_version
+
+from .configuration import g_oauth2
 
 from .oauth2lib import InteractionRequest
 from .oauth2lib import NoOAuth2
@@ -35,6 +40,7 @@ from .oauth2lib import OAuth2OOo
 
 from .oauth2tools import getRequest
 from .oauth2tools import getOAuth2
+from .oauth2tools import getOAuth2Version
 
 from .oauth2core import getOAuth2UserName
 from .oauth2core import getOAuth2Token
