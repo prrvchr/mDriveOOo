@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][3] et à notre [Politique de protection des données][4].**
 
-# version [1.0.1][5]
+# version [1.0.2][5]
 
 ## Introduction:
 
@@ -75,7 +75,7 @@ Vous devez d'abord installer cette extension, si elle n'est pas déjà installé
 
 Vous devez installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** version 1.0.1.
+- Installer l'extension ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** version 1.0.2.
 
 Redémarrez LibreOffice / OpenOffice après l'installation.
 
@@ -164,7 +164,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
   - L'accès aux deux fichiers journaux concernant les activités de l'UCP et du réplicateur de données.
   - Le choix de l'ordre de synchronisation.
   - La modification de l'intervalle entre deux synchronisations.
-  - L'accès à la base de données HsqlDB 2.7.1 sous-jacente gérant vos métadonnées Microsoft oneDrive.
+  - L'accès à la base de données HsqlDB 2.7.2 sous-jacente gérant vos métadonnées Microsoft oneDrive.
 
 - La présence ou l'absence d'une barre oblique finale dans l'Url est maintenant prise en charge.
 
@@ -182,7 +182,13 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 
 - Beaucoup d'autres correctifs...
 
-### Que reste-t-il à faire pour la version 1.0.1:
+### Ce qui a été fait pour la version 1.0.2:
+
+- L'absence ou l'obsolescence des extensions **OAuth2OOo** et/ou **jdbcDriverOOo** nécessaires au bon fonctionnement de **mDriveOOo** affiche désormais un message d'erreur.
+
+- Encore plein d'autres choses...
+
+### Que reste-t-il à faire pour la version 1.0.2:
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 

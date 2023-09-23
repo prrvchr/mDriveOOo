@@ -107,7 +107,7 @@ class ContentUser():
                     msg = self._logger.resolveString(504, name)
                     raise IllegalIdentifierException(msg, source)
             self.MetaData = metadata
-            self.DataBase = DataBase(ctx, logger, database.getDataSource(), name, password, sync)
+            self.DataBase = DataBase(ctx, logger, database.Url, sync, name, password)
             self._identifiers = {}
             self._contents = {}
             self._contents[self.RootId] = Content(ctx, self)

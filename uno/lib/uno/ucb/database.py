@@ -36,25 +36,22 @@ from com.sun.star.logging.LogLevel import SEVERE
 from com.sun.star.sdb.CommandType import QUERY
 
 from com.sun.star.sdbc.DataType import VARCHAR
-from com.sun.star.sdbc.DataType import ARRAY
 
 from io.github.prrvchr.css.util import DateTimeWithTimezone
 
-from .unotool import createService
+from .dbtool import Array
+
+from .unotool import checkVersion
+from .unotool import getSimpleFile
 
 from .dbqueries import getSqlQuery
-from .dbconfig import g_role
-from .dbconfig import g_dba
-from .dbconfig import g_csv
-
-from .dbtool import Array
 
 from .dbtool import createStaticTable
 from .dbtool import currentDateTimeInTZ
 from .dbtool import currentUnoDateTime
 from .dbtool import executeSqlQueries
 from .dbtool import getDataSourceCall
-from .dbtool import getDateTimeInTZToString
+from .dbtool import getDataSourceConnection
 from .dbtool import getDataFromResult
 from .dbtool import executeQueries
 
@@ -62,40 +59,56 @@ from .dbinit import getStaticTables
 from .dbinit import getQueries
 from .dbinit import getTablesAndStatements
 
+from .dbconfig import g_role
+from .dbconfig import g_dba
+from .dbconfig import g_csv
 from .dbconfig import g_version
 
 from .configuration import g_admin
-from .configuration import g_scheme
 
-from packaging import version
 import traceback
 
 
 class DataBase():
-    def __init__(self, ctx, logger, datasource, name='', password='', sync=None):
+    def __init__(self, ctx, logger, url, sync=None, user='', pwd=''):
         self._ctx = ctx
         self._logger = logger
-        self._statement = datasource.getIsolatedConnection(name, password).createStatement()
+        self._url = url
         self._sync = sync
+        odb = url + '.odb'
+        new = not getSimpleFile(ctx).exists(odb)
+        connection = getDataSourceConnection(ctx, url, user, pwd, new)
+        self._version = connection.getMetaData().getDriverVersion()
+        if new and self.isUptoDate():
+            self._createDataBase(connection, odb)
+        self._statement = connection.createStatement()
         self._logger.logprb(INFO, 'DataBase', '__init__()', 401)
+
+    @property
+    def Url(self):
+        return self._url
+    @property
+    def Version(self):
+        return self._version
 
     @property
     def Connection(self):
         return self._statement.getConnection()
 
+    def isUptoDate(self):
+        return checkVersion(self._version, g_version)
+
 # Procedures called by the DataSource
-    def createDataBase(self):
-        ver = self.Connection.getMetaData().getDriverVersion()
-        self._logger.logprb(INFO, 'DataBase', 'createDataBase()', 411, ver)
-        if version.parse(ver) >= version.parse(g_version):
-            createStaticTable(self._ctx, self._statement, getStaticTables(), g_csv, True)
-            tables, statements = getTablesAndStatements(self._ctx, self._statement, ver)
-            executeSqlQueries(self._statement, tables)
-            executeQueries(self._ctx, self._statement, getQueries())
-            self._logger.logprb(INFO, 'DataBase', 'createDataBase()', 412)
-            return True
-        self._logger.logprb(SEVERE, 'DataBase', 'createDataBase()', 413, ver, g_version)
-        return False
+    def _createDataBase(self, connection, odb):
+        self._logger.logprb(INFO, 'DataBase', '_createDataBase()', 411, self._version)
+        statement = connection.createStatement()
+        createStaticTable(self._ctx, statement, getStaticTables(), g_csv, True)
+        tables, statements = getTablesAndStatements(self._ctx, statement, self._version)
+        executeSqlQueries(statement, tables)
+        executeQueries(self._ctx, statement, getQueries())
+        statement.close()
+        connection.getParent().DatabaseDocument.storeAsURL(odb, ())
+        self._logger.logprb(INFO, 'DataBase', '_createDataBase()', 412)
 
     def getDataSource(self):
         return self.Connection.getParent().DatabaseDocument.DataSource

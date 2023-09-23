@@ -29,7 +29,7 @@
 
 **The use of this software subjects you to our [Terms Of Use][3] and [Data Protection Policy][4].**
 
-# version [1.0.1][5]
+# version [1.0.2][5]
 
 ## Introduction:
 
@@ -75,7 +75,7 @@ You must first install this extension, if it is not already installed.
 
 You must install this extension, if it is not already installed.
 
-- Install ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** extension version 1.0.1.
+- Install ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** extension version 1.0.2.
 
 Restart LibreOffice / OpenOffice after installation.
 
@@ -164,7 +164,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
   - Access to the two log files concerning the activities of the UCP and the data replicator.
   - Choice of synchronization order.
   - The modification of the interval between two synchronizations.
-  - Access to the underlying HsqlDB 2.7.1 database managing your Microsoft oneDrive metadata.
+  - Access to the underlying HsqlDB 2.7.2 database managing your Microsoft oneDrive metadata.
 
 - The presence or absence of a trailing slash in the Url is now supported.
 
@@ -182,7 +182,13 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 
 - Many other fix...
 
-### What remains to be done for version 1.0.1:
+### What has been done for version 1.0.2:
+
+- The absence or obsolescence of the **OAuth2OOo** and/or **jdbcDriverOOo** extensions necessary for the proper functioning of **mDriveOOo** now displays an error message.
+
+- Many other things...
+
+### What remains to be done for version 1.0.2:
 
 - Add new language for internationalization...
 

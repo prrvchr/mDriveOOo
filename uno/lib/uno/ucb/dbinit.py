@@ -31,6 +31,7 @@ from com.sun.star.sdbc import SQLException
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from .unotool import checkVersion
 from .unotool import createService
 from .unotool import getResourceLocation
 from .unotool import getSimpleFile
@@ -129,11 +130,11 @@ def getTablesAndStatements(ctx, statement, version=g_version):
             columns.append(getSqlQuery(ctx, 'getUniqueConstraint', format))
         for format in constraint:
             columns.append(getSqlQuery(ctx, 'getForeignConstraint', format))
-        if version >= '2.5.0' and versioned:
+        if checkVersion(version, g_version) and versioned:
             columns.append(getSqlQuery(ctx, 'getPeriodColumns'))
         format = (table, ','.join(columns))
         query = getSqlQuery(ctx, 'createTable', format)
-        if version >= '2.5.0' and versioned:
+        if checkVersion(version, g_version) and versioned:
             query += getSqlQuery(ctx, 'getSystemVersioning')
         tables.append(query)
         if view:

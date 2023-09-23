@@ -38,26 +38,9 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb import IllegalIdentifierException
 
-from .oauth2 import g_oauth2
 from .oauth2 import getOAuth2UserName
 
 from .unotool import createService
-from .unotool import getResourceLocation
-from .unotool import getSimpleFile
-from .unotool import getUrlPresentation
-from .unotool import parseUrl
-
-from .configuration import g_cache
-
-from .dbconfig import g_folder
-from .dbconfig import g_protocol
-from .dbconfig import g_options
-from .dbconfig import g_shutdown
-
-from .dbtool import getDataSourceLocation
-from .dbtool import getDataSourceInfo
-from .dbtool import getDataSourceJavaInfo
-from .dbtool import registerDataSource
 
 from .ucp import ContentUser
 
@@ -65,37 +48,27 @@ from .provider import Provider
 
 from .replicator import Replicator
 
-from .database import DataBase
-
-from .logger import getLogger
-
-from .configuration import g_identifier
-from .configuration import g_scheme
-
-g_message = 'datasource'
-
+from threading import Event
+from threading import Lock
 import traceback
 
 
 class DataSource(unohelper.Base,
                  XCloseListener):
-    def __init__(self, ctx, logger, sync, lock):
+    def __init__(self, ctx, logger, database):
         self._ctx = ctx
         self._default = ''
         self._users = {}
         self._logger = logger
         self.Error = None
-        self._sync = sync
-        self._lock = lock
+        self._sync = Event()
+        self._lock = Lock()
         self._factory = createService(ctx, 'com.sun.star.uri.UriReferenceFactory')
-        datasource, url, new = self._getDataSource(False)
-        self.DataBase = DataBase(self._ctx, logger, datasource)
-        if new and self.DataBase.createDataBase():
-            self.DataBase.storeDataBase(url)
-        self.DataBase.addCloseListener(self)
-        folder, link = self.DataBase.getContentType()
+        database.addCloseListener(self)
+        folder, link = database.getContentType()
         self._provider = Provider(ctx, logger, folder, link)
-        self.Replicator = Replicator(ctx, datasource, self._provider, self._users, self._sync, self._lock)
+        self.Replicator = Replicator(ctx, database.Url, self._provider, self._users, self._sync, self._lock)
+        self.DataBase = database
         self._logger.logprb(INFO, 'DataSource', '__init__()', 301)
 
     # DataSource
@@ -157,36 +130,4 @@ class DataSource(unohelper.Base,
             msg = self._logger.resolveString(331, url)
             raise IllegalIdentifierException(msg, source)
         return name
-
-    def _getDataSource(self, register):
-        path = '%s/%s.odb' % (g_folder, g_scheme)
-        location = getResourceLocation(self._ctx, g_identifier, path)
-        url = getUrlPresentation(self._ctx, location)
-        dbcontext = createService(self._ctx, 'com.sun.star.sdb.DatabaseContext')
-        if getSimpleFile(self._ctx).exists(url):
-            self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 311, url)
-            if register and dbcontext.hasByName(g_scheme):
-                datasource = dbcontext.getByName(g_scheme)
-                self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 312, g_scheme)
-            else:
-                datasource = dbcontext.getByName(url)
-                self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 313, url)
-            new = False
-        else:
-            self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 314, url)
-            datasource = dbcontext.createInstance()
-            datasource.URL = self._getDataSourceLocation(url, True)
-            datasource.Info = getDataSourceInfo()
-            new = True
-            self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 315, url)
-        if register and new:
-            registerDataSource(dbcontext, g_scheme, url)
-            self._logger.logprb(INFO, 'DataSource', '_getDataSource()', 316, url, g_scheme)
-        return datasource, url, new
-
-    def _getDataSourceLocation(self, url, shutdown):
-        url = g_protocol + url + g_options
-        if shutdown:
-            url += g_shutdown
-        return url
 

@@ -42,38 +42,48 @@ from com.sun.star.ucb import IllegalIdentifierException
 
 from .ucp import ContentIdentifier
 
-from .unotool import createService
-from .unotool import parseUrl
+from .database import DataBase
 
 from .datasource import DataSource
 
+from .unotool import checkVersion
+from .unotool import createService
+from .unotool import getExtensionVersion
+from .unotool import parseUrl
+
+from .dbtool import getConnectionUrl
+
 from .logger import getLogger
 
+from .oauth2 import getOAuth2Version
+from .oauth2 import g_extension as g_oauth2ext
+from .oauth2 import g_version as g_oauth2ver
+
+from .jdbcdriver import g_extension as g_jdbcext
+from .jdbcdriver import g_identifier as g_jdbcid
+from .jdbcdriver import g_version as g_jdbcver
+
+from .dbconfig import g_folder
+from .dbconfig import g_version
+
+from .configuration import g_extension
 from .configuration import g_identifier
 from .configuration import g_defaultlog
 from .configuration import g_scheme
 
 import traceback
-from threading import Event
-from threading import Lock
 
 
 class ContentProvider(unohelper.Base,
-                            XServiceInfo,
-                            XContentIdentifierFactory,
-                            XContentProvider):
+                      XServiceInfo,
+                      XContentIdentifierFactory,
+                      XContentProvider):
     def __init__(self, ctx, logger, authority,  arguments):
-        print("ContentProvider.__init__() 1 Scheme: %s" % g_scheme)
         self._ctx = ctx
         self._authority = authority
         self._cls = '%sContentProvider' % arguments
         self._services = ('com.sun.star.ucb.ContentProvider', g_identifier + '.ContentProvider')
-        self._sync = Event()
-        self._lock = Lock()
         self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
-        if self._datasource is None:
-            print("ContentProvider.__init__() 2 Scheme: %s" % g_scheme)
-            ContentProvider.__datasource = DataSource(ctx, logger, self._sync, self._lock)
         self._logger = logger
         self._logger.logprb(INFO, self._cls, '__init__()', 201, arguments)
 
@@ -81,6 +91,8 @@ class ContentProvider(unohelper.Base,
 
     @property
     def _datasource(self):
+        if ContentProvider.__datasource is None:
+            ContentProvider.__datasource = self._getDataSource()
         return ContentProvider.__datasource
 
     # XContentIdentifierFactory
@@ -93,23 +105,23 @@ class ContentProvider(unohelper.Base,
     def queryContent(self, identifier):
         try:
             content = self._datasource.queryContent(self, self._authority, identifier)
-            self._logger.logprb(INFO, self._cls, 'queryContent()', 221, identifier.getContentIdentifier())
+            self._logger.logprb(INFO, self._cls, 'queryContent()', 231, identifier.getContentIdentifier())
             return content
         except IllegalIdentifierException as e:
-            self._logger.logprb(INFO, self._cls, 'queryContent()', 222, e.Message)
+            self._logger.logprb(INFO, self._cls, 'queryContent()', 232, e.Message)
             raise e
         except Exception as e:
-            msg = self._logger.resolveString(223, traceback.format_exc())
+            msg = self._logger.resolveString(233, traceback.format_exc())
             self._logger.logp(SEVERE, self._cls, 'queryContent()', msg)
             print(msg)
 
     def compareContentIds(self, id1, id2):
         url1, url2 = id1.getContentIdentifier(), id2.getContentIdentifier()
         if url1 == url2:
-            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 231, url1, url2)
+            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 241, url1, url2)
             compare = 0
         else:
-            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 232, url1, url2)
+            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 242, url1, url2)
             compare = -1
         return compare
 
@@ -129,3 +141,42 @@ class ContentProvider(unohelper.Base,
         if uri is not None:
             uri = self._transformer.getPresentation(uri, True)
         return uri if uri else url
+
+    def _getDataSource(self):
+        oauth2 = getOAuth2Version(self._ctx)
+        driver = getExtensionVersion(self._ctx, g_jdbcid)
+        if oauth2 is None:
+            self._logException(221, g_oauth2ext, ' ', g_extension)
+            raise self._getException(221, g_oauth2ext, '\n', g_extension)
+        elif not checkVersion(oauth2, g_oauth2ver):
+            self._logException(222, oauth2, g_oauth2ext, ' ', g_oauth2ver)
+            raise self._getException(222, oauth2, g_oauth2ext, '\n', g_oauth2ver)
+        elif driver is None:
+            self._logException(221, g_jdbcext, ' ', g_extension)
+            raise self._getException(221, g_jdbcext, '\n', g_extension)
+        elif not checkVersion(driver, g_jdbcver):
+            self._logException(222, driver, g_jdbcext, ' ', g_jdbcver)
+            raise self._getException(222, driver, g_jdbcext, '\n', g_jdbcver)
+        else:
+            path = g_folder + '/' + g_scheme
+            url = getConnectionUrl(self._ctx, path)
+            try:
+                database = DataBase(self._ctx, self._logger, url)
+            except SQLException as e:
+                self._logException(223, url, ' ', e.Message)
+                raise self._getException(223, url, '\n', e.Message)
+            else:
+                if not database.isUptoDate():
+                    self._logException(224, database.Version, ' ', g_version)
+                    raise self._getException(224, database.Version, '\n', g_version)
+                else:
+                    return DataSource(self._ctx, self._logger, database)
+        return None
+
+    def _logException(self, code, *args):
+        self._logger.logprb(SEVERE, 'ContentProvider', 'queryContent()', code, *args)
+
+    def _getException(self, code, *args):
+        msg = self._logger.resolveString(code, *args)
+        return IllegalIdentifierException(msg, self)
+

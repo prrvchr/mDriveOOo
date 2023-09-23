@@ -69,7 +69,7 @@ import time
 
 class Replicator(unohelper.Base,
                  Thread):
-    def __init__(self, ctx, datasource, provider, users, sync, lock):
+    def __init__(self, ctx, url, provider, users, sync, lock):
         Thread.__init__(self)
         self._ctx = ctx
         self._users = users
@@ -80,7 +80,7 @@ class Replicator(unohelper.Base,
         self._provider = provider
         self._config = getConfiguration(ctx, g_identifier, False)
         self._logger = getLogger(ctx, g_synclog, g_basename)
-        self.DataBase = DataBase(ctx, self._logger, datasource)
+        self.DataBase = DataBase(ctx, self._logger, url)
         sync.clear()
         self.start()
 
