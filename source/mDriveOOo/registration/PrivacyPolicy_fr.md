@@ -44,18 +44,18 @@ L'utilisation des services du `Fournisseur` au travers de `OAuth2OOo` et/ou `mDr
 Le `Fournisseur` est seul responsable de l'utilisation des données qu'il collecte, comme décrit dans sa Politique de Protection des Données.
 
 ___
-## Sécurité de vos informations personnelles:
+## Nature et étendue des droits sur vos données:
+
+`mDriveOOo` vous permet d'obtenir une copie de vos fichiers Microsoft oneDrive sur votre `Ordinateur`. En conséquence, `mDriveOOo` revendique au travers de `OAuth2OOo` le droit de **consulter, modifier et supprimer vos fichiers Microsoft oneDrive**.
+
+___
+## Sécurité des données collectées:
 
 Étant donné que les données collectées par `OAuth2OOo` et/ou `mDriveOOo` sont situées sur l'`Ordinateur`, **seul l'**`Utilisateur` **est responsable de la sécurité des données collectées**.
 
 L'utilisation des services du `Fournisseur` au travers de `OAuth2OOo` et/ou `mDriveOOo` peut vous soumettre à la politique de protection des données du `Fournisseur`. Il incombe à l'`Utilisateur` de consulter ces règles sur le site Web du `Fournisseur`.
 
 Le `Fournisseur` est seul responsable de la sécurité des données qu'il collecte, comme décrit dans sa Politique de Protection des Données.
-
-___
-## Nature et étendue des droits sur les données collectées:
-
-`mDriveOOo` vous permet d'obtenir une copie de vos fichiers Microsoft oneDrive sur votre `Ordinateur`. En conséquence, `mDriveOOo` revendique au travers de `OAuth2OOo` le droit de **consulter, modifier et supprimer vos fichiers Microsoft oneDrive**.
 
 ___
 ## Expiration des données collectées:
