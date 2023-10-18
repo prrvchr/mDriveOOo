@@ -82,7 +82,7 @@ class Wizard(unohelper.Base,
             self._model.setRoadmapModel(roadmap)
             print("Wizard.__init__()")
         except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
+            msg = "Error: %s" % traceback.format_exc()
             print(msg)
 
 # XWizard

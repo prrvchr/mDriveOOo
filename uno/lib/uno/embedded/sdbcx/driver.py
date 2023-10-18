@@ -52,23 +52,23 @@ class Driver(DriverBase,
     # XDataDefinitionSupplier
     def getDataDefinitionByConnection(self, connection):
         try:
-            self._logger.logprb(INFO, 'Driver', 'getDataDefinitionByConnection()', 141)
+            self._logger.logprb(INFO, 'Driver', 'getDataDefinitionByConnection()', 151)
             driver = self._getDriver()
             return driver.getDataDefinitionByConnection(connection)
         except SQLException as e:
             raise e
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Driver', 'getDataDefinitionByConnection()', 142, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'Driver', 'getDataDefinitionByConnection()', 152, e, traceback.format_exc())
 
     def getDataDefinitionByURL(self, url, infos):
-        self._logger.logprb(INFO, 'Driver', 'getDataDefinitionByURL()', 151, url)
+        self._logger.logprb(INFO, 'Driver', 'getDataDefinitionByURL()', 161, url)
         return self.getDataDefinitionByConnection(connect(url, infos))
 
     # XCreateCatalog
     def createCatalog(self, info):
-        self._logger.logprb(INFO, 'Driver', 'createCatalog()', 161)
+        self._logger.logprb(INFO, 'Driver', 'createCatalog()', 171)
 
     # XDropCatalog
     def dropCatalog(self, name, info):
-        self._logger.logprb(INFO, 'Driver', 'dropCatalog()', 171, name)
+        self._logger.logprb(INFO, 'Driver', 'dropCatalog()', 181, name)
 

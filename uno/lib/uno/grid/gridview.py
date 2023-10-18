@@ -66,7 +66,7 @@ class GridView(unohelper.Base):
         index = -1
         control = self._getGrid()
         if control.hasSelectedRows():
-            index = control.getSelectedRows()[0]
+            index = control.getSelectedRows()[-1]
         return index
 
     def getSelectedRows(self):

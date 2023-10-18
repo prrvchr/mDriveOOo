@@ -81,7 +81,7 @@ class ItemListener(unohelper.Base,
         try:
             self._manager.changeRoadmapStep(event.ItemId)
         except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
+            msg = "Error: %s" % traceback.format_exc()
             print(msg)
 
     def disposing(self, event):

@@ -68,7 +68,7 @@ class WindowHandler(unohelper.Base,
                 handled = True
             return handled
         except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
+            msg = "Error: %s" % traceback.format_exc()
             print(msg)
 
     def getSupportedMethodNames(self):
@@ -93,7 +93,7 @@ class RowSetListener(unohelper.Base,
             rowset = event.Source
             self._manager.setDataModel(rowset)
         except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
+            msg = "Error: %s" % traceback.format_exc()
             print(msg)
 
 
@@ -110,7 +110,7 @@ class GridListener(unohelper.Base,
             index = control.getSelectedRows()[0] if control.hasSelectedRows() else -1
             self._manager.changeGridSelection(index, self._grid)
         except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
+            msg = "Error: %s" % traceback.format_exc()
             print(msg)
 
     def disposing(self, event):

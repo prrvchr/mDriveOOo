@@ -40,12 +40,20 @@ from com.sun.star.sdbc import SQLException
 
 from .documenthandler import DocumentHandler
 
+from .unotool import checkVersion
 from .unotool import createService
 from .unotool import getConfiguration
+from .unotool import getExtensionVersion
 from .unotool import getPropertyValueSet
 
 from .logger import getLogger
 
+from .jdbcdriver import g_extension as g_jdbcext
+from .jdbcdriver import g_identifier as g_jdbcid
+from .jdbcdriver import g_version as g_jdbcver
+
+from .configuration import g_dbname
+from .configuration import g_extension
 from .configuration import g_identifier
 from .configuration import g_defaultlog
 from .configuration import g_basename
@@ -78,43 +86,39 @@ class Driver(unohelper.Base,
         try:
             newinfos, document, storage, location = self._getConnectionInfo(infos)
             if storage is None or location is None:
-                code = self._logger.resolveString(111)
-                msg = self._logger.resolveString(112, url)
-                raise self._getException(code, 1001, msg, self)
-            driver = self._getDriver()
+                self._logException(112, url, ' ')
+                raise self._getException(1001, None, 111, url, '\n')
             handler = self._getDocumentHandler(location)
             path = handler.getConnectionUrl(document, storage, location)
             print("driver.connect() Path: %s" % path)
             self._logger.logprb(INFO, 'Driver', 'connect()', 113, location)
-            connection = driver.connect(path, newinfos)
+            connection = self._getDriver().connect(path, newinfos)
             version = connection.getMetaData().getDriverVersion()
-            self._logger.logprb(INFO, 'Driver', 'connect()', 114, version, g_user)
+            self._logger.logprb(INFO, 'Driver', 'connect()', 114, g_dbname, version, g_user)
             return connection
         except SQLException as e:
-            self._logger.logp(SEVERE, 'Driver', 'connect()', e.Message)
             raise e
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Driver', 'connect()', 117, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'Driver', 'connect()', 115, str(e), traceback.format_exc())
             raise e
 
     def acceptsURL(self, url):
         accept = url.startswith(g_url)
-        self._logger.logprb(INFO, 'Driver', 'acceptsURL()', 121, url, accept)
+        self._logger.logprb(INFO, 'Driver', 'acceptsURL()', 131, url, accept)
         return accept
 
     def getPropertyInfo(self, url, infos):
         try:
-            self._logger.logprb(INFO, 'Driver', 'getPropertyInfo()', 131, url)
-            driver = self._getDriver()
-            drvinfo = driver.getPropertyInfo(g_protocol, infos)
+            self._logger.logprb(INFO, 'Driver', 'getPropertyInfo()', 141, url)
+            drvinfo = self._getDriver().getPropertyInfo(g_protocol, infos)
             for info in drvinfo:
-                self._logger.logprb(INFO, 'Driver', 'getPropertyInfo()', 132, info.Name, info.Value)
+                self._logger.logprb(INFO, 'Driver', 'getPropertyInfo()', 142, info.Name, info.Value)
             return drvinfo
         except SQLException as e:
             self._logger.logp(SEVERE, 'Driver', 'getPropertyInfo()', e.Message)
             raise e
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Driver', 'getPropertyInfo()', 133, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'Driver', 'getPropertyInfo()', 143, e, traceback.format_exc())
             raise e
 
     def getMajorVersion(self):
@@ -135,12 +139,15 @@ class Driver(unohelper.Base,
         # FIXME: If jdbcDriverOOo is not installed,
         # FIXME: we need to throw SQLException
         if self._driver is None:
-            driver = createService(self._ctx, self._service)
-            if driver is None:
-                code = self._logger.resolveString(181)
-                msg = self._logger.resolveString(182, self._service)
-                raise self._getException(code, 1001, msg, self)
-            self._driver = driver
+            version = getExtensionVersion(self._ctx, g_jdbcid)
+            if version is None:
+                self._logException(122, g_jdbcext, ' ', g_extension)
+                raise self._getException(1001, None, 121, g_jdbcext, '\n', g_extension)
+            elif not checkVersion(version, g_jdbcver):
+                self._logException(124, version, g_jdbcext, ' ', g_jdbcver)
+                raise self._getException(1001, None, 123, version, g_jdbcext, '\n', g_jdbcver)
+            else:
+                self._driver = createService(self._ctx, self._service)
         return self._driver
 
     def _getConnectionInfo(self, infos):
@@ -177,12 +184,15 @@ class Driver(unohelper.Base,
                 self._handlers.append(handler)
             return handler
 
-    def _getException(self, state, code, message, context=None, exception=None):
+    def _logException(self, resource, *args):
+        self._logger.logprb(SEVERE, 'Driver', 'connect()', resource, *args)
+
+    def _getException(self, code, exception, resource, *args):
         error = SQLException()
-        error.SQLState = state
         error.ErrorCode = code
         error.NextException = exception
-        error.Message = message
-        error.Context = context
+        error.SQLState = self._logger.resolveString(resource)
+        error.Message = self._logger.resolveString(resource +1, *args)
+        error.Context = self
         return error
 
