@@ -13,9 +13,13 @@ the privacy of our mDriveOOo software users is very important to us, and we are 
 This policy explains what we do with your personal information.
 
 For simplicity, in the rest of this document, will be named:
-- `mDriveOOo`:  the mDriveOOo software in its entirety.
-- `User`: the user of the mDriveOOo software.
-- `Supplier`: the internet service provider delivering internet services to `mDriveOOo`.
+- `OAuth2OOo`: the [OAuth2OOo][4] software in its entirety.
+- `mDriveOOo`: the [mDriveOOo][5] software in its entirety.
+- `User`: the user of the `OAuth2OOo` and/or `mDriveOOo` software.
+- `Computer`: the personal computer of the `User` on which the `OAuth2OOo` and/or `mDriveOOo` software is installed.
+- `Supplier`: the internet service provider delivering the OAuth2 tokens to `OAuth2OOo` and internet services to `mDriveOOo`.
+
+`mDriveOOo` using software services provided by `OAuth2OOo`, **its use also subjects you to the [Data Protection Policy][6]** of `OAuth2OOo`.
 
 ___
 ## Contact:
@@ -27,40 +31,48 @@ prrvchr@gmail.com
 ___
 ## Use of your personal data:
 
-To work `mDriveOOo` need to keep data locally.
+To work `OAuth2OOo` and/or `mDriveOOo` need to keep data locally on the `Computer`.
 
-The location of this data is in the `mDriveOOo` application directory.
+The location of this data is in the `OAuth2OOo` and/or `mDriveOOo` application directory, respectively.
 
-`mDriveOOo` **does not collect any data on external servers in any way.**
+`OAuth2OOo` and/or `mDriveOOo` **does not collect any data on external servers in any way.**
 
-The deletion of data collected by `mDriveOOo`, is guaranteed, by the `mDriveOOo` application uninstall.
+The deletion of data collected by `OAuth2OOo` and/or `mDriveOOo`, is guaranteed, by the `OAuth2OOo` and/or `mDriveOOo` application uninstall, respectively.
 
-Use of the `Supplier` services through `mDriveOOo`, may submit you to the Data Protection Policy of `Supplier`. It is the responsibility of the `User` to take knowledge of these Policy from the `Supplier` website.
+Use of the `Supplier` services through `OAuth2OOo` and/or `mDriveOOo`, may submit you to the Data Protection Policy of `Supplier`. It is the responsibility of the `User` to take knowledge of these Policy from the `Supplier` website.
 
 `Supplier` is solely responsible for the use of the data it collects as described in its Policy.
 
 ___
 ## Security of your personal information:
 
-Since the data collected by `mDriveOOo` is located on the user's computer, only the `User` is responsible for the security of the data collected.
+Since the data collected by `OAuth2OOo` and/or `mDriveOOo` is located on the `Computer`, **only the** `User` **is responsible for the security of the data collected**.
 
-Use of the `Supplier` services via `mDriveOOo` may subject you to the data protection Policy of `Supplier`. It is the responsibility of the `User` to review this Policy from the `Supplier` website.
+Use of the `Supplier` services via `OAuth2OOo` and/or `mDriveOOo` may subject you to the data protection Policy of `Supplier`. It is the responsibility of the `User` to review this Policy from the `Supplier` website.
 
 `Supplier` is solely responsible for the security of the data it collects as described in its Policy.
 
 ___
+## Nature and scope rights over the data collected:
+
+`mDriveOOo` allows you to get a copy of your Microsoft oneDrive files on your `Computer`. Consequently, `mDriveOOo` claims through `OAuth2OOo` the right to **consult, modify and delete your Microsoft oneDrive files**.
+
+___
 ## Expiration of collected data:
 
-Updating the data collected locally is done each time `mDriveOOo` is used.
+Updating the data collected locally is done each time `OAuth2OOo` and/or `mDriveOOo` is used.
 
-**The deletion of data collected locally, is possible by the** `mDriveOOo` **uninstall.**
+**The deletion of data collected locally, is possible by uninstalling** `OAuth2OOo` and/or `mDriveOOo` **respectively**.
 
-It is the responsibility of the `User` to uninstall `mDriveOOo` in order to delete the collected data.
+It is the responsibility of the `User` to uninstall `OAuth2OOo` and/or `mDriveOOo` in order to delete the collected data.
 
-Use of the `Supplier` services via `mDriveOOo` may subject you to the data protection Policy of `Supplier`. It is the responsibility of the `User` to review this Policy from the `Supplier` website.
+Use of the `Supplier` services via `OAuth2OOo` and/or `mDriveOOo` may subject you to the data protection Policy of `Supplier`. It is the responsibility of the `User` to review this Policy from the `Supplier` website.
 
 `Supplier` is solely responsible for the expiration of the data it collects as described in its Policy.
 
 [1]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_fr>
 [2]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_en>
 [3]: <https://prrvchr.github.io/mDriveOOo>
+[4]: <https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt>
+[5]: <https://github.com/prrvchr/mDriveOOo/raw/master/mDriveOOo.oxt>
+[6]: <https://prrvchr.github.io/OAuth2OOo/source/OAuth2OOo/registration/PrivacyPolicy_fr>
