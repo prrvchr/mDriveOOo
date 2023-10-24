@@ -1,0 +1,13 @@
+namespace: mDriveOOo
+output:
+  file_path: ./Fluid-Attacks-Results.csv
+  format: CSV
+working_dir: .
+sast:
+  include:
+    - source/mDriveOOo/service/pythonpath/mdrive/
+    - glob(source/mDriveOOo/service/*.py)
+sca:
+  include:
+    - .
+language: EN

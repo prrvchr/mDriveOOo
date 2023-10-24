@@ -1,0 +1,12 @@
+# .github/workflows/dev.yml
+name: Fluid Attacks Scan
+on: [push, pull_request]
+jobs:
+  machineStandalone:
+    name: machineStandalone job
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@master
+      - uses: docker://ghcr.io/fluidattacks/makes/amd64
+        with:
+          args: m gitlab:fluidattacks/universe@trunk /skims scan ./_fascan.yml
