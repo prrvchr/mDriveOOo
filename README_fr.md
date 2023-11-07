@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][3] et à notre [Politique de protection des données][4].**
 
-# version [1.0.2][5]
+# version [1.0.3][5]
 
 ## Introduction:
 
@@ -67,7 +67,7 @@ ___
 Il semble important que le fichier n'ait pas été renommé lors de son téléchargement.  
 Si nécessaire, renommez-le avant de l'installer.
 
-- Installer l'extension ![OAuth2OOo logo][17] **[OAuth2OOo.oxt][18]** version 1.1.1.
+- Installer l'extension ![OAuth2OOo logo][17] **[OAuth2OOo.oxt][18]** version 1.2.0.
 
 Vous devez d'abord installer cette extension, si elle n'est pas déjà installée.
 
@@ -75,7 +75,7 @@ Vous devez d'abord installer cette extension, si elle n'est pas déjà installé
 
 Vous devez installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** version 1.0.2.
+- Installer l'extension ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** version 1.0.3.
 
 Redémarrez LibreOffice / OpenOffice après l'installation.
 
@@ -188,7 +188,11 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 
 - Encore plein d'autres choses...
 
-### Que reste-t-il à faire pour la version 1.0.2:
+### Ce qui a été fait pour la version 1.0.3:
+
+- Prise en charge de la version 1.2.0 de l'extension **OAuth2OOo**. Les versions précédentes ne fonctionneront pas avec l'extension **OAuth2OOo** 1.2.0 ou ultérieure.
+
+### Que reste-t-il à faire pour la version 1.0.3:
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 
