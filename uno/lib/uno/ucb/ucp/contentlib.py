@@ -30,13 +30,9 @@
 import uno
 import unohelper
 
-from com.sun.star.container import XIndexAccess
-from com.sun.star.sdb import XInteractionSupplyParameters
 from com.sun.star.sdbc import XRow
 from com.sun.star.sdbc import XResultSet
 from com.sun.star.sdbc import XResultSetMetaDataSupplier
-from com.sun.star.task import XInteractionRequest
-from com.sun.star.task import XInteractionAbort
 from com.sun.star.ucb import XContentAccess
 from com.sun.star.ucb import XDynamicResultSet
 from com.sun.star.ucb import XCommandInfo
@@ -52,125 +48,6 @@ from ..unotool import getProperty
 from .contenthelper import getParametersRequest
 
 import traceback
-
-
-class NoOAuth2(object):
-    def __eq__(self, other):
-        return False
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __call__(self, request):
-        return request
-
-
-class OAuth2OOo(NoOAuth2):
-    def __init__(self, ctx, scheme, username=None):
-        self.service = ctx.ServiceManager.createInstanceWithContext(g_oauth2, ctx)
-        self.service.ResourceUrl = scheme
-        if username is not None:
-            self.service.UserName = username
-
-    @property
-    def UserName(self):
-        return self.service.UserName
-    @UserName.setter
-    def UserName(self, username):
-        self.service.UserName = username
-    @property
-    def Scheme(self):
-        return self.service.ResourceUrl
-
-    def __eq__(self, other):
-        return all((self.UserName == getattr(other, 'UserName', None),
-                    self.Scheme == getattr(other, 'Scheme', None)))
-
-    def __call__(self, r):
-        r.headers['Authorization'] = self.service.getToken('Bearer %s')
-        return r
-
-
-class InteractionAbort(unohelper.Base,
-                       XInteractionAbort):
-    # XInteractionAbort
-    def select(self):
-        pass
-
-
-class InteractionSupplyParameters(unohelper.Base,
-                                  XInteractionSupplyParameters):
-    def __init__(self, result):
-        self._result = result
-        self._username = ''
-    # XInteractionSupplyParameters
-    def setParameters(self, properties):
-        for property in properties:
-            if property.Name == 'UserName':
-                self._username = property.Value
-    def select(self):
-        self._result.Value = self._username
-        self._result.IsPresent = True
-
-
-class InteractionRequestParameters(unohelper.Base,
-                                   XInteractionRequest):
-    def __init__(self, source, connection, message, result):
-        self.request = getParametersRequest(source, connection, message)
-        self.request.Parameters = RequestParameters(message)
-        self.continuations = (InteractionSupplyParameters(result), InteractionAbort())
-    # XInteractionRequest
-    def getRequest(self):
-        return self.request
-    def getContinuations(self):
-        return self.continuations
-
-
-class RequestParameters(unohelper.Base,
-                        XIndexAccess):
-    def __init__(self, description):
-        self.description = description
-    # XIndexAccess
-    def getCount(self):
-        return 1
-    def getByIndex(self, index):
-        return Parameters(self.description)
-    def getElementType(self):
-        return uno.getTypeByName('string')
-    def hasElements(self):
-        return True
-
-
-class Parameters(unohelper.Base,
-                 PropertySet):
-    def __init__(self, description):
-        self.Name = 'UserName'
-        self.Type = uno.getConstantByName('com.sun.star.sdbc.DataType.VARCHAR')
-        self.TypeName = 'VARCHAR'
-        self.Precision = 0
-        self.Scale = 0
-        self.IsNullable = uno.getConstantByName('com.sun.star.sdbc.ColumnValue.NO_NULLS')
-        self.IsAutoIncrement = False
-        self.IsCurrency = False
-        self.IsRowVersion = False
-        self.Description = description
-        self.DefaultValue = ''
-    def _getPropertySetInfo(self):
-        properties = {}
-        bound = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.BOUND')
-        readonly = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.READONLY')
-        properties['Name'] = getProperty('Name', 'string', bound | readonly)
-        properties['Type'] = getProperty('Type', 'long', bound | readonly)
-        properties['TypeName'] = getProperty('TypeName', 'string', bound | readonly)
-        properties['Precision'] = getProperty('Precision', 'long', bound | readonly)
-        properties['Scale'] = getProperty('Scale', 'long', bound | readonly)
-        properties['IsNullable'] = getProperty('IsNullable', 'long', bound | readonly)
-        properties['IsAutoIncrement'] = getProperty('IsAutoIncrement', 'boolean', bound | readonly)
-        properties['IsCurrency'] = getProperty('IsCurrency', 'boolean', bound | readonly)
-        properties['IsRowVersion'] = getProperty('IsRowVersion', 'boolean', bound | readonly)
-        properties['Description'] = getProperty('Description', 'string', bound | readonly)
-        properties['DefaultValue'] = getProperty('DefaultValue', 'string', bound | readonly)
-        return properties
 
 
 class CommandInfo(unohelper.Base,
@@ -208,7 +85,8 @@ class CommandInfo(unohelper.Base,
         return False
 
 
-class CommandInfoChangeNotifier(XCommandInfoChangeNotifier):
+class CommandInfoChangeNotifier(unohelper.Base,
+                                XCommandInfoChangeNotifier):
     def __init__(self):
         self.commandInfoListeners = []
     # XCommandInfoChangeNotifier

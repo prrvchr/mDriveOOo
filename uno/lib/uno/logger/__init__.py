@@ -27,27 +27,15 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from .dialog import LogManager
+from .dialog import LoggerListener
+
 from .logger import Logger
 
 from .loggerpool import LoggerPool
 
-from .logmanager import LogManager
-
-from .logmodel import LogModel
-
-from .handler import RollerHandler
-
-from .loghandler import LoggerListener
+from .loghandler import RollerHandler
 
 from .loghelper import getLogger
 from .loghelper import LogController
 
-from .log import clearLogger
-from .log import disposeLogger
-from .log import getLoggerUrl
-from .log import getLoggerSetting
-from .log import getMessage
-from .log import isDebugMode
-from .log import logMessage
-from .log import setDebugMode
-from .log import setLoggerSetting

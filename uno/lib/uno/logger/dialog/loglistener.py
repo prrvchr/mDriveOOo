@@ -29,72 +29,43 @@
 
 import unohelper
 
-from com.sun.star.logging.LogLevel import ALL
-from com.sun.star.logging.LogLevel import OFF
+from com.sun.star.util import XModifyListener
 
-from ..unotool import getConfiguration
-from ..unotool import getFileSequence
-from ..unotool import getResourceLocation
-from ..unotool import getStringResourceWithLocation
-
-from .loggerpool import LoggerPool
-
-from .loghelper import LogWrapper
-from .loghelper import LogController
-from .loghelper import LogConfig
-
-from ..configuration import g_identifier
-from ..configuration import g_resource
-from ..configuration import g_basename
+import traceback
 
 
-class LogModel(LogController):
-    def __init__(self, ctx, name, listener):
-        self._ctx = ctx
-        self._basename = g_basename
-        self._pool = LoggerPool(ctx)
-        self._url = getResourceLocation(ctx, g_identifier, g_resource)
-        self._logger = None
-        self._listener = listener
-        self._resolver = getStringResourceWithLocation(ctx, self._url, 'Logger')
-        self._setting = None
-        self._default = name
-        self._config = getConfiguration(ctx, '/org.openoffice.Office.Logging/Settings', True)
-        self._pool.addModifyListener(listener)
+class PoolListener(unohelper.Base,
+                   XModifyListener):
+    def __init__(self, manager):
+        self._manager = manager
 
-    # Public getter method
-    def getLoggerNames(self, filter=None):
-        names = self._pool.getLoggerNames() if filter is None else self._pool.getFilteredLoggerNames(filter)
-        if self._default not in names:
-            names = list(names)
-            names.insert(0, self._default)
-            names = tuple(names)
-        return names
+    # XModifyListener
+    def modified(self, event):
+        try:
+            print("PoolListener.modified()")
+            self._manager.updateLoggers()
+        except Exception as e:
+            msg = "Error: %s" % traceback.format_exc()
+            print(msg)
 
-    def getLoggerSetting(self, name):
-        self._logger = self._pool.getLocalizedLogger(name, self._url, g_basename)
-        return self._getLoggerSetting()
+    def disposing(self, event):
+        pass
 
-    def loadSetting(self):
-        self._config = getConfiguration(self._ctx, '/org.openoffice.Office.Logging/Settings', True)
-        return self._getLoggerSetting()
 
-    def getLoggerData(self):
-        url = self._getLoggerUrl()
-        length, sequence = getFileSequence(self._ctx, url)
-        text = sequence.value.decode('utf-8')
-        return url, text, length
+class LoggerListener(unohelper.Base,
+                     XModifyListener):
+    def __init__(self, manager):
+        self._manager = manager
 
-# Public setter method
-    def dispose(self):
-        self._pool.removeModifyListener(self._listener)
+    # XModifyListener
+    def modified(self, event):
+        try:
+            print("LoggerListener.modified()")
+            self._manager.updateLogger()
+        except Exception as e:
+            msg = "Error: %s" % traceback.format_exc()
+            print(msg)
 
-    def setLogSetting(self, setting):
-        config = self._getLogConfig()
-        config.LogLevel = setting.LogLevel
-        config.DefaultHandler = setting.DefaultHandler
-
-    def saveSetting(self):
-        if self._config.hasPendingChanges():
-            self._config.commitChanges()
+    def disposing(self, event):
+        pass
 

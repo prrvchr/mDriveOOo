@@ -66,6 +66,9 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     void setJson([in] string Path,
                  [in] any Value);
 
+    void setForm([in] string Key,
+                 [in] any Value);
+
     com::sun::star::json::XJsonBuilder getJsonBuilder();
 
     void setJsonStructure([in] com::sun::star::json::XJsonStructure Json);

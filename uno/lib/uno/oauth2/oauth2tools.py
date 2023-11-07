@@ -34,19 +34,21 @@ from .configuration import g_identifier
 from .configuration import g_service
 
 
-def getOAuth2(ctx, url, name):
-    oauth2 = createService(ctx, g_service)
-    if oauth2 is not None:
-        oauth2.initializeSession(url, name)
+def getOAuth2(ctx, url='', name=''):
+    if url and name:
+        oauth2 = createService(ctx, g_service, url, name)
+    else:
+        oauth2 = createService(ctx, g_service)
     return oauth2
 
 def getOAuth2Version(ctx):
     version = getExtensionVersion(ctx, g_identifier)
     return version
 
-def getRequest(ctx, scheme, name):
-    request = createService(ctx, g_service)
-    if request is not None:
-        request.initializeSession(scheme, name)
+def getRequest(ctx, url, name):
+    if url and name:
+        request = createService(ctx, g_service, url, name)
+    else:
+        request = createService(ctx, g_service)
     return request
 

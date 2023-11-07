@@ -45,10 +45,10 @@ class NoOAuth2(object):
 # Wrapper to make callable OAuth2Service
 class OAuth2OOo(NoOAuth2):
     def __init__(self, oauth2):
-        self.oauth2 = oauth2
+        self._oauth2 = oauth2
 
     def __call__(self, request):
-        request.headers['Authorization'] = self.oauth2.getToken('Bearer %s')
+        request.headers['Authorization'] = self._oauth2.getToken('Bearer %s')
         return request
 
 

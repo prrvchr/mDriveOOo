@@ -51,6 +51,9 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     com::sun::star::json::XJsonStructure getJson()
                                          raises(JSONDecodeException);
 
+    com::sun::star::json::XJsonStructure getForm()
+                                         raises(JSONDecodeException);
+
     void raiseForStatus()
          raises(HTTPException);
 

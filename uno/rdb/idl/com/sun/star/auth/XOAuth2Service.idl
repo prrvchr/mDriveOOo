@@ -37,27 +37,13 @@
 
 module com { module sun { module star { module auth {
 
-interface XOAuth2Service: com::sun::star::uno::XInterface
+interface XOAuth2Service : com::sun::star::uno::XInterface
 {
 
-    boolean isOnLine();
-
-    boolean isOffLine([in] string Host);
-
-    boolean initializeUrl([in] string ResourceUrl);
-
-    boolean initializeSession([in] string ResourceUrl,
-                              [in] string UserName);
-
-    boolean getAuthorization([in] string ResourceUrl,
-                             [in] string UserName,
-                             [in] boolean AutoClose,
-                             [in] com::sun::star::awt::XWindowPeer Parent);
+    short getSessionMode([in] string Host);
 
     string getToken([in] string Format)
                     raises(com::sun::star::auth::RefreshTokenException);
-
-    short getSessionMode([in] string Host);
 
     string unquoteUrl([in] string Url);
 
@@ -89,7 +75,6 @@ interface XOAuth2Service: com::sun::star::uno::XInterface
     [attribute, readonly] string ProviderName;
     [attribute, readonly] string UserName;
     [attribute, readonly] sequence<short> Timeout;
-
 
 };
 

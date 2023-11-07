@@ -30,12 +30,12 @@
 import uno
 import unohelper
 
-from ..unotool import getContainerWindow
-from ..unotool import getDialog
+from ..loghelper import LogSetting
 
-from .loghelper import LogSetting
+from ...unotool import getContainerWindow
+from ...unotool import getDialog
 
-from ..configuration import g_extension
+from ...configuration import g_extension
 
 
 class LogWindow():

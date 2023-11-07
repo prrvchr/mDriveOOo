@@ -34,28 +34,31 @@ from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
 from .logmodel import LogModel
+
 from .logview import LogWindow
 from .logview import LogDialog
+
 from .loghandler import WindowHandler
 from .loghandler import DialogHandler
-from .loghandler import PoolListener
-from .loghandler import LoggerListener
 
-from ..unotool import getDialog
-from ..unotool import getFileSequence
+from .loglistener import PoolListener
+from .loglistener import LoggerListener
 
-from .loghelper import getLoggerName
+from ..loghelper import getLoggerName
 
-from ..configuration import g_extension
-from ..configuration import g_identifier
+from ...unotool import getDialog
+from ...unotool import getFileSequence
+
+from ...configuration import g_extension
+from ...configuration import g_identifier
 
 import traceback
 
 
 class LogManager(unohelper.Base):
-    def __init__(self, ctx, parent, infos, filter, default):
+    def __init__(self, ctx, parent, infos, filter, *defaults):
         self._ctx = ctx
-        self._model = LogModel(ctx, default, PoolListener(self))
+        self._model = LogModel(ctx, PoolListener(self), *defaults)
         self._view = LogWindow(ctx, WindowHandler(self), parent)
         self._infos = infos
         self._filter = filter

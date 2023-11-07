@@ -299,12 +299,13 @@ class Provider(object):
         parameter = self.getRequestParameter(user.Request, method, data)
         response = user.Request.execute(parameter)
         location = self.parseUploadLocation(response)
-        if location is None:
-            return False
-        parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
-        url = self.SourceURL + g_separator + item
-        response = user.Request.upload(parameter, url, chunk, retry, delay)
-        return self.updateItemId(user.DataBase, item, response)
+        if location:
+            parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
+            url = self.SourceURL + g_separator + item
+            response = user.Request.upload(parameter, url, chunk, retry, delay)
+            if response:
+                return self.updateItemId(user.DataBase, item, response)
+        return None
 
     def updateTitle(self, request, itemid, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)

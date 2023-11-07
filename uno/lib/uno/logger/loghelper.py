@@ -46,8 +46,8 @@ from ..unotool import getResourceLocation
 from ..unotool import getSimpleFile
 from ..unotool import getStringResourceWithLocation
 
-from .handler import RollerHandler
-from .handler import getRollerHandlerUrl
+from .loghandler import RollerHandler
+from .loghandler import getRollerHandlerUrl
 
 from ..configuration import g_identifier
 from ..configuration import g_resource

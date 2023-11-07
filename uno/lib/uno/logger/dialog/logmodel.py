@@ -27,99 +27,74 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
 import unohelper
 
 from com.sun.star.logging.LogLevel import ALL
 from com.sun.star.logging.LogLevel import OFF
 
-from com.sun.star.logging import XLogHandler
+from ..loggerpool import LoggerPool
 
-from ..unotool import createService
-from ..unotool import getResourceLocation
-from ..unotool import getSimpleFile
+from ..loghelper import LogWrapper
+from ..loghelper import LogController
+from ..loghelper import LogConfig
 
-from ..configuration import g_identifier
+from ...unotool import getConfiguration
+from ...unotool import getFileSequence
+from ...unotool import getResourceLocation
+from ...unotool import getStringResourceWithLocation
 
-g_folderlog = 'log'
+from ...configuration import g_identifier
+from ...configuration import g_resource
+from ...configuration import g_basename
 
 
-def getRollerHandlerUrl(ctx, name):
-    path = '%s/%s.log' % (g_folderlog, name)
-    return getResourceLocation(ctx, g_identifier, path)
+class LogModel(LogController):
+    def __init__(self, ctx, listener, *names):
+        self._ctx = ctx
+        self._basename = g_basename
+        self._pool = LoggerPool(ctx)
+        self._url = getResourceLocation(ctx, g_identifier, g_resource)
+        self._logger = None
+        self._listener = listener
+        self._resolver = getStringResourceWithLocation(ctx, self._url, 'Logger')
+        self._setting = None
+        self._names = names
+        self._config = getConfiguration(ctx, '/org.openoffice.Office.Logging/Settings', True)
+        self._pool.addModifyListener(listener)
 
+    # Public getter method
+    def getLoggerNames(self, filter=None):
+        names = list(self._names)
+        others = self._pool.getLoggerNames() if filter is None else self._pool.getFilteredLoggerNames(filter)
+        for name in others:
+            if name not in names:
+                names.append(name)
+        return tuple(names)
 
-class RollerHandler(unohelper.Base,
-                    XLogHandler):
-    def __init__(self, ctx, name, level=ALL):
-        encoding = 'UTF-8'
-        self._encoding = encoding
-        self._formatter = createService(ctx, 'com.sun.star.logging.PlainTextFormatter')
-        self._url = getRollerHandlerUrl(ctx, name)
-        self._sf = getSimpleFile(ctx)
-        self._out = createService(ctx, 'com.sun.star.io.TextOutputStream')
-        self._out.setEncoding(encoding)
-        self._level = level
-        self._listeners = []
+    def getLoggerSetting(self, name):
+        self._logger = self._pool.getLocalizedLogger(name, self._url, g_basename)
+        return self._getLoggerSetting()
 
-# XLogHandler
-    @property
-    def Encoding(self):
-        return self._encoding
-    @Encoding.setter
-    def Encoding(self, value):
-        self._encoding = value
-        self._out.setEncoding(value)
+    def loadSetting(self):
+        self._config = getConfiguration(self._ctx, '/org.openoffice.Office.Logging/Settings', True)
+        return self._getLoggerSetting()
 
-    @property
-    def Formatter(self):
-        return self._formatter
-    @Formatter.setter
-    def Formatter(self, value):
-        self._formatter = value
+    def getLoggerData(self):
+        url = self._getLoggerUrl()
+        length, sequence = getFileSequence(self._ctx, url)
+        text = sequence.value.decode('utf-8')
+        return url, text, length
 
-    @property
-    def Level(self):
-        return self._level
-    @Level.setter
-    def Level(self, value):
-        self._level = value
-
-    def flush(self):
-        pass
-
-    def publish(self, record):
-        if self._level <= record.Level < OFF:
-            self._publishRecord(record)
-            return True
-        return False
-
-# XComponent <- XLogHandler
+# Public setter method
     def dispose(self):
-        event = uno.createUnoStruct('com.sun.star.lang.EventObject')
-        event.Source = self
-        for listener in self._listeners:
-            listener.disposing(event)
+        self._pool.removeModifyListener(self._listener)
 
-    def addEventListener(self, listener):
-        self._listeners.append(listener)
+    def setLogSetting(self, setting):
+        config = self._getLogConfig()
+        config.LogLevel = setting.LogLevel
+        config.DefaultHandler = setting.DefaultHandler
 
-    def removeEventListener(self, listener):
-        if listener in self._listeners:
-            self._listeners.remove(listener)
-
-    def _publishRecord(self, record):
-        if not self._sf.exists(self._url):
-            msg = self._formatter.getHead()
-            self._publishMessage(msg)
-        msg = self._formatter.format(record)
-        self._publishMessage(msg)
-
-    def _publishMessage(self, msg):
-        output = self._sf.openFileWrite(self._url)
-        output.seek(output.getLength())
-        self._out.setOutputStream(output)
-        self._out.writeString(msg)
-        self._out.getOutputStream().flush()
-        self._out.getOutputStream().closeOutput()
+    def saveSetting(self):
+        if self._config.hasPendingChanges():
+            self._config.commitChanges()
 

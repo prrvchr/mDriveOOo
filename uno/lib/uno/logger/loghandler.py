@@ -27,113 +27,99 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+import uno
 import unohelper
 
-from com.sun.star.awt import XContainerWindowEventHandler
-from com.sun.star.awt import XDialogEventHandler
+from com.sun.star.logging.LogLevel import ALL
+from com.sun.star.logging.LogLevel import OFF
 
-from com.sun.star.util import XModifyListener
+from com.sun.star.logging import XLogHandler
 
-import traceback
+from ..unotool import createService
+from ..unotool import getResourceLocation
+from ..unotool import getSimpleFile
 
+from ..configuration import g_identifier
 
-class WindowHandler(unohelper.Base,
-                    XContainerWindowEventHandler):
-    def __init__(self, manager):
-        self._manager = manager
-
-    # XContainerWindowEventHandler
-    def callHandlerMethod(self, dialog, event, method):
-        try:
-            handled = False
-            if method == 'SetLogger':
-                logger = event.Source.getSelectedItem()
-                self._manager.setLogger(logger)
-                handled = True
-            elif method == 'EnableLogger':
-                enabled = event.Source.State == 1
-                self._manager.enableLogger(enabled)
-                handled = True
-            elif method == 'ConsoleHandler':
-                self._manager.toggleHandler(False)
-                handled = True
-            elif method == 'FileHandler':
-                self._manager.toggleHandler(True)
-                handled = True
-            elif method == 'ViewLog':
-                self._manager.viewLog()
-                handled = True
-            elif method == 'SetLevel':
-                if self._manager.isHandlerEnabled():
-                    self._manager.setLevel()
-                handled = True
-            return handled
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
-
-    def getSupportedMethodNames(self):
-        return ('SetLogger',
-                'EnableLogger',
-                'ConsoleHandler',
-                'FileHandler',
-                'ViewLog',
-                'SetLevel')
+g_folderlog = 'log'
 
 
-class DialogHandler(unohelper.Base,
-                    XDialogEventHandler):
-    def __init__(self, manager):
-        self._manager = manager
-
-    # XDialogEventHandler
-    def callHandlerMethod(self, dialog, event, method):
-        try:
-            handled = False
-            if method == 'LogInfo':
-                self._manager.logInfos()
-                handled = True
-            return handled
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
-
-    def getSupportedMethodNames(self):
-        return ('LogInfo', )
+def getRollerHandlerUrl(ctx, name):
+    path = '%s/%s.log' % (g_folderlog, name)
+    return getResourceLocation(ctx, g_identifier, path)
 
 
-class PoolListener(unohelper.Base,
-                   XModifyListener):
-    def __init__(self, manager):
-        self._manager = manager
+class RollerHandler(unohelper.Base,
+                    XLogHandler):
+    def __init__(self, ctx, name, level=ALL):
+        encoding = 'UTF-8'
+        self._encoding = encoding
+        self._formatter = createService(ctx, 'com.sun.star.logging.PlainTextFormatter')
+        self._url = getRollerHandlerUrl(ctx, name)
+        self._sf = getSimpleFile(ctx)
+        self._out = createService(ctx, 'com.sun.star.io.TextOutputStream')
+        self._out.setEncoding(encoding)
+        self._level = level
+        self._listeners = []
 
-    # XModifyListener
-    def modified(self, event):
-        try:
-            print("PoolListener.modified()")
-            self._manager.updateLoggers()
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+# XLogHandler
+    @property
+    def Encoding(self):
+        return self._encoding
+    @Encoding.setter
+    def Encoding(self, value):
+        self._encoding = value
+        self._out.setEncoding(value)
 
-    def disposing(self, event):
+    @property
+    def Formatter(self):
+        return self._formatter
+    @Formatter.setter
+    def Formatter(self, value):
+        self._formatter = value
+
+    @property
+    def Level(self):
+        return self._level
+    @Level.setter
+    def Level(self, value):
+        self._level = value
+
+    def flush(self):
         pass
 
+    def publish(self, record):
+        if self._level <= record.Level < OFF:
+            self._publishRecord(record)
+            return True
+        return False
 
-class LoggerListener(unohelper.Base,
-                     XModifyListener):
-    def __init__(self, manager):
-        self._manager = manager
+# XComponent <- XLogHandler
+    def dispose(self):
+        event = uno.createUnoStruct('com.sun.star.lang.EventObject')
+        event.Source = self
+        for listener in self._listeners:
+            listener.disposing(event)
 
-    # XModifyListener
-    def modified(self, event):
-        try:
-            print("LoggerListener.modified()")
-            self._manager.updateLogger()
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+    def addEventListener(self, listener):
+        self._listeners.append(listener)
 
-    def disposing(self, event):
-        pass
+    def removeEventListener(self, listener):
+        if listener in self._listeners:
+            self._listeners.remove(listener)
+
+    def _publishRecord(self, record):
+        if not self._sf.exists(self._url):
+            msg = self._formatter.getHead()
+            self._publishMessage(msg)
+        msg = self._formatter.format(record)
+        self._publishMessage(msg)
+
+    def _publishMessage(self, msg):
+        output = self._sf.openFileWrite(self._url)
+        output.seek(output.getLength())
+        self._out.setOutputStream(output)
+        self._out.writeString(msg)
+        self._out.getOutputStream().flush()
+        self._out.getOutputStream().closeOutput()
 

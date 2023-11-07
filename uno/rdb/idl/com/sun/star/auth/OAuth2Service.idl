@@ -27,17 +27,31 @@
 #ifndef __com_sun_star_auth_OAuth2Service_idl__
 #define __com_sun_star_auth_OAuth2Service_idl__
 
-#include <com/sun/star/lang/XServiceInfo.idl>
-#include <com/sun/star/auth/XOAuth2Service.idl>
-
 module com { module sun { module star { module auth {
 
-service OAuth2Service
-{
+interface XOAuth2Service;
 
-    interface ::com::sun::star::lang::XComponent;
-    interface ::com::sun::star::lang::XServiceInfo;
-    interface ::com::sun::star::auth::XOAuth2Service;
+service OAuth2Service : XOAuth2Service
+{
+    /**
+        Constructs an instance of a OAuth2Service without OAuth2 support.
+
+    */
+    create();
+
+    /**
+        Constructs an instance of a OAuth2Service with OAuth2 support.
+
+        @param sUrl
+        [in] A URL to uniquely identify a Provider and its Scope in the OAuth2OOo configuration.
+
+        @param sUser
+        [in] the e-mail address of the OAuth2 User account used with the XOAuth2Service.
+        The User e-mail address has to conform to <a href="http://www.ietf.org/rfc/rfc822.txt">RFC&nbsp;822</a>.
+
+    */
+    createWithOAuth2([in] string sUrl,
+                     [in] string sUser);
 
 };
 

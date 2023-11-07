@@ -30,11 +30,10 @@
 import unohelper
 
 from com.sun.star.awt import XContainerWindowEventHandler
-from com.sun.star.awt.grid import XGridDataListener
-from com.sun.star.awt.grid import XGridSelectionListener
-from com.sun.star.sdbc import XRowSetListener
+from com.sun.star.awt import XDialogEventHandler
 
-from collections import OrderedDict
+from com.sun.star.util import XModifyListener
+
 import traceback
 
 
@@ -43,28 +42,30 @@ class WindowHandler(unohelper.Base,
     def __init__(self, manager):
         self._manager = manager
 
-# XContainerWindowEventHandler
-    def callHandlerMethod(self, window, event, method):
+    # XContainerWindowEventHandler
+    def callHandlerMethod(self, dialog, event, method):
         try:
             handled = False
-            if method == 'showControls':
-                state = event.Source.Model.State
-                self._manager.showControls(state)
+            if method == 'SetLogger':
+                logger = event.Source.getSelectedItem()
+                self._manager.setLogger(logger)
                 handled = True
-            elif method == 'ChangeColumn':
-                control = event.Source
-                index = control.getSelectedItemPos()
-                if index != -1:
-                    reset = True
-                    for i in range(control.Model.ItemCount):
-                        image = control.Model.getItemImage(i)
-                        if i != index and self._manager.isSelected(image):
-                            reset = False
-                            break
-                    identifier = control.Model.getItemData(index)
-                    image = control.Model.getItemImage(index)
-                    selected = self._manager.isUnSelected(image)
-                    self._manager.setColumn(identifier, selected, reset, index)
+            elif method == 'EnableLogger':
+                enabled = event.Source.State == 1
+                self._manager.enableLogger(enabled)
+                handled = True
+            elif method == 'ConsoleHandler':
+                self._manager.toggleHandler(False)
+                handled = True
+            elif method == 'FileHandler':
+                self._manager.toggleHandler(True)
+                handled = True
+            elif method == 'ViewLog':
+                self._manager.viewLog()
+                handled = True
+            elif method == 'SetLevel':
+                if self._manager.isHandlerEnabled():
+                    self._manager.setLevel()
                 handled = True
             return handled
         except Exception as e:
@@ -72,43 +73,45 @@ class WindowHandler(unohelper.Base,
             print(msg)
 
     def getSupportedMethodNames(self):
-        return ('showControls',
-                'ChangeColumn')
+        return ('SetLogger',
+                'EnableLogger',
+                'ConsoleHandler',
+                'FileHandler',
+                'ViewLog',
+                'SetLevel')
 
 
-class RowSetListener(unohelper.Base,
-                     XRowSetListener):
+class DialogHandler(unohelper.Base,
+                    XDialogEventHandler):
     def __init__(self, manager):
         self._manager = manager
 
-    # XRowSetListener
-    def disposing(self, event):
-        pass
-    def cursorMoved(self, event):
-        pass
-    def rowChanged(self, event):
-        pass
-    def rowSetChanged(self, event):
+    # XDialogEventHandler
+    def callHandlerMethod(self, dialog, event, method):
         try:
-            rowset = event.Source
-            self._manager.setDataModel(rowset)
+            handled = False
+            if method == 'LogInfo':
+                self._manager.logInfos()
+                handled = True
+            return handled
         except Exception as e:
             msg = "Error: %s" % traceback.format_exc()
             print(msg)
 
+    def getSupportedMethodNames(self):
+        return ('LogInfo', )
 
-class GridListener(unohelper.Base,
-                   XGridSelectionListener):
-    def __init__(self, manager, grid=1):
+
+class PoolListener(unohelper.Base,
+                   XModifyListener):
+    def __init__(self, manager):
         self._manager = manager
-        self._grid = grid
 
-    # XGridSelectionListener
-    def selectionChanged(self, event):
+    # XModifyListener
+    def modified(self, event):
         try:
-            control = event.Source
-            index = control.getSelectedRows()[-1] if control.hasSelectedRows() else -1
-            self._manager.changeGridSelection(index, self._grid)
+            print("PoolListener.modified()")
+            self._manager.updateLoggers()
         except Exception as e:
             msg = "Error: %s" % traceback.format_exc()
             print(msg)
@@ -117,26 +120,19 @@ class GridListener(unohelper.Base,
         pass
 
 
-class GridDataListener(unohelper.Base,
-                       XGridDataListener):
-    def __init__(self, manager, grid=1):
+class LoggerListener(unohelper.Base,
+                     XModifyListener):
+    def __init__(self, manager):
         self._manager = manager
-        self._grid = grid
 
-    # XGridDataListener
-    def rowsInserted(self, event):
-        print("GridDataListener.rowsInserted()")
-
-    def rowsRemoved(self, event):
-        print("GridDataListener.rowsRemoved()")
-
-    def dataChanged(self, event):
-        # FIXME: This method is called when a column header is clicked in order to sort it
-        print("GridDataListener.dataChanged() FirstColumn: %s LastColumn: %s FirstRow: %s LastRow: %s" % (event.FirstColumn, event.LastColumn, event.FirstRow, event.LastRow))
-        self._manager.setColumnOrder()
-
-    def rowHeadingChanged(self, event):
-        print("GridDataListener.rowHeadingChanged()")
+    # XModifyListener
+    def modified(self, event):
+        try:
+            print("LoggerListener.modified()")
+            self._manager.updateLogger()
+        except Exception as e:
+            msg = "Error: %s" % traceback.format_exc()
+            print(msg)
 
     def disposing(self, event):
         pass
