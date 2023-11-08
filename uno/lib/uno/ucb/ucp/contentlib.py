@@ -39,6 +39,8 @@ from com.sun.star.ucb import XCommandInfo
 from com.sun.star.ucb import XCommandInfoChangeNotifier
 from com.sun.star.ucb import UnsupportedCommandException
 
+from .identifier import Identifier
+
 from ..oauth2 import g_oauth2
 
 from ..unolib import PropertySet
@@ -283,7 +285,7 @@ class ContentResultSet(unohelper.Base,
     def queryContentIdentifierString(self):
         return  self._result.getString(self._result.findColumn('TargetURL'))
     def queryContentIdentifier(self):
-        return ContentIdentifier(self.queryContentIdentifierString())
+        return Identifier(self.queryContentIdentifierString())
     def queryContent(self):
         title = self._result.getString(self._result.findColumn('Title'))
         path = self._user.getContentPath(self._path, title)

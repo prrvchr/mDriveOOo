@@ -40,7 +40,7 @@ from com.sun.star.ucb import XContentProvider
 from com.sun.star.ucb import XParameterizedContentProvider
 from com.sun.star.ucb import IllegalIdentifierException
 
-from .ucp import ContentIdentifier
+from .ucp import Identifier
 
 from .database import DataBase
 
@@ -97,14 +97,16 @@ class ContentProvider(unohelper.Base,
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, url):
-        identifier = ContentIdentifier(self._getContentIdentifierUrl(url))
+        identifier = Identifier(self._getContentIdentifierUrl(url))
         self._logger.logprb(INFO, self._cls, 'createContentIdentifier()', 211, url, identifier.getContentIdentifier())
         return identifier
 
     # XContentProvider
     def queryContent(self, identifier):
         try:
+            print("ContentProvider.queryContent() 1 ******************************************")
             content = self._datasource.queryContent(self, self._authority, identifier)
+            print("ContentProvider.queryContent() 2 ******************************************")
             self._logger.logprb(INFO, self._cls, 'queryContent()', 231, identifier.getContentIdentifier())
             return content
         except IllegalIdentifierException as e:

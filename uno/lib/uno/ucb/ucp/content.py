@@ -83,8 +83,6 @@ from .contenthelper import getContentInfo
 from .contenthelper import getInteractiveAugmentedIOException
 from .contenthelper import getMimeType
 
-from .contentidentifier import ContentIdentifier
-
 from ..logger import getLogger
 
 from ..configuration import g_defaultlog

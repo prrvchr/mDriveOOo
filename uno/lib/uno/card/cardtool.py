@@ -39,11 +39,11 @@ from .configuration import g_basename
 import traceback
 
 
-def getSqlException(ctx, source, state, code, method, *args):
+def getSqlException(ctx, source, state, code, cls, method, *args):
     logger = getLogger(ctx, g_errorlog, g_basename)
     state = logger.resolveString(state)
     msg = logger.resolveString(code, *args)
-    logger.logp(SEVERE, g_basename, method, msg)
+    logger.logp(SEVERE, cls, method, msg)
     error = getException(state, code, msg, source)
     return error
 

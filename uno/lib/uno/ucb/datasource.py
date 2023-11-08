@@ -42,7 +42,7 @@ from .oauth2 import getOAuth2UserName
 
 from .unotool import createService
 
-from .ucp import ContentUser
+from .ucp import User
 
 from .provider import Provider
 
@@ -115,9 +115,14 @@ class DataSource(unohelper.Base,
         # User never change... we can cache it...
         if name in self._users:
             user = self._users[name]
+            if not user.Request.isAuthorized():
+                # The user's OAuth2 configuration has been deleted and
+                # the OAuth2 configuration wizard has been canceled.
+                msg = self._logger.resolveString(323, name)
+                raise IllegalIdentifierException(msg, source)
         else:
-            user = ContentUser(self._ctx, self._logger, source, self.DataBase,
-                               self._provider, name, self._sync, self._lock)
+            user = User(self._ctx, self._logger, source, self.DataBase,
+                        self._provider, name, self._sync, self._lock)
             self._users[name] = user
         # FIXME: if the user has been instantiated then we can consider it as the default user
         if default:

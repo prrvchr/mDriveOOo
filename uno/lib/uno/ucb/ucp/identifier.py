@@ -36,8 +36,8 @@ from ..configuration import g_scheme
 import traceback
 
 
-class ContentIdentifier(unohelper.Base,
-                        XContentIdentifier):
+class Identifier(unohelper.Base,
+                 XContentIdentifier):
     def __init__(self, url):
         self._url = url
 

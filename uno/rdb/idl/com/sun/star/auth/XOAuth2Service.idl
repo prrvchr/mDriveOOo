@@ -42,6 +42,8 @@ interface XOAuth2Service : com::sun::star::uno::XInterface
 
     short getSessionMode([in] string Host);
 
+    boolean isAuthorized();
+
     string getToken([in] string Format)
                     raises(com::sun::star::auth::RefreshTokenException);
 

@@ -27,9 +27,9 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from .identifier import Identifier
+
 from .provider import Provider
 
-from .contentuser import ContentUser
-
-from .contentidentifier import ContentIdentifier
+from .user import User
 
