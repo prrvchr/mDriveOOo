@@ -1,2 +1,6 @@
 /.settings/
 /build/
+/dist/
+.project
+.pydevproject
+.unoproject

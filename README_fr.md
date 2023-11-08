@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][3] et à notre [Politique de protection des données][4].**
 
-# version [1.0.3][5]
+# version [1.0.4][5]
 
 ## Introduction:
 
@@ -67,7 +67,7 @@ ___
 Il semble important que le fichier n'ait pas été renommé lors de son téléchargement.  
 Si nécessaire, renommez-le avant de l'installer.
 
-- Installer l'extension ![OAuth2OOo logo][17] **[OAuth2OOo.oxt][18]** version 1.2.0.
+- Installer l'extension ![OAuth2OOo logo][17] **[OAuth2OOo.oxt][18]** version 1.2.1.
 
 Vous devez d'abord installer cette extension, si elle n'est pas déjà installée.
 
@@ -75,7 +75,7 @@ Vous devez d'abord installer cette extension, si elle n'est pas déjà installé
 
 Vous devez installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** version 1.0.3.
+- Installer l'extension ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** version [![Version][0]][21]
 
 Redémarrez LibreOffice / OpenOffice après l'installation.
 
@@ -192,12 +192,17 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 
 - Prise en charge de la version 1.2.0 de l'extension **OAuth2OOo**. Les versions précédentes ne fonctionneront pas avec l'extension **OAuth2OOo** 1.2.0 ou ultérieure.
 
-### Que reste-t-il à faire pour la version 1.0.3:
+### Ce qui a été fait pour la version 1.0.4:
+
+- Prise en charge de la version 1.2.1 de l'extension **OAuth2OOo**. Les versions précédentes ne fonctionneront pas avec l'extension **OAuth2OOo** 1.2.1 ou ultérieure.
+
+### Que reste-t-il à faire pour la version 1.0.4:
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 
 - Tout ce qui est bienvenu...
 
+[0]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.4>
 [1]: <img/mDriveOOo.svg>
 [2]: <https://prrvchr.github.io/mDriveOOo>
 [3]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_fr>
@@ -215,10 +220,10 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [15]: <https://bugs.documentfoundation.org/show_bug.cgi?id=139538>
 [16]: <https://prrvchr.github.io/HyperSQLOOo/README_fr>
 [17]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.svg>
-[18]: <https://github.com/prrvchr/OAuth2OOo/raw/master/OAuth2OOo.oxt>
+[18]: <https://github.com/prrvchr/OAuth2OOo/releases/latest/download/OAuth2OOo.oxt>
 [19]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.svg>
-[20]: <https://github.com/prrvchr/jdbcDriverOOo/raw/master/source/jdbcDriverOOo/dist/jdbcDriverOOo.oxt>
-[21]: <https://github.com/prrvchr/mDriveOOo/raw/master/source/mDriveOOo/dist/mDriveOOo.oxt>
+[20]: <https://github.com/prrvchr/jdbcDriverOOo/releases/latest/download/jdbcDriverOOo.oxt>
+[21]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
 [23]: <https://prrvchr.github.io/OAuth2OOo/README_fr>
 [24]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [25]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
