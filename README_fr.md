@@ -25,61 +25,64 @@
 -->
 # Documentation
 
-**This [document][2] in English.**
+**This [document][1] in English.**
 
-**L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][3] et à notre [Politique de protection des données][4].**
+**L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][2] et à notre [Politique de protection des données][3].**
 
-# version [1.0.4][5]
+# version [1.0.4][4]
 
 ## Introduction:
 
-**mDriveOOo** fait partie d'une [Suite][6] d'extensions [LibreOffice][7] ~~et/ou [OpenOffice][8]~~ permettant de vous offrir des services inovants dans ces suites bureautique.  
+**mDriveOOo** fait partie d'une [Suite][5] d'extensions [LibreOffice][6] ~~et/ou [OpenOffice][7]~~ permettant de vous offrir des services inovants dans ces suites bureautique.  
 Cette extension vous permet de travailler dans LibreOffice sur vos fichiers Microsoft OneDrive, même hors ligne.
 
 Etant un logiciel libre je vous encourage:
-- A dupliquer son [code source][9].
+- A dupliquer son [code source][8].
 - A apporter des modifications, des corrections, des ameliorations.
-- D'ouvrir un [dysfonctionnement][10] si nécessaire.
+- D'ouvrir un [dysfonctionnement][9] si nécessaire.
 
 Bref, à participer au developpement de cette extension.
 Car c'est ensemble que nous pouvons rendre le Logiciel Libre plus intelligent.
 
 ___
+
 ## Prérequis:
 
 Afin de profiter des dernières versions des bibliothèques Python utilisées dans OAuth2OOo, la version 2 de Python a été abandonnée au profit de **Python 3.8 minimum**.  
 Cela signifie que **mDriveOOo ne supporte plus OpenOffice et LibreOffice 6.x sous Windows depuis sa version 1.0.0**.
 Je ne peux que vous conseiller **de migrer vers LibreOffice 7.x**.
 
-mDriveOOo utilise une base de données locale [HsqlDB][12] version 2.7.2.  
-HsqlDB étant une base de données écrite en Java, son utilisation nécessite [l'installation et la configuration][13] dans LibreOffice / OpenOffice d'un **JRE version 11 ou ultérieure**.  
-Je vous recommande [Adoptium][14] comme source d'installation de Java.
+mDriveOOo utilise une base de données locale [HsqlDB][10] version 2.7.2.  
+HsqlDB étant une base de données écrite en Java, son utilisation nécessite [l'installation et la configuration][11] dans LibreOffice / OpenOffice d'un **JRE version 11 ou ultérieure**.  
+Je vous recommande [Adoptium][12] comme source d'installation de Java.
 
-Si vous utilisez **LibreOffice sous Linux**, vous êtes sujet au [dysfonctionnement 139538][15]. Pour contourner le problème, veuillez **désinstaller les paquets** avec les commandes:
+Si vous utilisez **LibreOffice sous Linux**, vous êtes sujet au [dysfonctionnement 139538][13]. Pour contourner le problème, veuillez **désinstaller les paquets** avec les commandes:
 - `sudo apt remove libreoffice-sdbc-hsqldb` (pour désinstaller le paquet libreoffice-sdbc-hsqldb)
 - `sudo apt remove libhsqldb1.8.0-java` (pour désinstaller le paquet libhsqldb1.8.0-java)
 
-Si vous souhaitez quand même utiliser la fonctionnalité HsqlDB intégré fournie par LibreOffice, alors installez l'extension [HyperSQLOOo][16].  
+Si vous souhaitez quand même utiliser la fonctionnalité HsqlDB intégré fournie par LibreOffice, alors installez l'extension [HyperSQLOOo][14].  
 
 ___
+
 ## Installation:
 
 Il semble important que le fichier n'ait pas été renommé lors de son téléchargement.  
 Si nécessaire, renommez-le avant de l'installer.
 
-- Installer l'extension ![OAuth2OOo logo][17] **[OAuth2OOo.oxt][18]** version 1.2.1.
+- Installer l'extension ![OAuth2OOo logo][15] **[OAuth2OOo.oxt][16]** version [![Version][17]][16]
 
 Vous devez d'abord installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![jdbcDriverOOo logo][19] **[jdbcDriverOOo.oxt][20]** version 1.0.5.
+- Installer l'extension ![jdbcDriverOOo logo][18] **[jdbcDriverOOo.oxt][19]** version [![Version][20]][19]
 
 Vous devez installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![mDriveOOo logo][1] **[mDriveOOo.oxt][21]** version [![Version][0]][21]
+- Installer l'extension ![mDriveOOo logo][21] **[mDriveOOo.oxt][22]** version [![Version][23]][22]
 
 Redémarrez LibreOffice / OpenOffice après l'installation.
 
 ___
+
 ## Utilisation:
 
 **Ouvrir votre OneDrive Microsoft:**
@@ -98,9 +101,10 @@ Si vous ne donnez pas **votre_adresse@votre_fournisseur**, elle vous sera demand
 
 Les Urls anonymes vous permettent de rester anonyme (votre compte n'apparaît pas dans l'Url) tandis que les Urls nommées vous permettent d'accéder à plusieurs comptes simultanément.
 
-Après avoir autorisé l'application [OAuth2OOo][23] à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  :wink:
+Après avoir autorisé l'application [OAuth2OOo][24] à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  :wink:
 
 ___
+
 ## A été testé avec:
 
 * LibreOffice 7.3.7.2 - Lubuntu 22.04 - Python version 3.10.12
@@ -109,20 +113,21 @@ ___
 
 * LibreOffice 7.4.3.2(x64) - Windows 10(x64) - Python version 3.8.15 (sous Lubuntu 22.04 / VirtualBox 6.1.38)
 
-* **Ne fonctionne pas avec OpenOffice** voir [dysfonctionnement 128569][11]. N'ayant aucune solution, je vous encourrage d'installer **LibreOffice**.
+* **Ne fonctionne pas avec OpenOffice** voir [dysfonctionnement 128569][25]. N'ayant aucune solution, je vous encourrage d'installer **LibreOffice**.
 
 Je vous encourage en cas de problème :confused:  
-de créer un [dysfonctionnement][10]  
+de créer un [dysfonctionnement][9]  
 J'essaierai de le résoudre :smile:
 
 ___
+
 ## Historique:
 
 ### Ce qui a été fait pour la version 0.0.5:
 
 - Intégration et utilisation de la nouvelle version de Hsqldb 2.5.1.
 
-- Ecriture d'une nouvelle interface [Replicator][24], lancé en arrière-plan (python Thread) responsable de:
+- Ecriture d'une nouvelle interface [Replicator][26], lancé en arrière-plan (python Thread) responsable de:
 
     - Effectuer les procédures nécessaires lors de la création d'un nouvel utilisateur (Pull initial).
 
@@ -130,37 +135,37 @@ ___
 
     - Répliquer à la demande toutes les modifications apportées à la base de données hsqldb 2.5.1 à l'aide du contrôle de version du système (Pousser toutes les modifications).
 
-- Ecriture d'une nouvelle interface [DataBase][25], responsable de tous les appels à la base de données.
+- Ecriture d'une nouvelle interface [DataBase][27], responsable de tous les appels à la base de données.
 
-- Mise en place d'un cache sur les identifiants, voir la méthode: [_getUser()][26], autorisant l'accès à un Contenu (fichier ou dossier) sans accès à la base de données pour les appels ultérieurs.
+- Mise en place d'un cache sur les identifiants, voir la méthode: [_getUser()][28], autorisant l'accès à un Contenu (fichier ou dossier) sans accès à la base de données pour les appels ultérieurs.
 
-- Gestion des doublons des noms des fichiers / dossiers par [Vues SQL][27]: Child, Twin, Uri, et Title générant des noms uniques s'il existe des doublons.  
+- Gestion des doublons des noms des fichiers / dossiers par [Vues SQL][29]: Child, Twin, Uri, et Title générant des noms uniques s'il existe des doublons.  
 Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est implémentée globalement...
 
 - Beaucoup d'autres correctifs...
 
 ### Ce qui a été fait pour la version 0.0.6:
 
-- Utilisation du nouveau schéma: **vnd-microsoft://** comme revendiqué par [draft-king-vnd-urlscheme-03.txt][28]
+- Utilisation du nouveau schéma: **vnd-microsoft://** comme revendiqué par [draft-king-vnd-urlscheme-03.txt][30]
 
 - Aboutissement de la gestion des doublons des noms de fichiers / dossiers par des vues SQL dans HsqlDB:
-  - Une vue [**Twin**][29] regroupant tous les doublons par dossier parent et les ordonnant par date de création, date de modification.
-  - Une vue [**Uri**][30] générant des indexes uniques pour chaque doublon.
-  - Une vue [**Title**][31] générant des nom uniques pour chaque doublon.
-  - Une vue récursive [**Path**][32] pour générer un chemin unique pour chaque fichier/dossier.
+  - Une vue [**Twin**][31] regroupant tous les doublons par dossier parent et les ordonnant par date de création, date de modification.
+  - Une vue [**Uri**][32] générant des indexes uniques pour chaque doublon.
+  - Une vue [**Title**][33] générant des nom uniques pour chaque doublon.
+  - Une vue récursive [**Path**][34] pour générer un chemin unique pour chaque fichier/dossier.
 
-- Création d'un [Provider][33] capable de répondre aux deux types d'Urls supportées (nommées et anonymes).  
-  Des expressions régulières (regex), déclarées dans le [fichier de configuration de l'UCB][34], sont maintenant utilisées par OpenOffice/LibreOffice pour envoyer les Urls au ContentProvider approprié.
+- Création d'un [Provider][35] capable de répondre aux deux types d'Urls supportées (nommées et anonymes).  
+  Des expressions régulières (regex), déclarées dans le [fichier de configuration de l'UCB][36], sont maintenant utilisées par OpenOffice/LibreOffice pour envoyer les Urls au ContentProvider approprié.
 
-- Utilisation de la nouvelle struct UNO [DateTimeWithTimezone][35] fournie par l'extension [jdbcDriverOOo][36] depuis sa version 0.0.4.  
-  Bien que cette struct existe déjà dans LibreOffice, sa création était nécessaire afin de rester compatible avec OpenOffice (voir [Demande d'amélioration 128560][37]).
+- Utilisation de la nouvelle struct UNO [DateTimeWithTimezone][37] fournie par l'extension [jdbcDriverOOo][38] depuis sa version 0.0.4.  
+  Bien que cette struct existe déjà dans LibreOffice, sa création était nécessaire afin de rester compatible avec OpenOffice (voir [Demande d'amélioration 128560][39]).
 
-- Modification de l'interface [Replicator][24], afin de permettre:
+- Modification de l'interface [Replicator][26], afin de permettre:
   - De choisir l'ordre de synchronisation des données (locales d'abord puis distantes ensuite ou inversement).
   - La synchronisation des modifications locales par des opérations atomiques effectuées dans l'ordre chronologique pour supporter pleinement le travail hors ligne.  
-  Pour ce faire, trois procédures SQL [GetPushItems][38], [GetPushProperties][39] et [UpdatePushItems][40] sont utilisées pour chaque utilisateur ayant accédé à ses fichiers / dossiers.
+  Pour ce faire, trois procédures SQL [GetPushItems][40], [GetPushProperties][41] et [UpdatePushItems][42] sont utilisées pour chaque utilisateur ayant accédé à ses fichiers / dossiers.
 
-- Réécriture de la [fenêtre des options][41] accessible par : **Outils -> Options -> Internet -> mDriveOOo** afin de permettre :
+- Réécriture de la [fenêtre des options][43] accessible par : **Outils -> Options -> Internet -> mDriveOOo** afin de permettre :
   - L'accès aux deux fichiers journaux concernant les activités de l'UCP et du réplicateur de données.
   - Le choix de l'ordre de synchronisation.
   - La modification de l'intervalle entre deux synchronisations.
@@ -176,7 +181,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 
 ### Ce qui a été fait pour la version 1.0.1:
 
-- Mise en place de la gestion des fichiers partagés comme réclamé dans la demande d'amélioration, voir [dysfonctionnement 9][42].
+- Mise en place de la gestion des fichiers partagés comme réclamé dans la demande d'amélioration, voir [dysfonctionnement 9][44].
 
 - Le nom du dossier partagé peut être défini avant toute connexion dans: **Outils -> Options -> Internet -> mDriveOOo -> Gérer les documents partagés dans le dossier:**
 
@@ -202,45 +207,47 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 
 - Tout ce qui est bienvenu...
 
-[0]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.4>
-[1]: <img/mDriveOOo.svg>
-[2]: <https://prrvchr.github.io/mDriveOOo>
-[3]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_fr>
-[4]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_fr>
-[5]: <https://prrvchr.github.io/mDriveOOo/README_fr#historique>
-[6]: <https://prrvchr.github.io/README_fr>
-[7]: <https://fr.libreoffice.org/download/telecharger-libreoffice/>
-[8]: <https://www.openoffice.org/fr/Telecharger/>
-[9]: <https://github.com/prrvchr/mDriveOOo>
-[10]: <https://github.com/prrvchr/mDriveOOo/issues/new>
-[11]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
-[12]: <http://hsqldb.org/>
-[13]: <https://wiki.documentfoundation.org/Documentation/HowTo/Install_the_correct_JRE_-_LibreOffice_on_Windows_10/fr>
-[14]: <https://adoptium.net/releases.html?variant=openjdk11>
-[15]: <https://bugs.documentfoundation.org/show_bug.cgi?id=139538>
-[16]: <https://prrvchr.github.io/HyperSQLOOo/README_fr>
-[17]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.svg>
-[18]: <https://github.com/prrvchr/OAuth2OOo/releases/latest/download/OAuth2OOo.oxt>
-[19]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.svg>
-[20]: <https://github.com/prrvchr/jdbcDriverOOo/releases/latest/download/jdbcDriverOOo.oxt>
-[21]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[23]: <https://prrvchr.github.io/OAuth2OOo/README_fr>
-[24]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
-[25]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
-[26]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py#L127>
-[27]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L154>
-[28]: <https://datatracker.ietf.org/doc/html/draft-king-vnd-urlscheme-03>
-[29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L163>
-[30]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L173>
-[31]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L193>
-[32]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L213>
-[33]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/ucp/provider.py>
-[34]: <https://github.com/prrvchr/mDriveOOo/blob/master/source/mDriveOOo/mDriveOOo.xcu#L42>
-[35]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/rdb/idl/io/github/prrvchr/css/util/DateTimeWithTimezone.idl>
-[36]: <https://prrvchr.github.io/jdbcDriverOOo/README_fr>
-[37]: <https://bz.apache.org/ooo/show_bug.cgi?id=128560>
-[38]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L512>
-[39]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L557>
-[40]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L494>
-[41]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/options/ucb>
-[42]: <https://github.com/prrvchr/mDriveOOo/issues/9>
+[1]: <https://prrvchr.github.io/mDriveOOo>
+[2]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_fr>
+[3]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_fr>
+[4]: <https://prrvchr.github.io/mDriveOOo/README_fr#historique>
+[5]: <https://prrvchr.github.io/README_fr>
+[6]: <https://fr.libreoffice.org/download/telecharger-libreoffice/>
+[7]: <https://www.openoffice.org/fr/Telecharger/>
+[8]: <https://github.com/prrvchr/mDriveOOo>
+[9]: <https://github.com/prrvchr/mDriveOOo/issues/new>
+[10]: <http://hsqldb.org/>
+[11]: <https://wiki.documentfoundation.org/Documentation/HowTo/Install_the_correct_JRE_-_LibreOffice_on_Windows_10/fr>
+[12]: <https://adoptium.net/releases.html?variant=openjdk11>
+[13]: <https://bugs.documentfoundation.org/show_bug.cgi?id=139538>
+[14]: <https://prrvchr.github.io/HyperSQLOOo/README_fr>
+[15]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.svg>
+[16]: <https://github.com/prrvchr/OAuth2OOo/releases/latest/download/OAuth2OOo.oxt>
+[17]: <https://img.shields.io/github/downloads/prrvchr/OAuth2OOo/latest/total?label=v1.2.1>
+[18]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.svg>
+[19]: <https://github.com/prrvchr/jdbcDriverOOo/releases/latest/download/jdbcDriverOOo.oxt>
+[20]: <https://img.shields.io/github/downloads/prrvchr/jdbcDriverOOo/latest/total?label=v1.0.5>
+[21]: <img/mDriveOOo.svg>
+[22]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
+[23]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.4>
+[24]: <https://prrvchr.github.io/OAuth2OOo/README_fr>
+[25]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
+[26]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
+[27]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
+[28]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py#L127>
+[29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L154>
+[30]: <https://datatracker.ietf.org/doc/html/draft-king-vnd-urlscheme-03>
+[31]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L163>
+[32]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L173>
+[33]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L193>
+[34]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L213>
+[35]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/ucp/provider.py>
+[36]: <https://github.com/prrvchr/mDriveOOo/blob/master/source/mDriveOOo/mDriveOOo.xcu#L42>
+[37]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/rdb/idl/io/github/prrvchr/css/util/DateTimeWithTimezone.idl>
+[38]: <https://prrvchr.github.io/jdbcDriverOOo/README_fr>
+[39]: <https://bz.apache.org/ooo/show_bug.cgi?id=128560>
+[40]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L512>
+[41]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L557>
+[42]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L494>
+[43]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/options/ucb>
+[44]: <https://github.com/prrvchr/mDriveOOo/issues/9>
