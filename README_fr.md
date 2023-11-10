@@ -223,10 +223,10 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [14]: <https://prrvchr.github.io/HyperSQLOOo/README_fr>
 [15]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.svg#middle>
 [16]: <https://github.com/prrvchr/OAuth2OOo/releases/latest/download/OAuth2OOo.oxt>
-[17]: <https://img.shields.io/github/downloads/prrvchr/OAuth2OOo/latest/total?label=v1.2.1#right>
+[17]: <https://img.shields.io/github/v/tag/prrvchr/OAuth2OOo?label=latest#right>
 [18]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.svg#middle>
 [19]: <https://github.com/prrvchr/jdbcDriverOOo/releases/latest/download/jdbcDriverOOo.oxt>
-[20]: <https://img.shields.io/github/downloads/prrvchr/jdbcDriverOOo/latest/total?label=v1.0.5#right>
+[20]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
 [21]: <img/mDriveOOo.svg#middle>
 [22]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
 [23]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.4#right>
