@@ -69,15 +69,15 @@ ___
 Il semble important que le fichier n'ait pas été renommé lors de son téléchargement.  
 Si nécessaire, renommez-le avant de l'installer.
 
-- Installer l'extension ![OAuth2OOo logo][15] **[OAuth2OOo.oxt][16]** [![Version][17]][16]
+- [![OAuth2OOo logo][15]][16] Installer l'extension **[OAuth2OOo.oxt][17]** [![Version][18]][17]
 
     Vous devez d'abord installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![jdbcDriverOOo logo][18] **[jdbcDriverOOo.oxt][19]** [![Version][20]][19]
+- [![jdbcDriverOOo logo][19]][20] Installer l'extension **[jdbcDriverOOo.oxt][21]** [![Version][22]][21]
 
     Vous devez installer cette extension, si elle n'est pas déjà installée.
 
-- Installer l'extension ![mDriveOOo logo][21] **[mDriveOOo.oxt][22]** [![Version][23]][22]
+- ![mDriveOOo logo][23] Installer l'extension **[mDriveOOo.oxt][24]** [![Version][25]][24]
 
 Redémarrez LibreOffice / OpenOffice après l'installation.
 
@@ -101,7 +101,7 @@ Si vous ne donnez pas **votre_adresse@votre_fournisseur**, elle vous sera demand
 
 Les Urls anonymes vous permettent de rester anonyme (votre compte n'apparaît pas dans l'Url) tandis que les Urls nommées vous permettent d'accéder à plusieurs comptes simultanément.
 
-Après avoir autorisé l'application [OAuth2OOo][24] à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  :wink:
+Après avoir autorisé l'application [OAuth2OOo][16] à accéder à vos fichiers de votre Microsoft OneDrive, vos fichiers OneDrive devraient apparaître!!! normalement  :wink:
 
 ___
 
@@ -113,7 +113,7 @@ ___
 
 * LibreOffice 7.4.3.2(x64) - Windows 10(x64) - Python version 3.8.15 (sous Lubuntu 22.04 / VirtualBox 6.1.38)
 
-* **Ne fonctionne pas avec OpenOffice** voir [dysfonctionnement 128569][25]. N'ayant aucune solution, je vous encourrage d'installer **LibreOffice**.
+* **Ne fonctionne pas avec OpenOffice** voir [dysfonctionnement 128569][26]. N'ayant aucune solution, je vous encourrage d'installer **LibreOffice**.
 
 Je vous encourage en cas de problème :confused:  
 de créer un [dysfonctionnement][9]  
@@ -127,7 +127,7 @@ ___
 
 - Intégration et utilisation de la nouvelle version de Hsqldb 2.5.1.
 
-- Ecriture d'une nouvelle interface [Replicator][26], lancé en arrière-plan (python Thread) responsable de:
+- Ecriture d'une nouvelle interface [Replicator][27], lancé en arrière-plan (python Thread) responsable de:
 
     - Effectuer les procédures nécessaires lors de la création d'un nouvel utilisateur (Pull initial).
 
@@ -135,32 +135,32 @@ ___
 
     - Répliquer à la demande toutes les modifications apportées à la base de données hsqldb 2.5.1 à l'aide du contrôle de version du système (Pousser toutes les modifications).
 
-- Ecriture d'une nouvelle interface [DataBase][27], responsable de tous les appels à la base de données.
+- Ecriture d'une nouvelle interface [DataBase][28], responsable de tous les appels à la base de données.
 
-- Mise en place d'un cache sur les identifiants, voir la méthode: [_getUser()][28], autorisant l'accès à un Contenu (fichier ou dossier) sans accès à la base de données pour les appels ultérieurs.
+- Mise en place d'un cache sur les identifiants, voir la méthode: [_getUser()][29], autorisant l'accès à un Contenu (fichier ou dossier) sans accès à la base de données pour les appels ultérieurs.
 
-- Gestion des doublons des noms des fichiers / dossiers par [Vues SQL][29]: Child, Twin, Uri, et Title générant des noms uniques s'il existe des doublons.  
+- Gestion des doublons des noms des fichiers / dossiers par [Vues SQL][30]: Child, Twin, Uri, et Title générant des noms uniques s'il existe des doublons.  
 Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est implémentée globalement...
 
 - Beaucoup d'autres correctifs...
 
 ### Ce qui a été fait pour la version 0.0.6:
 
-- Utilisation du nouveau schéma: **vnd-microsoft://** comme revendiqué par [draft-king-vnd-urlscheme-03.txt][30]
+- Utilisation du nouveau schéma: **vnd-microsoft://** comme revendiqué par [draft-king-vnd-urlscheme-03.txt][31]
 
 - Aboutissement de la gestion des doublons des noms de fichiers / dossiers par des vues SQL dans HsqlDB:
-  - Une vue [**Twin**][31] regroupant tous les doublons par dossier parent et les ordonnant par date de création, date de modification.
-  - Une vue [**Uri**][32] générant des indexes uniques pour chaque doublon.
-  - Une vue [**Title**][33] générant des nom uniques pour chaque doublon.
-  - Une vue récursive [**Path**][34] pour générer un chemin unique pour chaque fichier/dossier.
+  - Une vue [**Twin**][32] regroupant tous les doublons par dossier parent et les ordonnant par date de création, date de modification.
+  - Une vue [**Uri**][33] générant des indexes uniques pour chaque doublon.
+  - Une vue [**Title**][34] générant des nom uniques pour chaque doublon.
+  - Une vue récursive [**Path**][35] pour générer un chemin unique pour chaque fichier/dossier.
 
-- Création d'un [Provider][35] capable de répondre aux deux types d'Urls supportées (nommées et anonymes).  
-  Des expressions régulières (regex), déclarées dans le [fichier de configuration de l'UCB][36], sont maintenant utilisées par OpenOffice/LibreOffice pour envoyer les Urls au ContentProvider approprié.
+- Création d'un [Provider][36] capable de répondre aux deux types d'Urls supportées (nommées et anonymes).  
+  Des expressions régulières (regex), déclarées dans le [fichier de configuration de l'UCB][37], sont maintenant utilisées par OpenOffice/LibreOffice pour envoyer les Urls au ContentProvider approprié.
 
-- Utilisation de la nouvelle struct UNO [DateTimeWithTimezone][37] fournie par l'extension [jdbcDriverOOo][38] depuis sa version 0.0.4.  
+- Utilisation de la nouvelle struct UNO [DateTimeWithTimezone][38] fournie par l'extension [jdbcDriverOOo][20] depuis sa version 0.0.4.  
   Bien que cette struct existe déjà dans LibreOffice, sa création était nécessaire afin de rester compatible avec OpenOffice (voir [Demande d'amélioration 128560][39]).
 
-- Modification de l'interface [Replicator][26], afin de permettre:
+- Modification de l'interface [Replicator][27], afin de permettre:
   - De choisir l'ordre de synchronisation des données (locales d'abord puis distantes ensuite ou inversement).
   - La synchronisation des modifications locales par des opérations atomiques effectuées dans l'ordre chronologique pour supporter pleinement le travail hors ligne.  
   Pour ce faire, trois procédures SQL [GetPushItems][40], [GetPushProperties][41] et [UpdatePushItems][42] sont utilisées pour chaque utilisateur ayant accédé à ses fichiers / dossiers.
@@ -222,29 +222,29 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [13]: <https://bugs.documentfoundation.org/show_bug.cgi?id=139538>
 [14]: <https://prrvchr.github.io/HyperSQLOOo/README_fr>
 [15]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.svg#middle>
-[16]: <https://github.com/prrvchr/OAuth2OOo/releases/latest/download/OAuth2OOo.oxt>
-[17]: <https://img.shields.io/github/v/tag/prrvchr/OAuth2OOo?label=latest#right>
-[18]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.svg#middle>
-[19]: <https://github.com/prrvchr/jdbcDriverOOo/releases/latest/download/jdbcDriverOOo.oxt>
-[20]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
-[21]: <img/mDriveOOo.svg#middle>
-[22]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[23]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.4#right>
-[24]: <https://prrvchr.github.io/OAuth2OOo/README_fr>
-[25]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
-[26]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
-[27]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
-[28]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py#L127>
-[29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L154>
-[30]: <https://datatracker.ietf.org/doc/html/draft-king-vnd-urlscheme-03>
-[31]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L163>
-[32]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L173>
-[33]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L193>
-[34]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L213>
-[35]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/ucp/provider.py>
-[36]: <https://github.com/prrvchr/mDriveOOo/blob/master/source/mDriveOOo/mDriveOOo.xcu#L42>
-[37]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/rdb/idl/io/github/prrvchr/css/util/DateTimeWithTimezone.idl>
-[38]: <https://prrvchr.github.io/jdbcDriverOOo/README_fr>
+[16]: <https://prrvchr.github.io/OAuth2OOo/README_fr>
+[17]: <https://github.com/prrvchr/OAuth2OOo/releases/latest/download/OAuth2OOo.oxt>
+[18]: <https://img.shields.io/github/v/tag/prrvchr/OAuth2OOo?label=latest#right>
+[19]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.svg#middle>
+[20]: <https://prrvchr.github.io/jdbcDriverOOo/README_fr>
+[21]: <https://github.com/prrvchr/jdbcDriverOOo/releases/latest/download/jdbcDriverOOo.oxt>
+[22]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
+[23]: <img/mDriveOOo.svg#middle>
+[24]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
+[25]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.4#right>
+[26]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
+[27]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
+[28]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
+[29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py#L127>
+[30]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L154>
+[31]: <https://datatracker.ietf.org/doc/html/draft-king-vnd-urlscheme-03>
+[32]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L163>
+[33]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L173>
+[34]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L193>
+[35]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L213>
+[36]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/ucp/provider.py>
+[37]: <https://github.com/prrvchr/mDriveOOo/blob/master/source/mDriveOOo/mDriveOOo.xcu#L42>
+[38]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/rdb/idl/io/github/prrvchr/css/util/DateTimeWithTimezone.idl>
 [39]: <https://bz.apache.org/ooo/show_bug.cgi?id=128560>
 [40]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L512>
 [41]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L557>
