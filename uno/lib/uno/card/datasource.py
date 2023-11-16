@@ -39,12 +39,14 @@ from .card import User
 from .listener import EventListener
 from .listener import TerminateListener
 
+from .cardtool import getSqlException
+
 from .unotool import getDesktop
 
 import traceback
 
 
-class DataSource(unohelper.Base):
+class DataSource(object):
     def __init__(self, ctx, database):
         self._ctx = ctx
         self._maps = {}
@@ -72,18 +74,22 @@ class DataSource(unohelper.Base):
         print("DataSource.closeConnection() 2")
 
 # Procedures called by Driver
-    def getConnection(self, scheme, server, account, password):
+    def getConnection(self, source, scheme, server, account, password):
         uri = self._provider.getUserUri(server, account)
         if uri in self._maps:
             name = self._maps.get(uri)
             user = self._users.get(name)
+            if not user.Request.isAuthorized():
+                cls, mtd = 'DataSource', 'getConnection()'
+                raise getSqlException(self._ctx, source, 1002, 1105, cls, mtd, name)
         else:
-            user = User(self._ctx, self._database, self._provider, scheme, server, account, password)
+            user = User(self._ctx, source, self._database,
+                        self._provider, scheme, server, account, password)
             name = user.getName()
             self._users[name] = user
             self._maps[uri] = name
         if user.isOnLine():
-            self._provider.initAddressbooks(self._database, user)
+            self._provider.initAddressbooks(source, self._database, user)
         connection = self._database.getConnection(name, user.getPassword())
         user.addSession(self._database.getSessionId(connection))
         # User and/or AddressBooks has been initialized and the connection to the database is done...

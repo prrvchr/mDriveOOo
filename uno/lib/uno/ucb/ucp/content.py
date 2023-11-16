@@ -201,7 +201,7 @@ class Content(unohelper.Base,
 
     # XContentCreator
     def queryCreatableContentsInfo(self):
-        return self._user.getCreatableContentsInfo(self.CanAddChild)
+        return self.MetaData.get('CreatableContentsInfo')
     def createNewContent(self, info):
         path = self._user.getContentPath(self.Path, self.Title, self.IsRoot)
         return self._user.createNewContent(self.Id, self.Link, path, self._authority, info.Type)

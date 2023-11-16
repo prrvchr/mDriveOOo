@@ -394,9 +394,11 @@ CREATE PROCEDURE "GetRoot"(IN USERID VARCHAR(100))
       SELECT I."ItemId" AS "Id", '' AS "Path", 
       '' AS "ParentId", I."ItemId" AS "ObjectId", I."Title", 
       I."Title" AS "TitleOnServer", I."DateCreated", I."DateModified", 
-      I2."ContentType", I."MediaType", I."Size", I."Link", I."Trashed", TRUE AS "IsRoot", 
-      I2."IsFolder", I2."IsLink", I2."IsDocument", C."CanAddChild", C."CanRename", 
-      C."IsReadOnly", C."IsVersionable", I."ConnectionMode", '' AS "CasePreservingURL" 
+      I2."ContentType", I."MediaType", I."Size", I."Link", I."Trashed",
+      TRUE AS "IsRoot", I2."IsFolder", I2."IsLink", I2."IsDocument", C."CanAddChild",
+      C."CanRename", C."IsReadOnly", C."IsVersionable", I."ConnectionMode",
+      '' AS "CasePreservingURL", FALSE AS "IsHidden", FALSE AS "IsVolume", FALSE AS "IsRemote",
+      FALSE AS "IsRemoveable", FALSE AS "IsFloppy", FALSE AS "IsCompactDisc"
       FROM "Users" AS U 
       INNER JOIN "Items" AS I ON U."RootId"=I."ItemId" 
       INNER JOIN "Item" AS I2 ON I."ItemId"=I2."ItemId" 
@@ -420,8 +422,10 @@ CREATE PROCEDURE "GetItem"(IN ITEMID VARCHAR(100),
        "GetTitle"(I."Title",T."Title",SWAP) AS "Title", 
        I."Title" AS "TitleOnServer", I."DateCreated", I."DateModified", 
        I2."ContentType", I."MediaType", I."Size", I."Link", I."Trashed", 
-       FALSE AS "IsRoot", I2."IsFolder", I2."IsLink", I2."IsDocument", C."CanAddChild", C."CanRename", 
-       C."IsReadOnly", C."IsVersionable", I."ConnectionMode", '' AS "CasePreservingURL" 
+       FALSE AS "IsRoot", I2."IsFolder", I2."IsLink", I2."IsDocument", C."CanAddChild",
+       C."CanRename", C."IsReadOnly", C."IsVersionable", I."ConnectionMode",
+       '' AS "CasePreservingURL", FALSE AS "IsHidden", FALSE AS "IsVolume", FALSE AS "IsRemote",
+       FALSE AS "IsRemoveable", FALSE AS "IsFloppy", FALSE AS "IsCompactDisc"
       FROM "Items" AS I 
       INNER JOIN "Item" AS I2 ON I."ItemId"=I2."ItemId" 
       INNER JOIN "Capabilities" AS C ON I."ItemId"=C."ItemId" 

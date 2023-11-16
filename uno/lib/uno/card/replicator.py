@@ -51,6 +51,7 @@ class Replicator(unohelper.Base):
         self._ctx = ctx
         self._database = database
         self._provider = provider
+        self._config = getConfiguration(ctx, g_identifier, False)
         self._users = users
         self._started = Event()
         self._paused = Event()
@@ -80,13 +81,8 @@ class Replicator(unohelper.Base):
     def _canceled(self):
         return False
 
-    def _canceled1(self):
-        return self._disposed.is_set() or not self._started.is_set()
-
     def _getReplicateTimeout(self):
-        configuration = getConfiguration(self._ctx, g_identifier, False)
-        timeout = configuration.getByName('ReplicateTimeout')
-        return timeout
+        return self._config.getByName('ReplicateTimeout')
 
     def _replicate(self):
         print("replicator.run()1")

@@ -32,12 +32,14 @@ import unohelper
 
 from .book import Book
 
+from ..cardtool import getSqlException
+
 from ..dbtool import getDateTimeFromString
 
 import traceback
 
 
-class Provider(unohelper.Base):
+class Provider(object):
 
     @property
     def DateTimeFormat(self):
@@ -53,10 +55,10 @@ class Provider(unohelper.Base):
     def insertUser(self, database, request, scheme, server, name, pwd):
         raise NotImplementedError
 
-    def initAddressbooks(self, database, user):
+    def initAddressbooks(self, source, database, user):
         raise NotImplementedError
 
-    def initUserBooks(self, database, user, books):
+    def initUserBooks(self, source, database, user, books):
         count = 0
         modified = False
         for uri, name, tag, token in books:
@@ -78,9 +80,8 @@ class Provider(unohelper.Base):
             count += 1
         print("Provider.initUserBooks() 4")
         if not count:
-            #TODO: Raise SqlException with correct message!
-            print("Provider.initUserBooks() 1 %s" % (books, ))
-            #raise getSqlException(self._ctx, self, 1004, 1108, 'initUserBooks', '%s has no support of CardDAV!' % user.Server)
+            cls, mtd = 'Provider', 'initUserBooks()'
+            raise getSqlException(self._ctx, source, 1006, 1109, cls, mtd, user.Name, user.Server)
         if modified and self.supportAddressBook():
             database.initAddressbooks(user)
 

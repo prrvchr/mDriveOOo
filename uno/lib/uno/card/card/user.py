@@ -49,8 +49,8 @@ from ..oauth2 import g_service
 import traceback
 
 
-class User(unohelper.Base):
-    def __init__(self, ctx, database, provider, scheme, server, name, pwd=''):
+class User(object):
+    def __init__(self, ctx, source, database, provider, scheme, server, name, pwd=''):
         self._ctx = ctx
         self._password = pwd
         self._sessions = []
@@ -60,14 +60,15 @@ class User(unohelper.Base):
         if not new:
             request = getRequest(ctx, server, name)
             if request is None:
-                raise getSqlException(ctx, self, 1002, 1105, cls, mtd, name)
+                raise getSqlException(ctx, source, 1002, 1105, cls, mtd, name)
         else:
             if self._isOffLine(server):
-                raise getSqlException(ctx, self, 1004, 1108, cls, mtd, name)
+                raise getSqlException(ctx, source, 1004, 1108, cls, mtd, name)
             request = getRequest(ctx, server, name)
             if request is None:
-                raise getSqlException(ctx, self, 1002, 1105, cls, mtd, name)
-            self._metadata, books = self._getUserData(cls, mtd, database, provider, request, scheme, server, name, pwd)
+                raise getSqlException(ctx, source, 1002, 1105, cls, mtd, name)
+            self._metadata, books = self._getUserData(ctx, source, cls, mtd, database,
+                                                      provider, request, scheme, server, name, pwd)
             database.createUser(self.getSchema(), self.Id, name, '')
         self.Request = request
         self._books = Books(ctx, books, new)
@@ -134,10 +135,10 @@ class User(unohelper.Base):
     def getBooks(self):
         return self._books.getBooks()
 
-    def _getUserData(self, cls, mtd, database, provider, request, scheme, server, name, pwd):
+    def _getUserData(self, ctx, source, cls, mtd, database, provider, request, scheme, server, name, pwd):
         data = provider.insertUser(database, request, scheme, server, name, pwd)
         if data is None:
-            raise getSqlException(self._ctx, self, 1006, 1107, cls, mtd, name)
+            raise getSqlException(ctx, source, 1006, 1107, cls, mtd, name)
         return data
 
     def _isOffLine(self, server):

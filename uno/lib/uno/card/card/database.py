@@ -86,7 +86,7 @@ import json
 import traceback
 
 
-class DataBase(unohelper.Base):
+class DataBase(object):
     def __init__(self, ctx, url, user='', pwd=''):
         self._ctx = ctx
         self._statement = None

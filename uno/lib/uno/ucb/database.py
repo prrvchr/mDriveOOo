@@ -243,6 +243,11 @@ class DataBase():
             item = getDataFromResult(result)
         result.close()
         select.close()
+        if item.get('IsFolder'):
+            infos = user.getCreatableContentsInfo(item.get('CanAddChild'))
+        else:
+            infos = ()
+        item['CreatableContentsInfo'] = infos
         return item
 
     def getChildren(self, username, itemid, properties, mode, scheme):

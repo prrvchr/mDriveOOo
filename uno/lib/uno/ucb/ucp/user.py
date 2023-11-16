@@ -269,6 +269,7 @@ class User():
         data['Trashed'] = False
         data['IsRoot'] = False
         data['IsFolder'] = isfolder
+        data['IsLink'] = False
         data['IsDocument'] = isdocument
         data['CanAddChild'] = isfolder
         data['CanRename'] = True
@@ -276,6 +277,14 @@ class User():
         data['IsVersionable'] = isdocument
         data['ConnectionMode'] = True
         data['BaseURI'] = path
+        data['CasePreservingURL'] = ''
+        data['IsHidden'] = False
+        data['IsVolume'] = False
+        data['IsRemote'] = False
+        data['IsRemoveable'] = False
+        data['IsFloppy'] = False
+        data['IsCompactDisc'] = False
+        data['CreatableContentsInfo'] = self.getCreatableContentsInfo(isfolder)
         return data
 
     def _getNewIdentifier(self):

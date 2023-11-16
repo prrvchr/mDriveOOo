@@ -34,7 +34,7 @@ from collections import OrderedDict
 import traceback
 
 
-class Books(unohelper.Base):
+class Books(object):
     def __init__(self, ctx, metadata, new):
         self._ctx = ctx
         print("Books.__init__() 1")
@@ -63,7 +63,7 @@ class Books(unohelper.Base):
         return books
 
 
-class Book(unohelper.Base):
+class Book(object):
     def __init__(self, ctx, new, **kwargs):
         self._ctx = ctx
         self._new = new
