@@ -53,7 +53,7 @@ class DataSource(object):
         self._users = {}
         self._database = database
         self._listener = EventListener(self)
-        self._provider = Provider(ctx, database)
+        self._provider = Provider(ctx)
         self._replicator = Replicator(ctx, database, self._provider, self._users)
         listener = TerminateListener(self._replicator)
         getDesktop(ctx).addTerminateListener(listener)
@@ -68,10 +68,8 @@ class DataSource(object):
         if name in self._users:
             user = self._users.get(name)
             user.removeSession(self._database.getSessionId(connection))
-            print("DataSource.closeConnection() 1: %s - %s" % (len(self._users), name))
         if not self._hasSession():
             self._replicator.stop()
-        print("DataSource.closeConnection() 2")
 
 # Procedures called by Driver
     def getConnection(self, source, scheme, server, account, password):

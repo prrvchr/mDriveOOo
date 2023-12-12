@@ -31,7 +31,7 @@
 g_extension = 'OAuth2OOo'
 g_identifier = 'io.github.prrvchr.%s' % g_extension
 g_service = '%s.OAuth2Service' % g_identifier
-g_version = '1.2.2'
+g_version = '1.2.3'
 
 g_oauth2 = g_service
 

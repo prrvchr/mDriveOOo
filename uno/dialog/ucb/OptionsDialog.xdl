@@ -13,7 +13,7 @@
     <dlg:text dlg:id="Label1" dlg:tab-index="3" dlg:left="10" dlg:top="100" dlg:width="50" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label1.HelpText" dlg:value="&amp;OptionsDialog.Label1.Label" dlg:valign="center"/>
     <dlg:radiogroup>
       <dlg:radio dlg:id="OptionButton1" dlg:tab-index="4" dlg:left="65" dlg:top="100" dlg:width="70" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton1.HelpText" dlg:value="&amp;OptionsDialog.OptionButton1.Label" dlg:valign="center">
-        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnabledSync" script:language="UNO"/>
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableSync" script:language="UNO"/>
       </dlg:radio>
       <dlg:radio dlg:id="OptionButton2" dlg:tab-index="5" dlg:left="140" dlg:top="100" dlg:width="70" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton2.HelpText" dlg:value="&amp;OptionsDialog.OptionButton2.Label" dlg:valign="center">
         <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableSync" script:language="UNO"/>

@@ -34,12 +34,16 @@ from .book import Book
 
 from ..cardtool import getSqlException
 
+from ..oauth2 import getRequest
+
 from ..dbtool import getDateTimeFromString
 
 import traceback
 
 
 class Provider(object):
+    def __init__(self, ctx):
+        self._ctx = ctx
 
     @property
     def DateTimeFormat(self):
@@ -54,6 +58,9 @@ class Provider(object):
     # Need to be implemented method
     def insertUser(self, database, request, scheme, server, name, pwd):
         raise NotImplementedError
+
+    def getRequest(self, url, user):
+        return getRequest(self._ctx, url, user)
 
     def initAddressbooks(self, source, database, user):
         raise NotImplementedError

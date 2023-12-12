@@ -45,7 +45,7 @@ def getOAuth2Version(ctx):
     version = getExtensionVersion(ctx, g_identifier)
     return version
 
-def getRequest(ctx, url, name):
+def getRequest(ctx, url=None, name=None):
     if url and name:
         request = createService(ctx, g_service, url, name)
     else:
