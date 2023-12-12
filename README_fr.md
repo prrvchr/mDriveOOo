@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][4] et à notre [Politique de protection des données][5].**
 
-# version [1.0.4][6]
+# version [1.0.5][6]
 
 ## Introduction:
 
@@ -201,7 +201,11 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 
 - Prise en charge de la version 1.2.1 de l'extension **OAuth2OOo**. Les versions précédentes ne fonctionneront pas avec l'extension **OAuth2OOo** 1.2.1 ou ultérieure.
 
-### Que reste-t-il à faire pour la version 1.0.4:
+### Ce qui a été fait pour la version 1.0.5:
+
+- Prise en charge de la version 1.2.3 de l'extension **OAuth2OOo**. Correction du [dysfonctionnement #12][47]
+
+### Que reste-t-il à faire pour la version 1.0.5:
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 
@@ -253,3 +257,4 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [44]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L494>
 [45]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/options/ucb>
 [46]: <https://github.com/prrvchr/mDriveOOo/issues/9>
+[47]: <https://github.com/prrvchr/gDriveOOo/issues/12>

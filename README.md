@@ -29,7 +29,7 @@
 
 **The use of this software subjects you to our [Terms Of Use][4] and [Data Protection Policy][5].**
 
-# version [1.0.4][6]
+# version [1.0.5][6]
 
 ## Introduction:
 
@@ -201,7 +201,11 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 
 - Support for version **1.2.1** of the **OAuth2OOo** extension. Previous versions will not work with **OAuth2OOo** extension 1.2.1 or higher.
 
-### What remains to be done for version 1.0.4:
+### What has been done for version 1.0.5:
+
+- Support for version **1.2.3** of the **OAuth2OOo** extension. Fixed [issue #12][47].
+
+### What remains to be done for version 1.0.5:
 
 - Add new language for internationalization...
 
@@ -253,3 +257,4 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [44]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L494>
 [45]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/options/ucb>
 [46]: <https://github.com/prrvchr/mDriveOOo/issues/9>
+[47]: <https://github.com/prrvchr/gDriveOOo/issues/12>
