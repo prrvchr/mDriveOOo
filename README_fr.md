@@ -237,7 +237,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [24]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
 [25]: <img/mDriveOOo.svg#middle>
 [26]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.4#right>
+[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.5#right>
 [28]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
 [29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [30]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
