@@ -561,8 +561,9 @@ class DataBase():
 
     def _mergeParent(self, call, item, itemid, timestamp):
         call.setString(1, itemid)
-        call.setArray(2, Array('VARCHAR', item[12]))
-        call.setObject(3, timestamp)
+        call.setString(2, item[12])
+        call.setArray(3, Array('VARCHAR', item[13]))
+        call.setObject(4, timestamp)
         call.addBatch()
 
     def _getCall(self, name, format=None):

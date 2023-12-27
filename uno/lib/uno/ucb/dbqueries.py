@@ -748,15 +748,22 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "MergeItem_1" TO "%(Role)s";''' % format
     elif name == 'createMergeParent':
         query = '''\
 CREATE PROCEDURE "MergeParent"(IN ITEMID VARCHAR(100),
+                               IN PATH VARCHAR(500),
                                IN PARENTS VARCHAR(100) ARRAY,
                                IN DATETIME TIMESTAMP(6) WITH TIME ZONE)
   SPECIFIC "MergeParent_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
     DECLARE INDEX INTEGER DEFAULT 1;
-    DELETE FROM "Parents" WHERE "ChildId" = ITEMID;
-    WHILE INDEX <= CARDINALITY(PARENTS) DO
-      MERGE INTO "Parents" USING (VALUES(ITEMID, PARENTS[INDEX], DATETIME)) 
+    DECLARE TMP VARCHAR(100) ARRAY;
+    IF CARDINALITY(PARENTS) > 0 THEN
+      SET TMP = PARENTS;
+    ELSE
+      SELECT ARRAY_AGG("ItemId") INTO TMP FROM "Path" WHERE "Path" || "Uri" = PATH;
+    END IF;
+    DELETE FROM "Parents" WHERE "ChildId"=ITEMID AND "ItemId" NOT IN (UNNEST(TMP));
+    WHILE INDEX <= CARDINALITY(TMP) DO
+      MERGE INTO "Parents" USING (VALUES(ITEMID, TMP[INDEX], DATETIME)) 
       AS vals(x,y,z) ON "Parents"."ChildId"=vals.x AND "Parents"."ItemId"=vals.y 
         WHEN NOT MATCHED THEN 
           INSERT ("ChildId","ItemId","TimeStamp") 
@@ -838,7 +845,7 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
     elif name == 'mergeItem':
         query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'mergeParent':
-        query = 'CALL "MergeParent"(?,?,?)'
+        query = 'CALL "MergeParent"(?,?,?,?)'
     elif name == 'pullChanges':
         query = 'CALL "PullChanges"(?,?,?,?,?,?)'
     elif name == 'insertItem':
