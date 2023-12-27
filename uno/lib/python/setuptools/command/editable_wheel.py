@@ -11,6 +11,7 @@ Create a wheel that, when installed, will make the source package 'editable'
 """
 
 import logging
+import io
 import os
 import shutil
 import sys
@@ -340,7 +341,7 @@ class editable_wheel(Command):
         with unpacked_wheel as unpacked, build_lib as lib, build_tmp as tmp:
             unpacked_dist_info = Path(unpacked, Path(self.dist_info_dir).name)
             shutil.copytree(self.dist_info_dir, unpacked_dist_info)
-            self._install_namespaces(unpacked, dist_info.name)
+            self._install_namespaces(unpacked, dist_name)
             files, mapping = self._run_build_commands(dist_name, unpacked, lib, tmp)
             strategy = self._select_strategy(dist_name, tag, lib)
             with strategy, WheelFile(wheel_path, "w") as wheel_obj:
@@ -401,7 +402,7 @@ class _StaticPth:
 
     def __call__(self, wheel: "WheelFile", files: List[str], mapping: Dict[str, str]):
         entries = "\n".join((str(p.resolve()) for p in self.path_entries))
-        contents = bytes(f"{entries}\n", "utf-8")
+        contents = _encode_pth(f"{entries}\n")
         wheel.writestr(f"__editable__.{self.name}.pth", contents)
 
     def __enter__(self):
@@ -426,8 +427,10 @@ class _LinkTree(_StaticPth):
     By collocating ``auxiliary_dir`` and the original source code, limitations
     with hardlinks should be avoided.
     """
+
     def __init__(
-        self, dist: Distribution,
+        self,
+        dist: Distribution,
         name: str,
         auxiliary_dir: _Path,
         build_lib: _Path,
@@ -457,10 +460,7 @@ class _LinkTree(_StaticPth):
     def _create_links(self, outputs, output_mapping):
         self.auxiliary_dir.mkdir(parents=True, exist_ok=True)
         link_type = "sym" if _can_symlink_files(self.auxiliary_dir) else "hard"
-        mappings = {
-            self._normalize_output(k): v
-            for k, v in output_mapping.items()
-        }
+        mappings = {self._normalize_output(k): v for k, v in output_mapping.items()}
         mappings.pop(None, None)  # remove files that are not relative to build_lib
 
         for output in outputs:
@@ -498,17 +498,29 @@ class _TopLevelFinder:
         package_dir = self.dist.package_dir or {}
         roots = _find_package_roots(top_level, package_dir, src_root)
 
-        namespaces_: Dict[str, List[str]] = dict(chain(
-            _find_namespaces(self.dist.packages or [], roots),
-            ((ns, []) for ns in _find_virtual_namespaces(roots)),
-        ))
+        namespaces_: Dict[str, List[str]] = dict(
+            chain(
+                _find_namespaces(self.dist.packages or [], roots),
+                ((ns, []) for ns in _find_virtual_namespaces(roots)),
+            )
+        )
+
+        legacy_namespaces = {
+            pkg: find_package_path(pkg, roots, self.dist.src_root or "")
+            for pkg in self.dist.namespace_packages or []
+        }
+
+        mapping = {**roots, **legacy_namespaces}
+        # ^-- We need to explicitly add the legacy_namespaces to the mapping to be
+        #     able to import their modules even if another package sharing the same
+        #     namespace is installed in a conventional (non-editable) way.
 
         name = f"__editable__.{self.name}.finder"
         finder = _normalization.safe_identifier(name)
-        content = bytes(_finder_template(name, roots, namespaces_), "utf-8")
+        content = bytes(_finder_template(name, mapping, namespaces_), "utf-8")
         wheel.writestr(f"{finder}.py", content)
 
-        content = bytes(f"import {finder}; {finder}.install()", "utf-8")
+        content = _encode_pth(f"import {finder}; {finder}.install()")
         wheel.writestr(f"__editable__.{self.name}.pth", content)
 
     def __enter__(self):
@@ -522,6 +534,24 @@ class _TopLevelFinder:
         name as your package as they may take precedence during imports.
         """
         InformationOnly.emit("Editable installation.", msg)
+
+
+def _encode_pth(content: str) -> bytes:
+    """.pth files are always read with 'locale' encoding, the recommendation
+    from the cpython core developers is to write them as ``open(path, "w")``
+    and ignore warnings (see python/cpython#77102, pypa/setuptools#3937).
+    This function tries to simulate this behaviour without having to create an
+    actual file, in a way that supports a range of active Python versions.
+    (There seems to be some variety in the way different version of Python handle
+    ``encoding=None``, not all of them use ``locale.getpreferredencoding(False)``).
+    """
+    encoding = "locale" if sys.version_info >= (3, 10) else None
+    with io.BytesIO() as buffer:
+        wrapper = io.TextIOWrapper(buffer, encoding)
+        wrapper.write(content)
+        wrapper.flush()
+        buffer.seek(0)
+        return buffer.read()
 
 
 def _can_symlink_files(base_dir: Path) -> bool:
@@ -575,10 +605,7 @@ def _simple_layout(
     >>> _simple_layout([], {"a": "_a", "": "src"}, "/tmp/myproj")
     False
     """
-    layout = {
-        pkg: find_package_path(pkg, package_dir, project_dir)
-        for pkg in packages
-    }
+    layout = {pkg: find_package_path(pkg, package_dir, project_dir) for pkg in packages}
     if not layout:
         return set(package_dir) in ({}, {""})
     parent = os.path.commonpath([_parent_path(k, v) for k, v in layout.items()])
@@ -598,7 +625,7 @@ def _parent_path(pkg, pkg_path):
     >>> _parent_path("b", "src/c")
     'src/c'
     """
-    parent = pkg_path[:-len(pkg)] if pkg_path.endswith(pkg) else pkg_path
+    parent = pkg_path[: -len(pkg)] if pkg_path.endswith(pkg) else pkg_path
     return parent.rstrip("/" + os.sep)
 
 
@@ -714,9 +741,8 @@ def _is_nested(pkg: str, pkg_path: str, parent: str, parent_path: str) -> bool:
     """
     norm_pkg_path = _path.normpath(pkg_path)
     rest = pkg.replace(parent, "", 1).strip(".").split(".")
-    return (
-        pkg.startswith(parent)
-        and norm_pkg_path == _path.normpath(Path(parent_path, *rest))
+    return pkg.startswith(parent) and norm_pkg_path == _path.normpath(
+        Path(parent_path, *rest)
     )
 
 
@@ -736,9 +762,9 @@ class _NamespaceInstaller(namespaces.Installer):
         self.outputs = []
         self.dry_run = False
 
-    def _get_target(self):
+    def _get_nspkg_file(self):
         """Installation target."""
-        return os.path.join(self.installation_dir, self.editable_name)
+        return os.path.join(self.installation_dir, self.editable_name + self.nspkg_ext)
 
     def _get_root(self):
         """Where the modules/packages should be loaded from."""
@@ -747,7 +773,7 @@ class _NamespaceInstaller(namespaces.Installer):
 
 _FINDER_TEMPLATE = """\
 import sys
-from importlib.machinery import ModuleSpec
+from importlib.machinery import ModuleSpec, PathFinder
 from importlib.machinery import all_suffixes as module_suffixes
 from importlib.util import spec_from_file_location
 from itertools import chain
@@ -761,11 +787,22 @@ PATH_PLACEHOLDER = {name!r} + ".__path_hook__"
 class _EditableFinder:  # MetaPathFinder
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        for pkg, pkg_path in reversed(list(MAPPING.items())):
-            if fullname == pkg or fullname.startswith(f"{{pkg}}."):
-                rest = fullname.replace(pkg, "", 1).strip(".").split(".")
-                return cls._find_spec(fullname, Path(pkg_path, *rest))
+        extra_path = []
 
+        # Top-level packages and modules (we know these exist in the FS)
+        if fullname in MAPPING:
+            pkg_path = MAPPING[fullname]
+            return cls._find_spec(fullname, Path(pkg_path))
+
+        # Handle immediate children modules (required for namespaces to work)
+        # To avoid problems with case sensitivity in the file system we delegate
+        # to the importlib.machinery implementation.
+        parent, _, child = fullname.rpartition(".")
+        if parent and parent in MAPPING:
+            return PathFinder.find_spec(fullname, path=[MAPPING[parent], *extra_path])
+
+        # Other levels of nesting should be handled automatically by importlib
+        # using the parent path.
         return None
 
     @classmethod

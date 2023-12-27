@@ -67,22 +67,26 @@ import traceback
 import time
 
 
-class Replicator(unohelper.Base,
-                 Thread):
+class Replicator(Thread):
     def __init__(self, ctx, url, provider, users, sync, lock):
-        Thread.__init__(self)
-        self._ctx = ctx
-        self._users = users
-        self._sync = sync
-        self._lock = lock
-        self._canceled = False
-        self._fullPull = False
-        self._provider = provider
-        self._config = getConfiguration(ctx, g_identifier, False)
-        self._logger = getLogger(ctx, g_synclog, g_basename)
-        self.DataBase = DataBase(ctx, self._logger, url)
-        sync.clear()
-        self.start()
+        try:
+            Thread.__init__(self)
+            self._ctx = ctx
+            self._users = users
+            self._sync = sync
+            self._lock = lock
+            self._canceled = False
+            self._fullPull = False
+            self._provider = provider
+            self._config = getConfiguration(ctx, g_identifier, False)
+            self._logger = getLogger(ctx, g_synclog, g_basename)
+            self.DataBase = DataBase(ctx, self._logger, url)
+            sync.clear()
+            self.start()
+        except Exception as e:
+            self._logger.logprb(INFO, 'Replicator', '__init__()', 102, e, traceback.format_exc())
+        else:
+            self._logger.logprb(INFO, 'Replicator', '__init__()', 101)
 
     def fullPull(self):
         return self._fullPull
@@ -94,26 +98,23 @@ class Replicator(unohelper.Base,
 
     def run(self):
         try:
-            msg = "Replicator for Scheme: %s loading ... " % self._provider.Scheme
-            print("Replicator.run() 1 *************************************************************")
-            print("Replicator run() 2")
+            self._logger.logprb(INFO, 'Replicator', 'run()', 111, self._provider.Scheme)
             while not self._canceled:
-                self._sync.wait(self._getReplicateTimeout())
+                timeout = self._getReplicateTimeout()
+                self._logger.logprb(INFO, 'Replicator', 'run()', 112, round(timeout /60))
+                self._sync.wait(timeout)
                 self._synchronize()
                 self._sync.clear()
-                print("replicator.run() 3")
-            print("replicator.run() 4 *************************************************************")
         except Exception as e:
-            msg = "Replicator run(): Error: %s - %s" % (e, traceback.print_exc())
-            print(msg)
+            self._logger.logprb(SEVERE, 'Replicator', 'run()', 113, e, traceback.format_exc())
 
     def _synchronize(self):
         policy = self._getPolicy()
         if policy == self._getSynchronizePolicy('NONE_IS_MASTER'):
             return
-        self._logger.logprb(INFO, 'Replicator', '_synchronize()', 101, getDateTimeInTZToString(currentDateTimeInTZ()))
+        self._logger.logprb(INFO, 'Replicator', '_synchronize()', 121)
         if self._provider.isOffLine():
-            self._logger.logprb(INFO, 'Replicator', '_synchronize()', 102)
+            self._logger.logprb(INFO, 'Replicator', '_synchronize()', 122)
         elif policy == self._getSynchronizePolicy('SERVER_IS_MASTER'):
             if not self._canceled:
                 self._pullUsers()
@@ -124,14 +125,14 @@ class Replicator(unohelper.Base,
                 self._pushUsers()
             if not self._canceled:
                 self._pullUsers()
-        self._logger.logprb(INFO, 'Replicator', '_synchronize()', 103, getDateTimeInTZToString(currentDateTimeInTZ()))
+        self._logger.logprb(INFO, 'Replicator', '_synchronize()', 123)
 
     def _pullUsers(self):
         try:
             for user in self._users.values():
                 if self._canceled:
                     break
-                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 111, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
+                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 131, user.Name)
                 # In order to make the creation of files or directories possible quickly,
                 # it is necessary to run the verification of the identifiers first.
                 self._checkNewIdentifier(user)
@@ -140,18 +141,19 @@ class Replicator(unohelper.Base,
                     self._initUser(user)
                 else:
                     self._pullUser(user)
-                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 112, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
+                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 132, user.Name)
         except Exception as e:
-            print("Replicator._pullUsers() ERROR: %s - %s" % (e, traceback.print_exc()))
+            self._logger.logprb(SEVERE, 'Replicator', '_pullUsers()', 133, e, traceback.format_exc())
 
     def _initUser(self, user):
         # This procedure is launched only once for each new user
         # This procedure corresponds to the initial pull for a new User (ie: without Token)
+        self._logger.logprb(INFO, 'Replicator', '_initUser()', 141, user.Name)
         pages, count, token = self._provider.firstPull(user)
-        print("Replicator._initUser() 1 Count: %s - Pages %s - Token: %s" % (count, pages, token))
         self._provider.initUser(self.DataBase, user, token)
         user.SyncMode = 1
         self._fullPull = True
+        self._logger.logprb(INFO, 'Replicator', '_initUser()', 142, user.Name)
 
     def _pullUser(self, user):
         # This procedure is launched each time the synchronization is started
@@ -169,27 +171,25 @@ class Replicator(unohelper.Base,
         try:
             end = currentDateTimeInTZ()
             for user in self._users.values():
-                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 131, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
+                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 151, user.Name)
                 if self._isNewUser(user):
                     self._initUser(user)
                 items = []
                 start = user.TimeStamp
                 for item in self.DataBase.getPushItems(user.Id, start, end):
-                    print("Replicator._pushUsers() 1 Start: %s - End: %s" % (getDateTimeInTZToString(start), getDateTimeInTZToString(end)))
-                    print("Replicator._pushUsers() 2 Item: UserName: %s - ItemId: %s - ChangeAction: %s - TimeStamp: %s" % (user.Name, item.get('Id'),item.get('ChangeAction'),getDateTimeInTZToString(item.get('TimeStamp'))))
                     metadata = self.DataBase.getMetaData(user, item)
                     newid = self._pushItem(user, item, metadata, start, end)
                     if newid is not None:
                         items.append(newid)
                     else:
                         modified = getDateTimeToString(metadata.get('DateModified'))
-                        self._logger.logprb(SEVERE, 'Replicator', '_pushUsers()', 132, metadata.get('Title'), modified, metadata.get('Id'))
+                        self._logger.logprb(SEVERE, 'Replicator', '_pushUsers()', 152, metadata.get('Title'), modified, metadata.get('Id'))
                         break
                 if items:
                     self.DataBase.updatePushItems(user, items)
-                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 133, user.Name, getDateTimeInTZToString(currentDateTimeInTZ()))
+                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 153, user.Name)
         except Exception as e:
-            print("Replicator.synchronize() ERROR: %s - %s" % (e, traceback.print_exc()))
+            self._logger.logprb(SEVERE, 'Replicator', '_pushUsers()', 154, e, traceback.format_exc())
 
     def _checkNewIdentifier(self, user):
         if not self._provider.GenerateIds:
@@ -209,7 +209,6 @@ class Replicator(unohelper.Base,
         rows = []
         while len(childs) and len(childs) != i:
             i = len(childs)
-            print("replicator._filterParents() %s" % len(childs))
             for item in childs:
                 itemid, parents = item
                 if all(parent in roots for parent in parents):
@@ -242,14 +241,13 @@ class Replicator(unohelper.Base,
                     print("Replicator._pushItem() INSERT 3")
                     newid = self._provider.createFolder(user, itemid, metadata)
                     print("Replicator._pushItem() INSERT 4")
-                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 141, metadata.get('Title'), created)
+                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 161, metadata.get('Title'), created)
                     print("Replicator._pushItem() INSERT 5")
                 elif self._provider.isLink(mediatype):
                     pass
                 elif self._provider.isDocument(mediatype):
-                    newid = self._provider.uploadFile(user, itemid, metadata, chunk, retry, delay, True)
-                    if newid:
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 142, metadata.get('Title'), created)
+                    newid, args = self._provider.uploadFile(165, user, itemid, metadata, created, chunk, retry, delay, True)
+                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', *args)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
             elif action & UPDATE:
                 for property in self.DataBase.getPushProperties(user.Id, itemid, start, end):
@@ -258,13 +256,13 @@ class Replicator(unohelper.Base,
                     modified = getDateTimeToString(metadata.get('DateModified'))
                     if properties & TITLE:
                         newid = self._provider.updateTitle(user.Request, itemid, metadata)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 143, metadata.get('Title'), modified)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 170, metadata.get('Title'), modified)
                     elif properties & CONTENT:
-                        newid = self._provider.uploadFile(user, itemid, metadata, chunk, retry, delay, False)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 144, metadata.get('Title'), modified, metadata.get('Size'))
+                        newid, args = self._provider.uploadFile(175, user, itemid, metadata, modified, chunk, retry, delay, False)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', *args)
                     elif properties & TRASHED:
                         newid = self._provider.updateTrashed(user.Request, itemid, metadata)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 145, metadata.get('Title'), modified)
+                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 172, metadata.get('Title'), modified)
             # MOVE procedures to follow parent changes of a resource
             elif action & MOVE:
                 print("Replicator._pushItem() MOVE")
@@ -274,11 +272,10 @@ class Replicator(unohelper.Base,
             elif action & DELETE:
                 print("Replicator._pushItem() DELETE")
                 newid = self._provider.updateTrashed(user.Request, itemid, metadata)
-                self._logger.logprb(INFO, 'Replicator', '_pushItem()', 145, metadata.get('Title'), timestamp)
+                self._logger.logprb(INFO, 'Replicator', '_pushItem()', 172, metadata.get('Title'), timestamp)
             return newid
         except Exception as e:
-            msg = "ERROR: %s - %s" % (e, traceback.print_exc())
-            self._logger.logp(SEVERE, 'Replicator', '_pushItem()', msg)
+            self._logger.logprb(SEVERE, 'Replicator', '_pushItem()', 179, e, traceback.format_exc())
 
     def _isNewUser(self, user):
         return user.SyncMode == 0

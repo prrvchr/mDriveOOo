@@ -39,6 +39,7 @@ from ..logger import LogManager
 
 from ..configuration import g_identifier
 from ..configuration import g_defaultlog
+from ..configuration import g_synclog
 
 from collections import OrderedDict
 import os
@@ -54,7 +55,7 @@ class OptionsManager(unohelper.Base):
         resumable = self._model.isResumable()
         data = self._model.getViewData()
         self._view = OptionsView(window, exist, resumable, data)
-        self._logger = LogManager(ctx, window.Peer, self._getInfos(), g_identifier, g_defaultlog)
+        self._logger = LogManager(ctx, window.Peer, self._getInfos(), g_identifier, g_defaultlog, g_synclog)
 
     def saveSetting(self):
         share, name, index, timeout, download, upload = self._view.getViewData()
@@ -74,7 +75,7 @@ class OptionsManager(unohelper.Base):
 
     def viewData(self):
         url = self._model.getDatasourceUrl()
-        getDesktop(self._ctx).loadComponentFromURL(url, '_blank', 0, ())
+        getDesktop(self._ctx).loadComponentFromURL(url, '_default', 0, ())
 
     def download(self):
         self._view.setStep(1)
@@ -84,17 +85,9 @@ class OptionsManager(unohelper.Base):
 
     def _getInfos(self):
         infos = OrderedDict()
-        version  = ' '.join(sys.version.split())
-        infos[111] = version
-        path = os.pathsep.join(sys.path)
-        infos[112] = path
-        # Required modules for ijson
-        try:
-            import ijson
-        except Exception as e:
-            infos[136] = self._getExceptionMsg(e)
-        else:
-            infos[137] = ijson.__version__, ijson.__file__
+        infos['ijson'] =              ('__version__',     '3.2.2')
+        infos['packaging'] =          ('__version__',     '23.1')
+        infos['six'] =                ('__version__',     '1.16.0')
         return infos
 
     def _getExceptionMsg(self, e):

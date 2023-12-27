@@ -40,9 +40,8 @@ from .logview import LogDialog
 
 from .loghandler import WindowHandler
 from .loghandler import DialogHandler
-
-from .loglistener import PoolListener
-from .loglistener import LoggerListener
+from .loghandler import LoggerListener
+from .loghandler import PoolListener
 
 from ..loghelper import getLoggerName
 
@@ -58,7 +57,7 @@ import traceback
 class LogManager(unohelper.Base):
     def __init__(self, ctx, parent, infos, filter, *defaults):
         self._ctx = ctx
-        self._model = LogModel(ctx, PoolListener(self), *defaults)
+        self._model = LogModel(ctx, PoolListener(self), defaults)
         self._view = LogWindow(ctx, WindowHandler(self), parent)
         self._infos = infos
         self._filter = filter
@@ -87,7 +86,7 @@ class LogManager(unohelper.Base):
         self.disableHandler()
         self._view.setLogSetting(self._model.loadSetting())
 
-    # LogManager setter methods called by PoolListener
+    # LogManager setter methods called by LoggerListener
     def updateLoggers(self):
         logger = self._view.getLogger()
         loggers = self._model.getLoggerNames(self._filter)

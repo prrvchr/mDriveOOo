@@ -49,7 +49,7 @@ from ...configuration import g_basename
 
 
 class LogModel(LogController):
-    def __init__(self, ctx, listener, *names):
+    def __init__(self, ctx, listener, names):
         self._ctx = ctx
         self._basename = g_basename
         self._pool = LoggerPool(ctx)

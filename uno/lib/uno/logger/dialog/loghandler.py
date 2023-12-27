@@ -69,7 +69,7 @@ class WindowHandler(unohelper.Base,
                 handled = True
             return handled
         except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
+            msg = f"Error: {traceback.format_exc()}"
             print(msg)
 
     def getSupportedMethodNames(self):
@@ -95,11 +95,28 @@ class DialogHandler(unohelper.Base,
                 handled = True
             return handled
         except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
+            msg = f"Error: {traceback.format_exc()}"
             print(msg)
 
     def getSupportedMethodNames(self):
         return ('LogInfo', )
+
+
+class LoggerListener(unohelper.Base,
+                     XModifyListener):
+    def __init__(self, manager):
+        self._manager = manager
+
+    # XModifyListener
+    def modified(self, event):
+        try:
+            self._manager.updateLogger()
+        except Exception as e:
+            msg = f"Error: {traceback.format_exc()}"
+            print(msg)
+
+    def disposing(self, event):
+        pass
 
 
 class PoolListener(unohelper.Base,
@@ -113,25 +130,7 @@ class PoolListener(unohelper.Base,
             print("PoolListener.modified()")
             self._manager.updateLoggers()
         except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
-
-    def disposing(self, event):
-        pass
-
-
-class LoggerListener(unohelper.Base,
-                     XModifyListener):
-    def __init__(self, manager):
-        self._manager = manager
-
-    # XModifyListener
-    def modified(self, event):
-        try:
-            print("LoggerListener.modified()")
-            self._manager.updateLogger()
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
+            msg = f"Error: {traceback.format_exc()}"
             print(msg)
 
     def disposing(self, event):

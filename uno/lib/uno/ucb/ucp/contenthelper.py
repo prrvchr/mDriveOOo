@@ -111,11 +111,11 @@ def getCommand(name, argument, handle=-1):
     command.Argument = argument
     return command
 
-def getCommandInfo(name, unotype=None, handle=-1):
+def getCommandInfo(name, typename='', handle=-1):
     command = uno.createUnoStruct('com.sun.star.ucb.CommandInfo')
     command.Name = name
-    if unotype:
-        command.ArgType = unotype
+    if typename:
+        command.ArgType = uno.getTypeByName(typename)
     command.Handle = handle
     return command
 

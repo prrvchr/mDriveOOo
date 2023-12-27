@@ -78,11 +78,11 @@ class Logger(unohelper.Base,
             return False
         return self._resolver.hasEntryForId(resource)
 
-    def resolveString(self, resource, args):
+    def resolveString(self, resource, arguments):
         if self.hasEntryForId(resource):
             msg = self._resolver.resolveString(resource)
-            if args:
-                msg = msg % args
+            if arguments:
+                msg = msg.format(*arguments)
         else:
             msg = resource
         return msg

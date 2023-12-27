@@ -98,7 +98,6 @@ class LoggerPool(unohelper.Base,
             toadd = name not in LoggerPool._loggers
             if toadd:
                 LoggerPool._loggers[name] = []
-                print("LoggerPool._getNamedLogger() %s" % name)
         logger = self._pool.getNamedLogger(name)
         if toadd:
             self._notifyListener()

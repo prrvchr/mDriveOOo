@@ -78,55 +78,26 @@ def _make_getattr(mod_name: str) -> Callable:
     """
 
     def __getattr__(name: str) -> str:
-        dunder_to_metadata = {
-            "__title__": "Name",
-            "__copyright__": "",
-            "__version__": "version",
-            "__version_info__": "version",
-            "__description__": "summary",
-            "__uri__": "",
-            "__url__": "",
-            "__author__": "",
-            "__email__": "",
-            "__license__": "license",
-        }
-        if name not in dunder_to_metadata.keys():
-            raise AttributeError(f"module {mod_name} has no attribute {name}")
 
-        import sys
-        import warnings
-
-        if sys.version_info < (3, 8):
-            from importlib_metadata import metadata
-        else:
-            from importlib.metadata import metadata
-
-        if name != "__version_info__":
-            warnings.warn(
-                f"Accessing {mod_name}.{name} is deprecated and will be "
-                "removed in a future release. Use importlib.metadata directly "
-                "to query for attrs's packaging metadata.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        meta = metadata("attrs")
         if name == "__license__":
             return "MIT"
         elif name == "__copyright__":
             return "Copyright (c) 2015 Hynek Schlawack"
         elif name in ("__uri__", "__url__"):
-            return meta["Project-URL"].split(" ", 1)[-1]
-        elif name == "__version_info__":
-            return VersionInfo._from_version_string(meta["version"])
+            return "https://github.com/denis-ryzhkov/attr"
+        elif name in ("__version__", "__version_info__"):
+            return "23.1.0"
         elif name == "__author__":
-            return meta["Author-email"].rsplit(" ", 1)[0]
+            return "Denis Ryzhkov"
         elif name == "__email__":
-            return meta["Author-email"].rsplit("<", 1)[1][:-1]
-
-        return meta[dunder_to_metadata[name]]
+            return "denisr@denisr.com"
+        elif name == "__title__":
+            return "attr"
+        elif name == "__description__":
+            return "Simple decorator to set attributes of target function or class in a DRY way."
+        else:
+            raise AttributeError(f"module {mod_name} has no attribute {name}")
 
     return __getattr__
-
 
 __getattr__ = _make_getattr(__name__)

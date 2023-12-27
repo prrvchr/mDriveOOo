@@ -3,7 +3,6 @@ from distutils import log
 from distutils.errors import DistutilsOptionError
 import os
 import glob
-import io
 
 from setuptools.command.easy_install import easy_install
 from setuptools import _path
@@ -90,9 +89,7 @@ class develop(namespaces.DevelopInstaller, easy_install):
         path_to_setup = egg_base.replace(os.sep, '/').rstrip('/')
         if path_to_setup != os.curdir:
             path_to_setup = '../' * (path_to_setup.count('/') + 1)
-        resolved = _path.normpath(
-            os.path.join(install_dir, egg_path, path_to_setup)
-        )
+        resolved = _path.normpath(os.path.join(install_dir, egg_path, path_to_setup))
         curdir = _path.normpath(os.curdir)
         if resolved != curdir:
             raise DistutilsOptionError(
@@ -156,7 +153,7 @@ class develop(namespaces.DevelopInstaller, easy_install):
         for script_name in self.distribution.scripts or []:
             script_path = os.path.abspath(convert_path(script_name))
             script_name = os.path.basename(script_path)
-            with io.open(script_path) as strm:
+            with open(script_path) as strm:
                 script_text = strm.read()
             self.install_script(dist, script_name, script_text, script_path)
 

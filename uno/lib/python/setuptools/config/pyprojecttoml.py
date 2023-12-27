@@ -14,10 +14,10 @@ from contextlib import contextmanager
 from functools import partial
 from typing import TYPE_CHECKING, Callable, Dict, Mapping, Optional, Set, Union
 
-from ..errors import FileError, OptionError
+from ..errors import FileError, InvalidConfigError
 from ..warnings import SetuptoolsWarning
 from . import expand as _expand
-from ._apply_pyprojecttoml import _PREVIOUSLY_DEFINED, _WouldIgnoreField
+from ._apply_pyprojecttoml import _PREVIOUSLY_DEFINED, _MissingDynamic
 from ._apply_pyprojecttoml import apply as _apply
 
 if TYPE_CHECKING:
@@ -106,9 +106,8 @@ def read_configuration(
     if not asdict or not (project_table or setuptools_table):
         return {}  # User is not using pyproject to configure setuptools
 
-    if setuptools_table:
-        # TODO: Remove the following once the feature stabilizes:
-        _BetaConfiguration.emit()
+    if "distutils" in tool_table:
+        _ExperimentalConfiguration.emit(subject="[tool.distutils]")
 
     # There is an overall sense in the community that making include_package_data=True
     # the default would be an improvement.
@@ -266,7 +265,7 @@ class _ConfigExpander:
                 "Some dynamic fields need to be specified via `tool.setuptools.dynamic`"
                 "\nothers must be specified via the equivalent attribute in `setup.py`."
             )
-            raise OptionError(msg)
+            raise InvalidConfigError(msg)
 
     def _expand_directive(
         self, specifier: str, directive, package_dir: Mapping[str, str]
@@ -331,9 +330,7 @@ class _ConfigExpander:
             if group in groups:
                 value = groups.pop(group)
                 if field not in self.dynamic:
-                    _WouldIgnoreField.emit(field=field, value=value)
-                # TODO: Don't set field when support for pyproject.toml stabilizes
-                #       instead raise an error as specified in PEP 621
+                    raise InvalidConfigError(_MissingDynamic.details(field, value))
                 expanded[field] = value
 
         _set_scripts("scripts", "console_scripts")
@@ -362,11 +359,13 @@ class _ConfigExpander:
             optional_dependencies_map = self.dynamic_cfg["optional-dependencies"]
             assert isinstance(optional_dependencies_map, dict)
             return {
-                group: _parse_requirements_list(self._expand_directive(
-                    f"tool.setuptools.dynamic.optional-dependencies.{group}",
-                    directive,
-                    {},
-                ))
+                group: _parse_requirements_list(
+                    self._expand_directive(
+                        f"tool.setuptools.dynamic.optional-dependencies.{group}",
+                        directive,
+                        {},
+                    )
+                )
                 for group, directive in optional_dependencies_map.items()
             }
         self._ensure_previously_set(dist, "optional-dependencies")
@@ -433,5 +432,8 @@ class _EnsurePackagesDiscovered(_expand.EnsurePackagesDiscovered):
         return super().__exit__(exc_type, exc_value, traceback)
 
 
-class _BetaConfiguration(SetuptoolsWarning):
-    _SUMMARY = "Support for `[tool.setuptools]` in `pyproject.toml` is still *beta*."
+class _ExperimentalConfiguration(SetuptoolsWarning):
+    _SUMMARY = (
+        "`{subject}` in `pyproject.toml` is still *experimental* "
+        "and likely to change in future releases."
+    )

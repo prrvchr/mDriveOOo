@@ -29,5 +29,5 @@
 
 from .logmanager import LogManager
 
-from .loglistener import LoggerListener
+from .loghandler import LoggerListener
 

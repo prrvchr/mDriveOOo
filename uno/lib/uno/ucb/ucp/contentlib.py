@@ -158,15 +158,14 @@ class Row(unohelper.Base,
 
 class DynamicResultSet(unohelper.Base,
                        XDynamicResultSet):
-    def __init__(self, user, path, authority, select):
+    def __init__(self, user, authority, select):
         self._user = user
-        self._path = path
         self._authority = authority
         self._select = select
 
     # XDynamicResultSet
     def getStaticResultSet(self):
-        return ContentResultSet(self._user, self._path, self._authority, self._select)
+        return ContentResultSet(self._user, self._authority, self._select)
     def setListener(self, listener):
         pass
     def connectToCache(self, cache):
@@ -181,10 +180,9 @@ class ContentResultSet(unohelper.Base,
                        XRow,
                        XResultSetMetaDataSupplier,
                        XContentAccess):
-    def __init__(self, user, path, authority, select):
+    def __init__(self, user, authority, select):
         try:
             self._user = user
-            self._path = path
             self._authority = authority
             result = select.executeQuery()
             result.last()
@@ -194,7 +192,7 @@ class ContentResultSet(unohelper.Base,
             self._result = result
             print("ContentResultSet.__init__() %s" % self.RowCount)
         except Exception as e:
-            msg = "Error: %s" % traceback.print_exc()
+            msg = "Error: %s - %s" % (e, traceback.format_exc())
             print(msg)
 
     # XResultSet
@@ -287,14 +285,14 @@ class ContentResultSet(unohelper.Base,
     def queryContentIdentifier(self):
         return Identifier(self.queryContentIdentifierString())
     def queryContent(self):
-        title = self._result.getString(self._result.findColumn('Title'))
-        path = self._user.getContentPath(self._path, title)
-        return self._user.getContent(path, self._authority)
+        url = self.queryContentIdentifierString()
+        itemid = self._user.getItemByUrl(url)
+        return self._user.getContent(self._authority, itemid)
 
     def _getPropertySetInfo(self):
         properties = {}
         readonly = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.READONLY')
-        properties['RowCount'] = getProperty('RowCount', 'long', readonly)
+        properties['RowCount'] =        getProperty('RowCount',        'long',    readonly)
         properties['IsRowCountFinal'] = getProperty('IsRowCountFinal', 'boolean', readonly)
         return properties
 

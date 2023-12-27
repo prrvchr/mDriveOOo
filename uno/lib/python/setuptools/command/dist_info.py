@@ -12,7 +12,6 @@ from distutils.core import Command
 from pathlib import Path
 
 from .. import _normalization
-from ..warnings import SetuptoolsDeprecationWarning
 
 
 class dist_info(Command):
@@ -24,11 +23,12 @@ class dist_info(Command):
     description = "DO NOT CALL DIRECTLY, INTERNAL ONLY: create .dist-info directory"
 
     user_options = [
-        ('egg-base=', 'e', "directory containing .egg-info directories"
-                           " (default: top of the source tree)"
-                           " DEPRECATED: use --output-dir."),
-        ('output-dir=', 'o', "directory inside of which the .dist-info will be"
-                             "created (default: top of the source tree)"),
+        (
+            'output-dir=',
+            'o',
+            "directory inside of which the .dist-info will be"
+            "created (default: top of the source tree)",
+        ),
         ('tag-date', 'd', "Add date stamp (e.g. 20050528) to version number"),
         ('tag-build=', 'b', "Specify explicit tag to add to version number"),
         ('no-date', 'D', "Don't include date stamp [default]"),
@@ -39,7 +39,6 @@ class dist_info(Command):
     negative_opt = {'no-date': 'tag-date'}
 
     def initialize_options(self):
-        self.egg_base = None
         self.output_dir = None
         self.name = None
         self.dist_info_dir = None
@@ -48,13 +47,6 @@ class dist_info(Command):
         self.keep_egg_info = False
 
     def finalize_options(self):
-        if self.egg_base:
-            msg = "--egg-base is deprecated for dist_info command. Use --output-dir."
-            SetuptoolsDeprecationWarning.emit(msg, due_date=(2023, 9, 26))
-            # This command is internal to setuptools, therefore it should be safe
-            # to remove the deprecated support soon.
-            self.output_dir = self.egg_base or self.output_dir
-
         dist = self.distribution
         project_dir = dist.src_root or os.curdir
         self.output_dir = Path(self.output_dir or project_dir)

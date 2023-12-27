@@ -57,6 +57,7 @@ from ..dbtool import getDateTimeInTZToString
 
 from ..unotool import createService
 from ..unotool import getProperty
+from ..unotool import getUriFactory
 
 from ..database import DataBase
 
@@ -77,16 +78,16 @@ import traceback
 
 
 class User():
-    def __init__(self, ctx, logger, source, database, provider, name, sync, lock, password=''):
+    def __init__(self, ctx, source, logger, database, provider, sync, name, password=''):
         self._ctx = ctx
         self._name = name
         self._sync = sync
-        self._lock = lock
         self._expired = None
         self.Provider = provider
         #self.CanAddChild = not self.Provider.GenerateIds
         self.CanAddChild = True
         self._logger = logger
+        self._factory = None
         metadata = database.selectUser(name)
         new = metadata is None
         if not new:
@@ -121,11 +122,13 @@ class User():
                 raise IllegalIdentifierException(msg, source)
         self.Request = request
         self.MetaData = metadata
-        self.DataBase = DataBase(ctx, logger, database.Url, sync, name, password)
-        self._identifiers = {}
+        self.DataBase = DataBase(ctx, logger, database.Url, name, password)
+        rootid = metadata.get('RootId')
+        self._ids = {'': rootid, '/': rootid}
+        self._paths = {}
         self._contents = {}
-        self._contents[self.RootId] = Content(ctx, self)
         if new:
+            # Start Replicator for pushing changes…
             self._sync.set()
         self._logger.logprb(INFO, 'User', '__init__()', 505)
 
@@ -164,44 +167,53 @@ class User():
     def setToken(self, token):
         self.MetaData['Token'] = token
 
+    # method called from ContentResultSet.queryContent()
+    def getItemByUrl(self, url):
+        uri = self._getUriFactory().parse(url)
+        return self.getItemByUri(uri)
+
+    # method called from DataSource.queryContent()
+    def getItemByUri(self, uri):
+        path = uri.getPath()
+        if path in self._ids:
+            itemid = self._ids[path]
+        else:
+            itemid = self.DataBase.getItemId(self.Id, path)
+            if itemid is not None:
+                self._ids[path] = itemid
+                self._paths[itemid] = path
+        return itemid
+
     # method called from DataSource.queryContent(), Content.getParent() and ContentResultSet.queryContent()
-    def getContent(self, path, authority):
-        if self._expired is not None and path.startswith(self._expired):
-            self._removeIdentifiers()
-        if self.isRootPath(path):
-            itemid = self.RootId
+    def getContent(self, authority, itemid):
+        content = None
+        if itemid in self._contents:
+            data = self._contents[itemid]
         else:
-            itemid = self._identifiers.get(path)
-        content = None if itemid is None else self._contents.get(itemid)
-        if content is None:
-            content = Content(self._ctx, self, authority, path)
-            self._identifiers[path] = content.Id
-            self._contents[content.Id] = content
-        else:
-            content.setAuthority(authority)
+            data = self.DataBase.getItem(self.Id, self.RootId, itemid)
+            if data is not None:
+                self._contents[itemid] = data
+        if data is not None:
+            content = Content(self._ctx, self, authority, data)
         return content
 
-    def isRootPath(self, path):
-        return path in ('', g_separator)
+    # method called from Content._identifier
+    def getContentIdentifier(self, authority, itemid, path, title):
+        identifier = self._getContentScheme(authority)
+        if itemid != self.RootId:
+            identifier += path + title
+        else:
+            identifier += g_separator
+        return identifier
 
-    def getContentIdentifier(self, authority, path, title, isroot):
-        url = self.getContentScheme(authority) + self.getContentPath(path, title, isroot, g_separator)
-        return Identifier(url)
-
-    def getContentPath(self, path, title, isroot=False, rootpath=''):
-        return rootpath if isroot else path + g_separator + title
+    def createNewContent(self, authority, parentid, path, title, contentype):
+        data = self._getNewContent(parentid, path, title, contentype)
+        content = Content(self._ctx, self, authority, data, True)
+        print("User.createNewContent()")
+        return content
 
     def getTargetUrl(self, itemid):
         return self.Provider.SourceURL + g_separator + itemid
-
-    def expireIdentifier(self, identifier):
-        # FIXME: We need to remove all the child of a resource (if it's a folder)
-         self._expired = identifier.getContentIdentifier()
-
-    def createNewContent(self, id, link, path, authority, contentype):
-        data = self._getNewContent(id, link, path, contentype)
-        content = Content(self._ctx, self, authority, path, data)
-        return content
 
     def getCreatableContentsInfo(self, canaddchild):
         content = []
@@ -216,7 +228,7 @@ class User():
     def getDocumentContent(self, sf, content, size):
         size = 0
         itemid = content.getValue('Id')
-        url = self.Provider.SourceURL + g_separator + itemid
+        url = self.getTargetUrl()
         if content.getValue('ConnectionMode') == OFFLINE and sf.exists(url):
             size = sf.getSize(url)
             return url, size
@@ -228,63 +240,84 @@ class User():
                 self._logger.logprb(SEVERE, 'User', 'getDocumentContent()', 511, e, traceback.format_exc())
             else:
                 size = sf.getSize(url)
-                loaded = self.DataBase.updateConnectionMode(self.Id, itemid, OFFLINE, ONLINE)
+                loaded = self.updateConnectionMode(itemid, OFFLINE)
                 content.setConnectionMode(loaded)
             finally:
                 stream.closeInput()
         return url, size
 
-    def insertNewContent(self, content):
+    def updateContent(self, itemid, property, value):
+        updated, clear = self.DataBase.updateContent(self.Id, itemid, property, value)
+        if updated:
+            # Start Replicator for pushing changes…
+            self._sync.set()
+        if clear:
+            # if Title as been changed then we need to clear identifier cache
+            self._ids = {'': self.RootId, '/': self.RootId}
+            self._paths = {}
+
+    def insertNewContent(self, authority, content):
         timestamp = currentDateTimeInTZ()
-        self.DataBase.insertNewContent(self.Id, content, timestamp)
-        return True
+        status = self.DataBase.insertNewContent(self.Id, content, timestamp)
+        if status :
+            # Start Replicator for pushing changes…
+            self._sync.set()
+        return status
 
     def deleteNewIdentifier(self, itemid):
         if self.Provider.GenerateIds:
             self.DataBase.deleteNewIdentifier(self.Id, itemid)
 
-    def getContentScheme(self, authority):
+    def getChildren(self, authority, itemid, properties):
+        scheme = self._getContentScheme(authority)
+        return self.DataBase.getChildren(itemid, properties, self.SessionMode, scheme)
+
+    def updateConnectionMode(self, itemid, mode):
+        return self.DataBase.updateConnectionMode(self.Id, itemid, mode)
+
+    # Private methods
+    def _getContentScheme(self, authority):
         name = self.Name if authority else ''
         return '%s://%s' % (g_scheme, name)
 
-    def _getNewContent(self, parentid, link, path, contentype):
+    def _getUriFactory(self):
+        if self._factory is None:
+            self._factory = getUriFactory(self._ctx)
+        return self._factory
+
+    def _getNewContent(self, parentid, path, title, contentype):
         timestamp = currentUnoDateTime()
         isfolder = self.Provider.isFolder(contentype)
         isdocument = self.Provider.isDocument(contentype)
         itemid = self._getNewIdentifier()
-        data = {}
-        data['Id'] = itemid
-        data['ParentId'] = parentid
-        data['Path'] = path
-        data['ObjectId'] = itemid
-        data['Title'] = ''
-        data['TitleOnServer'] = ''
-        data['DateCreated'] = timestamp
-        data['DateModified'] = timestamp
-        data['ContentType'] = contentype
-        mediatype = '' if isdocument else contentype
-        data['MediaType'] = mediatype
-        data['Link'] = link
-        data['Size'] = 0
-        data['Trashed'] = False
-        data['IsRoot'] = False
-        data['IsFolder'] = isfolder
-        data['IsLink'] = False
-        data['IsDocument'] = isdocument
-        data['CanAddChild'] = isfolder
-        data['CanRename'] = True
-        data['IsReadOnly'] = False
-        data['IsVersionable'] = isdocument
-        data['ConnectionMode'] = True
-        data['BaseURI'] = path
-        data['CasePreservingURL'] = ''
-        data['IsHidden'] = False
-        data['IsVolume'] = False
-        data['IsRemote'] = False
-        data['IsRemoveable'] = False
-        data['IsFloppy'] = False
-        data['IsCompactDisc'] = False
-        data['CreatableContentsInfo'] = self.getCreatableContentsInfo(isfolder)
+        data = {'ConnectionMode':        1,
+                'ContentType':           contentype,
+                'DateCreated':           timestamp,
+                'DateModified':          timestamp,
+                'IsCompactDisc':         False,
+                'IsDocument':            isdocument,
+                'IsFloppy':              False,
+                'IsFolder':              isfolder,
+                'IsHidden':              False,
+                'IsReadOnly':            False,
+                'IsRemote':              False,
+                'IsRemoveable':          False,
+                'IsVersionable':         isdocument,
+                'IsVolume':              False,
+                'MediaType':             '' if isdocument else contentype,
+                'ObjectId':              itemid,
+                'ParentId':              parentid,
+                'Size':                  0,
+                'Title':                 '',
+                'TitleOnServer':         '',
+                'Id':                    itemid,
+                'Path':                  self._getPath(parentid, path, title),
+                'Link':                  '',
+                'Trashed':               False,
+                'IsRoot':                False,
+                'IsLink':                False,
+                'CanAddChild':           isfolder,
+                'CanRename':             True}
         return data
 
     def _getNewIdentifier(self):
@@ -294,11 +327,10 @@ class User():
             identifier = binascii.hexlify(uno.generateUuid().value).decode('utf-8')
         return identifier
 
-    def _removeIdentifiers(self):
-        for url in tuple(self._identifiers.keys()):
-            if url.startswith(self._expired):
-                with self._lock:
-                    if url in self._identifiers:
-                        del self._identifiers[url]
-        self._expired = None
+    def _getPath(self, itemid, path, title):
+        if itemid != self.RootId:
+            path += title + g_separator
+        else:
+            path = g_separator
+        return path
 

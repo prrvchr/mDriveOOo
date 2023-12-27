@@ -35,6 +35,8 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.lang import XServiceInfo
 
+from com.sun.star.sdbc import SQLException
+
 from com.sun.star.ucb import XContentIdentifierFactory
 from com.sun.star.ucb import XContentProvider
 from com.sun.star.ucb import XParameterizedContentProvider
@@ -47,9 +49,9 @@ from .database import DataBase
 from .datasource import DataSource
 
 from .unotool import checkVersion
-from .unotool import createService
+from .unotool import createMessageBox
 from .unotool import getExtensionVersion
-from .unotool import parseUrl
+from .unotool import getParentWindow
 
 from .dbtool import getConnectionUrl
 
@@ -70,6 +72,7 @@ from .configuration import g_extension
 from .configuration import g_identifier
 from .configuration import g_defaultlog
 from .configuration import g_scheme
+from .configuration import g_separator
 
 import traceback
 
@@ -83,7 +86,6 @@ class ContentProvider(unohelper.Base,
         self._authority = authority
         self._cls = '%sContentProvider' % arguments
         self._services = ('com.sun.star.ucb.ContentProvider', g_identifier + '.ContentProvider')
-        self._transformer = createService(ctx, 'com.sun.star.util.URLTransformer')
         self._logger = logger
         self._logger.logprb(INFO, self._cls, '__init__()', 201, arguments)
 
@@ -97,34 +99,40 @@ class ContentProvider(unohelper.Base,
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, url):
-        identifier = Identifier(self._getContentIdentifierUrl(url))
+        identifier = Identifier(url)
         self._logger.logprb(INFO, self._cls, 'createContentIdentifier()', 211, url, identifier.getContentIdentifier())
         return identifier
 
     # XContentProvider
     def queryContent(self, identifier):
         try:
-            print("ContentProvider.queryContent() 1 ******************************************")
-            content = self._datasource.queryContent(self, self._authority, identifier)
+            url = identifier.getContentIdentifier()
+            print("ContentProvider.queryContent() 1 url: %s **********************************" % url)
+            content = self._datasource.queryContent(self, self._authority, url)
             print("ContentProvider.queryContent() 2 ******************************************")
-            self._logger.logprb(INFO, self._cls, 'queryContent()', 231, identifier.getContentIdentifier())
+            self._logger.logprb(INFO, self._cls, 'queryContent()', 231, url)
             return content
         except IllegalIdentifierException as e:
+            print("ContentProvider.queryContent() 3 ******************************************")
             self._logger.logprb(INFO, self._cls, 'queryContent()', 232, e.Message)
             raise e
         except Exception as e:
+            print("ContentProvider.queryContent() 4 ******************************************")
             msg = self._logger.resolveString(233, traceback.format_exc())
             self._logger.logp(SEVERE, self._cls, 'queryContent()', msg)
             print(msg)
 
     def compareContentIds(self, id1, id2):
-        url1, url2 = id1.getContentIdentifier(), id2.getContentIdentifier()
-        if url1 == url2:
-            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 241, url1, url2)
-            compare = 0
-        else:
-            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 242, url1, url2)
+        uri1 = self._datasource.parseIdentifier(id1)
+        uri2 = self._datasource.parseIdentifier(id2)
+        auth1 = uri1.getAuthority() if uri1.hasAuthority() else self._datasource.getDefaultUser()
+        auth2 = uri2.getAuthority() if uri2.hasAuthority() else self._datasource.getDefaultUser()
+        if (auth1 != auth2 or uri1.getPath() != uri2.getPath()):
+            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 242, uri1.getUriReference(), uri2.getUriReference())
             compare = -1
+        else:
+            self._logger.logprb(INFO, self._cls, 'compareContentIds()', 241, uri1.getUriReference(), uri2.getUriReference())
+            compare = 0
         return compare
 
     # XServiceInfo
@@ -136,49 +144,43 @@ class ContentProvider(unohelper.Base,
         return self._services
 
     # Private methods
-    def _getContentIdentifierUrl(self, url):
-        # FIXME: Sometimes the url can end with a dot, it must be deleted
-        url = url.rstrip('.')
-        uri = parseUrl(self._transformer, url)
-        if uri is not None:
-            uri = self._transformer.getPresentation(uri, True)
-        return uri if uri else url
-
     def _getDataSource(self):
         oauth2 = getOAuth2Version(self._ctx)
         driver = getExtensionVersion(self._ctx, g_jdbcid)
         if oauth2 is None:
-            self._logException(221, g_oauth2ext, ' ', g_extension)
-            raise self._getException(221, g_oauth2ext, '\n', g_extension)
+            msg = self._getExceptionMessage(221, g_oauth2ext, g_oauth2ext, g_extension)
+            raise IllegalIdentifierException(msg, self)
         elif not checkVersion(oauth2, g_oauth2ver):
-            self._logException(222, oauth2, g_oauth2ext, ' ', g_oauth2ver)
-            raise self._getException(222, oauth2, g_oauth2ext, '\n', g_oauth2ver)
+            msg = self._getExceptionMessage(223, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
+            raise IllegalIdentifierException(msg, self)
         elif driver is None:
-            self._logException(221, g_jdbcext, ' ', g_extension)
-            raise self._getException(221, g_jdbcext, '\n', g_extension)
+            msg = self._getExceptionMessage(221, g_jdbcext, g_jdbcext, g_extension)
+            raise IllegalIdentifierException(msg, self)
         elif not checkVersion(driver, g_jdbcver):
-            self._logException(222, driver, g_jdbcext, ' ', g_jdbcver)
-            raise self._getException(222, driver, g_jdbcext, '\n', g_jdbcver)
+            msg = self._getExceptionMessage(223, g_jdbcext, driver, g_jdbcext, g_jdbcver)
+            raise IllegalIdentifierException(msg, self)
         else:
-            path = g_folder + '/' + g_scheme
+            path = g_folder + g_separator + g_scheme
             url = getConnectionUrl(self._ctx, path)
             try:
                 database = DataBase(self._ctx, self._logger, url)
             except SQLException as e:
-                self._logException(223, url, ' ', e.Message)
-                raise self._getException(223, url, '\n', e.Message)
+                msg = self._getExceptionMessage(225, g_extension, url, e.Message)
+                raise IllegalIdentifierException(msg, self)
             else:
                 if not database.isUptoDate():
-                    self._logException(224, database.Version, ' ', g_version)
-                    raise self._getException(224, database.Version, '\n', g_version)
+                    msg = self._getExceptionMessage(227, g_jdbcext, database.Version, g_version)
+                    raise IllegalIdentifierException(msg, self)
                 else:
                     return DataSource(self._ctx, self._logger, database)
         return None
 
-    def _logException(self, code, *args):
-        self._logger.logprb(SEVERE, 'ContentProvider', 'queryContent()', code, *args)
-
-    def _getException(self, code, *args):
-        msg = self._logger.resolveString(code, *args)
-        return IllegalIdentifierException(msg, self)
+    def _getExceptionMessage(self, code, extension, *args):
+        title = self._logger.resolveString(code, extension)
+        message = self._logger.resolveString(code +1, *args)
+        self._logger.logp(SEVERE, 'ContentProvider', 'queryContent()', message)
+        msgbox = createMessageBox(getParentWindow(self._ctx), message, title, 'error', 1)
+        msgbox.execute()
+        msgbox.dispose()
+        return message
 

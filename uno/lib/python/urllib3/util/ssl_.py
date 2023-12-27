@@ -16,7 +16,6 @@ SSLContext = None
 SSLTransport = None
 HAS_NEVER_CHECK_COMMON_NAME = False
 IS_PYOPENSSL = False
-IS_SECURETRANSPORT = False
 ALPN_PROTOCOLS = ["http/1.1"]
 
 _TYPE_VERSION_INFO = typing.Tuple[int, int, int, str, int]
@@ -26,32 +25,33 @@ HASHFUNC_MAP = {32: md5, 40: sha1, 64: sha256}
 
 
 def _is_bpo_43522_fixed(
-    implementation_name: str, version_info: _TYPE_VERSION_INFO
+    implementation_name: str,
+    version_info: _TYPE_VERSION_INFO,
+    pypy_version_info: _TYPE_VERSION_INFO | None,
 ) -> bool:
-    """Return True for CPython 3.8.9+, 3.9.3+ or 3.10+ where setting
-    SSLContext.hostname_checks_common_name to False works.
-
-    PyPy 7.3.7 doesn't work as it doesn't ship with OpenSSL 1.1.1l+
-    so we're waiting for a version of PyPy that works before
-    allowing this function to return 'True'.
+    """Return True for CPython 3.8.9+, 3.9.3+ or 3.10+ and PyPy 7.3.8+ where
+    setting SSLContext.hostname_checks_common_name to False works.
 
     Outside of CPython and PyPy we don't know which implementations work
     or not so we conservatively use our hostname matching as we know that works
     on all implementations.
 
     https://github.com/urllib3/urllib3/issues/2192#issuecomment-821832963
-    https://foss.heptapod.net/pypy/pypy/-/issues/3539#
+    https://foss.heptapod.net/pypy/pypy/-/issues/3539
     """
-    if implementation_name != "cpython":
+    if implementation_name == "pypy":
+        # https://foss.heptapod.net/pypy/pypy/-/issues/3129
+        return pypy_version_info >= (7, 3, 8)  # type: ignore[operator]
+    elif implementation_name == "cpython":
+        major_minor = version_info[:2]
+        micro = version_info[2]
+        return (
+            (major_minor == (3, 8) and micro >= 9)
+            or (major_minor == (3, 9) and micro >= 3)
+            or major_minor >= (3, 10)
+        )
+    else:  # Defensive:
         return False
-
-    major_minor = version_info[:2]
-    micro = version_info[2]
-    return (
-        (major_minor == (3, 8) and micro >= 9)
-        or (major_minor == (3, 9) and micro >= 3)
-        or major_minor >= (3, 10)
-    )
 
 
 def _is_has_never_check_common_name_reliable(
@@ -59,6 +59,7 @@ def _is_has_never_check_common_name_reliable(
     openssl_version_number: int,
     implementation_name: str,
     version_info: _TYPE_VERSION_INFO,
+    pypy_version_info: _TYPE_VERSION_INFO | None,
 ) -> bool:
     # As of May 2023, all released versions of LibreSSL fail to reject certificates with
     # only common names, see https://github.com/urllib3/urllib3/pull/3024
@@ -71,14 +72,13 @@ def _is_has_never_check_common_name_reliable(
 
     return is_openssl and (
         is_openssl_issue_14579_fixed
-        or _is_bpo_43522_fixed(implementation_name, version_info)
+        or _is_bpo_43522_fixed(implementation_name, version_info, pypy_version_info)
     )
 
 
 if typing.TYPE_CHECKING:
     from ssl import VerifyMode
-
-    from typing_extensions import Literal, TypedDict
+    from typing import Literal, TypedDict
 
     from .ssltransport import SSLTransport as SSLTransportType
 
@@ -117,6 +117,7 @@ try:  # Do we have ssl at all?
         OPENSSL_VERSION_NUMBER,
         sys.implementation.name,
         sys.version_info,
+        sys.pypy_version_info if sys.implementation.name == "pypy" else None,  # type: ignore[attr-defined]
     ):
         HAS_NEVER_CHECK_COMMON_NAME = False
 
@@ -319,12 +320,13 @@ def create_urllib3_context(
     # Enable post-handshake authentication for TLS 1.3, see GH #1634. PHA is
     # necessary for conditional client cert authentication with TLS 1.3.
     # The attribute is None for OpenSSL <= 1.1.0 or does not exist in older
-    # versions of Python.  We only enable on Python 3.7.4+ or if certificate
-    # verification is enabled to work around Python issue #37428
+    # versions of Python. We only enable if certificate verification is enabled to work
+    # around Python issue #37428
     # See: https://bugs.python.org/issue37428
-    if (cert_reqs == ssl.CERT_REQUIRED or sys.version_info >= (3, 7, 4)) and getattr(
-        context, "post_handshake_auth", None
-    ) is not None:
+    if (
+        cert_reqs == ssl.CERT_REQUIRED
+        and getattr(context, "post_handshake_auth", None) is not None
+    ):
         context.post_handshake_auth = True
 
     # The order of the below lines setting verify_mode and check_hostname
@@ -341,7 +343,7 @@ def create_urllib3_context(
 
     try:
         context.hostname_checks_common_name = False
-    except AttributeError:
+    except AttributeError:  # Defensive: for CPython < 3.8.9 and 3.9.3; for PyPy < 7.3.8
         pass
 
     # Enable logging of TLS session keys via defacto standard environment variable
@@ -408,8 +410,10 @@ def ssl_wrap_socket(
     tls_in_tls: bool = False,
 ) -> ssl.SSLSocket | SSLTransportType:
     """
-    All arguments except for server_hostname, ssl_context, and ca_cert_dir have
-    the same meaning as they do when using :func:`ssl.wrap_socket`.
+    All arguments except for server_hostname, ssl_context, tls_in_tls, ca_cert_data and
+    ca_cert_dir have the same meaning as they do when using
+    :func:`ssl.create_default_context`, :meth:`ssl.SSLContext.load_cert_chain`,
+    :meth:`ssl.SSLContext.set_ciphers` and :meth:`ssl.SSLContext.wrap_socket`.
 
     :param server_hostname:
         When SNI is supported, the expected hostname of the certificate
