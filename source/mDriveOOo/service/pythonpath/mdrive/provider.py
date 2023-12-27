@@ -119,7 +119,7 @@ class Provider(ProviderBase):
         parents = [parent, ]
         trashed = rename = readonly = versionable = False
         addchild = True
-        path = None
+        path = ''
         while parameter.hasNextPage():
             response = request.execute(parameter)
             if response.Ok:
@@ -130,9 +130,10 @@ class Provider(ProviderBase):
                     parser.send(iterator.nextElement().value)
                     for prefix, event, value in events:
                         if (prefix, event) == ('value.item', 'start_map'):
-                            itemid = link = name = None
+                            itemid = name = None
                             created = modified = timestamp
                             mimetype = g_folder
+                            link = ''
                             size = 0
                         elif (prefix, event) == ('value.item.remoteItem.id', 'string'):
                             itemid = value
@@ -149,7 +150,8 @@ class Provider(ProviderBase):
                         elif (prefix, event) == ('value.item.remoteItem.file.mimeType', 'string'):
                             mimetype = value
                         elif (prefix, event) == ('value.item', 'end_map'):
-                            yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, path, parents
+                            if itemid and name:
+                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, path, parents
                     del events[:]
                 parser.close()
             response.close()
@@ -157,10 +159,10 @@ class Provider(ProviderBase):
     def parseRootFolder(self, parameter, content):
         return self.parseItems(content.User.Request, parameter, content.Link)
 
-    def parseItems(self, request, parameter, link=None):
+    def parseItems(self, request, parameter):
         readonly = versionable = False
         addchild = rename = True
-        path = None
+        path = link = ''
         while parameter.hasNextPage():
             response = request.execute(parameter)
             if response.Ok:
@@ -199,7 +201,8 @@ class Provider(ProviderBase):
                         elif (prefix, event) == ('value.item.parentReference.id', 'string'):
                             parents.append(value)
                         elif (prefix, event) == ('value.item', 'end_map'):
-                            yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, path, parents
+                            if itemid and name:
+                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, path, parents
                     del events[:]
                 parser.close()
             response.close()
@@ -339,31 +342,24 @@ class Provider(ProviderBase):
 
     def parseUploadLocation(self, response):
         url =  None
-        if not response.Ok:
-            print("Provider.parseUploadLocation() Text: %s" % response.Text)
-        else:
-            events = ijson.sendable_list()
-            parser = ijson.parse_coro(events)
-            iterator = response.iterContent(g_chunk, False)
-            while iterator.hasMoreElements():
-                parser.send(iterator.nextElement().value)
-                for prefix, event, value in events:
-                    if (prefix, event) == ('uploadUrl', 'string'):
-                        url = value
-                del events[:]
-            parser.close()
+        events = ijson.sendable_list()
+        parser = ijson.parse_coro(events)
+        iterator = response.iterContent(g_chunk, False)
+        while iterator.hasMoreElements():
+            parser.send(iterator.nextElement().value)
+            for prefix, event, value in events:
+                if (prefix, event) == ('uploadUrl', 'string'):
+                    url = value
+            del events[:]
+        parser.close()
         response.close()
         return url
 
     def updateItemId(self, database, oldid, response):
-        if response is not None:
-            if response.Ok:
-                newid = self._parseNewId(response)
-                if newid and oldid != newid:
-                    database.updateItemId(newid, oldid)
-                return newid
-            response.close()
-        return None
+        newid = self._parseNewId(response)
+        if newid and oldid != newid:
+            database.updateItemId(newid, oldid)
+        return newid
 
     def _parseNewId(self, response):
         newid = None

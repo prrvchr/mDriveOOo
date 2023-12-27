@@ -51,7 +51,7 @@ import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.NamedProvider' % g_identifier
+g_ImplementationName = f'{g_identifier}.NamedProvider'
 
 
 class NamedProvider(unohelper.Base,

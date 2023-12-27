@@ -41,7 +41,7 @@ import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = '%s.OptionsHandler' % g_identifier
+g_ImplementationName = f'{g_identifier}.OptionsHandler'
 
 
 class OptionsHandler(unohelper.Base,
@@ -85,7 +85,7 @@ class OptionsHandler(unohelper.Base,
                 handled = True
             return handled
         except Exception as e:
-            msg = "OptionsHandler.callHandlerMethod() Error: %s" % traceback.format_exc()
+            msg = f'OptionsHandler.callHandlerMethod() Error: {e}\n{traceback.format_exc()}'
             print(msg)
 
     def getSupportedMethodNames(self):
