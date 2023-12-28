@@ -13,7 +13,7 @@ Table|Column|Type|Default|Options|Primary|Unique|ForeignTable|ForeignColumn
 1|8|TIMESTAMP(6)|CURRENT_TIMESTAMP(6)|NOT NULL|false|false||
 1|9|VARCHAR(100)|'application/octet-stream'|NOT NULL|false|false||
 1|10|BIGINT|0|NOT NULL|false|false||
-1|11|VARCHAR(256)|NULL||false|false||
+1|11|VARCHAR(256)|''||false|false||
 1|12|BOOLEAN|FALSE|NOT NULL|false|false||
 1|13|SMALLINT|0|NOT NULL|false|false||
 1|15|SMALLINT|0|NOT NULL|false|false||

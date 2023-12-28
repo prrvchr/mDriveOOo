@@ -159,10 +159,10 @@ class Provider(ProviderBase):
     def parseRootFolder(self, parameter, content):
         return self.parseItems(content.User.Request, parameter, content.Link)
 
-    def parseItems(self, request, parameter):
+    def parseItems(self, request, parameter, link=''):
         readonly = versionable = False
         addchild = rename = True
-        path = link = ''
+        path = ''
         while parameter.hasNextPage():
             response = request.execute(parameter)
             if response.Ok:
@@ -407,20 +407,20 @@ class Provider(ProviderBase):
             parameter.Url += '/me/drive/sharedWithMe'
 
         elif method == 'getFolderContent':
-            if data.Link is None:
-                url = '/me/drive/items/%s/children' % data.Id
-            else:
+            if data.Link:
                 url = '/drives/%s/items/%s/children' % (data.Link, data.Id)
+            else:
+                url = '/me/drive/items/%s/children' % data.Id
             print("Provider.getFolderContent() Url: %s" % url)
             parameter.Url += url
             parameter.setQuery('$select', g_itemfields)
             parameter.setQuery('$top', g_pages)
 
         elif method == 'getDocumentLocation':
-            if data.Link is None:
-                url = '/me/drive/items/%s/content' % data.Id
-            else:
+            if data.Link:
                 url = '/drives/%s/items/%s/content' % (data.Link, data.Id)
+            else:
+                url = '/me/drive/items/%s/content' % data.Id
             parameter.Url += url
             print("Provider.getRequestParameter() Name: %s - Url: %s" % (parameter.Name, parameter.Url))
             parameter.NoRedirect = True
@@ -450,10 +450,10 @@ class Provider(ProviderBase):
 
         elif method == 'createNewFolder':
             parameter.Method = 'POST'
-            if data.get('Link') is None:
-                url = '/me/drive/items/%s/children' % data.get('ParentId')
-            else:
+            if data.get('Link'):
                 url = '/drives/%s/items/%s/children' % (data.get('Link'), data.get('ParentId'))
+            else:
+                url = '/me/drive/items/%s/children' % data.get('ParentId')
             parameter.Url += url
             parameter.setJson('name', data.get('Title'))
             # FIXME: We need to bee able to construct a JSON object like:
@@ -464,19 +464,19 @@ class Provider(ProviderBase):
 
         elif method == 'getUploadLocation':
             parameter.Method = 'POST'
-            if data.get('Link') is None:
-                url = '/me/drive/items/%s/createUploadSession' % data.get('Id')
-            else:
+            if data.get('Link'):
                 url = '/drives/%s/items/%s/createUploadSession' % (data.get('Link'), data.get('Id'))
+            else:
+                url = '/me/drive/items/%s/createUploadSession' % data.get('Id')
             parameter.Url += url
             print("Provider.getUploadLocation() Parameter.Json: '%s'" % parameter.Json)
 
         elif method == 'getNewUploadLocation':
             parameter.Method = 'POST'
-            if data.get('Link') is None:
-                url = '/me/drive/items/%s:/%s:/createUploadSession' % (data.get('ParentId'), data.get('Title'))
-            else:
+            if data.get('Link'):
                 url = '/drives/%s/items/%s:/%s:/createUploadSession' % (data.get('Link'), data.get('ParentId'), data.get('Title'))
+            else:
+                url = '/me/drive/items/%s:/%s:/createUploadSession' % (data.get('ParentId'), data.get('Title'))
             parameter.Url += url
             parameter.setJson('item/@odata.type', 'microsoft.graph.driveItemUploadableProperties')
             parameter.setJson('item/@microsoft.graph.conflictBehavior', 'replace')
@@ -491,18 +491,18 @@ class Provider(ProviderBase):
 
         elif method == 'uploadFile':
             parameter.Method = 'PUT'
-            if data.get('Link') is None:
-                url = '/me/drive/items/%s/content' % data.get('Id')
-            else:
+            if data.get('Link'):
                 url = '/drives/%s/items/%s/content' % (data.get('Link'), data.get('Id'))
+            else:
+                url = '/me/drive/items/%s/content' % data.get('Id')
             parameter.Url += url
 
         elif method == 'uploadNewFile':
             parameter.Method = 'PUT'
-            if data.get('Link') is None:
-                url = '/me/drive/items/%s:/%s:/content' % (data.get('ParentId'), data.get('Title'))
-            else:
+            if data.get('Link'):
                 url = '/drives/%s/items/%s:/%s:/content' % (data.get('Link'), data.get('ParentId'), data.get('Title'))
+            else:
+                url = '/me/drive/items/%s:/%s:/content' % (data.get('ParentId'), data.get('Title'))
             parameter.Url += url
         return parameter
 
