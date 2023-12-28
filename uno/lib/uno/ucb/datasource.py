@@ -45,11 +45,13 @@ from .unotool import getUriFactory
 from .unotool import parseUrl
 
 from .ucp import User
+from .ucp import getExceptionMessage
 
 from .provider import Provider
 
 from .replicator import Replicator
 
+from .configuration import g_extension
 from .configuration import g_separator
 
 from threading import Event
@@ -90,12 +92,10 @@ class DataSource(unohelper.Base,
         itemid = user.getItemByUri(uri)
         if itemid is None:
             msg = self._logger.resolveString(311, url)
-            print(msg)
             raise IllegalIdentifierException(msg, source)
         content = user.getContent(authority, itemid)
         if content is None:
             msg = self._logger.resolveString(311, url)
-            print(msg)
             raise IllegalIdentifierException(msg, source)
         return content
 
@@ -125,7 +125,7 @@ class DataSource(unohelper.Base,
             if uri.hasAuthority() and uri.getAuthority() != '':
                 name = uri.getAuthority()
             else:
-                msg = self._logger.resolveString(322, url)
+                msg = self._getExceptionMessage('_getUser()', 322, url)
                 raise IllegalIdentifierException(msg, source)
         elif self._default:
             name = self._default
@@ -138,7 +138,7 @@ class DataSource(unohelper.Base,
             if not user.Request.isAuthorized():
                 # The user's OAuth2 configuration has been deleted and
                 # the OAuth2 configuration wizard has been canceled.
-                msg = self._logger.resolveString(323, name)
+                msg = self._getExceptionMessage('_getUser()', 324, name)
                 raise IllegalIdentifierException(msg, source)
         else:
             user = User(self._ctx, source, self._logger, self.DataBase,
@@ -160,7 +160,9 @@ class DataSource(unohelper.Base,
     def _getUserName(self, source, url):
         name = getOAuth2UserName(self._ctx, self, self._provider.Scheme)
         if not name:
-            msg = self._logger.resolveString(331, url)
+            msg = self._getExceptionMessage('_getUserName', 331, url)
             raise IllegalIdentifierException(msg, source)
         return name
 
+    def _getExceptionMessage(self, method, code, *args):
+        return getExceptionMessage(self._ctx, self._logger, 'DataSource', method, code, g_extension, *args)

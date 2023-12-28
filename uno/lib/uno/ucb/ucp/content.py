@@ -241,7 +241,6 @@ class Content(unohelper.Base,
         return 1
     def execute(self, command, cmdid, environment):
         self._logger.logprb(INFO, 'Content', 'execute()', 636, command.Name, self._identifier)
-        print("Content.execute() commande: %s - url: %s - commandid: %s" % (command.Name, self._identifier, cmdid))
         if command.Name == 'getCommandInfo':
             self._logger.logprb(INFO, 'Content', 'execute()', 631, 'getCommandInfo', self.IsFolder)
             return CommandInfo(self._getCommandInfo())
@@ -376,9 +375,6 @@ class Content(unohelper.Base,
             if move:
                 # TODO: must delete object
                 pass 
-
-        elif command.Name == 'update':
-            self._logger.logprb(INFO, 'Content', 'execute()', 631, 'update', self.IsFolder)
 
         elif command.Name == 'flush':
             self._logger.logprb(INFO, 'Content', 'execute()', 631, 'flush', self.IsFolder)
@@ -571,18 +567,15 @@ class Content(unohelper.Base,
         commands['setPropertyValues'] =       getCommandInfo('setPropertyValues',  '[]com.sun.star.beans.PropertyValue')
         if self.IsFolder:
             commands['transfer'] =            getCommandInfo('transfer',           'com.sun.star.ucb.TransferInfo2')
-        commands['update'] =                  getCommandInfo('update',             'com.sun.star.ucb.OpenCommandArgument3')
         return commands
 
     def _getPropertySetInfo(self):
         RO = 0 if self._isNew() else READONLY
         properties = {}
-        #properties['BaseURI'] =               getProperty('BaseURI',               'string',                               BOUND | RO)
         properties['CasePreservingURL'] =     getProperty('CasePreservingURL',     'string',                               BOUND | RO)
         properties['ConnectionMode'] =        getProperty('ConnectionMode',        'short',                                BOUND | READONLY)
         properties['ContentType'] =           getProperty('ContentType',           'string',                               BOUND | RO)
         properties['CreatableContentsInfo'] = getProperty('CreatableContentsInfo', '[]com.sun.star.ucb.ContentInfo',       BOUND | RO)
-        #properties['CmisProperties'] =        getProperty('CmisProperties',        '[]com.sun.star.document.CmisProperty', BOUND | RO)
         properties['DateCreated'] =           getProperty('DateCreated',           'com.sun.star.util.DateTime',           BOUND | READONLY)
         properties['DateModified'] =          getProperty('DateModified',          'com.sun.star.util.DateTime',           BOUND | RO)
         properties['IsCompactDisc'] =         getProperty('IsCompactDisc',         'boolean',                              BOUND | RO)
@@ -597,9 +590,7 @@ class Content(unohelper.Base,
         properties['IsVolume'] =              getProperty('IsVolume',              'boolean',                              BOUND | RO)
         properties['MediaType'] =             getProperty('MediaType',             'string',                               BOUND | READONLY)
         properties['ObjectId'] =              getProperty('ObjectId',              'string',                               BOUND | RO)
-        #properties['ParentId'] =              getProperty('ParentId',              'string',                               BOUND | READONLY)
         properties['Size'] =                  getProperty('Size',                  'hyper',                                BOUND | RO)
-        #properties['TargetURL'] =             getProperty('TargetURL',             'string',                               BOUND | RO)
         properties['Title'] =                 getProperty('Title',                 'string',                               BOUND | CONSTRAINED)
         properties['TitleOnServer'] =         getProperty('TitleOnServer',         'string',                               BOUND)
         return properties

@@ -43,15 +43,14 @@ from com.sun.star.ucb import XParameterizedContentProvider
 from com.sun.star.ucb import IllegalIdentifierException
 
 from .ucp import Identifier
+from .ucp import getExceptionMessage
 
 from .database import DataBase
 
 from .datasource import DataSource
 
 from .unotool import checkVersion
-from .unotool import createMessageBox
 from .unotool import getExtensionVersion
-from .unotool import getParentWindow
 
 from .dbtool import getConnectionUrl
 
@@ -81,11 +80,11 @@ class ContentProvider(unohelper.Base,
                       XServiceInfo,
                       XContentIdentifierFactory,
                       XContentProvider):
-    def __init__(self, ctx, logger, authority,  arguments):
+    def __init__(self, ctx, logger, authority, arguments):
         self._ctx = ctx
         self._authority = authority
-        self._cls = '%sContentProvider' % arguments
-        self._services = ('com.sun.star.ucb.ContentProvider', g_identifier + '.ContentProvider')
+        self._cls = f'{arguments}ContentProvider'
+        self._services = ('com.sun.star.ucb.ContentProvider', f'{g_identifier}.ContentProvider')
         self._logger = logger
         self._logger.logprb(INFO, self._cls, '__init__()', 201, arguments)
 
@@ -107,17 +106,13 @@ class ContentProvider(unohelper.Base,
     def queryContent(self, identifier):
         try:
             url = identifier.getContentIdentifier()
-            print("ContentProvider.queryContent() 1 url: %s **********************************" % url)
             content = self._datasource.queryContent(self, self._authority, url)
-            print("ContentProvider.queryContent() 2 ******************************************")
             self._logger.logprb(INFO, self._cls, 'queryContent()', 231, url)
             return content
         except IllegalIdentifierException as e:
-            print("ContentProvider.queryContent() 3 ******************************************")
             self._logger.logprb(INFO, self._cls, 'queryContent()', 232, e.Message)
             raise e
         except Exception as e:
-            print("ContentProvider.queryContent() 4 ******************************************")
             msg = self._logger.resolveString(233, traceback.format_exc())
             self._logger.logp(SEVERE, self._cls, 'queryContent()', msg)
             print(msg)
@@ -145,19 +140,20 @@ class ContentProvider(unohelper.Base,
 
     # Private methods
     def _getDataSource(self):
+        method = '_getDataSource()'
         oauth2 = getOAuth2Version(self._ctx)
         driver = getExtensionVersion(self._ctx, g_jdbcid)
         if oauth2 is None:
-            msg = self._getExceptionMessage(221, g_oauth2ext, g_oauth2ext, g_extension)
+            msg = self._getExceptionMessage(method, 221, g_oauth2ext, g_oauth2ext, g_extension)
             raise IllegalIdentifierException(msg, self)
         elif not checkVersion(oauth2, g_oauth2ver):
-            msg = self._getExceptionMessage(223, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
+            msg = self._getExceptionMessage(method, 223, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
             raise IllegalIdentifierException(msg, self)
         elif driver is None:
-            msg = self._getExceptionMessage(221, g_jdbcext, g_jdbcext, g_extension)
+            msg = self._getExceptionMessage(method, 221, g_jdbcext, g_jdbcext, g_extension)
             raise IllegalIdentifierException(msg, self)
         elif not checkVersion(driver, g_jdbcver):
-            msg = self._getExceptionMessage(223, g_jdbcext, driver, g_jdbcext, g_jdbcver)
+            msg = self._getExceptionMessage(method, 223, g_jdbcext, driver, g_jdbcext, g_jdbcver)
             raise IllegalIdentifierException(msg, self)
         else:
             path = g_folder + g_separator + g_scheme
@@ -165,22 +161,16 @@ class ContentProvider(unohelper.Base,
             try:
                 database = DataBase(self._ctx, self._logger, url)
             except SQLException as e:
-                msg = self._getExceptionMessage(225, g_extension, url, e.Message)
+                msg = self._getExceptionMessage(method, 225, g_extension, url, e.Message)
                 raise IllegalIdentifierException(msg, self)
             else:
                 if not database.isUptoDate():
-                    msg = self._getExceptionMessage(227, g_jdbcext, database.Version, g_version)
+                    msg = self._getExceptionMessage(method, 227, g_jdbcext, database.Version, g_version)
                     raise IllegalIdentifierException(msg, self)
                 else:
                     return DataSource(self._ctx, self._logger, database)
         return None
 
-    def _getExceptionMessage(self, code, extension, *args):
-        title = self._logger.resolveString(code, extension)
-        message = self._logger.resolveString(code +1, *args)
-        self._logger.logp(SEVERE, 'ContentProvider', 'queryContent()', message)
-        msgbox = createMessageBox(getParentWindow(self._ctx), message, title, 'error', 1)
-        msgbox.execute()
-        msgbox.dispose()
-        return message
+    def _getExceptionMessage(self, method, code, extension, *args):
+        return getExceptionMessage(self._ctx, self._logger, self._cls, method, code, extension, *args)
 

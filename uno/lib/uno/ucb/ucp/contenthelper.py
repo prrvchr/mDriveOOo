@@ -31,6 +31,9 @@ import uno
 
 from com.sun.star.connection import NoConnectException
 
+from com.sun.star.logging.LogLevel import INFO
+from com.sun.star.logging.LogLevel import SEVERE
+
 from com.sun.star.ucb.ContentAction import INSERTED
 from com.sun.star.ucb.ContentAction import REMOVED
 from com.sun.star.ucb.ContentAction import DELETED
@@ -43,7 +46,9 @@ from com.sun.star.ucb.ConnectionMode import OFFLINE
 
 from com.sun.star.sdb import ParametersRequest
 
+from ..unotool import createMessageBox
 from ..unotool import createService
+from ..unotool import getParentWindow
 from ..unotool import getProperty
 from ..unotool import getPropertyValue
 from ..unotool import getNamedValueSet
@@ -169,4 +174,13 @@ def notifyContentListener(ctx, content, action, identifier=None):
 def executeContentCommand(content, name, argument, environment):
     command = getCommand(name, argument)
     return content.execute(command, 0, environment)
+
+def getExceptionMessage(ctx, logger, cls, method, code, extension, *args):
+    title = logger.resolveString(code, extension)
+    message = logger.resolveString(code +1, *args)
+    logger.logp(SEVERE, cls, method, message)
+    msgbox = createMessageBox(getParentWindow(ctx), message, title, 'error', 1)
+    msgbox.execute()
+    msgbox.dispose()
+    return message
 
