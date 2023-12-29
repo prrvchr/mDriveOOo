@@ -50,7 +50,6 @@ from ..unotool import getConfiguration
 from ..unotool import getResourceLocation
 
 from ..dbtool import currentDateTimeInTZ
-from ..dbtool import getDateTimeFromString
 
 from ..logger import getLogger
 
@@ -59,6 +58,7 @@ from ..configuration import g_scheme
 from ..configuration import g_separator
 from ..configuration import g_chunk
 
+from dateutil import parser, tz
 from collections import OrderedDict
 import traceback
 
@@ -103,9 +103,6 @@ class Provider(object):
         raise NotImplementedError
     @property
     def Buffer(self):
-        raise NotImplementedError
-    @property
-    def DateTimeFormat(self):
         raise NotImplementedError
     @property
     def Folder(self):
@@ -271,7 +268,21 @@ class Provider(object):
 
     # Base method
     def parseDateTime(self, timestamp):
-        return getDateTimeFromString(timestamp, self.DateTimeFormat)
+        datetime = uno.createUnoStruct('com.sun.star.util.DateTime')
+        try:
+            dt = parser.parse(timestamp)
+        except parser.ParserError:
+            pass
+        else:
+            datetime.Year = dt.year
+            datetime.Month = dt.month
+            datetime.Day = dt.day
+            datetime.Hours = dt.hour
+            datetime.Minutes = dt.minute
+            datetime.Seconds = dt.second
+            datetime.NanoSeconds = dt.microsecond * 1000
+            datetime.IsUTC = dt.tzinfo == tz.tzutc()
+        return datetime
     def isOnLine(self):
         return OFFLINE != getConnectionMode(self._ctx, self.Host)
     def isOffLine(self):

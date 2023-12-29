@@ -85,6 +85,7 @@ class OptionsManager(unohelper.Base):
 
     def _getInfos(self):
         infos = OrderedDict()
+        infos['dateutil'] =           ('__version__',     '2.8.2')
         infos['ijson'] =              ('__version__',     '3.2.2')
         infos['packaging'] =          ('__version__',     '23.1')
         infos['six'] =                ('__version__',     '1.16.0')

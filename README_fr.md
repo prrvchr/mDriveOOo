@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][4] et à notre [Politique de protection des données][5].**
 
-# version [1.0.5][6]
+# version [1.0.7][6]
 
 ## Introduction:
 
@@ -203,9 +203,17 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 
 ### Ce qui a été fait pour la version 1.0.5:
 
-- Prise en charge de la version 1.2.3 de l'extension **OAuth2OOo**. Correction du [dysfonctionnement #12][47]
+- Prise en charge de la version 1.2.3 de l'extension **OAuth2OOo**. Correction du [dysfonctionnement #12][47].
 
-### Que reste-t-il à faire pour la version 1.0.5:
+### Ce qui a été fait pour la version 1.0.6:
+
+- Prise en charge de la version 1.2.4 de l'extension **OAuth2OOo**. De nombreux problèmes résolus.
+
+### Ce qui a été fait pour la version 1.0.7:
+
+- Maintenant utilisation du package Python dateutil pour convertir vers UNO DateTime.
+
+### Que reste-t-il à faire pour la version 1.0.7:
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 
@@ -237,7 +245,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [24]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
 [25]: <img/mDriveOOo.svg#middle>
 [26]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.5#right>
+[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.0.7#right>
 [28]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
 [29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [30]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
