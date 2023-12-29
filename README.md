@@ -29,7 +29,7 @@
 
 **The use of this software subjects you to our [Terms Of Use][4] and [Data Protection Policy][5].**
 
-# version [1.0.5][6]
+# version [1.0.7][6]
 
 ## Introduction:
 
