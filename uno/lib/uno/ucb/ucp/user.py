@@ -204,8 +204,8 @@ class User():
             identifier += g_separator
         return identifier
 
-    def createNewContent(self, authority, parentid, path, title, contentype):
-        data = self._getNewContent(parentid, path, title, contentype)
+    def createNewContent(self, authority, parentid, path, title, link, contentype):
+        data = self._getNewContent(parentid, path, title, link, contentype)
         content = Content(self._ctx, self, authority, data, True)
         return content
 
@@ -282,7 +282,7 @@ class User():
             self._factory = getUriFactory(self._ctx)
         return self._factory
 
-    def _getNewContent(self, parentid, path, title, contentype):
+    def _getNewContent(self, parentid, path, title, link, contentype):
         timestamp = currentUnoDateTime()
         isfolder = self.Provider.isFolder(contentype)
         isdocument = self.Provider.isDocument(contentype)
@@ -309,7 +309,7 @@ class User():
                 'TitleOnServer':         '',
                 'Id':                    itemid,
                 'Path':                  self._getPath(parentid, path, title),
-                'Link':                  '',
+                'Link':                  link,
                 'Trashed':               False,
                 'IsRoot':                False,
                 'IsLink':                False,

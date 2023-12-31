@@ -217,7 +217,7 @@ class Content(unohelper.Base,
         return self._getCreatableContentsInfo()
     def createNewContent(self, info):
         self._logger.logprb(INFO, 'Content', 'createNewContent()', 661, self._identifier)
-        return self._user.createNewContent(self._authority, self.Id, self.Path, self.Title, info.Type)
+        return self._user.createNewContent(self._authority, self.Id, self.Path, self.Title, self.Link, info.Type)
 
     # XContent
     def getIdentifier(self):
