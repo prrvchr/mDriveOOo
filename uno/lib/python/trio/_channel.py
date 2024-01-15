@@ -1,32 +1,30 @@
 from __future__ import annotations
 
-from collections import deque, OrderedDict
+from collections import OrderedDict, deque
 from math import inf
-
-from types import TracebackType
 from typing import (
-    Generic,
-    TypeVar,
     TYPE_CHECKING,
+    Generic,
     Tuple,  # only needed for typechecking on <3.9
 )
 
 import attr
 from outcome import Error, Value
 
-from ._abc import SendChannel, ReceiveChannel, ReceiveType, SendType, T
-from ._util import generic_function, NoPublicConstructor
-
 import trio
-from ._core import enable_ki_protection, Task, Abort, RaiseCancelT
 
+from ._abc import ReceiveChannel, ReceiveType, SendChannel, SendType, T
+from ._core import Abort, RaiseCancelT, Task, enable_ki_protection
+from ._util import NoPublicConstructor, final, generic_function
 
-# Temporary TypeVar needed until mypy release supports Self as a type
-SelfT = TypeVar("SelfT")
+if TYPE_CHECKING:
+    from types import TracebackType
+
+    from typing_extensions import Self
 
 
 def _open_memory_channel(
-    max_buffer_size: int,
+    max_buffer_size: int | float,  # noqa: PYI041
 ) -> tuple[MemorySendChannel[T], MemoryReceiveChannel[T]]:
     """Open a channel for passing objects between tasks within a process.
 
@@ -96,13 +94,13 @@ def _open_memory_channel(
 if TYPE_CHECKING:
     # written as a class so you can say open_memory_channel[int](5)
     # Need to use Tuple instead of tuple due to CI check running on 3.8
-    class open_memory_channel(Tuple[MemorySendChannel[T], MemoryReceiveChannel[T]]):
+    class open_memory_channel(Tuple["MemorySendChannel[T]", "MemoryReceiveChannel[T]"]):
         def __new__(  # type: ignore[misc]  # "must return a subtype"
-            cls, max_buffer_size: int
+            cls, max_buffer_size: int | float  # noqa: PYI041
         ) -> tuple[MemorySendChannel[T], MemoryReceiveChannel[T]]:
             return _open_memory_channel(max_buffer_size)
 
-        def __init__(self, max_buffer_size: int):
+        def __init__(self, max_buffer_size: int | float):  # noqa: PYI041
             ...
 
 else:
@@ -114,7 +112,7 @@ else:
 @attr.s(frozen=True, slots=True)
 class MemoryChannelStats:
     current_buffer_used: int = attr.ib()
-    max_buffer_size: int = attr.ib()
+    max_buffer_size: int | float = attr.ib()
     open_send_channels: int = attr.ib()
     open_receive_channels: int = attr.ib()
     tasks_waiting_send: int = attr.ib()
@@ -123,7 +121,7 @@ class MemoryChannelStats:
 
 @attr.s(slots=True)
 class MemoryChannelState(Generic[T]):
-    max_buffer_size: int = attr.ib()
+    max_buffer_size: int | float = attr.ib()
     data: deque[T] = attr.ib(factory=deque)
     # Counts of open endpoints using this state
     open_send_channels: int = attr.ib(default=0)
@@ -144,6 +142,7 @@ class MemoryChannelState(Generic[T]):
         )
 
 
+@final
 @attr.s(eq=False, repr=False)
 class MemorySendChannel(SendChannel[SendType], metaclass=NoPublicConstructor):
     _state: MemoryChannelState[SendType] = attr.ib()
@@ -157,9 +156,7 @@ class MemorySendChannel(SendChannel[SendType], metaclass=NoPublicConstructor):
         self._state.open_send_channels += 1
 
     def __repr__(self) -> str:
-        return "<send channel at {:#x}, using buffer at {:#x}>".format(
-            id(self), id(self._state)
-        )
+        return f"<send channel at {id(self):#x}, using buffer at {id(self._state):#x}>"
 
     def statistics(self) -> MemoryChannelStats:
         # XX should we also report statistics specific to this object?
@@ -215,7 +212,7 @@ class MemorySendChannel(SendChannel[SendType], metaclass=NoPublicConstructor):
 
     # Return type must be stringified or use a TypeVar
     @enable_ki_protection
-    def clone(self) -> "MemorySendChannel[SendType]":
+    def clone(self) -> MemorySendChannel[SendType]:
         """Clone this send channel object.
 
         This returns a new `MemorySendChannel` object, which acts as a
@@ -243,14 +240,14 @@ class MemorySendChannel(SendChannel[SendType], metaclass=NoPublicConstructor):
             raise trio.ClosedResourceError
         return MemorySendChannel._create(self._state)
 
-    def __enter__(self: SelfT) -> SelfT:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
         self,
         exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         self.close()
 
@@ -288,6 +285,7 @@ class MemorySendChannel(SendChannel[SendType], metaclass=NoPublicConstructor):
         await trio.lowlevel.checkpoint()
 
 
+@final
 @attr.s(eq=False, repr=False)
 class MemoryReceiveChannel(ReceiveChannel[ReceiveType], metaclass=NoPublicConstructor):
     _state: MemoryChannelState[ReceiveType] = attr.ib()
@@ -358,7 +356,7 @@ class MemoryReceiveChannel(ReceiveChannel[ReceiveType], metaclass=NoPublicConstr
         return await trio.lowlevel.wait_task_rescheduled(abort_fn)  # type: ignore[no-any-return]
 
     @enable_ki_protection
-    def clone(self) -> "MemoryReceiveChannel[ReceiveType]":
+    def clone(self) -> MemoryReceiveChannel[ReceiveType]:
         """Clone this receive channel object.
 
         This returns a new `MemoryReceiveChannel` object, which acts as a
@@ -389,14 +387,14 @@ class MemoryReceiveChannel(ReceiveChannel[ReceiveType], metaclass=NoPublicConstr
             raise trio.ClosedResourceError
         return MemoryReceiveChannel._create(self._state)
 
-    def __enter__(self: SelfT) -> SelfT:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
         self,
         exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         self.close()
 

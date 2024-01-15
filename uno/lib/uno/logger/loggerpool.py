@@ -46,7 +46,6 @@ class LoggerPool(unohelper.Base,
         self._ctx = ctx
         self._default = 'org.openoffice.logging.DefaultLogger'
         self._pool = ctx.getByName('/singletons/com.sun.star.logging.LoggerPool')
-        print("LoggerPool.__init__() *******************************")
 
     # FIXME: for the LoggerPool, the modify listener is global
     _listeners = []

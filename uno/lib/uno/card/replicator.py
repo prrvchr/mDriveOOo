@@ -111,7 +111,7 @@ class Replicator(unohelper.Base):
                         print("replicator.run()8 end waitting *******************************************")
             print("replicator.run()9 canceled *******************************************")
         except Exception as e:
-            msg = "Replicator run(): Error: %s" % traceback.print_exc()
+            msg = "Replicator run(): Error: %s" % traceback.format_exc()
             print(msg)
 
     def _synchronize(self, logger):

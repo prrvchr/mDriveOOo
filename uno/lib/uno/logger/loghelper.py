@@ -27,6 +27,8 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+import uno
+
 from com.sun.star.logging.LogLevel import SEVERE
 from com.sun.star.logging.LogLevel import WARNING
 from com.sun.star.logging.LogLevel import INFO
@@ -39,7 +41,6 @@ from com.sun.star.logging.LogLevel import OFF
 
 from .loggerpool import LoggerPool
 
-from ..unotool import checkVersion
 from ..unotool import createService
 from ..unotool import getConfiguration
 from ..unotool import getFileSequence
@@ -55,7 +56,9 @@ from ..configuration import g_resource
 from ..configuration import g_defaultlog
 from ..configuration import g_basename
 
-import importlib
+from packaging.requirements import Requirement
+from importlib import metadata
+import pkg_resources as pkgr
 import os, sys
 import traceback
 
@@ -137,7 +140,7 @@ class LogWrapper(object):
         return self._resolveErrorMessage(resolver, resource)
 
     def _resolveErrorMessage(self, resolver, resource):
-        return resolver.resolveString(121).format(resource, self._url, self._basename)
+        return resolver.resolveString(101).format(resource, self._url, self._basename)
 
 
 # This LogController allows using listener and access content of logger
@@ -165,45 +168,27 @@ class LogController(LogWrapper):
         if self._listener is not None:
             self._logger.removeModifyListener(self._listener)
 
-    def logInfos(self, level, infos, clazz, method):
-        msg = self._resolver.resolveString(111).format(' '.join(sys.version.split()))
-        self._logger.logp(level, clazz, method, msg)
-        msg = self._resolver.resolveString(112).format(os.pathsep.join(sys.path))
-        self._logger.logp(level, clazz, method, msg)
-        for name, info in infos.items():
-            try:
-                mod = importlib.import_module(name)
-            except Exception as e:
-                msg = self._resolver.resolveString(113).format(name, e, traceback.format_exc())
-            else:
-                attr, minimum = info
-                unknown = '<unknown>'
-                path = getattr(mod, '__file__', unknown)
-                if not path:
-                    path = unknown
-                if attr is None:
-                    msg = self._resolver.resolveString(114).format(name, minimum, path)
-                elif hasattr(mod, attr):
-                    version = getattr(mod, attr)
-                    if minimum is None or checkVersion(version, minimum):
-                        msg = self._resolver.resolveString(114).format(name, version, path)
-                    else:
-                        msg = self._resolver.resolveString(115).format(name, version, path, minimum)
-                else:
-                    modattr = ', '.join(dir(mod))
-                    msg = self._resolver.resolveString(116).format(name, path, modattr)
-            self._logger.logp(level, clazz, method, msg)
-
     def clearLogger(self):
         url = getRollerHandlerUrl(self._ctx, self.Name)
         sf = getSimpleFile(self._ctx)
         if sf.exists(url):
             sf.kill(url)
-            msg = self._resolver.resolveString(131)
+            msg = self._resolver.resolveString(111)
             handler = RollerHandler(self._ctx, self.Name)
             self.addRollerHandler(handler)
             self._logMessage(SEVERE, msg, 'Logger', 'clearLogger()')
             self.removeRollerHandler(handler)
+
+    def logInfos(self, level, clazz, method, requirements):
+        msg = self._resolver.resolveString(121).format(sys.version)
+        self._logger.logp(level, clazz, method, msg)
+        msg = self._resolver.resolveString(122).format(os.pathsep.join(sys.path))
+        self._logger.logp(level, clazz, method, msg)
+        # If a requirements file exists at the extension root,
+        # then we check if the requirements are met
+        url = getResourceLocation(self._ctx, g_identifier, requirements)
+        if getSimpleFile(self._ctx).exists(url):
+            self._logRequirements(level, clazz, method, url)
 
     def addModifyListener(self, listener):
         self._logger.addModifyListener(listener)
@@ -255,6 +240,50 @@ class LogController(LogWrapper):
         else:
             self._logger.logp(level, clazz, method, msg)
 
+    def _logRequirements(self, level, clazz, method, url):
+        info = sys.version_info
+        ver = '%s.%s.%s' % (info.major, info.minor, info.micro)
+        path = uno.fileUrlToSystemPath(url)
+        with open(path) as requirements:
+            for requirement in pkgr.parse_requirements(requirements):
+                name = requirement.project_name
+                try:
+                    data = metadata.metadata(name)
+                    dver = data.get('Version')
+                    # FIXME: In the absence of 'Requires-Python' information, we assume
+                    # FIXME: that the package works with the current version of Python.
+                    pver = data.get('Requires-Python')
+                    if pver is None:
+                        print(f"WARNING: Package <{name}> does not provide 'Requires-Python' metadata: open an issue if possible on the package site")
+                        pver = '>=' + ver
+                    distfiles = metadata.files(name)
+                    if distfiles:
+                        location = distfiles[0].locate()
+                    else:
+                        # FIXME: If package is already installed on Python system in dist-packages
+                        # FIXME: we need to use: pkgr.get_distribution(name).location
+                        location = pkgr.get_distribution(name).location
+                    if location:
+                        # FIXME: Since we are not installing packages but just integrating them into the LibreOffice extension with pythonpath,
+                        # FIXME: we also need to check if the Python version required by the package matches the system Python version.
+                        req = Requirement('python' + pver)
+                        if dver in requirement:
+                            if ver in req.specifier:
+                                msg = self._resolver.resolveString(131).format(name, dver, location)
+                            else:
+                                msg = self._resolver.resolveString(132).format(name, dver, pver, ver, location)
+                        elif ver in req.specifier:
+                            _op, rver = requirement.specs[0]
+                            msg = self._resolver.resolveString(133).format(name, dver, rver, location)
+                        else:
+                            _op, rver = requirement.specs[0]
+                            msg = self._resolver.resolveString(134).format(name, dver, pver, rver, ver, location)
+                    else:
+                        _op, rver = requirement.specs[0]
+                        msg = self._resolver.resolveString(135).format(name, dver, rver)
+                except Exception as e:
+                    msg = self._resolver.resolveString(136).format(name, e, traceback.format_exc())
+                self._logger.logp(level, clazz, method, msg)
 
 # This LogConfig is a wrapper around the logger configuration
 class LogConfig():

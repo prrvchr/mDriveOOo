@@ -51,15 +51,13 @@ from ...unotool import getFileSequence
 from ...configuration import g_extension
 from ...configuration import g_identifier
 
-import traceback
-
 
 class LogManager(unohelper.Base):
-    def __init__(self, ctx, parent, infos, filter, *defaults):
+    def __init__(self, ctx, parent, requirements, filter, *defaults):
         self._ctx = ctx
         self._model = LogModel(ctx, PoolListener(self), defaults)
         self._view = LogWindow(ctx, WindowHandler(self), parent)
-        self._infos = infos
+        self._requirements = requirements
         self._filter = filter
         self._dialog = None
         self._disabled = False
@@ -74,14 +72,15 @@ class LogManager(unohelper.Base):
     def disableHandler(self):
         self._disabled = True
 
+    # LogManager getter methods called by OptionsHandler
+    def saveSetting(self):
+        return self._model.saveSetting()
+
 # LogManager setter methods
     def dispose(self):
         self._model.dispose()
 
     # LogManager setter methods called by OptionsHandler
-    def saveSetting(self):
-        self._model.saveSetting()
-
     def loadSetting(self):
         self.disableHandler()
         self._view.setLogSetting(self._model.loadSetting())
@@ -127,7 +126,7 @@ class LogManager(unohelper.Base):
 
     # LogManager setter methods called by DialogHandler
     def logInfos(self):
-        self._model.logInfos(INFO, self._infos, 'LogManager', 'logInfos()')
+        self._model.logInfos(INFO, 'LogManager', 'logInfos()', self._requirements)
 
     # LogManager setter methods called by LoggerListener
     def updateLogger(self):

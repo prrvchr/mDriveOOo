@@ -51,9 +51,9 @@ class OptionsModel(unohelper.Base):
     _level = False
     _reboot = False
 
-    def __init__(self, ctx):
+    def __init__(self, ctx, url):
         self._ctx = ctx
-        self._url = 'xdbc:hsqldb:mem:dbversion'
+        self._url = url
         self._services = {'Driver': ('io.github.prrvchr.jdbcdriver.sdbc.Driver',
                                      'io.github.prrvchr.jdbcdriver.sdbcx.Driver'),
                           'Connection': ('com.sun.star.sdbc.Connection',

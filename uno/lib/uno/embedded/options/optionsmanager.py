@@ -58,20 +58,17 @@ import traceback
 
 
 class OptionsManager(unohelper.Base):
-    def __init__(self, ctx, window):
+    def __init__(self, ctx, window, url):
         self._ctx = ctx
         self._disposed = False
         self._disabled = False
-        self._model = OptionsModel(ctx)
+        self._model = OptionsModel(ctx, url)
         window.addEventListener(OptionsListener(self))
         self._view = OptionsView(window, *self._model.getViewData())
-        version  = ' '.join(sys.version.split())
-        path = os.pathsep.join(sys.path)
-        infos = {111: version, 112: path}
-        self._logger = LogManager(ctx, window.getPeer(), infos, g_identifier, g_defaultlog)
+        self._logmanager = LogManager(ctx, window.getPeer(), 'requirements.txt', g_identifier, g_defaultlog)
 
     def dispose(self):
-        self._logger.dispose()
+        self._logmanager.dispose()
         self._disposed = True
 
     # TODO: One shot disabler handler
@@ -94,12 +91,12 @@ class OptionsManager(unohelper.Base):
                     self._view.setVersion(versions[protocol])
 
     def saveSetting(self):
-        self._logger.saveSetting()
+        self._logmanager.saveSetting()
         if self._model.saveSetting() and self._model.isUpdated():
             self._view.disableDriverLevel()
 
     def loadSetting(self):
-        self._logger.loadSetting()
+        self._logmanager.loadSetting()
         self._view.initView(*self._model.loadSetting())
 
     def setDriverService(self, driver):

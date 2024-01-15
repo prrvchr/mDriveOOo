@@ -80,8 +80,8 @@
   Ivan Herman <http://www.ivan-herman.net>, August 2012.
 """
 
-__author__ = "Deron Meranda <http://deron.meranda.us/>"
-__date__ = "2012-08-31"
+__author__ =  "Deron Meranda <http://deron.meranda.us/>"
+__date__ =    "2012-08-31"
 __version__ = "1.02"
 __credits__ = """Copyright (c) 2005 Deron E. Meranda <http://deron.meranda.us/>
 Licensed under GNU LGPL 2.1 or later.  See <http://www.fsf.org/>.
@@ -103,24 +103,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 # Character classes from RFC 2616 section 2.2
 SEPARATORS = '()<>@,;:\\"/[]?={} \t'
-LWS = ' \t\n\r'  # linear white space
-CRLF = '\r\n'
-DIGIT = '0123456789'
-HEX = '0123456789ABCDEFabcdef'
-
-import sys
-PY3 = (sys.version_info[0] >= 3)
-
-# Try to get a set/frozenset implementation if possible
-try:
-    type(frozenset)
-except NameError:
-    try:
-        # The demset.py module is available at http://deron.meranda.us/
-        from demset import set, frozenset
-        __emulating_set = True  # So we can clean up global namespace later
-    except ImportError:
-        pass
+LWS =        ' \t\n\r'  # linear white space
+CRLF =       '\r\n'
+DIGIT =      '0123456789'
+HEX =        '0123456789ABCDEFabcdef'
 
 try:
     # Turn character classes into set types (for Python 2.4 or greater)
@@ -131,19 +117,16 @@ try:
     HEX = frozenset([c for c in HEX])
     del c
 except NameError:
-    # Python 2.3 or earlier, leave as simple strings
+    # on frozenset error, leave as simple strings
     pass
 
 
-def _is_string( obj ):
-    """Returns True if the object is a string or unicode type."""
-    if PY3 :
-        return isinstance(obj,str)
-    else :
-        return isinstance(obj,str) or isinstance(obj,unicode)
+def _is_string(obj):
+    """Returns True if the object is a string."""
+    return isinstance(obj,str)
 
 
-def http_datetime( dt=None ):
+def http_datetime(dt=None):
     """Formats a datetime as an HTTP 1.1 Date/Time string.
 
     Takes a standard Python datetime object and returns a string
@@ -172,7 +155,7 @@ def http_datetime( dt=None ):
     return s
 
 
-def parse_http_datetime( datestring, utc_tzinfo=None, strict=False ):
+def parse_http_datetime(datestring, utc_tzinfo=None, strict=False):
     """Returns a datetime object from an HTTP 1.1 Date/Time string.
 
     Note that HTTP dates are always in UTC, so the returned datetime
@@ -462,7 +445,7 @@ def remove_comments(s, collapse_spaces=True):
                 added_comment_space = True  # lie
     while pos < len(s):
         if s[pos] == '(':
-            cmt, k = parse_comment( s, pos )
+            _cmt, k = parse_comment( s, pos )
             pos += k
             if collapse_spaces:
                 dostrip = True
@@ -697,7 +680,7 @@ class range_spec(object):
         is the is_unbounded() method.
 
         """
-        return first is not None and last is not None
+        return self.first is not None and self.last is not None
 
     def is_unbounded(self):
         """Returns True if the number of bytes in the range is unspecified.
@@ -956,7 +939,7 @@ def parse_range_spec( s, start=0 ):
         raise ParseError('Starting position is beyond the end of the string',s,start)
     if s[start] not in DIGIT and s[start] != '-':
         raise ParseError("Invalid range, expected a digit or '-'",s,start)
-    first, last = None, None
+    _first, last = None, None
     pos = start
     first, k = parse_number( s, pos )
     pos += k
@@ -1303,13 +1286,13 @@ class content_type(object):
         unless they appear in the given paramter_list.
 
         """
-        if hasattr(parameter_list_or_dict, 'has_key'):
+        if isinstance(parameter_list_or_dict, dict):
             # already a dictionary
             pl = parameter_list_or_dict
         else:
-            pl, k = parse_parameter_list(parameter_list)
-            if k < len(parameter_list):
-                raise ParseError('Invalid parameter list',paramter_list,k)
+            pl, k = parse_parameter_list(parameter_list_or_dict)
+            if k < len(parameter_list_or_dict):
+                raise ParseError('Invalid parameter list', parameter_list_or_dict, k)
         self.parmdict = dict(pl)
 
     def set(self, content_type_string, with_parameters=True):
@@ -1342,8 +1325,8 @@ class content_type(object):
             raise ValueError('Minor media type contains an invalid character')
         self._minor = s
 
-    major = property(_get_major,_set_major,doc="Major media classification")
-    minor = property(_get_minor,_set_minor,doc="Minor media sub-classification")
+    major = property(_get_major, _set_major, doc="Major media classification")
+    minor = property(_get_minor, _set_minor, doc="Minor media sub-classification")
 
     def __str__(self):
         """String value."""
@@ -1356,10 +1339,7 @@ class content_type(object):
     def __unicode__(self):
         """Unicode string value."""
         # In Python 3 this is probably unnecessary in general, this is just to avoid possible syntax issues. I.H.
-        if PY3 :
-            return str(self.__str__())
-        else :
-            return unicode(self.__str__())
+        return str(self.__str__())
 
     def __repr__(self):
         """Python representation of this object."""
@@ -1638,7 +1618,7 @@ character_set_aliases = {
     'LATIN10': 'ISO-8859-16',
     }
 
-def canonical_charset( charset ):
+def canonical_charset(charset):
     """Returns the canonical or preferred name of a charset.
 
     Additional character sets can be recognized by this function by
@@ -1658,7 +1638,7 @@ def canonical_charset( charset ):
     return uccon
 
 
-def acceptable_charset( accept_charset_header, charsets, ignore_wildcard=True, default='ISO-8859-1' ):
+def acceptable_charset(accept_charset_header, charsets, ignore_wildcard=True, default='ISO-8859-1'):
     """
     Determines if the given charset is acceptable to the user agent.
 
@@ -1687,7 +1667,7 @@ def acceptable_charset( accept_charset_header, charsets, ignore_wildcard=True, d
 
     """
     if default:
-        default = _canonical_charset(default)
+        default = canonical_charset(default)
 
     if _is_string(accept_charset_header):
         accept_list = parse_accept_header(accept_charset_header)
@@ -1695,15 +1675,15 @@ def acceptable_charset( accept_charset_header, charsets, ignore_wildcard=True, d
         accept_list = accept_charset_header
 
     if _is_string(charsets):
-        charsets = [_canonical_charset(charsets)]
+        charsets = [canonical_charset(charsets)]
     else:
-        charsets = [_canonical_charset(c) for c in charsets]
+        charsets = [canonical_charset(c) for c in charsets]
 
     # Note per RFC that 'ISO-8859-1' is special, and is implictly in the
     # accept list with q=1; unless it is already in the list, or '*' is in the list.
 
     best = None
-    for c, qvalue, junk in accept_list:
+    for c, qvalue, _junk in accept_list:
         if c == '*':
             default = None
             if ignore_wildcard:
@@ -1711,7 +1691,7 @@ def acceptable_charset( accept_charset_header, charsets, ignore_wildcard=True, d
             if not best or qvalue > best[1]:
                 best = (c, qvalue)
         else:
-            c = _canonical_charset(c)
+            c = canonical_charset(c)
             for test_c in charsets:
                 if c == default:
                     default = None
@@ -1777,11 +1757,7 @@ class language_tag(object):
 
     def __unicode__(self):
         """The unicode string form of this language tag."""
-        # Probably unnecessary in Python 3
-        if PY3 :
-            return str(self.__str__())
-        else :
-            return unicode(self.__str__())
+        return str(self.__str__())
 
     def __repr__(self):
         """The python representation of this language tag."""
@@ -1960,7 +1936,7 @@ def acceptable_language( accept_header, server_languages, ignore_wildcard=True, 
     all_tags = [a[0] for a in accept_list]
     if assume_superiors:
         to_add = []
-        for langtag, qvalue, aargs in accept_list:
+        for langtag, qvalue, _args in accept_list:
             if len(langtag) >= 2:
                 for suptag in langtag.all_superiors( include_wildcard=False ):
                     if suptag not in all_tags:
@@ -1980,7 +1956,7 @@ def acceptable_language( accept_header, server_languages, ignore_wildcard=True, 
     # Select the best one
     best = None  # tuple (langtag, qvalue, matchlen)
     
-    for langtag, qvalue, aargs in accept_list:
+    for langtag, qvalue, _args in accept_list:
         # aargs is ignored for Accept-Language
         if qvalue <= 0:
             continue # UA doesn't accept this language
@@ -2003,14 +1979,5 @@ def acceptable_language( accept_header, server_languages, ignore_wildcard=True, 
     if not best:
         return None
     return best[0]
-
-
-# Clean up global namespace
-try:
-    if __emulating_set:
-        del set
-        del frozenset
-except NameError:
-    pass
 
 # end of file

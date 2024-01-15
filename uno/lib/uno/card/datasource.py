@@ -53,7 +53,7 @@ class DataSource(object):
         self._users = {}
         self._database = database
         self._listener = EventListener(self)
-        self._provider = Provider(ctx)
+        self._provider = Provider(ctx, database)
         self._replicator = Replicator(ctx, database, self._provider, self._users)
         listener = TerminateListener(self._replicator)
         getDesktop(ctx).addTerminateListener(listener)

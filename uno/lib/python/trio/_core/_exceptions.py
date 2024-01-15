@@ -1,4 +1,4 @@
-from trio._util import NoPublicConstructor
+from trio._util import NoPublicConstructor, final
 
 
 class TrioInternalError(Exception):
@@ -26,6 +26,7 @@ class WouldBlock(Exception):
     """Raised by ``X_nowait`` functions if ``X`` would block."""
 
 
+@final
 class Cancelled(BaseException, metaclass=NoPublicConstructor):
     """Raised by blocking calls if the surrounding scope has been cancelled.
 
@@ -59,7 +60,7 @@ class Cancelled(BaseException, metaclass=NoPublicConstructor):
 
     """
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Cancelled"
 
 

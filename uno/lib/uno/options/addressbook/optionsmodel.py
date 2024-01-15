@@ -44,33 +44,43 @@ import traceback
 class OptionsModel(unohelper.Base):
     def __init__(self, ctx):
         self._ctx = ctx
-        self._configuration = getConfiguration(ctx, g_identifier, True)
+        self._config = getConfiguration(ctx, g_identifier, True)
         folder = g_folder + '/' + g_host
         location = getResourceLocation(ctx, g_identifier, folder)
         self._url = location + '.odb'
         self._factor = 60
 
+    @property
+    def _Timeout(self):
+        timeout = self._config.getByName('ReplicateTimeout')
+        return timeout // self._factor
+    @property
+    def _ViewName(self):
+        return self._config.getByName('AddressBookName')
+
 # OptionsModel getter methods
     def getViewData(self):
-        return self.getTimeout(), self.getViewName(), self._hasDatasource()
+        return self._Timeout, self._ViewName, self._hasDatasource()
 
     def getTimeout(self):
-        timeout = self._configuration.getByName('ReplicateTimeout')
-        return timeout / self._factor
+         return self._Timeout
 
     def getViewName(self):
-        return self._configuration.getByName('AddressBookName')
+        return self._ViewName
 
     def getDatasourceUrl(self):
         return self._url
 
 # OptionsModel setter methods
     def setViewData(self, timeout, view):
-        timeout = timeout * self._factor
-        self._configuration.replaceByName('ReplicateTimeout', timeout)
-        self._configuration.replaceByName('AddressBookName', view)
-        if self._configuration.hasPendingChanges():
-            self._configuration.commitChanges()
+        if timeout != self._Timeout:
+            self._config.replaceByName('ReplicateTimeout', timeout * self._factor)
+        if view != self._ViewName:
+            self._config.replaceByName('AddressBookName', view)
+        if self._config.hasPendingChanges():
+            self._config.commitChanges()
+            return True
+        return False
 
 # OptionsModel private getter methods
     def _hasDatasource(self):

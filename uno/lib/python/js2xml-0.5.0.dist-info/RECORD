@@ -1,0 +1,12 @@
+js2xml/__init__.py,sha256=Rq5Hq2Ei1-iFdP-V12naxCocf7YVyjhEvpS2g86ZDu8,502
+js2xml/__main__.py,sha256=Stv3Vqhm_x49jUZkuTndgGVKx9Ppc3WRaBj9_lacIK8,482
+js2xml/jsonlike.py,sha256=SXv4kHgOema0Maj1r9JLAL71cENuBkRfhBfz29i5-7k,302
+js2xml/xmlvisitor.py,sha256=3RUbbTK6MzJcNJs2Pya7OoAwOJ8jOVWQP_6o3rwEFok,14395
+js2xml/utils/__init__.py,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+js2xml/utils/objects.py,sha256=NPiAIY1VpkBeK3Xn3gPi41WeHrsPYC0UKP33ov7tJl4,2604
+js2xml/utils/vars.py,sha256=4Jo0LkfCHPk1geOqIWpfUAkzGP5ba7Gl_04Rfjjoy8U,3111
+js2xml-0.5.0.dist-info/LICENSE,sha256=CanS83KqvZeWb-rHbBbtDUOJGuXuveX5Z8A5fCoxNZo,1080
+js2xml-0.5.0.dist-info/METADATA,sha256=1om6Rkk4BTx9GQD1ilCrdKu7izNj2w5cUk72e0gyXTY,1312
+js2xml-0.5.0.dist-info/WHEEL,sha256=z9j0xAa_JmUKMpmz72K0ZGALSM_n-wQVmGbleXx2VHg,110
+js2xml-0.5.0.dist-info/top_level.txt,sha256=IHt5OqYXkARtzE-csgTqSOzUTU8L4htudCpvxJpPluQ,7
+js2xml-0.5.0.dist-info/RECORD,,

@@ -1,21 +1,26 @@
 # Utilities for testing
+from __future__ import annotations
+
 import asyncio
-import socket as stdlib_socket
-import threading
+import gc
 import os
+import socket as stdlib_socket
 import sys
-from typing import TYPE_CHECKING
+import warnings
+from contextlib import closing, contextmanager
+from typing import TYPE_CHECKING, TypeVar
 
 import pytest
-import warnings
-from contextlib import contextmanager, closing
-
-import gc
 
 # See trio/_tests/conftest.py for the other half of this
 from trio._tests.pytest_plugin import RUN_SLOW
 
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable, Sequence
+
 slow = pytest.mark.skipif(not RUN_SLOW, reason="use --run-slow to run slow tests")
+
+T = TypeVar("T")
 
 # PyPy 7.2 was released with a bug that just never called the async
 # generator 'firstiter' hook at all.  This impacts tests of end-of-run
@@ -43,7 +48,7 @@ else:
     with s:
         try:
             s.bind(("::1", 0))
-        except OSError:
+        except OSError:  # pragma: no cover # since support for 3.7 was removed
             can_bind_ipv6 = False
         else:
             can_bind_ipv6 = True
@@ -52,7 +57,7 @@ creates_ipv6 = pytest.mark.skipif(not can_create_ipv6, reason="need IPv6")
 binds_ipv6 = pytest.mark.skipif(not can_bind_ipv6, reason="need IPv6")
 
 
-def gc_collect_harder():
+def gc_collect_harder() -> None:
     # In the test suite we sometimes want to call gc.collect() to make sure
     # that any objects with noisy __del__ methods (e.g. unawaited coroutines)
     # get collected before we continue, so their noise doesn't leak into
@@ -71,7 +76,7 @@ def gc_collect_harder():
 # manager should be used anywhere this happens to hide those messages, because
 # when expected they're clutter.
 @contextmanager
-def ignore_coroutine_never_awaited_warnings():
+def ignore_coroutine_never_awaited_warnings() -> Generator[None, None, None]:
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="coroutine '.*' was never awaited")
         try:
@@ -82,46 +87,24 @@ def ignore_coroutine_never_awaited_warnings():
             gc_collect_harder()
 
 
-def _noop(*args, **kwargs):
+def _noop(*args: object, **kwargs: object) -> None:
     pass
 
 
-if sys.version_info >= (3, 8):
-
-    @contextmanager
-    def restore_unraisablehook():
-        sys.unraisablehook, prev = sys.__unraisablehook__, sys.unraisablehook
-        try:
-            yield
-        finally:
-            sys.unraisablehook = prev
-
-    @contextmanager
-    def disable_threading_excepthook():
-        if sys.version_info >= (3, 10):
-            threading.excepthook, prev = threading.__excepthook__, threading.excepthook
-        else:
-            threading.excepthook, prev = _noop, threading.excepthook
-
-        try:
-            yield
-        finally:
-            threading.excepthook = prev
-
-else:
-
-    @contextmanager
-    def restore_unraisablehook():  # pragma: no cover
+@contextmanager
+def restore_unraisablehook() -> Generator[None, None, None]:
+    sys.unraisablehook, prev = sys.__unraisablehook__, sys.unraisablehook
+    try:
         yield
-
-    @contextmanager
-    def disable_threading_excepthook():  # pragma: no cover
-        yield
+    finally:
+        sys.unraisablehook = prev
 
 
-# template is like:
-#   [1, {2.1, 2.2}, 3] -> matches [1, 2.1, 2.2, 3] or [1, 2.2, 2.1, 3]
-def check_sequence_matches(seq, template):
+# Used to check sequences that might have some elements out of order.
+# Example usage:
+# The sequences [1, 2.1, 2.2, 3] and [1, 2.2, 2.1, 3] are both
+# matched by the template [1, {2.1, 2.2}, 3]
+def check_sequence_matches(seq: Sequence[T], template: Iterable[T | set[T]]) -> None:
     i = 0
     for pattern in template:
         if not isinstance(pattern, set):
@@ -141,6 +124,6 @@ skip_if_fbsd_pipes_broken = pytest.mark.skipif(
 )
 
 
-def create_asyncio_future_in_new_loop():
+def create_asyncio_future_in_new_loop() -> asyncio.Future[object]:
     with closing(asyncio.new_event_loop()) as loop:
         return loop.create_future()

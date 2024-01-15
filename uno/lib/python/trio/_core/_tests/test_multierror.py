@@ -1,81 +1,84 @@
+from __future__ import annotations
+
 import gc
 import os
-import subprocess
-from pathlib import Path
 import pickle
+import re
+import subprocess
+import sys
 import warnings
+from pathlib import Path
+from traceback import extract_tb, print_exception
+from typing import TYPE_CHECKING, Callable, NoReturn
 
 import pytest
 
-from traceback import (
-    extract_tb,
-    print_exception,
-)
-import sys
-import re
-
-from .tutil import slow
-from .._multierror import MultiError, concat_tb, NonBaseMultiError
 from ... import TrioDeprecationWarning
 from ..._core import open_nursery
+from .._multierror import MultiError, NonBaseMultiError, concat_tb
+from .tutil import slow
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 if sys.version_info < (3, 11):
     from exceptiongroup import ExceptionGroup
 
 
 class NotHashableException(Exception):
-    code = None
+    code: int | None = None
 
-    def __init__(self, code):
+    def __init__(self, code: int) -> None:
         super().__init__()
         self.code = code
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, NotHashableException):
             return False
         return self.code == other.code
 
 
-async def raise_nothashable(code):
+async def raise_nothashable(code: int) -> NoReturn:
     raise NotHashableException(code)
 
 
-def raiser1():
+def raiser1() -> NoReturn:
     raiser1_2()
 
 
-def raiser1_2():
+def raiser1_2() -> NoReturn:
     raiser1_3()
 
 
-def raiser1_3():
+def raiser1_3() -> NoReturn:
     raise ValueError("raiser1_string")
 
 
-def raiser2():
+def raiser2() -> NoReturn:
     raiser2_2()
 
 
-def raiser2_2():
+def raiser2_2() -> NoReturn:
     raise KeyError("raiser2_string")
 
 
-def raiser3():
+def raiser3() -> NoReturn:
     raise NameError
 
 
-def get_exc(raiser):
+def get_exc(raiser: Callable[[], NoReturn]) -> BaseException:
     try:
         raiser()
     except Exception as exc:
         return exc
+    raise AssertionError("raiser should always raise")  # pragma: no cover
 
 
-def get_tb(raiser):
+def get_tb(raiser: Callable[[], NoReturn]) -> TracebackType | None:
     return get_exc(raiser).__traceback__
 
 
-def test_concat_tb():
+def test_concat_tb() -> None:
     tb1 = get_tb(raiser1)
     tb2 = get_tb(raiser2)
 
@@ -100,7 +103,7 @@ def test_concat_tb():
     assert extract_tb(get_tb(raiser2)) == entries2
 
 
-def test_MultiError():
+def test_MultiError() -> None:
     exc1 = get_exc(raiser1)
     exc2 = get_exc(raiser2)
 
@@ -111,12 +114,12 @@ def test_MultiError():
     assert "ValueError" in repr(m)
 
     with pytest.raises(TypeError):
-        MultiError(object())
+        MultiError(object())  # type: ignore[arg-type]
     with pytest.raises(TypeError):
-        MultiError([KeyError(), ValueError])
+        MultiError([KeyError(), ValueError])  # type: ignore[list-item]
 
 
-def test_MultiErrorOfSingleMultiError():
+def test_MultiErrorOfSingleMultiError() -> None:
     # For MultiError([MultiError]), ensure there is no bad recursion by the
     # constructor where __init__ is called if __new__ returns a bare MultiError.
     exceptions = (KeyError(), ValueError())
@@ -126,23 +129,23 @@ def test_MultiErrorOfSingleMultiError():
     assert b.exceptions == exceptions
 
 
-async def test_MultiErrorNotHashable():
+async def test_MultiErrorNotHashable() -> None:
     exc1 = NotHashableException(42)
     exc2 = NotHashableException(4242)
     exc3 = ValueError()
     assert exc1 != exc2
     assert exc1 != exc3
 
-    with pytest.raises(MultiError):
+    with pytest.raises(MultiError):  # noqa: PT012
         async with open_nursery() as nursery:
             nursery.start_soon(raise_nothashable, 42)
             nursery.start_soon(raise_nothashable, 4242)
 
 
-def test_MultiError_filter_NotHashable():
+def test_MultiError_filter_NotHashable() -> None:
     excs = MultiError([NotHashableException(42), ValueError()])
 
-    def handle_ValueError(exc):
+    def handle_ValueError(exc: BaseException) -> BaseException | None:
         if isinstance(exc, ValueError):
             return None
         else:
@@ -154,7 +157,7 @@ def test_MultiError_filter_NotHashable():
     assert isinstance(filtered_excs, NotHashableException)
 
 
-def make_tree():
+def make_tree() -> MultiError:
     # Returns an object like:
     #   MultiError([
     #     MultiError([
@@ -175,7 +178,9 @@ def make_tree():
         return MultiError([m12, exc3])
 
 
-def assert_tree_eq(m1, m2):
+def assert_tree_eq(
+    m1: BaseException | MultiError | None, m2: BaseException | MultiError | None
+) -> None:
     if m1 is None or m2 is None:
         assert m1 is m2
         return
@@ -184,13 +189,14 @@ def assert_tree_eq(m1, m2):
     assert_tree_eq(m1.__cause__, m2.__cause__)
     assert_tree_eq(m1.__context__, m2.__context__)
     if isinstance(m1, MultiError):
+        assert isinstance(m2, MultiError)
         assert len(m1.exceptions) == len(m2.exceptions)
         for e1, e2 in zip(m1.exceptions, m2.exceptions):
             assert_tree_eq(e1, e2)
 
 
-def test_MultiError_filter():
-    def null_handler(exc):
+def test_MultiError_filter() -> None:
+    def null_handler(exc: BaseException) -> BaseException:
         return exc
 
     m = make_tree()
@@ -210,7 +216,7 @@ def test_MultiError_filter():
             assert MultiError.filter(null_handler, m) is m
     assert_tree_eq(m, make_tree())
 
-    def simple_filter(exc):
+    def simple_filter(exc: BaseException) -> BaseException | None:
         if isinstance(exc, ValueError):
             return None
         if isinstance(exc, KeyError):
@@ -234,6 +240,7 @@ def test_MultiError_filter():
     # traceback on its parent MultiError
     orig = make_tree()
     # make sure we have the right path
+    assert isinstance(orig.exceptions[0], MultiError)
     assert isinstance(orig.exceptions[0].exceptions[1], KeyError)
     # get original traceback summary
     orig_extracted = (
@@ -242,7 +249,7 @@ def test_MultiError_filter():
         + extract_tb(orig.exceptions[0].exceptions[1].__traceback__)
     )
 
-    def p(exc):
+    def p(exc: BaseException) -> None:
         print_exception(type(exc), exc, exc.__traceback__)
 
     p(orig)
@@ -255,7 +262,7 @@ def test_MultiError_filter():
     assert orig_extracted == new_extracted
 
     # check preserving partial tree
-    def filter_NameError(exc):
+    def filter_NameError(exc: BaseException) -> BaseException | None:
         if isinstance(exc, NameError):
             return None
         return exc
@@ -267,17 +274,17 @@ def test_MultiError_filter():
     assert new_m is m.exceptions[0]
 
     # check fully handling everything
-    def filter_all(exc):
+    def filter_all(exc: BaseException) -> None:
         return None
 
     with pytest.warns(TrioDeprecationWarning):
         assert MultiError.filter(filter_all, make_tree()) is None
 
 
-def test_MultiError_catch():
+def test_MultiError_catch() -> None:
     # No exception to catch
 
-    def noop(_):
+    def noop(_: object) -> None:
         pass  # pragma: no cover
 
     with pytest.warns(TrioDeprecationWarning), MultiError.catch(noop):
@@ -324,36 +331,35 @@ def test_MultiError_catch():
     assert new_m.__context__ is None
 
     # check preservation of __cause__ and __context__
-    v = ValueError()
+    v = ValueError("waffles are great")
     v.__cause__ = KeyError()
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError, match="^waffles are great$") as excinfo:
         with pytest.warns(TrioDeprecationWarning), MultiError.catch(lambda exc: exc):
             raise v
     assert isinstance(excinfo.value.__cause__, KeyError)
 
-    v = ValueError()
+    v = ValueError("mushroom soup")
     context = KeyError()
     v.__context__ = context
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError, match="^mushroom soup$") as excinfo:
         with pytest.warns(TrioDeprecationWarning), MultiError.catch(lambda exc: exc):
             raise v
     assert excinfo.value.__context__ is context
     assert not excinfo.value.__suppress_context__
 
     for suppress_context in [True, False]:
-        v = ValueError()
+        v = ValueError("unique text")
         context = KeyError()
         v.__context__ = context
         v.__suppress_context__ = suppress_context
         distractor = RuntimeError()
-        with pytest.raises(ValueError) as excinfo:
 
-            def catch_RuntimeError(exc):
-                if isinstance(exc, RuntimeError):
-                    return None
-                else:
-                    return exc
+        def catch_RuntimeError(exc: Exception) -> Exception | None:
+            if isinstance(exc, RuntimeError):
+                return None
+            return exc
 
+        with pytest.raises(ValueError, match="^unique text$") as excinfo:  # noqa: PT012
             with pytest.warns(TrioDeprecationWarning):
                 with MultiError.catch(catch_RuntimeError):
                     raise MultiError([v, distractor])
@@ -364,21 +370,23 @@ def test_MultiError_catch():
 @pytest.mark.skipif(
     sys.implementation.name != "cpython", reason="Only makes sense with refcounting GC"
 )
-def test_MultiError_catch_doesnt_create_cyclic_garbage():
+def test_MultiError_catch_doesnt_create_cyclic_garbage() -> None:
     # https://github.com/python-trio/trio/pull/2063
     gc.collect()
     old_flags = gc.get_debug()
 
-    def make_multi():
+    def make_multi() -> NoReturn:
         # make_tree creates cycles itself, so a simple
         raise MultiError([get_exc(raiser1), get_exc(raiser2)])
 
-    def simple_filter(exc):
+    def simple_filter(exc: BaseException) -> Exception | RuntimeError:
         if isinstance(exc, ValueError):
             return Exception()
         if isinstance(exc, KeyError):
             return RuntimeError()
-        assert False, "only ValueError and KeyError should exist"  # pragma: no cover
+        raise AssertionError(
+            "only ValueError and KeyError should exist"
+        )  # pragma: no cover
 
     try:
         gc.set_debug(gc.DEBUG_SAVEALL)
@@ -393,7 +401,7 @@ def test_MultiError_catch_doesnt_create_cyclic_garbage():
         gc.garbage.clear()
 
 
-def assert_match_in_seq(pattern_list, string):
+def assert_match_in_seq(pattern_list: list[str], string: str) -> None:
     offset = 0
     print("looking for pattern matches...")
     for pattern in pattern_list:
@@ -404,14 +412,14 @@ def assert_match_in_seq(pattern_list, string):
         offset = match.end()
 
 
-def test_assert_match_in_seq():
+def test_assert_match_in_seq() -> None:
     assert_match_in_seq(["a", "b"], "xx a xx b xx")
     assert_match_in_seq(["b", "a"], "xx b xx a xx")
     with pytest.raises(AssertionError):
         assert_match_in_seq(["a", "b"], "xx b xx a xx")
 
 
-def test_base_multierror():
+def test_base_multierror() -> None:
     """
     Test that MultiError() with at least one base exception will return a MultiError
     object.
@@ -421,7 +429,7 @@ def test_base_multierror():
     assert type(exc) is MultiError
 
 
-def test_non_base_multierror():
+def test_non_base_multierror() -> None:
     """
     Test that MultiError() without base exceptions will return a NonBaseMultiError
     object.
@@ -432,7 +440,7 @@ def test_non_base_multierror():
     assert isinstance(exc, ExceptionGroup)
 
 
-def run_script(name, use_ipython=False):
+def run_script(name: str) -> subprocess.CompletedProcess[bytes]:
     import trio
 
     trio_path = Path(trio.__file__).parent.parent
@@ -440,33 +448,15 @@ def run_script(name, use_ipython=False):
 
     env = dict(os.environ)
     print("parent PYTHONPATH:", env.get("PYTHONPATH"))
+    pp = []
     if "PYTHONPATH" in env:  # pragma: no cover
         pp = env["PYTHONPATH"].split(os.pathsep)
-    else:
-        pp = []
     pp.insert(0, str(trio_path))
     pp.insert(0, str(script_path.parent))
     env["PYTHONPATH"] = os.pathsep.join(pp)
     print("subprocess PYTHONPATH:", env.get("PYTHONPATH"))
 
-    if use_ipython:
-        lines = [
-            "import runpy",
-            f"runpy.run_path(r'{script_path}', run_name='trio.fake')",
-            "exit()",
-        ]
-
-        cmd = [
-            sys.executable,
-            "-u",
-            "-m",
-            "IPython",
-            # no startup files
-            "--quick",
-            "--TerminalIPythonApp.code_to_run=" + "\n".join(lines),
-        ]
-    else:
-        cmd = [sys.executable, "-u", str(script_path)]
+    cmd = [sys.executable, "-u", str(script_path)]
     print("running:", cmd)
     completed = subprocess.run(
         cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
@@ -476,77 +466,12 @@ def run_script(name, use_ipython=False):
     return completed
 
 
-def check_simple_excepthook(completed, uses_ipython):
-    assert_match_in_seq(
-        [
-            "in <cell line: "
-            if uses_ipython and sys.version_info >= (3, 8)
-            else "in <module>",
-            "MultiError",
-            "--- 1 ---",
-            "in exc1_fn",
-            "ValueError",
-            "--- 2 ---",
-            "in exc2_fn",
-            "KeyError",
-        ],
-        completed.stdout.decode("utf-8"),
-    )
-
-
-try:
-    import IPython  # noqa: F401
-except ImportError:  # pragma: no cover
-    have_ipython = False
-else:
-    have_ipython = True
-
-need_ipython = pytest.mark.skipif(not have_ipython, reason="need IPython")
-
-
-@slow
-@need_ipython
-def test_ipython_exc_handler():
-    completed = run_script("simple_excepthook.py", use_ipython=True)
-    check_simple_excepthook(completed, True)
-
-
-@slow
-@need_ipython
-def test_ipython_imported_but_unused():
-    completed = run_script("simple_excepthook_IPython.py")
-    check_simple_excepthook(completed, False)
-
-
-@slow
-@need_ipython
-def test_ipython_custom_exc_handler():
-    # Check we get a nice warning (but only one!) if the user is using IPython
-    # and already has some other set_custom_exc handler installed.
-    completed = run_script("ipython_custom_exc.py", use_ipython=True)
-    assert_match_in_seq(
-        [
-            # The warning
-            "RuntimeWarning",
-            "IPython detected",
-            "skip installing Trio",
-            # The MultiError
-            "MultiError",
-            "ValueError",
-            "KeyError",
-        ],
-        completed.stdout.decode("utf-8"),
-    )
-    # Make sure our other warning doesn't show up
-    assert "custom sys.excepthook" not in completed.stdout.decode("utf-8")
-
-
 @slow
 @pytest.mark.skipif(
     not Path("/usr/lib/python3/dist-packages/apport_python_hook.py").exists(),
     reason="need Ubuntu with python3-apport installed",
 )
-def test_apport_excepthook_monkeypatch_interaction():
+def test_apport_excepthook_monkeypatch_interaction() -> None:
     completed = run_script("apport_excepthook.py")
     stdout = completed.stdout.decode("utf-8")
 
@@ -561,16 +486,16 @@ def test_apport_excepthook_monkeypatch_interaction():
 
 
 @pytest.mark.parametrize("protocol", range(0, pickle.HIGHEST_PROTOCOL + 1))
-def test_pickle_multierror(protocol) -> None:
+def test_pickle_multierror(protocol: int) -> None:
     # use trio.MultiError to make sure that pickle works through the deprecation layer
     import trio
 
     my_except = ZeroDivisionError()
 
     try:
-        1 / 0
-    except ZeroDivisionError as e:
-        my_except = e
+        1 / 0  # noqa: B018  # "useless statement"
+    except ZeroDivisionError as exc:
+        my_except = exc
 
     # MultiError will collapse into different classes depending on the errors
     for cls, errors in (

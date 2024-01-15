@@ -9,13 +9,15 @@ warn_deprecated(
     "trio.tests",
     "0.22.1",
     instead="trio._tests",
-    issue="https://github.com/python-trio/trio/issues/274",
+    issue=274,
 )
 
 
 # This won't give deprecation warning on import, but will give a warning on use of any
 # attribute in tests, and static analysis tools will also not see any content inside.
 class TestsDeprecationWrapper:
+    """trio.tests is deprecated, use trio._tests"""
+
     __name__ = "trio.tests"
 
     def __getattr__(self, attr: str) -> Any:
@@ -23,7 +25,7 @@ class TestsDeprecationWrapper:
             f"trio.tests.{attr}",
             "0.22.1",
             instead=f"trio._tests.{attr}",
-            issue="https://github.com/python-trio/trio/issues/274",
+            issue=274,
         )
 
         # needed to access e.g. trio._tests.tools, although pytest doesn't need it

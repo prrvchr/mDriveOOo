@@ -29,6 +29,9 @@
 
 import unohelper
 
+from com.sun.star.logging.LogLevel import INFO
+from com.sun.star.logging.LogLevel import SEVERE
+
 from .optionsmodel import OptionsModel
 from .optionsview import OptionsView
 
@@ -46,45 +49,28 @@ import traceback
 
 
 class OptionsManager(unohelper.Base):
-    def __init__(self, ctx, window, ijson=True):
+    def __init__(self, ctx, window, logger):
         self._ctx = ctx
         self._model = OptionsModel(ctx)
         timeout, view, enabled = self._model.getViewData()
         self._view = OptionsView(window, timeout, view, enabled)
-        self._logger = LogManager(self._ctx, window.Peer, self._getInfos(ijson), g_identifier, g_defaultlog)
-
-    def saveSetting(self):
-        timeout, view = self._view.getViewData()
-        self._model.setViewData(timeout, view)
-        self._logger.saveSetting()
+        self._logmanager = LogManager(self._ctx, window.Peer, 'requirements.txt', g_identifier, g_defaultlog)
+        self._logger = logger
+        self._logger.logprb(INFO, 'OptionsManager', '__init__()', 151)
 
     def loadSetting(self):
         self._view.setTimeout(self._model.getTimeout())
         self._view.setViewName(self._model.getViewName())
-        self._logger.loadSetting()
+        self._logmanager.loadSetting()
+        self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 161)
+
+    def saveSetting(self):
+        timeout, view = self._view.getViewData()
+        option = self._model.setViewData(timeout, view)
+        log = self._logmanager.saveSetting()
+        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 171, option, log)
 
     def viewData(self):
         url = self._model.getDatasourceUrl()
         getDesktop(self._ctx).loadComponentFromURL(url, '_default', 0, ())
-
-    def _getInfos(self, hasijson):
-        infos = OrderedDict()
-        version  = ' '.join(sys.version.split())
-        infos[111] = version
-        path = os.pathsep.join(sys.path)
-        infos[112] = path
-        if hasijson:
-            # Required modules for ijson
-            try:
-                import ijson
-            except Exception as e:
-                infos[136] = self._getExceptionMsg(e)
-            else:
-                infos[137] = (ijson.__version__, ijson.__file__)
-        return infos
-
-    def _getExceptionMsg(self, e):
-        error = repr(e)
-        trace = repr(traceback.format_exc())
-        return error, trace
 

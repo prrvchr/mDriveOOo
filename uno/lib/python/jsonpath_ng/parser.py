@@ -5,6 +5,7 @@ from __future__ import (
     generators,
     nested_scopes,
 )
+import logging
 import sys
 import os.path
 
@@ -55,7 +56,8 @@ class JsonPathParser(object):
 
         parsing_table_module = '_'.join([module_name, start_symbol, 'parsetab'])
 
-        # And we regenerate the parse table every time; it doesn't actually take that long!
+        # And we regenerate the parse table every time;
+        # it doesn't actually take that long!
         new_parser = ply.yacc.yacc(module=self,
                                    debug=self.debug,
                                    tabmodule = parsing_table_module,

@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 import sys
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
+from typing import TYPE_CHECKING, Any
 
 import trio
 from trio._core._multierror import MultiError
-from trio.socket import getaddrinfo, SOCK_STREAM, socket
+from trio.socket import SOCK_STREAM, SocketType, getaddrinfo, socket
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from socket import AddressFamily, SocketKind
 
 if sys.version_info < (3, 11):
     from exceptiongroup import ExceptionGroup
@@ -109,8 +116,8 @@ DEFAULT_DELAY = 0.250
 
 
 @contextmanager
-def close_all():
-    sockets_to_close = set()
+def close_all() -> Generator[set[SocketType], None, None]:
+    sockets_to_close: set[SocketType] = set()
     try:
         yield sockets_to_close
     finally:
@@ -126,7 +133,17 @@ def close_all():
             raise MultiError(errs)
 
 
-def reorder_for_rfc_6555_section_5_4(targets):
+def reorder_for_rfc_6555_section_5_4(
+    targets: list[
+        tuple[
+            AddressFamily,
+            SocketKind,
+            int,
+            str,
+            Any,
+        ]
+    ]
+) -> None:
     # RFC 6555 section 5.4 says that if getaddrinfo returns multiple address
     # families (e.g. IPv4 and IPv6), then you should make sure that your first
     # and second attempts use different families:
@@ -144,7 +161,7 @@ def reorder_for_rfc_6555_section_5_4(targets):
             break
 
 
-def format_host_port(host, port):
+def format_host_port(host: str | bytes, port: int | str) -> str:
     host = host.decode("ascii") if isinstance(host, bytes) else host
     if ":" in host:
         return f"[{host}]:{port}"
@@ -173,8 +190,12 @@ def format_host_port(host, port):
 #   AF_INET6: "..."}
 # this might be simpler after
 async def open_tcp_stream(
-    host, port, *, happy_eyeballs_delay=DEFAULT_DELAY, local_address=None
-):
+    host: str | bytes,
+    port: int,
+    *,
+    happy_eyeballs_delay: float | None = DEFAULT_DELAY,
+    local_address: str | None = None,
+) -> trio.SocketStream:
     """Connect to the given host and port over TCP.
 
     If the given ``host`` has multiple IP addresses associated with it, then
@@ -212,9 +233,9 @@ async def open_tcp_stream(
 
       port (int): The port to connect to.
 
-      happy_eyeballs_delay (float): How many seconds to wait for each
+      happy_eyeballs_delay (float or None): How many seconds to wait for each
           connection attempt to succeed or fail before getting impatient and
-          starting another one in parallel. Set to `math.inf` if you want
+          starting another one in parallel. Set to `None` if you want
           to limit to only one connection attempt at a time (like
           :func:`socket.create_connection`). Default: 0.25 (250 ms).
 
@@ -247,9 +268,8 @@ async def open_tcp_stream(
     # To keep our public API surface smaller, rule out some cases that
     # getaddrinfo will accept in some circumstances, but that act weird or
     # have non-portable behavior or are just plain not useful.
-    # No type check on host though b/c we want to allow bytes-likes.
-    if host is None:
-        raise ValueError("host cannot be None")
+    if not isinstance(host, (str, bytes)):
+        raise ValueError(f"host must be str or bytes, not {host!r}")
     if not isinstance(port, int):
         raise TypeError(f"port must be int, not {port!r}")
 
@@ -262,19 +282,17 @@ async def open_tcp_stream(
     # getaddrinfo should have raised OSError instead of returning an empty
     # list. But let's be paranoid and handle it anyway:
     if not targets:
-        msg = "no results found for hostname lookup: {}".format(
-            format_host_port(host, port)
-        )
+        msg = f"no results found for hostname lookup: {format_host_port(host, port)}"
         raise OSError(msg)
 
     reorder_for_rfc_6555_section_5_4(targets)
 
     # This list records all the connection failures that we ignored.
-    oserrors = []
+    oserrors: list[OSError] = []
 
     # Keeps track of the socket that we're going to complete with,
     # need to make sure this isn't automatically closed
-    winning_socket = None
+    winning_socket: SocketType | None = None
 
     # Try connecting to the specified address. Possible outcomes:
     # - success: record connected socket in winning_socket and cancel
@@ -283,7 +301,11 @@ async def open_tcp_stream(
     #   the next connection attempt to start early
     # code needs to ensure sockets can be closed appropriately in the
     # face of crash or cancellation
-    async def attempt_connect(socket_args, sockaddr, attempt_failed):
+    async def attempt_connect(
+        socket_args: tuple[AddressFamily, SocketKind, int],
+        sockaddr: Any,
+        attempt_failed: trio.Event,
+    ) -> None:
         nonlocal winning_socket
 
         try:
@@ -323,19 +345,17 @@ async def open_tcp_stream(
                 # bind() to only bind the IP, and not the port. That way,
                 # connect() is allowed to pick the the port, and it can do a
                 # better job of it because it knows the remote IP/port.
-                try:
+                with suppress(OSError, AttributeError):
                     sock.setsockopt(
                         trio.socket.IPPROTO_IP, trio.socket.IP_BIND_ADDRESS_NO_PORT, 1
                     )
-                except (OSError, AttributeError):
-                    pass
                 try:
                     await sock.bind((local_address, 0))
                 except OSError:
                     raise OSError(
                         f"local_address={local_address!r} is incompatible "
-                        f"with remote address {sockaddr}"
-                    )
+                        f"with remote address {sockaddr!r}"
+                    ) from None
 
             await sock.connect(sockaddr)
 
@@ -355,12 +375,23 @@ async def open_tcp_stream(
         # nursery spawns a task for each connection attempt, will be
         # cancelled by the task that gets a successful connection
         async with trio.open_nursery() as nursery:
-            for *sa, _, addr in targets:
+            for address_family, socket_type, proto, _, addr in targets:
                 # create an event to indicate connection failure,
                 # allowing the next target to be tried early
                 attempt_failed = trio.Event()
 
-                nursery.start_soon(attempt_connect, sa, addr, attempt_failed)
+                # workaround to check types until typing of nursery.start_soon improved
+                if TYPE_CHECKING:
+                    await attempt_connect(
+                        (address_family, socket_type, proto), addr, attempt_failed
+                    )
+
+                nursery.start_soon(
+                    attempt_connect,
+                    (address_family, socket_type, proto),
+                    addr,
+                    attempt_failed,
+                )
 
                 # give this attempt at most this time before moving on
                 with trio.move_on_after(happy_eyeballs_delay):
@@ -369,9 +400,7 @@ async def open_tcp_stream(
         # nothing succeeded
         if winning_socket is None:
             assert len(oserrors) == len(targets)
-            msg = "all attempts to connect to {} failed".format(
-                format_host_port(host, port)
-            )
+            msg = f"all attempts to connect to {format_host_port(host, port)} failed"
             raise OSError(msg) from ExceptionGroup(msg, oserrors)
         else:
             stream = trio.SocketStream(winning_socket)

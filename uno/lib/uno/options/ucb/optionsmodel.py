@@ -56,6 +56,32 @@ class OptionsModel(unohelper.Base):
         self._policies = {'SERVER_IS_MASTER': 1, 'CLIENT_IS_MASTER': 2, 'NONE_IS_MASTER': 3}
         self._factors = {'Timeout': 60, 'Chunk': 1024}
 
+    @property
+    def _IsShared(self):
+        return self._config.getByName('SharedDocuments')
+    @property
+    def _ShareName(self):
+        return self._config.getByName('SharedFolderName')
+    @property
+    def _Policy(self):
+        policy = self._config.getByName('SynchronizePolicy')
+        return self._policies.get(policy)
+    @property
+    def _Timeout(self):
+        timeout = self._config.getByName('ReplicateTimeout')
+        return timeout // self._factors['Timeout']
+    @property
+    def _Download(self):
+        config = self._config.getByHierarchicalName('Settings/Download')
+        return self._getSetting(config)
+    @property
+    def _Upload(self):
+        config = self._config.getByHierarchicalName('Settings/Upload')
+        return self._getSetting(config)
+    @property
+    def _SupportShare(self):
+        return self._config.getByName('SupportShare')
+
 # OptionsModel getter methods
     def hasData(self):
         return getSimpleFile(self._ctx).exists(self._url)
@@ -64,9 +90,9 @@ class OptionsModel(unohelper.Base):
         return self._config.getByName('ResumableUpload')
 
     def getViewData(self):
-        return (self._supportShare(), self._isShared(), self._getShare(),
-                self._getPolicy(), self._getTimeout(),
-                self._getDownload(), self._getUpload())
+        return (self._SupportShare, self._IsShared, self._ShareName,
+                self._Policy, self._Timeout,
+                self._Download, self._Upload)
 
     def getDatasourceUrl(self):
         return self._url
@@ -81,37 +107,14 @@ class OptionsModel(unohelper.Base):
         self._setUpload(upload)
         if self._config.hasPendingChanges():
             self._config.commitChanges()
+            return True
+        return False
 
 # OptionsModel private getter methods
-    def _supportShare(self):
-        return self._config.getByName('SupportShare')
-
-    def _isShared(self):
-        return self._config.getByName('SharedDocuments')
-
-    def _getShare(self):
-        return self._config.getByName('SharedFolderName')
-
-    def _getPolicy(self):
-        policy = self._config.getByName('SynchronizePolicy')
-        return self._policies.get(policy)
-
-    def _getTimeout(self):
-        timeout = self._config.getByName('ReplicateTimeout')
-        return timeout / self._factors['Timeout']
-
     def _getSynchronizePolicy(self, index):
         for policy, value in self._policies.items():
             if value == index:
                 return policy
-
-    def _getDownload(self):
-        config = self._config.getByHierarchicalName('Settings/Download')
-        return self._getSetting(config)
-
-    def _getUpload(self):
-        config = self._config.getByHierarchicalName('Settings/Upload')
-        return self._getSetting(config)
 
     def _getSetting(self, config):
         setting = {}
@@ -124,27 +127,31 @@ class OptionsModel(unohelper.Base):
 
 # OptionsModel private setter methods
     def _setShared(self, enabled):
-        self._config.replaceByName('SharedDocuments', enabled)
+        if enabled != self._IsShared:
+            self._config.replaceByName('SharedDocuments', enabled)
 
     def _setShare(self, name):
-        if name:
+        if name and name != self._ShareName:
             self._config.replaceByName('SharedFolderName', name)
 
     def _setPolicy(self, index):
-        policy = self._getSynchronizePolicy(index)
-        self._config.replaceByName('SynchronizePolicy', policy)
+        if index != self._Policy:
+            policy = self._getSynchronizePolicy(index)
+            self._config.replaceByName('SynchronizePolicy', policy)
 
     def _setTimeout(self, timeout):
-        timeout = timeout * self._factors['Timeout']
-        self._config.replaceByName('ReplicateTimeout', timeout)
+        if timeout != self._Timeout:
+            self._config.replaceByName('ReplicateTimeout', timeout * self._factors['Timeout'])
 
     def _setDownload(self, setting):
-        config = self._config.getByHierarchicalName('Settings/Download')
-        self._setSetting(config, setting)
+        if setting != self._Download:
+            config = self._config.getByHierarchicalName('Settings/Download')
+            self._setSetting(config, setting)
 
     def _setUpload(self, setting):
-        config = self._config.getByHierarchicalName('Settings/Upload')
-        self._setSetting(config, setting)
+        if setting != self._Upload:
+            config = self._config.getByHierarchicalName('Settings/Upload')
+            self._setSetting(config, setting)
 
     def _setSetting(self, config, setting):
         for name, value in setting.items():

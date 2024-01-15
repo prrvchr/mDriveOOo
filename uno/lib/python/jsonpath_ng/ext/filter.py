@@ -13,7 +13,6 @@
 
 import operator
 import re
-from six import moves
 
 from .. import JSONPath, DatumInContext, Index
 
@@ -49,7 +48,7 @@ class Filter(JSONPath):
             return []
 
         return [DatumInContext(datum.value[i], path=Index(i), context=datum)
-                for i in moves.range(0, len(datum.value))
+                for i in range(0, len(datum.value))
                 if (len(self.expressions) ==
                     len(list(filter(lambda x: x.find(datum.value[i]),
                                     self.expressions))))]

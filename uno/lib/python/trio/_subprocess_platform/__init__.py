@@ -2,12 +2,12 @@
 
 import os
 import sys
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import trio
-from .. import _core, _subprocess
-from .._abc import SendStream, ReceiveStream
 
+from .. import _core, _subprocess
+from .._abc import ReceiveStream, SendStream  # noqa: TCH001
 
 _wait_child_exiting_error: Optional[ImportError] = None
 _create_child_pipe_error: Optional[ImportError] = None
@@ -72,17 +72,17 @@ try:
     if sys.platform == "win32":
         from .windows import wait_child_exiting  # noqa: F811
     elif sys.platform != "linux" and (TYPE_CHECKING or hasattr(_core, "wait_kevent")):
-        from .kqueue import wait_child_exiting  # noqa: F811
+        from .kqueue import wait_child_exiting
     else:
-        # noqa'd as it's an exported symbol
-        from .waitid import wait_child_exiting  # noqa: F811, F401
+        # as it's an exported symbol, noqa'd
+        from .waitid import wait_child_exiting  # noqa: F401
 except ImportError as ex:  # pragma: no cover
     _wait_child_exiting_error = ex
 
 try:
     if TYPE_CHECKING:
         # Not worth type checking these definitions
-        pass
+        pass  # noqa: TCH005
 
     elif os.name == "posix":
 
@@ -95,7 +95,7 @@ try:
             return trio.lowlevel.FdStream(rfd), wfd
 
     elif os.name == "nt":
-        from .._windows_pipes import PipeSendStream, PipeReceiveStream
+        import msvcrt
 
         # This isn't exported or documented, but it's also not
         # underscore-prefixed, and seems kosher to use. The asyncio docs
@@ -104,14 +104,15 @@ try:
         # when asyncio.windows_utils.socketpair was removed in 3.7, the
         # removal was mentioned in the release notes.
         from asyncio.windows_utils import pipe as windows_pipe
-        import msvcrt
 
-        def create_pipe_to_child_stdin():  # noqa: F811
+        from .._windows_pipes import PipeReceiveStream, PipeSendStream
+
+        def create_pipe_to_child_stdin():
             # for stdin, we want the write end (our end) to use overlapped I/O
             rh, wh = windows_pipe(overlapped=(False, True))
             return PipeSendStream(wh), msvcrt.open_osfhandle(rh, os.O_RDONLY)
 
-        def create_pipe_from_child_output():  # noqa: F811
+        def create_pipe_from_child_output():
             # for stdout/err, it's the read end that's overlapped
             rh, wh = windows_pipe(overlapped=(True, False))
             return PipeReceiveStream(rh), msvcrt.open_osfhandle(wh, 0)

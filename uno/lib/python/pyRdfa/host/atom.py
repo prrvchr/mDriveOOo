@@ -16,14 +16,14 @@ $Id: atom.py,v 1.3 2013-01-07 13:03:16 ivan Exp $
 $Date: 2013-01-07 13:03:16 $
 """
 
-def atom_add_entry_type(node, state) :
-	"""
-	@param node: the current node that could be modified
-	@param state: current state
-	@type state: L{Execution context<pyRdfa.state.ExecutionContext>}
-	"""
-	def res_set(node) :	
-		return True in [ node.hasAttribute(a) for a in ["resource", "about", "href", "src"] ]
-	
-	if node.tagName == "entry" and not res_set(node) and node.hasAttribute("typeof") == False :
-		node.setAttribute("typeof","")
+def atom_add_entry_type(node, _state):
+    """
+    @param node: the current node that could be modified
+    @param state: current state
+    @type state: L{Execution context<pyRdfa.state.ExecutionContext>}
+    """
+    def res_set(node) :    
+        return True in [node.hasAttribute(a) for a in ["resource", "about", "href", "src"]]
+    
+    if node.tagName == "entry" and not res_set(node) and node.hasAttribute("typeof") == False :
+        node.setAttribute("typeof","")

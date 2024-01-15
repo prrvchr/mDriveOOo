@@ -42,7 +42,7 @@ class WebDriver(RemoteWebDriver):
         self,
         options: Options = None,
         service: Service = None,
-        keep_alive=True,
+        keep_alive: bool = True,
     ) -> None:
         """Creates a new instance of the Firefox driver. Starts the service and
         then creates new instance of Firefox driver.
@@ -54,30 +54,34 @@ class WebDriver(RemoteWebDriver):
         """
 
         self.service = service if service else Service()
-        self.options = options if options else Options()
-        self.keep_alive = keep_alive
+        options = options if options else Options()
 
-        self.service.path = DriverFinder.get_path(self.service, self.options)
+        self.service.path = DriverFinder.get_path(self.service, options)
         self.service.start()
 
         executor = FirefoxRemoteConnection(
             remote_server_addr=self.service.service_url,
-            ignore_proxy=self.options._ignore_local_proxy,
-            keep_alive=self.keep_alive,
+            keep_alive=keep_alive,
+            ignore_proxy=options._ignore_local_proxy,
         )
-        super().__init__(command_executor=executor, options=self.options)
+
+        try:
+            super().__init__(command_executor=executor, options=options)
+        except Exception:
+            self.quit()
+            raise
 
         self._is_remote = False
 
     def quit(self) -> None:
-        """Quits the driver and close every associated window."""
+        """Closes the browser and shuts down the GeckoDriver executable."""
         try:
             super().quit()
         except Exception:
             # We don't care about the message because something probably has gone wrong
             pass
-
-        self.service.stop()
+        finally:
+            self.service.stop()
 
     def set_context(self, context) -> None:
         self.execute("SET_CONTEXT", {"context": context})
@@ -123,7 +127,7 @@ class WebDriver(RemoteWebDriver):
             fp = BytesIO()
             path_root = len(path) + 1  # account for trailing slash
             with zipfile.ZipFile(fp, "w", zipfile.ZIP_DEFLATED) as zipped:
-                for base, dirs, files in os.walk(path):
+                for base, _, files in os.walk(path):
                     for fyle in files:
                         filename = os.path.join(base, fyle)
                         zipped.write(filename, filename[path_root:])
@@ -161,7 +165,7 @@ class WebDriver(RemoteWebDriver):
         """
         if not filename.lower().endswith(".png"):
             warnings.warn(
-                "name used for saved screenshot does not match file " "type. It should end with a `.png` extension",
+                "name used for saved screenshot does not match file type. It should end with a `.png` extension",
                 UserWarning,
             )
         png = self.get_full_page_screenshot_as_png()

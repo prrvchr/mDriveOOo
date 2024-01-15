@@ -90,7 +90,6 @@ class Driver(unohelper.Base,
                 raise self._getException(1001, None, 111, url, '\n')
             handler = self._getDocumentHandler(location)
             path = handler.getConnectionUrl(document, storage, location)
-            print("driver.connect() Path: %s" % path)
             self._logger.logprb(INFO, 'Driver', 'connect()', 113, location)
             connection = self._getDriver().connect(path, newinfos)
             version = connection.getMetaData().getDriverVersion()

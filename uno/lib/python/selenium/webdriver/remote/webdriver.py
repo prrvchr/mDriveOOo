@@ -14,14 +14,16 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 """The WebDriver implementation."""
+import base64
 import contextlib
 import copy
+import os
 import pkgutil
 import types
 import typing
 import warnings
+import zipfile
 from abc import ABCMeta
 from base64 import b64decode
 from base64 import urlsafe_b64encode
@@ -91,11 +93,12 @@ def _create_caps(caps):
 
 
 def get_remote_connection(capabilities, command_executor, keep_alive, ignore_local_proxy=False):
-    from selenium.webdriver.chromium.remote_connection import ChromiumRemoteConnection
+    from selenium.webdriver.chrome.remote_connection import ChromeRemoteConnection
+    from selenium.webdriver.edge.remote_connection import EdgeRemoteConnection
     from selenium.webdriver.firefox.remote_connection import FirefoxRemoteConnection
     from selenium.webdriver.safari.remote_connection import SafariRemoteConnection
 
-    candidates = [RemoteConnection, ChromiumRemoteConnection, SafariRemoteConnection, FirefoxRemoteConnection]
+    candidates = [ChromeRemoteConnection, EdgeRemoteConnection, SafariRemoteConnection, FirefoxRemoteConnection]
     handler = next((c for c in candidates if c.browser_name == capabilities.get("browserName")), RemoteConnection)
 
     return handler(command_executor, keep_alive=keep_alive, ignore_proxy=ignore_local_proxy)
@@ -146,12 +149,12 @@ class BaseWebDriver(metaclass=ABCMeta):
 class WebDriver(BaseWebDriver):
     """Controls a browser by sending commands to a remote server. This server
     is expected to be running the WebDriver wire protocol as defined at
-    https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol.
+    https://www.selenium.dev/documentation/legacy/json_wire_protocol/.
 
     :Attributes:
      - session_id - String ID of the browser session started and controlled by this WebDriver.
      - capabilities - Dictionary of effective capabilities of this browser session as returned
-         by the remote server. See https://github.com/SeleniumHQ/selenium/wiki/DesiredCapabilities
+         by the remote server. See https://www.selenium.dev/documentation/legacy/desired_capabilities/
      - command_executor - remote_connection.RemoteConnection object used to execute commands.
      - error_handler - errorhandler.ErrorHandler object used to handle errors.
     """
@@ -284,7 +287,6 @@ class WebDriver(BaseWebDriver):
 
         :Args:
          - capabilities - a capabilities dict to start the session with.
-         - browser_profile - A selenium.webdriver.firefox.firefox_profile.FirefoxProfile object. Only used if Firefox is requested.
         """
 
         caps = _create_caps(capabilities)
@@ -771,13 +773,13 @@ class WebDriver(BaseWebDriver):
 
     @property
     def desired_capabilities(self) -> dict:
-        """returns the drivers current desired capabilities being used."""
+        """Returns the drivers current desired capabilities being used."""
         warnings.warn("desired_capabilities is deprecated. Please call capabilities.", DeprecationWarning, stacklevel=2)
         return self.caps
 
     @property
     def capabilities(self) -> dict:
-        """returns the drivers current capabilities being used."""
+        """Returns the drivers current capabilities being used."""
         return self.caps
 
     def get_screenshot_as_file(self, filename) -> bool:
@@ -796,8 +798,9 @@ class WebDriver(BaseWebDriver):
         """
         if not str(filename).lower().endswith(".png"):
             warnings.warn(
-                "name used for saved screenshot does not match file " "type. It should end with a `.png` extension",
+                "name used for saved screenshot does not match file type. It should end with a `.png` extension",
                 UserWarning,
+                stacklevel=2,
             )
         png = self.get_screenshot_as_png()
         try:
@@ -858,8 +861,7 @@ class WebDriver(BaseWebDriver):
 
                 driver.set_window_size(800,600)
         """
-        if windowHandle != "current":
-            warnings.warn("Only 'current' window is supported for W3C compatible browsers.")
+        self._check_if_window_handle_is_current(windowHandle)
         self.set_window_rect(width=int(width), height=int(height))
 
     def get_window_size(self, windowHandle: str = "current") -> dict:
@@ -871,8 +873,7 @@ class WebDriver(BaseWebDriver):
                 driver.get_window_size()
         """
 
-        if windowHandle != "current":
-            warnings.warn("Only 'current' window is supported for W3C compatible browsers.")
+        self._check_if_window_handle_is_current(windowHandle)
         size = self.get_window_rect()
 
         if size.get("value", None):
@@ -892,8 +893,7 @@ class WebDriver(BaseWebDriver):
 
                 driver.set_window_position(0,0)
         """
-        if windowHandle != "current":
-            warnings.warn("Only 'current' window is supported for W3C compatible browsers.")
+        self._check_if_window_handle_is_current(windowHandle)
         return self.set_window_rect(x=int(x), y=int(y))
 
     def get_window_position(self, windowHandle="current") -> dict:
@@ -905,11 +905,15 @@ class WebDriver(BaseWebDriver):
                 driver.get_window_position()
         """
 
-        if windowHandle != "current":
-            warnings.warn("Only 'current' window is supported for W3C compatible browsers.")
+        self._check_if_window_handle_is_current(windowHandle)
         position = self.get_window_rect()
 
         return {k: position[k] for k in ("x", "y")}
+
+    def _check_if_window_handle_is_current(self, windowHandle: str) -> None:
+        """Warns if the window handle is not equal to `current`."""
+        if windowHandle != "current":
+            warnings.warn("Only 'current' window is supported for W3C compatible browsers.", stacklevel=2)
 
     def get_window_rect(self) -> dict:
         """Gets the x, y coordinates of the window as well as height and width
@@ -1054,9 +1058,9 @@ class WebDriver(BaseWebDriver):
         http = urllib3.PoolManager()
         _firefox = False
         if self.caps.get("browserName") == "chrome":
-            debugger_address = self.caps.get(f"{self.vendor_prefix}:{self.caps.get('browserName')}Options").get(
-                "debuggerAddress"
-            )
+            debugger_address = self.caps.get("goog:chromeOptions").get("debuggerAddress")
+        elif self.caps.get("browserName") == "msedge":
+            debugger_address = self.caps.get("ms:edgeOptions").get("debuggerAddress")
         else:
             _firefox = True
             debugger_address = self.caps.get("moz:debuggerAddress")
@@ -1132,3 +1136,40 @@ class WebDriver(BaseWebDriver):
         verified: True if the authenticator will pass user verification, False otherwise.
         """
         self.execute(Command.SET_USER_VERIFIED, {"authenticatorId": self._authenticator_id, "isUserVerified": verified})
+
+    def get_downloadable_files(self) -> dict:
+        """Retrieves the downloadable files as a map of file names and their
+        corresponding URLs."""
+        if "se:downloadsEnabled" not in self.capabilities:
+            raise WebDriverException("You must enable downloads in order to work with downloadable files.")
+
+        return self.execute(Command.GET_DOWNLOADABLE_FILES)["value"]["names"]
+
+    def download_file(self, file_name: str, target_directory: str) -> None:
+        """Downloads a file with the specified file name to the target
+        directory.
+
+        file_name: The name of the file to download.
+        target_directory: The path to the directory to save the downloaded file.
+        """
+        if "se:downloadsEnabled" not in self.capabilities:
+            raise WebDriverException("You must enable downloads in order to work with downloadable files.")
+
+        if not os.path.exists(target_directory):
+            os.makedirs(target_directory)
+
+        contents = self.execute(Command.DOWNLOAD_FILE, {"name": file_name})["value"]["contents"]
+
+        target_file = os.path.join(target_directory, file_name)
+        with open(target_file, "wb") as file:
+            file.write(base64.b64decode(contents))
+
+        with zipfile.ZipFile(target_file, "r") as zip_ref:
+            zip_ref.extractall(target_directory)
+
+    def delete_downloadable_files(self) -> None:
+        """Deletes all downloadable files."""
+        if "se:downloadsEnabled" not in self.capabilities:
+            raise WebDriverException("You must enable downloads in order to work with downloadable files.")
+
+        self.execute(Command.DELETE_DOWNLOADABLE_FILES)

@@ -29,6 +29,9 @@
 
 import unohelper
 
+from com.sun.star.logging.LogLevel import INFO
+from com.sun.star.logging.LogLevel import SEVERE
+
 from .optionsmodel import OptionsModel
 from .optionsview import OptionsView
 
@@ -41,31 +44,32 @@ from ..configuration import g_identifier
 from ..configuration import g_defaultlog
 from ..configuration import g_synclog
 
-from collections import OrderedDict
-import os
-import sys
 import traceback
 
 
 class OptionsManager(unohelper.Base):
-    def __init__(self, ctx, window):
+    def __init__(self, ctx, window, logger):
         self._ctx = ctx
         self._model = OptionsModel(ctx)
         exist = self._model.hasData()
         resumable = self._model.isResumable()
         data = self._model.getViewData()
         self._view = OptionsView(window, exist, resumable, data)
-        self._logger = LogManager(ctx, window.Peer, self._getInfos(), g_identifier, g_defaultlog, g_synclog)
-
-    def saveSetting(self):
-        share, name, index, timeout, download, upload = self._view.getViewData()
-        self._model.setViewData(share, name, index, timeout, download, upload)
-        self._logger.saveSetting()
+        self._logmanager = LogManager(ctx, window.Peer, 'requirements.txt', g_identifier, g_defaultlog, g_synclog)
+        self._logger = logger
+        self._logger.logprb(INFO, 'OptionsManager', '__init__()', 151)
 
     def loadSetting(self):
         data = self._model.getViewData()
         self._view.setViewData(*data)
-        self._logger.loadSetting()
+        self._logmanager.loadSetting()
+        self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 161)
+
+    def saveSetting(self):
+        share, name, index, timeout, download, upload = self._view.getViewData()
+        option = self._model.setViewData(share, name, index, timeout, download, upload)
+        log = self._logmanager.saveSetting()
+        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 171, option, log)
 
     def enableShare(self, enabled):
         self._view.enableShare(enabled)
@@ -82,17 +86,4 @@ class OptionsManager(unohelper.Base):
 
     def upload(self):
         self._view.setStep(2)
-
-    def _getInfos(self):
-        infos = OrderedDict()
-        infos['dateutil'] =           ('__version__',     '2.8.2')
-        infos['ijson'] =              ('__version__',     '3.2.2')
-        infos['packaging'] =          ('__version__',     '23.1')
-        infos['six'] =                ('__version__',     '1.16.0')
-        return infos
-
-    def _getExceptionMsg(self, e):
-        error = repr(e)
-        trace = repr(traceback.format_exc())
-        return error, trace
 

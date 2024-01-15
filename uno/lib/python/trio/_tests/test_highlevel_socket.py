@@ -1,29 +1,35 @@
+from __future__ import annotations
+
+import errno
+import socket as stdlib_socket
+import sys
+from typing import Sequence
+
 import pytest
 
-import sys
-import socket as stdlib_socket
-import errno
-
-from .. import _core
+from .. import _core, socket as tsocket
+from .._highlevel_socket import *
 from ..testing import (
+    assert_checkpoints,
     check_half_closeable_stream,
     wait_all_tasks_blocked,
-    assert_checkpoints,
 )
-from .._highlevel_socket import *
-from .. import socket as tsocket
+from .test_socket import setsockopt_tests
 
 
-async def test_SocketStream_basics():
+async def test_SocketStream_basics() -> None:
     # stdlib socket bad (even if connected)
-    a, b = stdlib_socket.socketpair()
-    with a, b:
+    stdlib_a, stdlib_b = stdlib_socket.socketpair()
+    with stdlib_a, stdlib_b:
         with pytest.raises(TypeError):
-            SocketStream(a)
+            SocketStream(stdlib_a)  # type: ignore[arg-type]
 
     # DGRAM socket bad
     with tsocket.socket(type=tsocket.SOCK_DGRAM) as sock:
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="^SocketStream requires a SOCK_STREAM socket$"
+        ):
+            # TODO: does not raise an error?
             SocketStream(sock)
 
     a, b = tsocket.socketpair()
@@ -48,11 +54,13 @@ async def test_SocketStream_basics():
             s.setsockopt(tsocket.IPPROTO_TCP, tsocket.TCP_NODELAY, False)
             assert not s.getsockopt(tsocket.IPPROTO_TCP, tsocket.TCP_NODELAY)
 
-            b = s.getsockopt(tsocket.IPPROTO_TCP, tsocket.TCP_NODELAY, 1)
-            assert isinstance(b, bytes)
+            res = s.getsockopt(tsocket.IPPROTO_TCP, tsocket.TCP_NODELAY, 1)
+            assert isinstance(res, bytes)
+
+            setsockopt_tests(s)
 
 
-async def test_SocketStream_send_all():
+async def test_SocketStream_send_all() -> None:
     BIG = 10000000
 
     a_sock, b_sock = tsocket.socketpair()
@@ -63,7 +71,7 @@ async def test_SocketStream_send_all():
         # Check a send_all that has to be split into multiple parts (on most
         # platforms... on Windows every send() either succeeds or fails as a
         # whole)
-        async def sender():
+        async def sender() -> None:
             data = bytearray(BIG)
             await a.send_all(data)
             # send_all uses memoryviews internally, which temporarily "lock"
@@ -87,7 +95,7 @@ async def test_SocketStream_send_all():
             # and we break our implementation of send_all, then we'll get some
             # early warning...)
 
-        async def receiver():
+        async def receiver() -> None:
             # Make sure the sender fills up the kernel buffers and blocks
             await wait_all_tasks_blocked()
             nbytes = 0
@@ -107,12 +115,12 @@ async def test_SocketStream_send_all():
         assert await b.receive_some(10) == b""
 
 
-async def fill_stream(s):
-    async def sender():
+async def fill_stream(s: SocketStream) -> None:
+    async def sender() -> None:
         while True:
             await s.send_all(b"x" * 10000)
 
-    async def waiter(nursery):
+    async def waiter(nursery: _core.Nursery) -> None:
         await wait_all_tasks_blocked()
         nursery.cancel_scope.cancel()
 
@@ -121,12 +129,12 @@ async def fill_stream(s):
         nursery.start_soon(waiter, nursery)
 
 
-async def test_SocketStream_generic():
-    async def stream_maker():
+async def test_SocketStream_generic() -> None:
+    async def stream_maker() -> tuple[SocketStream, SocketStream]:
         left, right = tsocket.socketpair()
         return SocketStream(left), SocketStream(right)
 
-    async def clogged_stream_maker():
+    async def clogged_stream_maker() -> tuple[SocketStream, SocketStream]:
         left, right = await stream_maker()
         await fill_stream(left)
         await fill_stream(right)
@@ -135,18 +143,20 @@ async def test_SocketStream_generic():
     await check_half_closeable_stream(stream_maker, clogged_stream_maker)
 
 
-async def test_SocketListener():
+async def test_SocketListener() -> None:
     # Not a Trio socket
     with stdlib_socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         s.listen(10)
         with pytest.raises(TypeError):
-            SocketListener(s)
+            SocketListener(s)  # type: ignore[arg-type]
 
     # Not a SOCK_STREAM
     with tsocket.socket(type=tsocket.SOCK_DGRAM) as s:
         await s.bind(("127.0.0.1", 0))
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(
+            ValueError, match="^SocketListener requires a SOCK_STREAM socket$"
+        ) as excinfo:
             SocketListener(s)
         excinfo.match(r".*SOCK_STREAM")
 
@@ -155,7 +165,9 @@ async def test_SocketListener():
     if sys.platform != "darwin":
         with tsocket.socket() as s:
             await s.bind(("127.0.0.1", 0))
-            with pytest.raises(ValueError) as excinfo:
+            with pytest.raises(
+                ValueError, match="^SocketListener requires a listening socket$"
+            ) as excinfo:
                 SocketListener(s)
             excinfo.match(r".*listen")
 
@@ -188,7 +200,7 @@ async def test_SocketListener():
     await server_stream.aclose()
 
 
-async def test_SocketListener_socket_closed_underfoot():
+async def test_SocketListener_socket_closed_underfoot() -> None:
     listen_sock = tsocket.socket()
     await listen_sock.bind(("127.0.0.1", 0))
     listen_sock.listen(10)
@@ -203,21 +215,50 @@ async def test_SocketListener_socket_closed_underfoot():
             await listener.accept()
 
 
-async def test_SocketListener_accept_errors():
+async def test_SocketListener_accept_errors() -> None:
     class FakeSocket(tsocket.SocketType):
-        def __init__(self, events):
+        def __init__(self, events: Sequence[SocketType | BaseException]) -> None:
             self._events = iter(events)
 
         type = tsocket.SOCK_STREAM
 
         # Fool the check for SO_ACCEPTCONN in SocketListener.__init__
-        def getsockopt(self, level, opt):
+        @overload
+        def getsockopt(self, /, level: int, optname: int) -> int:
+            ...
+
+        @overload
+        def getsockopt(  # noqa: F811
+            self, /, level: int, optname: int, buflen: int
+        ) -> bytes:
+            ...
+
+        def getsockopt(  # noqa: F811
+            self, /, level: int, optname: int, buflen: int | None = None
+        ) -> int | bytes:
             return True
 
-        def setsockopt(self, level, opt, value):
+        @overload
+        def setsockopt(self, /, level: int, optname: int, value: int | Buffer) -> None:
+            ...
+
+        @overload
+        def setsockopt(  # noqa: F811
+            self, /, level: int, optname: int, value: None, optlen: int
+        ) -> None:
+            ...
+
+        def setsockopt(  # noqa: F811
+            self,
+            /,
+            level: int,
+            optname: int,
+            value: int | Buffer | None,
+            optlen: int | None = None,
+        ) -> None:
             pass
 
-        async def accept(self):
+        async def accept(self) -> tuple[SocketType, object]:
             await _core.checkpoint()
             event = next(self._events)
             if isinstance(event, BaseException):
@@ -240,24 +281,28 @@ async def test_SocketListener_accept_errors():
         ]
     )
 
-    l = SocketListener(fake_listen_sock)
+    listener = SocketListener(fake_listen_sock)
 
     with assert_checkpoints():
-        s = await l.accept()
-        assert s.socket is fake_server_sock
+        stream = await listener.accept()
+        assert stream.socket is fake_server_sock
 
-    for code in [errno.EMFILE, errno.EFAULT, errno.ENOBUFS]:
+    for code, match in {
+        errno.EMFILE: r"\[\w+ \d+\] Out of file descriptors$",
+        errno.EFAULT: r"\[\w+ \d+\] attempt to write to read-only memory$",
+        errno.ENOBUFS: r"\[\w+ \d+\] out of buffers$",
+    }.items():
         with assert_checkpoints():
-            with pytest.raises(OSError) as excinfo:
-                await l.accept()
+            with pytest.raises(OSError, match=match) as excinfo:
+                await listener.accept()
             assert excinfo.value.errno == code
 
     with assert_checkpoints():
-        s = await l.accept()
-        assert s.socket is fake_server_sock
+        stream = await listener.accept()
+        assert stream.socket is fake_server_sock
 
 
-async def test_socket_stream_works_when_peer_has_already_closed():
+async def test_socket_stream_works_when_peer_has_already_closed() -> None:
     sock_a, sock_b = tsocket.socketpair()
     with sock_a, sock_b:
         await sock_b.send(b"x")

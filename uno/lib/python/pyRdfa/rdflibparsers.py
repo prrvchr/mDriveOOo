@@ -20,6 +20,8 @@ from rdflib.parser import (
     Parser, StringInputSource, URLInputSource, FileInputSource)
 
 from . import pyRdfa, Options
+from .embeddedRDF import handle_embeddedRDF
+from .state import ExecutionContext
 
 try:
     import html5lib
@@ -53,10 +55,10 @@ def _get_orig_source(source):
 
 
 def _check_error(graph):
-    from pyRdfa import RDFA_Error, ns_rdf
-    from pyRdfa.options import ns_dc
-    for (s, p, o) in graph.triples((None, ns_rdf["type"], RDFA_Error)):
-        for (x, y, msg) in graph.triples((s, ns_dc["description"], None)):
+    from . import RDFA_Error, ns_rdf
+    from .options import ns_dc
+    for s, _p, _o in graph.triples((None, ns_rdf["type"], RDFA_Error)):
+        for _x, _y, msg in graph.triples((s, ns_dc["description"], None)):
             raise Exception("RDFa parsing Error! %s" % msg)
 
 

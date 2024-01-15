@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-import os
 import errno
+import os
+import sys
 from typing import TYPE_CHECKING
-
-from ._abc import Stream
-from ._util import ConflictDetector, Final
 
 import trio
 
+from ._abc import Stream
+from ._util import ConflictDetector, final
+
 if TYPE_CHECKING:
-    from typing_extensions import Final as FinalType
+    from typing import Final as FinalType
+
+assert not TYPE_CHECKING or sys.platform != "win32"
 
 if os.name != "posix":
     # We raise an error here rather than gating the import in lowlevel.py
@@ -81,7 +84,8 @@ class _FdHolder:
             self._raw_close()
 
 
-class FdStream(Stream, metaclass=Final):
+@final
+class FdStream(Stream):
     """
     Represents a stream given the file descriptor to a pipe, TTY, etc.
 

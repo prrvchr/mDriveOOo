@@ -1,16 +1,22 @@
+from __future__ import annotations
+
 import errno
-import select
 import os
+import select
 import sys
+from typing import TYPE_CHECKING
 
 import pytest
 
-from .._core._tests.tutil import gc_collect_harder, skip_if_fbsd_pipes_broken
 from .. import _core
-from ..testing import wait_all_tasks_blocked, check_one_way_stream
+from .._core._tests.tutil import gc_collect_harder, skip_if_fbsd_pipes_broken
+from ..testing import check_one_way_stream, wait_all_tasks_blocked
 
 posix = os.name == "posix"
 pytestmark = pytest.mark.skipif(not posix, reason="posix only")
+
+assert not TYPE_CHECKING or sys.platform == "unix"
+
 if posix:
     from .._unix_pipes import FdStream
 else:
@@ -18,8 +24,7 @@ else:
         from .._unix_pipes import FdStream
 
 
-# Have to use quoted types so import doesn't crash on windows
-async def make_pipe() -> "Tuple[FdStream, FdStream]":
+async def make_pipe() -> tuple[FdStream, FdStream]:
     """Makes a new pair of pipes."""
     (r, w) = os.pipe()
     return FdStream(w), FdStream(r)
@@ -51,7 +56,7 @@ async def make_clogged_pipe():
     return s, r
 
 
-async def test_send_pipe():
+async def test_send_pipe() -> None:
     r, w = os.pipe()
     async with FdStream(w) as send:
         assert send.fileno() == w
@@ -61,7 +66,7 @@ async def test_send_pipe():
         os.close(r)
 
 
-async def test_receive_pipe():
+async def test_receive_pipe() -> None:
     r, w = os.pipe()
     async with FdStream(r) as recv:
         assert (recv.fileno()) == r
@@ -71,15 +76,15 @@ async def test_receive_pipe():
         os.close(w)
 
 
-async def test_pipes_combined():
+async def test_pipes_combined() -> None:
     write, read = await make_pipe()
     count = 2**20
 
-    async def sender():
+    async def sender() -> None:
         big = bytearray(count)
         await write.send_all(big)
 
-    async def reader():
+    async def reader() -> None:
         await wait_all_tasks_blocked()
         received = 0
         while received < count:
@@ -95,33 +100,33 @@ async def test_pipes_combined():
     await write.aclose()
 
 
-async def test_pipe_errors():
+async def test_pipe_errors() -> None:
     with pytest.raises(TypeError):
         FdStream(None)
 
     r, w = os.pipe()
     os.close(w)
     async with FdStream(r) as s:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="^max_bytes must be integer >= 1$"):
             await s.receive_some(0)
 
 
-async def test_del():
+async def test_del() -> None:
     w, r = await make_pipe()
     f1, f2 = w.fileno(), r.fileno()
     del w, r
     gc_collect_harder()
 
-    with pytest.raises(OSError) as excinfo:
+    with pytest.raises(OSError, match="Bad file descriptor$") as excinfo:
         os.close(f1)
     assert excinfo.value.errno == errno.EBADF
 
-    with pytest.raises(OSError) as excinfo:
+    with pytest.raises(OSError, match="Bad file descriptor$") as excinfo:
         os.close(f2)
     assert excinfo.value.errno == errno.EBADF
 
 
-async def test_async_with():
+async def test_async_with() -> None:
     w, r = await make_pipe()
     async with w, r:
         pass
@@ -129,16 +134,16 @@ async def test_async_with():
     assert w.fileno() == -1
     assert r.fileno() == -1
 
-    with pytest.raises(OSError) as excinfo:
+    with pytest.raises(OSError, match="Bad file descriptor$") as excinfo:
         os.close(w.fileno())
     assert excinfo.value.errno == errno.EBADF
 
-    with pytest.raises(OSError) as excinfo:
+    with pytest.raises(OSError, match="Bad file descriptor$") as excinfo:
         os.close(r.fileno())
     assert excinfo.value.errno == errno.EBADF
 
 
-async def test_misdirected_aclose_regression():
+async def test_misdirected_aclose_regression() -> None:
     # https://github.com/python-trio/trio/issues/661#issuecomment-456582356
     w, r = await make_pipe()
     old_r_fd = r.fileno()
@@ -158,7 +163,7 @@ async def test_misdirected_aclose_regression():
 
         # And now set up a background task that's working on the new receive
         # handle
-        async def expect_eof():
+        async def expect_eof() -> None:
             assert await r2.receive_some(10) == b""
 
         async with _core.open_nursery() as nursery:
@@ -176,7 +181,9 @@ async def test_misdirected_aclose_regression():
             os.close(w2_fd)
 
 
-async def test_close_at_bad_time_for_receive_some(monkeypatch):
+async def test_close_at_bad_time_for_receive_some(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # We used to have race conditions where if one task was using the pipe,
     # and another closed it at *just* the wrong moment, it would give an
     # unexpected error instead of ClosedResourceError:
@@ -184,13 +191,13 @@ async def test_close_at_bad_time_for_receive_some(monkeypatch):
     #
     # This tests what happens if the pipe gets closed in the moment *between*
     # when receive_some wakes up, and when it tries to call os.read
-    async def expect_closedresourceerror():
+    async def expect_closedresourceerror() -> None:
         with pytest.raises(_core.ClosedResourceError):
             await r.receive_some(10)
 
     orig_wait_readable = _core._run.TheIOManager.wait_readable
 
-    async def patched_wait_readable(*args, **kwargs):
+    async def patched_wait_readable(*args, **kwargs) -> None:
         await orig_wait_readable(*args, **kwargs)
         await r.aclose()
 
@@ -204,7 +211,7 @@ async def test_close_at_bad_time_for_receive_some(monkeypatch):
             await s.send_all(b"x")
 
 
-async def test_close_at_bad_time_for_send_all(monkeypatch):
+async def test_close_at_bad_time_for_send_all(monkeypatch: pytest.MonkeyPatch) -> None:
     # We used to have race conditions where if one task was using the pipe,
     # and another closed it at *just* the wrong moment, it would give an
     # unexpected error instead of ClosedResourceError:
@@ -212,13 +219,13 @@ async def test_close_at_bad_time_for_send_all(monkeypatch):
     #
     # This tests what happens if the pipe gets closed in the moment *between*
     # when send_all wakes up, and when it tries to call os.write
-    async def expect_closedresourceerror():
+    async def expect_closedresourceerror() -> None:
         with pytest.raises(_core.ClosedResourceError):
             await s.send_all(b"x" * 100)
 
     orig_wait_writable = _core._run.TheIOManager.wait_writable
 
-    async def patched_wait_writable(*args, **kwargs):
+    async def patched_wait_writable(*args, **kwargs) -> None:
         await orig_wait_writable(*args, **kwargs)
         await s.aclose()
 
@@ -251,7 +258,7 @@ async def test_close_at_bad_time_for_send_all(monkeypatch):
     sys.platform.startswith("freebsd"),
     reason="no way to make read() return a bizarro error on FreeBSD",
 )
-async def test_bizarro_OSError_from_receive():
+async def test_bizarro_OSError_from_receive() -> None:
     # Make sure that if the read syscall returns some bizarro error, then we
     # get a BrokenResourceError. This is incredibly unlikely; there's almost
     # no way to trigger a failure here intentionally (except for EBADF, but we
@@ -271,5 +278,5 @@ async def test_bizarro_OSError_from_receive():
 
 
 @skip_if_fbsd_pipes_broken
-async def test_pipe_fully():
+async def test_pipe_fully() -> None:
     await check_one_way_stream(make_pipe, make_clogged_pipe)

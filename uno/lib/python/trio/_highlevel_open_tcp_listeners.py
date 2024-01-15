@@ -1,9 +1,18 @@
+from __future__ import annotations
+
 import errno
+import math
 import sys
-from math import inf
+from typing import TYPE_CHECKING
 
 import trio
+from trio import TaskStatus
+
 from . import socket as tsocket
+from ._deprecate import warn_deprecated
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 if sys.version_info < (3, 11):
     from exceptiongroup import ExceptionGroup
@@ -22,7 +31,7 @@ if sys.version_info < (3, 11):
 # backpressure. If a connection gets stuck waiting in the backlog queue, then
 # from the peer's point of view the connection succeeded but then their
 # send/recv will stall until we get to it, possibly for a long time. OTOH if
-# there isn't room in the backlog queue... then their connect stalls, possibly
+# there isn't room in the backlog queue, then their connect stalls, possibly
 # for a long time, which is pretty much the same thing.
 #
 # A large backlog can also use a bit more kernel memory, but this seems fairly
@@ -36,16 +45,31 @@ if sys.version_info < (3, 11):
 # so this is unnecessary -- we can just pass in "infinity" and get the maximum
 # that way. (Verified on Windows, Linux, macOS using
 # notes-to-self/measure-listen-backlog.py)
-def _compute_backlog(backlog):
-    if backlog is None:
-        backlog = inf
+def _compute_backlog(backlog: int | None) -> int:
     # Many systems (Linux, BSDs, ...) store the backlog in a uint16 and are
     # missing overflow protection, so we apply our own overflow protection.
     # https://github.com/golang/go/issues/5030
+    if backlog == math.inf:
+        backlog = None
+        warn_deprecated(
+            thing="math.inf as a backlog",
+            version="0.23.0",
+            instead="None",
+            issue=2842,
+        )
+    if not isinstance(backlog, int) and backlog is not None:
+        raise TypeError(f"backlog must be an int or None, not {backlog!r}")
+    if backlog is None:
+        return 0xFFFF
     return min(backlog, 0xFFFF)
 
 
-async def open_tcp_listeners(port, *, host=None, backlog=None):
+async def open_tcp_listeners(
+    port: int,
+    *,
+    host: str | bytes | None = None,
+    backlog: int | None = None,
+) -> list[trio.SocketListener]:
     """Create :class:`SocketListener` objects to listen for TCP connections.
 
     Args:
@@ -61,7 +85,7 @@ async def open_tcp_listeners(port, *, host=None, backlog=None):
           :func:`open_tcp_listeners` will bind to both the IPv4 wildcard
           address (``0.0.0.0``) and also the IPv6 wildcard address (``::``).
 
-      host (str, bytes-like, or None): The local interface to bind to. This is
+      host (str, bytes, or None): The local interface to bind to. This is
           passed to :func:`~socket.getaddrinfo` with the ``AI_PASSIVE`` flag
           set.
 
@@ -84,6 +108,9 @@ async def open_tcp_listeners(port, *, host=None, backlog=None):
     Returns:
       list of :class:`SocketListener`
 
+    Raises:
+      :class:`TypeError` if invalid arguments.
+
     """
     # getaddrinfo sometimes allows port=None, sometimes not (depending on
     # whether host=None). And on some systems it treats "" as 0, others it
@@ -92,7 +119,7 @@ async def open_tcp_listeners(port, *, host=None, backlog=None):
     if not isinstance(port, int):
         raise TypeError(f"port must be an int not {port!r}")
 
-    backlog = _compute_backlog(backlog)
+    computed_backlog = _compute_backlog(backlog)
 
     addresses = await tsocket.getaddrinfo(
         host, port, type=tsocket.SOCK_STREAM, flags=tsocket.AI_PASSIVE
@@ -125,7 +152,7 @@ async def open_tcp_listeners(port, *, host=None, backlog=None):
                     sock.setsockopt(tsocket.IPPROTO_IPV6, tsocket.IPV6_V6ONLY, 1)
 
                 await sock.bind(sockaddr)
-                sock.listen(backlog)
+                sock.listen(computed_backlog)
 
                 listeners.append(trio.SocketListener(sock))
             except:
@@ -149,14 +176,14 @@ async def open_tcp_listeners(port, *, host=None, backlog=None):
 
 
 async def serve_tcp(
-    handler,
-    port,
+    handler: Callable[[trio.SocketStream], Awaitable[object]],
+    port: int,
     *,
-    host=None,
-    backlog=None,
-    handler_nursery=None,
-    task_status=trio.TASK_STATUS_IGNORED,
-):
+    host: str | bytes | None = None,
+    backlog: int | None = None,
+    handler_nursery: trio.Nursery | None = None,
+    task_status: TaskStatus[list[trio.SocketListener]] = trio.TASK_STATUS_IGNORED,
+) -> None:
     """Listen for incoming TCP connections, and for each one start a task
     running ``handler(stream)``.
 
@@ -176,11 +203,12 @@ async def serve_tcp(
     connect to it to check that it's working properly, you can use something
     like::
 
+        from trio import SocketListener, SocketStream
         from trio.testing import open_stream_to_socket_listener
 
         async with trio.open_nursery() as nursery:
-            listeners = await nursery.start(serve_tcp, handler, 0)
-            client_stream = await open_stream_to_socket_listener(listeners[0])
+            listeners: list[SocketListener] = await nursery.start(serve_tcp, handler, 0)
+            client_stream: SocketStream = await open_stream_to_socket_listener(listeners[0])
 
             # Then send and receive data on 'client_stream', for example:
             await client_stream.send_all(b"GET / HTTP/1.0\\r\\n\\r\\n")
