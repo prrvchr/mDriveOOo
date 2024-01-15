@@ -1,4 +1,4 @@
-# .github/workflows/dev.yml
+# .github/workflows/fascan.yml
 name: Fluid Attacks Scan
 on: [push, pull_request]
 jobs:
