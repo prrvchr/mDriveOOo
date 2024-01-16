@@ -433,6 +433,7 @@ class DataBase():
         if count > 0:
             call.executeBatch()
         call.close()
+        return count
 
     # Pull procedure
     def pullItems(self, iterator, userid, timestamp, mode=1):

@@ -154,15 +154,16 @@ class Provider(object):
 
     # Method called by Replicator
     def pullNewIdentifiers(self, user):
+        count, msg = 0, ''
         parameter = self.getRequestParameter(user.Request, 'getNewIdentifier', user)
         response = user.Request.execute(parameter)
-        if response.Ok:
-            iterator = self.parseNewIdentifiers(response)
+        if not response.Ok:
+            msg = response.Text
         else:
-            # TODO: raise exception with the right message...
-            self._logger.logprb(SEVERE, 'Replicator', '_checkNewIdentifier', 403, user.Name)
-        user.DataBase.insertIdentifier(iterator, user.Id)
+            iterator = self.parseNewIdentifiers(response)
+            count = user.DataBase.insertIdentifier(iterator, user.Id)
         response.close()
+        return count, msg
 
     def firstPull(self, user):
         datetime = currentDateTimeInTZ()
@@ -306,26 +307,32 @@ class Provider(object):
         return self.mergeNewFolder(user, itemid, response)
 
     def uploadFile(self, code, user, item, data, created, chunk, retry, delay, new=False):
+        newid = None
         method = 'getNewUploadLocation' if new else 'getUploadLocation'
         parameter = self.getRequestParameter(user.Request, method, data)
         response = user.Request.execute(parameter)
         if not response.Ok:
-            msg = response.Text
+            args = code, data.get('Title'), response.Text
             response.close()
-            return None, (code +1, data.get('Title'), msg)
-        location = self.parseUploadLocation(response)
-        if location is None:
-            return None, (code +2, data.get('Title'))
-        parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
-        url = self.SourceURL + g_separator + item
-        response = user.Request.upload(parameter, url, chunk, retry, delay)
-        if not response.Ok:
-            msg = response.Text
-            response.close()
-            return None, (code +3, data.get('Title'), msg)
-        newid = self.updateItemId(user.DataBase, item, response)
-        return newid, (code, data.get('Title'), created, data.get('Size'))
-
+        else:
+            location = self.parseUploadLocation(response)
+            if location is None:
+                args = code + 1, data.get('Title')
+            else:
+                parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
+                url = self.SourceURL + g_separator + item
+                response = user.Request.upload(parameter, url, chunk, retry, delay)
+                if not response.Ok:
+                    args = code + 2, data.get('Title'), response.Text
+                    response.close()
+                elif new:
+                    newid = self.updateItemId(user.DataBase, item, response)
+                    args = code + 3, data.get('Title'), created, data.get('Size')
+                else:
+                    response.close()
+                    newid = item
+                    args = code + 4, data.get('Title'), created, data.get('Size')
+        return newid, args
 
     def updateTitle(self, request, itemid, item):
         parameter = self.getRequestParameter(request, 'updateTitle', item)

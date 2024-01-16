@@ -84,9 +84,9 @@ class Replicator(Thread):
             sync.clear()
             self.start()
         except Exception as e:
-            self._logger.logprb(INFO, 'Replicator', '__init__()', 102, e, traceback.format_exc())
+            self._logger.logprb(INFO, g_basename, '__init__()', 102, e, traceback.format_exc())
         else:
-            self._logger.logprb(INFO, 'Replicator', '__init__()', 101)
+            self._logger.logprb(INFO, g_basename, '__init__()', 101)
 
     def fullPull(self):
         return self._fullPull
@@ -98,23 +98,23 @@ class Replicator(Thread):
 
     def run(self):
         try:
-            self._logger.logprb(INFO, 'Replicator', 'run()', 111, self._provider.Scheme)
+            self._logger.logprb(INFO, g_basename, 'run()', 111, self._provider.Scheme)
             while not self._canceled:
                 timeout = self._getReplicateTimeout()
-                self._logger.logprb(INFO, 'Replicator', 'run()', 112, round(timeout /60))
+                self._logger.logprb(INFO, g_basename, 'run()', 112, timeout // 60)
                 self._sync.wait(timeout)
                 self._synchronize()
                 self._sync.clear()
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Replicator', 'run()', 113, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, g_basename, 'run()', 113, e, traceback.format_exc())
 
     def _synchronize(self):
         policy = self._getPolicy()
         if policy == self._getSynchronizePolicy('NONE_IS_MASTER'):
             return
-        self._logger.logprb(INFO, 'Replicator', '_synchronize()', 121)
+        self._logger.logprb(INFO, g_basename, '_synchronize()', 121)
         if self._provider.isOffLine():
-            self._logger.logprb(INFO, 'Replicator', '_synchronize()', 122)
+            self._logger.logprb(INFO, g_basename, '_synchronize()', 122)
         elif policy == self._getSynchronizePolicy('SERVER_IS_MASTER'):
             if not self._canceled:
                 self._pullUsers()
@@ -125,44 +125,59 @@ class Replicator(Thread):
                 self._pushUsers()
             if not self._canceled:
                 self._pullUsers()
-        self._logger.logprb(INFO, 'Replicator', '_synchronize()', 123)
+        self._logger.logprb(INFO, g_basename, '_synchronize()', 123)
 
     def _pullUsers(self):
         try:
             for user in self._users.values():
                 if self._canceled:
                     break
-                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 131, user.Name)
+                self._logger.logprb(INFO, g_basename, '_pullUsers()', 201, user.Name)
                 # In order to make the creation of files or directories possible quickly,
                 # it is necessary to run the verification of the identifiers first.
                 self._checkNewIdentifier(user)
-                #if not user.Token:
                 if self._isNewUser(user):
                     self._initUser(user)
                 else:
                     self._pullUser(user)
-                self._logger.logprb(INFO, 'Replicator', '_pullUsers()', 132, user.Name)
+                self._logger.logprb(INFO, g_basename, '_pullUsers()', 202, user.Name)
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Replicator', '_pullUsers()', 133, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, g_basename, '_pullUsers()', 203, e, traceback.format_exc())
+
+    def _checkNewIdentifier(self, user):
+        if not self._provider.GenerateIds:
+            user.CanAddChild = True
+            return
+        if self._provider.isOffLine():
+            user.CanAddChild = self.DataBase.countIdentifier(user.Id) > 0
+            return
+        count = self.DataBase.countIdentifier(user.Id)
+        if count < min(self._provider.IdentifierRange):
+            total, msg = self._provider.pullNewIdentifiers(user)
+            if total:
+                self._logger.logprb(INFO, g_basename, '_checkNewIdentifier()', 211, user.Name, count, total)
+            else:
+                self._logger.logprb(INFO, g_basename, '_checkNewIdentifier()', 212, user.Name, msg)
+        # Need to postpone the creation authorization after this verification...
+        user.CanAddChild = True
 
     def _initUser(self, user):
         # This procedure is launched only once for each new user
         # This procedure corresponds to the initial pull for a new User (ie: without Token)
-        self._logger.logprb(INFO, 'Replicator', '_initUser()', 141, user.Name)
+        self._logger.logprb(INFO, g_basename, '_initUser()', 221, user.Name)
         pages, count, token = self._provider.firstPull(user)
         self._provider.initUser(self.DataBase, user, token)
         user.SyncMode = 1
         self._fullPull = True
-        self._logger.logprb(INFO, 'Replicator', '_initUser()', 142, user.Name)
+        self._logger.logprb(INFO, g_basename, '_initUser()', 222, user.Name)
 
     def _pullUser(self, user):
         # This procedure is launched each time the synchronization is started
         # This procedure corresponds to the pull for a User (ie: a Token is required)
-        print("Replicator._pullUser() 1")
         pages, count, token = self._provider.pullUser(user)
         if token:
             user.setToken(token)
-        print("Replicator._pullUser() 2 Items count: %s - Pages count: %s - Token: %s" % (count, pages, token))
+        self._logger.logprb(INFO, g_basename, '_pullUser()', 231, user.Name, count, pages, token)
 
     def _pushUsers(self):
         # This procedure is launched each time the synchronization is started
@@ -171,7 +186,7 @@ class Replicator(Thread):
         try:
             end = currentDateTimeInTZ()
             for user in self._users.values():
-                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 151, user.Name)
+                self._logger.logprb(INFO, g_basename, '_pushUsers()', 301, user.Name)
                 if self._isNewUser(user):
                     self._initUser(user)
                 items = []
@@ -183,25 +198,13 @@ class Replicator(Thread):
                         items.append(newid)
                     else:
                         modified = getDateTimeToString(metadata.get('DateModified'))
-                        self._logger.logprb(SEVERE, 'Replicator', '_pushUsers()', 152, metadata.get('Title'), modified, metadata.get('Id'))
+                        self._logger.logprb(SEVERE, g_basename, '_pushUsers()', 302, metadata.get('Title'), modified, metadata.get('Id'))
                         break
                 if items:
                     self.DataBase.updatePushItems(user, items)
-                self._logger.logprb(INFO, 'Replicator', '_pushUsers()', 153, user.Name)
+                self._logger.logprb(INFO, g_basename, '_pushUsers()', 303, user.Name)
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Replicator', '_pushUsers()', 154, e, traceback.format_exc())
-
-    def _checkNewIdentifier(self, user):
-        if not self._provider.GenerateIds:
-            user.CanAddChild = True
-            return
-        if self._provider.isOffLine():
-            user.CanAddChild = self.DataBase.countIdentifier(user.Id) > 0
-            return
-        if self.DataBase.countIdentifier(user.Id) < min(self._provider.IdentifierRange):
-            self._provider.pullNewIdentifiers(user)
-        # Need to postpone the creation authorization after this verification...
-        user.CanAddChild = True
+            self._logger.logprb(SEVERE, g_basename, '_pushUsers()', 304, e, traceback.format_exc())
 
 
     def _filterParents(self, call, provider, items, childs, roots, start):
@@ -226,28 +229,20 @@ class Replicator(Thread):
             timestamp = item.get('TimeStamp')
             action = item.get('ChangeAction')
             chunk, retry, delay = self._getUploadSetting()
-            print("Replicator._pushItem() 3 Insert/Update Title: %s Id: %s - Action: %s" % (metadata.get('Title'),
-                                                                                 itemid,
-                                                                                 action))
             # If the synchronization of an INSERT or an UPDATE fails
             # then the user's TimeStamp will not be updated
             # INSERT procedures, new files and folders are synced here.
             if action & INSERT:
-                print("Replicator._pushItem() INSERT 1")
                 mediatype = metadata.get('MediaType')
-                print("Replicator._pushItem() INSERT 2")
                 created = getDateTimeToString(metadata.get('DateCreated'))
                 if self._provider.isFolder(mediatype):
-                    print("Replicator._pushItem() INSERT 3")
                     newid = self._provider.createFolder(user, itemid, metadata)
-                    print("Replicator._pushItem() INSERT 4")
-                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', 161, metadata.get('Title'), created)
-                    print("Replicator._pushItem() INSERT 5")
+                    self._logger.logprb(INFO, g_basename, '_pushItem()', 311, metadata.get('Title'), created)
                 elif self._provider.isLink(mediatype):
                     pass
                 elif self._provider.isDocument(mediatype):
-                    newid, args = self._provider.uploadFile(165, user, itemid, metadata, created, chunk, retry, delay, True)
-                    self._logger.logprb(INFO, 'Replicator', '_pushItem()', *args)
+                    newid, args = self._provider.uploadFile(314, user, itemid, menewidtadata, created, chunk, retry, delay, True)
+                    self._logger.logprb(INFO, g_basename, '_pushItem()', *args)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
             elif action & UPDATE:
                 for property in self.DataBase.getPushProperties(user.Id, itemid, start, end):
@@ -256,26 +251,23 @@ class Replicator(Thread):
                     modified = getDateTimeToString(metadata.get('DateModified'))
                     if properties & TITLE:
                         newid = self._provider.updateTitle(user.Request, itemid, metadata)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 170, metadata.get('Title'), modified)
+                        self._logger.logprb(INFO, g_basename, '_pushItem()', 312, metadata.get('Title'), modified)
                     elif properties & CONTENT:
-                        newid, args = self._provider.uploadFile(175, user, itemid, metadata, modified, chunk, retry, delay, False)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', *args)
+                        newid, args = self._provider.uploadFile(314, user, itemid, metadata, modified, chunk, retry, delay, False)
+                        self._logger.logprb(INFO, g_basename, '_pushItem()', *args)
                     elif properties & TRASHED:
                         newid = self._provider.updateTrashed(user.Request, itemid, metadata)
-                        self._logger.logprb(INFO, 'Replicator', '_pushItem()', 172, metadata.get('Title'), modified)
+                        self._logger.logprb(INFO, g_basename, '_pushItem()', 313, metadata.get('Title'), modified)
             # MOVE procedures to follow parent changes of a resource
             elif action & MOVE:
-                print("Replicator._pushItem() MOVE")
                 self.DataBase.getItemParentIds(itemid, metadata, start, end)
                 newid = self._provider.updateParents(user.Request, itemid, metadata)
-                print("Replicator.._pushItem() MOVE ToAdd: %s - ToRemove: %s" % (toadd, toremove))
             elif action & DELETE:
-                print("Replicator._pushItem() DELETE")
                 newid = self._provider.updateTrashed(user.Request, itemid, metadata)
-                self._logger.logprb(INFO, 'Replicator', '_pushItem()', 172, metadata.get('Title'), timestamp)
+                self._logger.logprb(INFO, g_basename, '_pushItem()', 313, metadata.get('Title'), timestamp)
             return newid
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Replicator', '_pushItem()', 179, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, g_basename, '_pushItem()', 319, e, traceback.format_exc())
 
     def _isNewUser(self, user):
         return user.SyncMode == 0
