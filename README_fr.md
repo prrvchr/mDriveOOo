@@ -79,10 +79,10 @@ Si nécessaire, renommez-le avant de l'installer.
 
 - ![mDriveOOo logo][25] Installer l'extension **[mDriveOOo.oxt][26]** [![Version][27]][26]
 
-Redémarrez LibreOffice après l'installation.
-
-**Sous Windows, redémarrer LibreOffice peut ne pas suffire.**  
-Pour vous assurer que LibreOffice redémarre correctement, utilisez le Gestionnaire de tâche de Windows pour vérifier qu'aucun service LibreOffice n'est visible après l'arrêt de LibreOffice.
+Redémarrez LibreOffice après l'installation.  
+**Attention, redémarrer LibreOffice peut ne pas suffire.**
+- **Sous Windows** pour vous assurer que LibreOffice redémarre correctement, utilisez le Gestionnaire de tâche de Windows pour vérifier qu'aucun service LibreOffice n'est visible après l'arrêt de LibreOffice (et tuez-le si ç'est le cas).
+- **Sous Linux ou macOS** vous pouvez également vous assurer que LibreOffice redémarre correctement, en le lançant depuis un terminal avec la commande `soffice` et en utilisant la combinaison de touches `Ctrl + C` si après l'arrêt de LibreOffice, le terminal n'est pas actif (pas d'invité de commande).
 
 ___
 
