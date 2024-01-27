@@ -33,13 +33,16 @@
 
 ## Introduction:
 
-**mDriveOOo** is part of a [Suite][7] of [LibreOffice][8] ~~and/or [OpenOffice][9]~~ extensions allowing to offer you innovative services in these office suites.  
-This extension allows you to work in LibreOffice on your Microsoft oneDrive files, even while offline.
+**mDriveOOo** is part of a [Suite][7] of [LibreOffice][8] ~~and/or [OpenOffice][9]~~ extensions allowing to offer you innovative services in these office suites.
+
+This extension allows you to work in LibreOffice on your Microsoft oneDrive files, even while offline.  
+It uses [Microsoft Graph API][10] to synchronize your remote Microsoft oneDrive files with the help of a local HsqlDB 2.7.2 database.  
+This extension is seen by LibreOffice as a [Content Provider][11] responding to the URL: `vnd-microsoft://*`.
 
 Being free software I encourage you:
-- To duplicate its [source code][10].
+- To duplicate its [source code][12].
 - To make changes, corrections, improvements.
-- To open [issue][11] if needed.
+- To open [issue][13] if needed.
 
 In short, to participate in the development of this extension.
 Because it is together that we can make Free Software smarter.
@@ -49,10 +52,10 @@ ___
 ## Requirement:
 
 The mDriveOOo extension uses the OAuth2OOo extension to work.  
-It must therefore meet the [requirement of the OAuth2OOo extension][12].
+It must therefore meet the [requirement of the OAuth2OOo extension][14].
 
 The mDriveOOo extension uses the jdbcDriverOOo extension to work.  
-It must therefore meet the [requirement of the jdbcDriverOOo extension][13].
+It must therefore meet the [requirement of the jdbcDriverOOo extension][15].
 
 **On Linux and macOS the Python packages** used by the extension, if already installed, may come from the system and therefore **may not be up to date**.  
 To ensure that your Python packages are up to date it is recommended to use the **System Info** option in the extension Options accessible by:  
@@ -60,7 +63,7 @@ To ensure that your Python packages are up to date it is recommended to use the 
 If outdated packages appear, you can update them with the command:  
 `pip install --upgrade <package-name>`
 
-For more information see: [What has been done for version 1.1.0][14].
+For more information see: [What has been done for version 1.1.0][16].
 
 ___
 
@@ -119,7 +122,7 @@ ___
 * **Does not work with OpenOffice** see [bug 128569][28]. Having no solution, I encourage you to install **LibreOffice**.
 
 I encourage you in case of problem :confused:  
-to create an [issue][11]  
+to create an [issue][13]  
 I will try to solve it :smile:
 
 ___
@@ -238,11 +241,13 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [7]: <https://prrvchr.github.io/>
 [8]: <https://www.libreoffice.org/download/download/>
 [9]: <https://www.openoffice.org/download/index.html>
-[10]: <https://github.com/prrvchr/mDriveOOo>
-[11]: <https://github.com/prrvchr/mDriveOOo/issues/new>
-[12]: <https://prrvchr.github.io/OAuth2OOo/#requirement>
-[13]: <https://prrvchr.github.io/jdbcDriverOOo/#requirement>
-[14]: <https://prrvchr.github.io/mDriveOOo/#what-has-been-done-for-version-110>
+[10]: <https://learn.microsoft.com/en-us/graph/api/resources/onedrive?view=graph-rest-1.0>
+[11]: <https://wiki.openoffice.org/wiki/Documentation/DevGuide/UCB/Content_Providers>
+[12]: <https://github.com/prrvchr/mDriveOOo>
+[13]: <https://github.com/prrvchr/mDriveOOo/issues/new>
+[14]: <https://prrvchr.github.io/OAuth2OOo/#requirement>
+[15]: <https://prrvchr.github.io/jdbcDriverOOo/#requirement>
+[16]: <https://prrvchr.github.io/mDriveOOo/#what-has-been-done-for-version-110>
 [17]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.svg#middle>
 [18]: <https://prrvchr.github.io/OAuth2OOo>
 [19]: <https://github.com/prrvchr/OAuth2OOo/releases/latest/download/OAuth2OOo.oxt>
@@ -274,6 +279,6 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [45]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/options/ucb>
 [46]: <https://github.com/prrvchr/mDriveOOo/issues/9>
 [47]: <https://github.com/prrvchr/gDriveOOo/issues/12>
-[48]: <https://github.com/prrvchr/mDriveOOo/tree/master/source/mDriveOOo/requirements.txt>
+[48]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/requirements.txt>
 [49]: <https://peps.python.org/pep-0508/>
 [50]: <https://prrvchr.github.io/mDriveOOo/#requirement>
