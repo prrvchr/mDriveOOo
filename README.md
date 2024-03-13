@@ -242,7 +242,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [3]: <https://prrvchr.github.io/mDriveOOo/README_fr>
 [4]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_en>
 [5]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_en>
-[6]: <https://prrvchr.github.io/mDriveOOo#historical>
+[6]: <https://prrvchr.github.io/mDriveOOo#what-has-been-done-for-version-110>
 [7]: <https://prrvchr.github.io/>
 [8]: <https://www.libreoffice.org/download/download/>
 [9]: <https://www.openoffice.org/download/index.html>
