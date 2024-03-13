@@ -10,7 +10,7 @@
         <OpenOffice.org-minimal-version value="4.1" d:name="OpenOffice.org 4.1"/>
     </dependencies>
     <update-information>
-        <src xlink:href="https://prrvchr.github.io/mDriveOOo/mDriveOOo.update.xml"/>
+        <src xlink:href="https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.update.xml"/>
     </update-information>
     <publisher>
         <name xlink:href="https://prrvchr.github.io/mDriveOOo/" lang="en-US">Microsoft OneDrive for LibreOffice</name>
