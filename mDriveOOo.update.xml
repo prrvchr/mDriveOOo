@@ -27,19 +27,20 @@
 <description
   xmlns="http://openoffice.org/extensions/update/2006"
   xmlns:xlink="http://www.w3.org/1999/xlink">
-    <identifier value="io.github.prrvchr.mDriveOOo" />
-    <version value="1.1.0" />
+    <identifier value="io.github.prrvchr.mDriveOOo"/>
+    <version value="1.1.1"/>
     <update-download>
-        <src xlink:href="https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt" />
+        <src xlink:href="https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt"/>
     </update-download>
     <dependencies xmlns:dep="http://openoffice.org/extensions/description/2006">
-        <dep:OpenOffice.org-minimal-version value="4.0" dep:name="OpenOffice.org 4.0"/>
+        <dep:OpenOffice.org-minimal-version value="4.1" dep:name="OpenOffice.org 4.1"/>
     </dependencies>
     <publisher>
-        <name xlink:href="https://github.com/prrvchr/mDriveOOo" lang="en">mDriveOOo</name>
+        <name xlink:href="https://prrvchr.github.io/mDriveOOo/" lang="en">mDriveOOo</name>
+        <name xlink:href="https://prrvchr.github.io/mDriveOOo/README_fr" lang="fr">mDriveOOo</name>
     </publisher>
     <release-notes>
-        <src xlink:href="https://prrvchr.github.io/mDriveOOo/#historical" lang="en" />
-        <src xlink:href="https://prrvchr.github.io/mDriveOOo/README_fr#historique" lang="fr" />
+        <src xlink:href="https://prrvchr.github.io/mDriveOOo/#what-has-been-done-for-version-111" lang="en"/>
+        <src xlink:href="https://prrvchr.github.io/mDriveOOo/README_fr#ce-qui-a-%C3%A9t%C3%A9-fait-pour-la-version-111" lang="fr"/>
     </release-notes>
 </description>

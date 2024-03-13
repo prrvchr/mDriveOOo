@@ -29,7 +29,7 @@
 
 **The use of this software subjects you to our [Terms Of Use][4] and [Data Protection Policy][5].**
 
-# version [1.1.0][6]
+# version [1.1.1][6]
 
 ## Introduction:
 
@@ -226,7 +226,12 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
   `pip install requirements.txt`
 - Modification of the [Requirement][50] section.
 
-### What remains to be done for version 1.1.0:
+### What has been done for version 1.1.1:
+
+- Fixed a regression preventing the creation of new files.
+- Integration of a fix to workaround the [issue #159988][51].
+
+### What remains to be done for version 1.1.1:
 
 - Add new language for internationalization...
 
@@ -258,7 +263,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [24]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
 [25]: <img/mDriveOOo.svg#middle>
 [26]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.1.0#right>
+[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.1.1#right>
 [28]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
 [29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [30]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
@@ -282,3 +287,4 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [48]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/requirements.txt>
 [49]: <https://peps.python.org/pep-0508/>
 [50]: <https://prrvchr.github.io/mDriveOOo/#requirement>
+[51]: <https://bugs.documentfoundation.org/show_bug.cgi?id=159988>
