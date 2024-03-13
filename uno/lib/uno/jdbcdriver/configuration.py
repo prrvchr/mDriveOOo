@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -31,7 +31,7 @@
 g_extension = 'jdbcDriverOOo'
 g_identifier = 'io.github.prrvchr.%s' % g_extension
 g_service = '%s.Driver' % g_identifier
-g_version = '1.1.0'
+g_version = '1.2.3'
 
 # jdbcDriverOOo resource strings files and folder
 g_resource = 'resource'

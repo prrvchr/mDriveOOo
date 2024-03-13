@@ -33,6 +33,8 @@ import unohelper
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from com.sun.star.uno import Exception as UnoException
+
 from .unotool import getConfiguration
 
 from .configuration import g_identifier
@@ -42,115 +44,117 @@ from .logger import getLogger
 g_basename = 'Replicator'
 
 from threading import Thread
-from threading import Event
 import traceback
 
 
-class Replicator(unohelper.Base):
-    def __init__(self, ctx, database, provider, users):
+class Replicator(Thread):
+    def __init__(self, ctx, database, provider, users, sync):
+        Thread.__init__(self)
         self._ctx = ctx
         self._database = database
         self._provider = provider
         self._config = getConfiguration(ctx, g_identifier, False)
         self._users = users
-        self._started = Event()
-        self._paused = Event()
-        self._disposed = Event()
-        self._thread = Thread(target=self._replicate)
-        self._thread.start()
+        self._sync = sync
+        self._canceled = False
+        self.start()
 
-    # XRestReplicator
     def dispose(self):
-        print("replicator.dispose() 1")
-        self._disposed.set()
-        self._started.set()
-        self._paused.set()
-        self._thread.join()
-        print("replicator.dispose() 2")
+        self._canceled = True
+        self._sync.set()
+        self.join()
 
-    def stop(self):
-        print("replicator.stop() 1")
-        self._started.clear()
-        self._paused.set()
-        print("replicator.stop() 2")
-
-    def start(self):
-        self._started.set()
-        self._paused.set()
-
-    def _canceled(self):
-        return False
-
-    def _getReplicateTimeout(self):
-        return self._config.getByName('ReplicateTimeout')
-
-    def _replicate(self):
-        print("replicator.run()1")
+    def run(self):
+        cls, mtd = 'Replicator', 'run()'
+        logger = getLogger(self._ctx, g_synclog, g_basename)
         try:
-            print("replicator.run()1 begin ****************************************")
-            logger = getLogger(self._ctx, g_synclog, g_basename)
-            while not self._disposed.is_set():
-                print("replicator.run()2 wait to start ****************************************")
-                self._started.wait()
-                if not self._disposed.is_set():
-                    print("replicator.run()3 synchronize started ****************************************")
-                    pages, total = self._synchronize(logger)
-                    logger.logprb(INFO, 'Replicator', '_replicate()', 101, pages, total)
-                    if total > 0:
-                        print("replicator.run()4 synchronize started CardSync.jar")
-                        pages, total = self._finalize(logger)
-                        print("replicator.run()5 synchronize ended CardSync.jar")
-                        logger.logprb(INFO, 'Replicator', '_replicate()', 102, pages, total)
-                    self._database.dispose()
-                    print("replicator.run()6 synchronize ended Pages: %s - Total: %s *******************************************" % (pages, total))
-                    if self._started.is_set():
-                        print("replicator.run()7 start waitting *******************************************")
-                        self._paused.clear()
-                        timeout = self._getReplicateTimeout()
-                        self._paused.wait(timeout)
-                        print("replicator.run()8 end waitting *******************************************")
-            print("replicator.run()9 canceled *******************************************")
+            logger.logprb(INFO, cls, mtd, 101)
+            timeout = self._config.getByName('ReplicateTimeout')
+            while not self._canceled:
+                self._sync.clear()
+                self._sync.wait(timeout)
+                if self._canceled:
+                    continue
+                if not self._hasConnectedUser():
+                    timeout = self._config.getByName('ReplicateTimeout')
+                    logger.logprb(INFO, cls, mtd, 102, timeout // 60)
+                    continue
+                users, pages, total = self._syncCard(logger)
+                logger.logprb(INFO, cls, '_syncCard()', 103, users, pages, total)
+                if total > 0:
+                    self._provider.parseCard(self._database)
+                    if self._provider.supportGroup():
+                        users, pages, total = self._syncGroup(logger)
+                        logger.logprb(INFO, cls, '_syncGroup()', 104, users, pages, total)
+                self._database.dispose()
+                if self._canceled:
+                    continue
+                timeout = self._config.getByName('ReplicateTimeout')
+                logger.logprb(INFO, cls, mtd, 105, timeout // 60)
+            logger.logprb(INFO, cls, mtd, 106)
+        except UnoException as e:
+            logger.logprb(SEVERE, cls, mtd, 107, e.Message)
         except Exception as e:
-            msg = "Replicator run(): Error: %s" % traceback.format_exc()
-            print(msg)
+            logger.logprb(SEVERE, cls, mtd, 108, e, traceback.format_exc())
 
-    def _synchronize(self, logger):
-        pages = count = 0
-        for user in self._users.values():
-            if not user.hasSession():
-                continue
-            if user.isOffLine():
-                logger.logprb(INFO, 'Replicator', '_synchronize()', 111)
-            elif self._canceled():
-                break
-            logger.logprb(INFO, 'Replicator', '_synchronize()', 112, user.Name)
-            for book in user.getBooks():
-                if self._canceled():
+    def _syncCard(self, logger):
+        cls, mtd = 'Replicator', '_syncCard()'
+        users = pages = count = 0
+        try:
+            for user in self._users.values():
+                if self._canceled:
                     break
-                if book.isNew():
-                    print("Replicator._syncUser() New AddressBook Path: %s" % book.Uri)
-                    pages, count = self._provider.firstPullCard(self._database, user, book, pages, count)
+                if user.isOffLine():
+                    logger.logprb(INFO, cls, mtd, 111)
                 else:
-                    pages, count = self._provider.pullCard(self._database, user, book, pages, count)
-            logger.logprb(INFO, 'Replicator', '_synchronize()', 113, user.Name)
-        return pages, count
+                    users += 1
+                    logger.logprb(INFO, cls, mtd, 112, user.Name)
+                    for book in user.getBooks():
+                        if self._canceled:
+                            break
+                        if book.isNew():
+                            pages, count, args = self._provider.firstPullCard(self._database, user, book, pages, count)
+                        else:
+                            pages, count, args = self._provider.pullCard(self._database, user, book, pages, count)
+                        if args:
+                            logger.logprb(SEVERE, *args)
+                    logger.logprb(INFO, cls, mtd, 113, user.Name)
+        except UnoException as e:
+            logger.logprb(SEVERE, cls, mtd, 114, e.Message)
+        except Exception as e:
+            logger.logprb(SEVERE, cls, mtd, 115, e, traceback.format_exc())
+        return users, pages, count
 
-    def _finalize(self, logger):
-        pages = count = 0
-        self._provider.parseCard(self._database)
-        for user in self._users.values():
-            if not user.hasSession():
-                continue
-            if user.isOffLine():
-                logger.logprb(INFO, 'Replicator', '_finalize()', 121)
-            elif self._canceled():
-                break
-            logger.logprb(INFO, 'Replicator', '_finalize()', 122, user.Name)
-            for book in user.getBooks():
-                if self._canceled():
+    def _syncGroup(self, logger):
+        cls, mtd = 'Replicator', '_syncGroup()'
+        users = pages = count = 0
+        try:
+            for user in self._users.values():
+                if self._canceled:
                     break
-                pages, count = self._provider.syncGroups(self._database, user, book, pages, count)
-            logger.logprb(INFO, 'Replicator', '_finalize()', 123, user.Name)
-        self._database.syncGroups()
-        return pages, count
+                if user.isOffLine():
+                    logger.logprb(INFO, cls, mtd, 121)
+                else:
+                    users += 1
+                    logger.logprb(INFO, cls, mtd, 122, user.Name)
+                    for book in user.getBooks():
+                        if self._canceled:
+                            break
+                        pages, count, args = self._provider.syncGroups(self._database, user, book, pages, count)
+                        if args:
+                            logger.logprb(SEVERE, *args)
+                    logger.logprb(INFO, cls, mtd, 123, user.Name)
+            if not self._canceled:
+                self._database.syncGroups()
+        except UnoException as e:
+            logger.logprb(SEVERE, cls, mtd, 124, e.Message)
+        except Exception as e:
+            logger.logprb(SEVERE, cls, mtd, 125, e, traceback.format_exc())
+        return users, pages, count
+
+    def _hasConnectedUser(self):
+        for user in self._users.values():
+            if user.hasSession():
+                return True
+        return False
 

@@ -200,6 +200,7 @@ class DataBase(object):
         return session
 
     def insertUser(self, uri, scheme, server, path, name):
+        metadata = None
         books = []
         call = self._getCall('insertUser')
         call.setString(1, uri)
@@ -208,17 +209,19 @@ class DataBase(object):
         call.setString(4, path)
         call.setString(5, name)
         result = call.executeQuery()
-        user = {'User': call.getInt(6),
-                'Uri': uri,
-                'Scheme': scheme,
-                'Server': server,
-                'Path': path,
-                'Name': name}
-        while result.next():
-            books.append(getDataFromResult(result))
+        user = call.getInt(6)
+        if not call.wasNull():
+            metadata = {'User': user,
+                        'Uri': uri,
+                        'Scheme': scheme,
+                        'Server': server,
+                        'Path': path,
+                        'Name': name}
+            while result.next():
+                books.append(getDataFromResult(result))
         result.close()
         call.close()
-        return user, books
+        return metadata, books
 
     def createUser(self, schema, userid, name, password):
         format = {'Public': 'PUBLIC',
@@ -241,8 +244,8 @@ class DataBase(object):
         statement.close()
 
     def selectUser(self, server, name):
-        books = []
         metadata = None
+        books = []
         call = self._getCall('selectUser')
         call.setString(1, server)
         call.setString(2, name)
@@ -255,8 +258,8 @@ class DataBase(object):
                         'Server': server,
                         'Path': call.getString(6),
                         'Name': name}
-        while result.next():
-            books.append(getDataFromResult(result))
+            while result.next():
+                books.append(getDataFromResult(result))
         result.close()
         call.close()
         return metadata, books
@@ -356,6 +359,7 @@ class DataBase(object):
         while result.next():
             groups.append(getDataFromResult(result))
         print("DataBase._selectChangedGroups() 2 %s" % (groups,))
+        result.close()
         call.close()
         return groups
 
@@ -546,23 +550,14 @@ class DataBase(object):
         self._setBatchModeOff()
         return count
 
-    def mergeGroupData(self, gid, timestamp, iterator):
-        print("Provider.mergeGroupData() 1")
-        count = 0
-        self._setBatchModeOn()
+    def mergeGroupMembers(self, gid, timestamp, members):
         call = self._getCall('mergeGroupMembers')
         call.setInt(1, gid)
         call.setTimestamp(2, timestamp)
-        for members in iterator:
-            call.setArray(3, Array('VARCHAR', tuple(members)))
-            call.addBatch()
-            count += 1
-        if count:
-            call.executeBatch()
+        call.setArray(3, Array('VARCHAR', members))
+        call.executeUpdate()
         call.close()
-        self.Connection.commit()
-        self._setBatchModeOff()
-        return count
+        return 1
 
     def deleteCard(self, urls):
         call = self._getCall('deleteCard')

@@ -67,6 +67,7 @@ class Book(object):
     def __init__(self, ctx, new, **kwargs):
         self._ctx = ctx
         self._new = new
+        self._changed = False
         self._id = kwargs.get('Book')
         self._uri = kwargs.get('Uri')
         self._name = kwargs.get('Name')
@@ -98,4 +99,4 @@ class Book(object):
         return self._name != name
 
     def setName(self, name):
-        self.Name = name
+        self._name = name

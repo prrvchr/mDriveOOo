@@ -1,7 +1,7 @@
 /*
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -293,16 +293,22 @@ public class EventLogger
     }
 
     protected boolean _log(int level,
-                               String clazz,
-                               String method,
-                               String message,
-                               Object... arguments)
+                           String clazz,
+                           String method,
+                           String message,
+                           Object... arguments)
     {
         if (m_xLogger == null) {
             return false;
         }
         if (arguments.length > 0) {
-            message = String.format(message, arguments);
+            try {
+                message = String.format(message, arguments);
+            }
+            catch (java.lang.Exception e){
+                System.out.println("EventLogger._log ERROR" + message);
+                // pass
+            }
         }
         if (clazz != null && method != null) {
             m_xLogger.logp(level, clazz, method, message);

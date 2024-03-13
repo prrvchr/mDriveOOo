@@ -376,14 +376,23 @@ public class UnoHelper
             exception.Context = component;
             exception.SQLState = e.getSQLState();
             exception.ErrorCode = e.getErrorCode();
-            exception.NextException = _getNextSQLException(e.getNextException(), component);
+            SQLException ex = getNextSQLException(e.getNextException(), component);
+            exception.NextException = (ex == null) ? Any.VOID : ex;
         }
         return exception;
     }
 
-    private static Object _getNextSQLException(java.sql.SQLException e, XInterface component)
+    public static SQLException getSQLException(java.lang.Exception e,
+                                               XInterface component)
     {
-        Object exception = Any.VOID;
+        SQLException exception = new SQLException(e.getMessage());
+        exception.Context = component;
+        return exception;
+    }
+
+    private static SQLException getNextSQLException(java.sql.SQLException e, XInterface component)
+    {
+        SQLException exception = null;
         if (e != null) {
             exception = getSQLException(e, component);
         }
@@ -873,6 +882,38 @@ public class UnoHelper
         Object object = UnoHelper.createService(context, service);
         XIntrospection mri = (XIntrospection) UnoRuntime.queryInterface(XIntrospection.class, object);
         mri.inspect(descriptor);
+    }
+
+    public static String getConfigurationOption(XHierarchicalNameAccess config,
+                                                String property,
+                                                String value)
+    {
+        String option = value;
+        try {
+            if (config.hasByHierarchicalName(property)) {
+                option = AnyConverter.toString(config.getByHierarchicalName(property));
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return option;
+    }
+
+    public static boolean getConfigurationOption(XHierarchicalNameAccess config,
+                                                 String property,
+                                                 boolean value)
+    {
+        boolean option = value;
+        try {
+            if (config.hasByHierarchicalName(property)) {
+                option = AnyConverter.toBoolean(config.getByHierarchicalName(property));
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return option;
     }
 
 }

@@ -740,14 +740,18 @@ CREATE PROCEDURE "SelectMaps"()
     # The getTypes query allows to obtain the right label (column) for typed properties
     elif name == 'createSelectTypes':
         query = """\
-CREATE PROCEDURE "SelectTypes"()
+CREATE PROCEDURE "SelectTypes"(IN COMPOSE BOOLEAN)
   SPECIFIC "SelectTypes_1"
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE Rslt CURSOR WITH RETURN FOR 
       SELECT R."Path", R."Name", P."Path", 
-      ARRAY_AGG(JSON_OBJECT(T."Path" || P2."Path": COALESCE(T."Name", '') || P2."Name")) 
+      CASE WHEN COMPOSE THEN 
+        ARRAY_AGG(JSON_OBJECT(T."Path" || P2."Path": COALESCE(T."Name", '') || P2."Name")) 
+      ELSE
+        ARRAY_AGG(JSON_OBJECT(T."Path": COALESCE(T."Name", '') || P2."Name")) 
+      END
       FROM "Resources" AS R 
       INNER JOIN "Properties" AS P ON R."Resource"=P."Resource" 
       INNER JOIN "Resources" AS R2 ON R."Resource"=R2."Resource" 
@@ -795,7 +799,7 @@ CREATE PROCEDURE "SelectFields"()
 
     elif name == 'createSelectGroups':
         query = """\
-CREATE PROCEDURE "SelectGroups"(IN Aid Integer)
+CREATE PROCEDURE "SelectGroups"(IN Aid INTEGER)
   SPECIFIC "SelectGroups_1"
   READS SQL DATA
   DYNAMIC RESULT SETS 1
@@ -830,25 +834,25 @@ CREATE PROCEDURE "MergeGroup"(IN AID VARCHAR(100),
 
     elif name == 'createMergeGroupMembers':
         query = """\
-CREATE PROCEDURE "MergeGroupMembers"(IN Gid INTEGER,
-                                     DateTime TIMESTAMP(6),
-                                     IN Members VARCHAR(100) ARRAY)
+CREATE PROCEDURE "MergeGroupMembers"(IN GID INTEGER,
+                                     IN DATETIME TIMESTAMP(6),
+                                     IN MEMBERS VARCHAR(100) ARRAY)
   SPECIFIC "MergeGroupMembers_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    DECLARE Index INTEGER DEFAULT 1;
-    DECLARE Cid INTEGER DEFAULT 1;
-    DELETE FROM "GroupCards" WHERE "Group"=Gid; 
-    WHILE Index <= CARDINALITY(Members) DO 
-      SELECT "Card" INTO Cid FROM "Cards" WHERE "Uri"=Members[Index];
-      IF Cid IS NOT NULL THEN
-        MERGE INTO "GroupCards" USING (VALUES(Gid,Cid,DateTime))
-          AS vals(x,y,z) ON "Group"=vals.x AND "Card"=vals.y
-            WHEN MATCHED THEN UPDATE SET "Modified"=vals.z
-            WHEN NOT MATCHED THEN INSERT ("Group","Card","Modified")
-              VALUES vals.x,vals.y,vals.z;
+    DECLARE INDEX INTEGER DEFAULT 1;
+    DECLARE CID INTEGER DEFAULT NULL;
+    DELETE FROM "GroupCards" WHERE "Group" = GID; 
+    WHILE INDEX <= CARDINALITY(MEMBERS) DO 
+      SELECT "Card" INTO CID FROM "Cards" WHERE "Uri" = MEMBERS[INDEX];
+      IF CID IS NOT NULL THEN
+        MERGE INTO "GroupCards" USING (VALUES(GID, CID, DATETIME))
+          AS vals(x, y, z) ON "Group" = vals.x AND "Card" = vals.y
+            WHEN MATCHED THEN UPDATE SET "Modified" = vals.z
+            WHEN NOT MATCHED THEN INSERT ("Group", "Card", "Modified")
+              VALUES vals.x, vals.y, vals.z;
       END IF;
-      SET Index = Index + 1;
+      SET INDEX = INDEX + 1;
     END WHILE;
   END"""
 
@@ -983,7 +987,7 @@ CREATE PROCEDURE "MergeCardGroups"(IN Book INTEGER,
     elif name == 'getLists':
         query = 'CALL "SelectLists"()'
     elif name == 'getTypes':
-        query = 'CALL "SelectTypes"()'
+        query = 'CALL "SelectTypes"(?)'
     elif name == 'getMaps':
         query = 'CALL "SelectMaps"()'
     elif name == 'getTmps':

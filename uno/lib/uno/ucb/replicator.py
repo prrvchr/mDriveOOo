@@ -241,7 +241,7 @@ class Replicator(Thread):
                 elif self._provider.isLink(mediatype):
                     pass
                 elif self._provider.isDocument(mediatype):
-                    newid, args = self._provider.uploadFile(314, user, itemid, menewidtadata, created, chunk, retry, delay, True)
+                    newid, args = self._provider.uploadFile(314, user, itemid, metadata, created, chunk, retry, delay, True)
                     self._logger.logprb(INFO, g_basename, '_pushItem()', *args)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
             elif action & UPDATE:

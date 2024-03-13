@@ -41,6 +41,7 @@ from ..logger import LogManager
 
 from ..configuration import g_identifier
 from ..configuration import g_defaultlog
+from ..configuration import g_synclog
 
 from collections import OrderedDict
 import os
@@ -54,21 +55,21 @@ class OptionsManager(unohelper.Base):
         self._model = OptionsModel(ctx)
         timeout, view, enabled = self._model.getViewData()
         self._view = OptionsView(window, timeout, view, enabled)
-        self._logmanager = LogManager(self._ctx, window.Peer, 'requirements.txt', g_identifier, g_defaultlog)
+        self._logmanager = LogManager(self._ctx, window.Peer, 'requirements.txt', g_identifier, g_defaultlog, g_synclog)
         self._logger = logger
-        self._logger.logprb(INFO, 'OptionsManager', '__init__()', 151)
+        self._logger.logprb(INFO, 'OptionsManager', '__init__()', 201)
 
     def loadSetting(self):
         self._view.setTimeout(self._model.getTimeout())
         self._view.setViewName(self._model.getViewName())
         self._logmanager.loadSetting()
-        self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 161)
+        self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 211)
 
     def saveSetting(self):
         timeout, view = self._view.getViewData()
         option = self._model.setViewData(timeout, view)
         log = self._logmanager.saveSetting()
-        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 171, option, log)
+        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 221, option, log)
 
     def viewData(self):
         url = self._model.getDatasourceUrl()

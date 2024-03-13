@@ -37,11 +37,13 @@ from .book import Books
 
 from ..cardtool import getSqlException
 
+from ..unotool import getConnectionMode
+
 from ..dbconfig import g_user
 from ..dbconfig import g_schema
 from ..dbconfig import g_dotcode
 
-from ..unotool import getConnectionMode
+from ..configuration import g_extension
 
 import traceback
 
@@ -57,15 +59,15 @@ class User(object):
         if not new:
             request = provider.getRequest(server, name)
             if request is None:
-                raise getSqlException(ctx, source, 1002, 1105, cls, mtd, name)
+                raise getSqlException(ctx, source, 1002, 1501, cls, mtd, name, g_extension)
         else:
             if self._isOffLine(server):
-                raise getSqlException(ctx, source, 1004, 1108, cls, mtd, name)
+                raise getSqlException(ctx, source, 1004, 1502, cls, mtd, server)
             request = provider.getRequest(server, name)
             if request is None:
-                raise getSqlException(ctx, source, 1002, 1105, cls, mtd, name)
-            self._metadata, books = self._getUserData(ctx, source, cls, mtd, database,
-                                                      provider, request, scheme, server, name, pwd)
+                raise getSqlException(ctx, source, 1002, 1501, cls, mtd, name, g_extension)
+            self._metadata, books = self._getUserData(ctx, source, cls, database, provider,
+                                                      request, scheme, server, name, pwd)
             database.createUser(self.getSchema(), self.Id, name, '')
         self.Request = request
         self._books = Books(ctx, books, new)
@@ -99,7 +101,7 @@ class User(object):
         return self.Scheme + self.Server + self.Path
 
     def isOnLine(self):
-        return getConnectionMode(self._ctx, self.Server) != OFFLINE
+        return self._isOnLine(self.Server)
     def isOffLine(self):
         return self._isOffLine(self.Server)
 
@@ -132,12 +134,15 @@ class User(object):
     def getBooks(self):
         return self._books.getBooks()
 
-    def _getUserData(self, ctx, source, cls, mtd, database, provider, request, scheme, server, name, pwd):
-        data = provider.insertUser(database, request, scheme, server, name, pwd)
-        if data is None:
-            raise getSqlException(ctx, source, 1006, 1107, cls, mtd, name)
-        return data
+    def _getUserData(self, ctx, source, cls, database, provider, request, scheme, server, name, pwd):
+        metadata, books = provider.insertUser(source, database, request, scheme, server, name, pwd)
+        if metadata is None:
+            raise getSqlException(ctx, source, 1005, 1503, cls, '_getUserData', name)
+        return metadata, books
 
     def _isOffLine(self, server):
         return getConnectionMode(self._ctx, server) != ONLINE
+
+    def _isOnLine(self, server):
+        return getConnectionMode(self._ctx, server) != OFFLINE
 

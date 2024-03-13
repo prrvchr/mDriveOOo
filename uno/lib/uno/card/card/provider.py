@@ -45,23 +45,41 @@ class Provider(object):
     def __init__(self, ctx):
         self._ctx = ctx
 
-    @property
-    def DateTimeFormat(self):
-        return '%Y-%m-%dT%H:%M:%SZ'
-
+    # Currently only vCardOOo supports multiple address books
     def supportAddressBook(self):
         return False
 
+    # Currently only vCardOOo does not supports group
+    def supportGroup(self):
+        return True
+
     def parseDateTime(self, timestamp):
-        return getDateTimeFromString(timestamp, self.DateTimeFormat)
+        datetime = uno.createUnoStruct('com.sun.star.util.DateTime')
+        try:
+            dt = parser.parse(timestamp)
+        except parser.ParserError:
+            pass
+        else:
+            datetime.Year = dt.year
+            datetime.Month = dt.month
+            datetime.Day = dt.day
+            datetime.Hours = dt.hour
+            datetime.Minutes = dt.minute
+            datetime.Seconds = dt.second
+            datetime.NanoSeconds = dt.microsecond * 1000
+            datetime.IsUTC = dt.tzinfo == tz.tzutc()
+        return datetime
+
+    # Method called from User.__init__()
+    # This main method call Request with OAuth2 mode
+    def getRequest(self, url, name):
+        return getRequest(self._ctx, url, name)
 
     # Need to be implemented method
-    def insertUser(self, database, request, scheme, server, name, pwd):
+    def insertUser(self, source, database, request, scheme, server, name, pwd):
         raise NotImplementedError
 
-    def getRequest(self, url, user):
-        return getRequest(self._ctx, url, user)
-
+    # Method called from DataSource.getConnection()
     def initAddressbooks(self, source, database, user):
         raise NotImplementedError
 
@@ -88,7 +106,7 @@ class Provider(object):
         print("Provider.initUserBooks() 4")
         if not count:
             cls, mtd = 'Provider', 'initUserBooks()'
-            raise getSqlException(self._ctx, source, 1006, 1109, cls, mtd, user.Name, user.Server)
+            raise getSqlException(self._ctx, source, 1006, 1611, cls, mtd, user.Name, user.Server)
         if modified and self.supportAddressBook():
             database.initAddressbooks(user)
 
@@ -104,7 +122,20 @@ class Provider(object):
     def parseCard(self, database):
         raise NotImplementedError
 
+    def raiseForStatus(self, source, response, mtd, code, parameter, user):
+        status = response.StatusCode
+        msg = response.Text
+        response.close()
+        raise getSqlException(self._ctx, source, code, 1601, 'Provider', mtd,
+                              parameter.Name, status, user, parameter.Url, msg)
+
+    def getLoggerArgs(self, response, mtd, parameter, user):
+        status = response.StatusCode
+        msg = response.Text
+        response.close()
+        return ['Provider', mtd, 201, parameter.Name, status, user, parameter.Url, msg]
+
     # Can be overwritten method
     def syncGroups(self, database, user, addressbook, pages, count):
-        pass
+        return pages, count, None
 

@@ -1,7 +1,7 @@
 /*
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -84,23 +84,6 @@ public class ResourceBasedEventLogger
             throw new RuntimeException(e);
         }
     }
-    
-    /**
-     * Logs a given resource id with its arguments, without the caller's class and method.
-     * @param level the log level
-     * @param id the resource ID of the message to log
-     * @param arguments the arguments to log, which are converted to strings and replace $1$, $2$, up to $n$ in the message
-     * @return whether logging succeeded
-     */
-    public boolean log(int level,
-                       int id,
-                       Object... arguments)
-    {
-        if (isLoggable(level)) {
-            return _log(level, null, null, loadStringMessage(id), arguments);
-        }
-        return false;
-    }
 
     /**
      * Logs a given message, without the caller's class and method.
@@ -118,6 +101,43 @@ public class ResourceBasedEventLogger
     }
 
     /**
+     * Logs a given message with its arguments, with the caller's class and method
+     * taken from a (relatively costly!) stack trace.
+     * @param level the log level
+     * @param class name who log this message
+     * @param method name who log this message
+     * @param message the message to log
+     * @return whether logging succeeded
+     */
+    public boolean logp(int level,
+                        String cls,
+                        String method,
+                        String message)
+    {
+        if (isLoggable(level)) {
+            return _log(level, cls, method, message);
+        }
+        return false;
+    }
+
+    /**
+     * Logs a given resource bundle id with its arguments, without the caller's class and method.
+     * @param level the log level
+     * @param id the resource ID of the message to log
+     * @param arguments the arguments to log, which are converted to strings and replace $1$, $2$, up to $n$ in the message
+     * @return whether logging succeeded
+     */
+    public boolean logrb(int level,
+                         int id,
+                         Object... arguments)
+    {
+        if (isLoggable(level)) {
+            return _log(level, null, null, loadStringMessage(id), arguments);
+        }
+        return false;
+    }
+
+    /**
      * Logs a given resource id with its arguments, with the caller's class and method
      * taken from a (relatively costly!) stack trace.
      * @param level the log level
@@ -125,7 +145,7 @@ public class ResourceBasedEventLogger
      * @param arguments the arguments to log, which are converted to strings and replace $1$, $2$, up to $n$ in the message
      * @return whether logging succeeded
      */
-    public boolean logp(int level,
+    public boolean logprb(int level,
                         int id,
                         Object... arguments)
     {
@@ -136,15 +156,52 @@ public class ResourceBasedEventLogger
         return false;
     }
 
-    protected boolean logp(int level,
-                           StackTraceElement caller,
-                           int id,
-                           Object... arguments)
+
+    /**
+     * Logs a given message with its arguments, with the caller's class and method
+     * taken from a (relatively costly!) stack trace.
+     * @param level the log level
+     * @param class name who log this message
+     * @param method name who log this message
+     * @param id the resource string id to log
+     * @param arguments the arguments to log, which are converted to strings and replace $1$, $2$, up to $n$ in the message
+     * @return whether logging succeeded
+     */
+    public boolean logprb(int level,
+                          String cls,
+                          String method,
+                          int id,
+                          Object...arguments)
+    {
+        if (isLoggable(level)) {
+            return _log(level, cls, method, loadStringMessage(id), arguments);
+        }
+        return false;
+    }
+
+    protected boolean logprb(int level,
+                             StackTraceElement caller,
+                             int id,
+                             Object... arguments)
     {
         if (isLoggable(level)) {
             return _log(level, caller.getClassName(), caller.getMethodName(), loadStringMessage(id), arguments);
         }
         return false;
+    }
+
+    public String getStringResource(int id, Object... arguments)
+    {
+        String message = loadStringMessage(id);
+        if (arguments.length > 0) {
+            try {
+                message = String.format(message, arguments);
+            }
+            catch (java.lang.Exception e) {
+                // pass
+            }
+        }
+        return message;
     }
 
     private String loadStringMessage(int id)
@@ -154,9 +211,9 @@ public class ResourceBasedEventLogger
             message = m_Bundle.loadString(id);
         }
         catch (MissingResourceException | Exception e) {
-            StringWriter error = new StringWriter();
-            e.printStackTrace(new PrintWriter(error));
-            message = String.format("<invalid event resource: '%s:%d'>\n%s", m_basename, id, error.getBuffer().toString());
+            StringWriter writer = new StringWriter();
+            e.printStackTrace(new PrintWriter(writer));
+            message = String.format("<invalid event resource: '%s:%d'>\n%s", m_basename, id, writer.getBuffer().toString());
         }
         return message;
     }
