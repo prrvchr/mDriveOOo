@@ -27,9 +27,14 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from .dbtool import addRole
 from .dbtool import checkDataBase
 from .dbtool import createDataSource
+from .dbtool import createDataBaseTables
+from .dbtool import createDataBaseIndexes
+from .dbtool import createDataBaseForeignKeys
 from .dbtool import createStaticTable
+from .dbtool import createRoleAndPrivileges
 from .dbtool import currentDateTime
 from .dbtool import currentDateTimeInTZ
 from .dbtool import currentUnoDateTime

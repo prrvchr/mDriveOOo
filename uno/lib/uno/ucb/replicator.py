@@ -166,6 +166,7 @@ class Replicator(Thread):
         # This procedure corresponds to the initial pull for a new User (ie: without Token)
         self._logger.logprb(INFO, g_basename, '_initUser()', 221, user.Name)
         pages, count, token = self._provider.firstPull(user)
+        print("Replicator._initUser() Pages: %s - Count: %s - Token : %s" % (pages, count, token))
         self._provider.initUser(self.DataBase, user, token)
         user.SyncMode = 1
         self._fullPull = True

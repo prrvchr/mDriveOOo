@@ -27,147 +27,92 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from com.sun.star.sdbc import SQLException
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .unotool import checkVersion
-from .unotool import createService
-from .unotool import getResourceLocation
-from .unotool import getSimpleFile
+from .unotool import getPropertyValueSet
 
-from .dbconfig import g_path
-from .dbconfig import g_version
+from .dbconfig import g_catalog
+from .dbconfig import g_schema
+from .dbconfig import g_rowversion
 from .dbconfig import g_role
-from .dbconfig import g_csv
+from .dbconfig import g_sep
+from .dbconfig import g_typeinfo
+from .dbconfig import g_privilege
 
-from .dbtool import registerDataSource
-from .dbtool import executeQueries
-from .dbtool import executeSqlQueries
-from .dbtool import getDataSourceConnection
-from .dbtool import getDataSourceCall
-from .dbtool import getSequenceFromResult
-from .dbtool import getDataFromResult
-from .dbtool import createDataSource
-from .dbtool import checkDataBase
+from .dbtool import addRole
 from .dbtool import createStaticTable
+from .dbtool import createDataBaseTables
+from .dbtool import createDataBaseIndexes
+from .dbtool import createDataBaseForeignKeys
+from .dbtool import createRoleAndPrivileges
+from .dbtool import executeQueries
+from .dbtool import getDataSourceCall
+from .dbtool import getDataSourceConnection
 
 from .dbqueries import getSqlQuery
 
-from .configuration import g_scheme
 from .configuration import g_separator
+
+from .dbconfig import g_csv
 
 import traceback
 
+def getDataBaseConnection(ctx, url, user, pwd, new):
+    infos = _getConnectionInfos() if new else None
+    return getDataSourceConnection(ctx, url, user, pwd, new, infos)
 
-def getDataSourceUrl(ctx, dbname, plugin, register):
-    error = None
-    url = getResourceLocation(ctx, plugin, g_path)
-    odb = '%s/%s.odb' % (url, dbname)
-    dbcontext = createService(ctx, 'com.sun.star.sdb.DatabaseContext')
-    if not getSimpleFile(ctx).exists(odb):
-        datasource = createDataSource(dbcontext, url, dbname)
-        error = createDataBase(ctx, datasource, url, dbname)
-        if error is None:
-            datasource.DatabaseDocument.storeAsURL(odb, ())
-    if error is None and register:
-        registerDataSource(dbcontext, dbname, odb)
-    return url, error
+def createDataBase(ctx, logger, connection, odb, version):
+    print("dbint.createDataBase() 1")
+    logger.logprb(INFO, 'DataBase', '_createDataBase()', 411, version)
+    statement = connection.createStatement()
+    createStaticTable(ctx, statement, _getStaticTables(), g_csv, True)
+    tables = connection.getTables()
+    _createTables(ctx, connection, statement, tables)
+    _createIndexes(ctx, statement, tables)
+    _createForeignKeys(ctx, statement, tables)
+    print("dbint.createDataBase() 2")
+    _createRoleAndPrivileges(ctx, statement, tables, connection.getGroups())
+    print("dbint.createDataBase() 3")
+    executeQueries(ctx, statement, _getQueries())
+    statement.close()
+    connection.getParent().DatabaseDocument.storeAsURL(odb, ())
+    logger.logprb(INFO, 'DataBase', '_createDataBase()', 412)
+    print("dbint.createDataBase() 4")
 
-def createDataBase(ctx, connection):
-    version, error = checkDataBase(ctx, connection)
-    if error is None:
-        statement = connection.createStatement()
-        createStaticTable(statement, getStaticTables(), g_csv, True)
-        tables, statements = getTablesAndStatements(statement, version)
-        executeSqlQueries(statement, tables)
-        executeQueries(statement, getViews())
-    return error
+def _getConnectionInfos():
+    infos = {'TypeInfoSettings': g_typeinfo, 'TablePrivilegesSettings': g_privilege}
+    return getPropertyValueSet(infos)
 
-def _getTableNames(ctx, statement):
-    result = statement.executeQuery(getSqlQuery(ctx, 'getTableNames'))
-    names = getSequenceFromResult(result)
-    result.close()
-    return names
-
-def getTablesAndStatements(ctx, statement, version=g_version):
-    tables = []
-    statements = []
-    call = getDataSourceCall(ctx, statement.getConnection(), 'getTables')
-    for table in _getTableNames(ctx, statement):
-        view = False
-        versioned = False
-        columns = []
-        primary = []
-        unique = []
-        constraint = []
-        call.setString(1, table)
-        result = call.executeQuery()
-        while result.next():
-            data = getDataFromResult(result)
-            view = data.get('View')
-            versioned = data.get('Versioned')
-            column = data.get('Column')
-            definition = '"%s"' % column
-            definition += ' %s' % data.get('Type')
-            default = data.get('Default')
-            definition += ' DEFAULT %s' % default if default else ''
-            options = data.get('Options')
-            definition += ' %s' % options if options else ''
-            columns.append(definition)
-            if data.get('Primary'):
-                primary.append('"%s"' % column)
-            if data.get('Unique'):
-                unique.append({'Table': table, 'Column': column})
-            if data.get('ForeignTable') and data.get('ForeignColumn'):
-                constraint.append({'Table': table,
-                                   'Column': column,
-                                   'ForeignTable': data.get('ForeignTable'),
-                                   'ForeignColumn': data.get('ForeignColumn')})
-        if primary:
-            columns.append(getSqlQuery(ctx, 'getPrimayKey', primary))
-        for format in unique:
-            columns.append(getSqlQuery(ctx, 'getUniqueConstraint', format))
-        for format in constraint:
-            columns.append(getSqlQuery(ctx, 'getForeignConstraint', format))
-        if checkVersion(version, g_version) and versioned:
-            columns.append(getSqlQuery(ctx, 'getPeriodColumns'))
-        format = (table, ','.join(columns))
-        query = getSqlQuery(ctx, 'createTable', format)
-        if checkVersion(version, g_version) and versioned:
-            query += getSqlQuery(ctx, 'getSystemVersioning')
-        tables.append(query)
-        if view:
-            typed = False
-            for format in constraint:
-                if format['Column'] == 'Type':
-                    typed = True
-                    break
-            format = {'Table': table}
-            if typed:
-                merge = getSqlQuery(ctx, 'createTypedDataMerge', format)
-            else:
-                merge = getSqlQuery(ctx, 'createUnTypedDataMerge', format)
-            statements.append(merge)
-    call.close()
-    return tables, statements
-
-def getStaticTables():
+def _getStaticTables():
     tables = ('Tables',
               'Columns',
               'TableColumn',
+              'ForeignKeys',
+              'Indexes',
+              'Privileges',
               'Settings')
     return tables
 
-def getQueries():
-    return (('createRole',{'Role': g_role}),
-            ('grantPrivilege',{'Privilege':'SELECT,UPDATE','Table': 'Users', 'Role': g_role}),
-            ('grantPrivilege',{'Privilege':'SELECT,INSERT,DELETE','Table': 'Identifiers', 'Role': g_role}),
-            ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Items', 'Role': g_role}),
-            ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Parents', 'Role': g_role}),
-            ('grantPrivilege',{'Privilege':'SELECT,INSERT,UPDATE,DELETE','Table': 'Capabilities', 'Role': g_role}),
+def _createTables(ctx, connection, statement, tables):
+    call = getDataSourceCall(ctx, connection, 'getTables')
+    query = getSqlQuery(ctx, 'getTableNames')
+    createDataBaseTables(statement, tables, call, query, g_rowversion)
 
-            ('createGetTitle',{'Role': g_role}),
+def _createIndexes(ctx, statement, tables):
+    query = getSqlQuery(ctx, 'getIndexes')
+    createDataBaseIndexes(statement, tables, query)
+
+def _createForeignKeys(ctx, statement, tables):
+    query = getSqlQuery(ctx, 'getForeignKeys')
+    createDataBaseForeignKeys(statement, tables, query)
+
+def _createRoleAndPrivileges(ctx, statement, tables, groups):
+    query = getSqlQuery(ctx, 'getPrivileges')
+    createRoleAndPrivileges(statement, tables, groups, query)
+
+def _getQueries():
+    return (('createGetTitle',{'Role': g_role}),
             ('createGetUniqueName',{'Role': g_role, 'Prefix': ' ~', 'Suffix': ''}),
 
             ('createChildView',{'Role': g_role}),

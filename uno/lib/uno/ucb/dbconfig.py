@@ -38,4 +38,30 @@ g_shutdown = ';shutdown=true'
 g_csv = '%s.csv;fs=|;ignore_first=true;encoding=UTF-8;quoted=true'
 g_version = '2.5.1'
 g_role = 'FrontOffice'
+g_catalog = 'PUBLIC'
+g_schema = 'PUBLIC'
+g_rowversion = ('GENERATED ALWAYS AS ROW START', 'GENERATED ALWAYS AS ROW END')
+g_sep = '.'
 g_dba = 'AD'
+# XXX: If we want to be able to adjust the temporal
+# XXX: SQL type we need to pass there settings
+g_typeinfo = ('Column(1) = TIME', 'Column(6) = SCALE',
+              'Column(1) = TIME', 'Column(14) = 0',
+              'Column(1) = TIME', 'Column(15) = 6',
+              'Column(1) = TIMESTAMP', 'Column(6) = SCALE',
+              'Column(1) = TIMESTAMP', 'Column(14) = 0',
+              'Column(1) = TIMESTAMP', 'Column(15) = 6',
+              'Column(1) = TIME WITH TIME ZONE', 'Column(6) = SCALE',
+              'Column(1) = TIME WITH TIME ZONE', 'Column(14) = 0',
+              'Column(1) = TIME WITH TIME ZONE', 'Column(15) = 6',
+              'Column(1) = TIMESTAMP WITH TIME ZONE', 'Column(6) = SCALE',
+              'Column(1) = TIMESTAMP WITH TIME ZONE', 'Column(12) = true',
+              'Column(1) = TIMESTAMP WITH TIME ZONE', 'Column(14) = 0',
+              'Column(1) = TIMESTAMP WITH TIME ZONE', 'Column(15) = 6')
+# XXX: If we want Base show only there privileges
+# XXX: we need to pass there settings
+g_privilege = ('SELECT', '1',
+               'INSERT', '2',
+               'UPDATE', '4',
+               'DELETE', '8',
+               'REFERENCES', '128')

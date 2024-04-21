@@ -267,6 +267,7 @@ class User():
 
     def getChildren(self, authority, itemid, properties):
         scheme = self._getContentScheme(authority)
+        print("User.getChildren() itemid: %s - properties: %s - mode: %s - scheme: %s" % (itemid, properties, self.SessionMode, scheme))
         return self.DataBase.getChildren(itemid, properties, self.SessionMode, scheme)
 
     def updateConnectionMode(self, itemid, mode):

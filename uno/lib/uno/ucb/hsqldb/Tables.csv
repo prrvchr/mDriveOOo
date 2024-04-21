@@ -1,6 +1,6 @@
-Table|Name|Identity|View|Versioned
-0|Users|0||false
-1|Items|5||true
-2|Parents|||true
-3|Capabilities|||true
-4|Identifiers|||false
+Table|Catalog|Schema|Name|Identity|View
+0|PUBLIC|PUBLIC|Users|0|
+1|PUBLIC|PUBLIC|Items|5|
+2|PUBLIC|PUBLIC|Parents||
+3|PUBLIC|PUBLIC|Capabilities||
+4|PUBLIC|PUBLIC|Identifiers||

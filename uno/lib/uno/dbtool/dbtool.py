@@ -32,6 +32,13 @@ import uno
 from com.sun.star.sdbc import SQLException
 from com.sun.star.sdbc import SQLWarning
 
+from com.sun.star.sdbc.KeyRule import CASCADE
+
+from com.sun.star.sdbcx import PrivilegeObject
+
+from com.sun.star.sdbcx.KeyType import PRIMARY
+from com.sun.star.sdbcx.KeyType import FOREIGN
+
 from com.sun.star.sdb.CommandType import TABLE
 
 from com.sun.star.sdbc.DataType2 import BIT
@@ -103,9 +110,10 @@ def getConnectionUrl(ctx, path):
     location = getResourceLocation(ctx, g_identifier, path)
     return getUrlPresentation(ctx, location)
 
-def getDataSourceConnection(ctx, url, name='', password='', create=True, isolated=True):
+def getDataSourceConnection(ctx, url, name='', password='', create=True, infos=None, isolated=True):
     if create:
-        datasource = createDataSource(ctx, url)
+        # XXX: The connection infos must be given to the creation
+        datasource = createDataSource(ctx, url, infos)
     else:
         datasource = getDataSource(ctx, url)
     if isolated:
@@ -114,13 +122,13 @@ def getDataSourceConnection(ctx, url, name='', password='', create=True, isolate
         connection = datasource.getConnection(name, password)
     return connection
 
-def createDataSource(ctx, url, path=None):
+def createDataSource(ctx, url, infos=None):
     service = 'com.sun.star.sdb.DatabaseContext'
     dbcontext = createService(ctx, service)
     datasource = dbcontext.createInstance()
     datasource.URL = getDataBaseUrl(url)
-    if path is not None:
-        datasource.Settings.JavaDriverClassPath = path
+    if infos is not None:
+        datasource.Info = infos
     return datasource
 
 def getDataSource(ctx, url):
@@ -548,3 +556,193 @@ def _currentDateTime(now, utc=True):
 def _getTimeZone():
     offset = time.timezone if time.localtime().tm_isdst else time.altzone
     return offset / 60 * -1
+
+def createDataBaseTables(statement, tables, call, query, rowversion):
+    for catalog, schema, name in _getTableNames(statement, query):
+        table = tables.createDataDescriptor()
+        table.setPropertyValue('CatalogName', catalog)
+        table.setPropertyValue('SchemaName', schema)
+        table.setPropertyValue('Name', name)
+        columns = table.getColumns()
+        primarykeys = []
+        # FIXME: Here we assume that only two columns (START and END)
+        # FIXME: are required to declare a system versioning table
+        index = 0
+        call.setString(1, catalog)
+        call.setString(2, schema)
+        call.setString(3, name)
+        result = call.executeQuery()
+        while result.next():
+            column = columns.createDataDescriptor()
+            column.setPropertyValue('Name', result.getString(1))
+            column.setPropertyValue('CatalogName', table.CatalogName)
+            column.setPropertyValue('SchemaName', table.SchemaName)
+            column.setPropertyValue('TypeName', result.getString(2))
+            column.setPropertyValue('Type', result.getInt(3))
+            scale = result.getInt(4)
+            if not result.wasNull():
+                column.setPropertyValue('Scale', scale)
+            nullable = result.getInt(5)
+            if not result.wasNull():
+                column.setPropertyValue('IsNullable', nullable)
+            default = result.getString(6)
+            if not result.wasNull():
+                column.setPropertyValue('DefaultValue', default)
+            column.setPropertyValue('IsRowVersion', result.getBoolean(7))
+            if column.IsRowVersion:
+                column.setPropertyValue('IsAutoIncrement', True)
+                column.setPropertyValue('AutoIncrementCreation', rowversion[index])
+                index = 0 if index else 1
+            pk = result.getBoolean(8)
+            if not result.wasNull() and pk:
+                primarykeys.append(column.Name)
+            columns.appendByDescriptor(column)
+        if primarykeys:
+            _createPrimaryKey(table, primarykeys)
+        tables.appendByDescriptor(table)
+    call.close()
+
+def _getTableNames(statement, query):
+    result = statement.executeQuery(query)
+    while result.next():
+        yield result.getString(1), result.getString(2), result.getString(3)
+    result.close()
+
+def _createPrimaryKey(table, primarykeys):
+    keys = table.getKeys()
+    key = keys.createDataDescriptor()
+    key.setPropertyValue('Name', 'PK_%s' % table.Name)
+    key.setPropertyValue("Type", PRIMARY)
+    _addColums(key.getColumns(), primarykeys)
+    keys.appendByDescriptor(key)
+
+def createDataBaseIndexes(statement, tables, query):
+    i = 1
+    result = statement.executeQuery(query)
+    while result.next():
+        catalog = result.getString(1)
+        if result.wasNull():
+            continue
+        schema = result.getString(2)
+        if result.wasNull():
+            continue
+        name = result.getString(3)
+        if result.wasNull():
+            continue
+        fullname = catalog + '.' + schema + '.' + name
+        if not tables.hasByName(fullname):
+            continue
+        table = tables.getByName(fullname)
+        columns = result.getArray(4)
+        if result.wasNull():
+            continue
+        indexes = table.getIndexes()
+        index = indexes.createDataDescriptor()
+        index.setPropertyValue('Name', 'IDX_%s_%s' % (table.Name, i))
+        i += 1
+        _addColums(index.getColumns(), columns.getArray(None))
+        indexes.appendByDescriptor(index)
+    result.close()
+
+def createDataBaseForeignKeys(statement, tables, query):
+    i = 1
+    result = statement.executeQuery(query)
+    while result.next():
+        catalog = result.getString(1)
+        if result.wasNull():
+            continue
+        schema = result.getString(2)
+        if result.wasNull():
+            continue
+        name = result.getString(3)
+        if result.wasNull():
+            continue
+        fullname = catalog + '.' + schema + '.' + name
+        if not tables.hasByName(fullname):
+            continue
+        column = result.getString(4)
+        if result.wasNull():
+            continue
+        fcatalog = result.getString(5)
+        if result.wasNull():
+            continue
+        fschema = result.getString(6)
+        if result.wasNull():
+            continue
+        fname = result.getString(7)
+        if result.wasNull():
+            continue
+        referencedtable = fcatalog + '.' + fschema + '.' + fname
+        if not tables.hasByName(referencedtable):
+            continue
+        updaterule = result.getInt(8)
+        if result.wasNull():
+            continue
+        deleterule = result.getInt(9)
+        if result.wasNull():
+            continue
+        relatedcolumn = result.getString(10)
+        if result.wasNull():
+            continue
+        table = tables.getByName(fullname)
+        keys = table.getKeys()
+        key = keys.createDataDescriptor()
+        key.setPropertyValue('Name', 'FK_%s_%s' % (table.Name, i))
+        key.setPropertyValue('Type', FOREIGN)
+        key.setPropertyValue('ReferencedTable', referencedtable)
+        key.setPropertyValue('UpdateRule', updaterule)
+        key.setPropertyValue('DeleteRule', deleterule)
+        i += 1
+        _addColum(key.getColumns(), column, relatedcolumn)
+        keys.appendByDescriptor(key)
+    result.close()
+
+def _addColums(columns, items):
+    column = columns.createDataDescriptor()
+    for item in items:
+        column.setPropertyValue('Name', item)
+        columns.appendByDescriptor(column)
+
+def _addColum(columns, name, relatedcolumn):
+    column = columns.createDataDescriptor()
+    column.setPropertyValue('Name', name)
+    column.setPropertyValue('RelatedColumn', relatedcolumn)
+    columns.appendByDescriptor(column)
+
+def addRole(groups, role):
+    if not groups.hasByName(role):
+        group = groups.createDataDescriptor()
+        group.Name = role
+        groups.appendByDescriptor(group)
+
+def createRoleAndPrivileges(statement, tables, groups, query):
+    result = statement.executeQuery(query)
+    while result.next():
+        catalog = result.getString(1)
+        if result.wasNull():
+            continue
+        schema = result.getString(2)
+        if result.wasNull():
+            continue
+        name = result.getString(3)
+        if result.wasNull():
+            continue
+        fullname = catalog + '.' + schema + '.' + name
+        if not tables.hasByName(fullname):
+            continue
+        column = result.getString(4)
+        if result.wasNull():
+            column = None
+        role = result.getString(5)
+        if result.wasNull():
+            continue
+        privilege = result.getInt(6)
+        if result.wasNull():
+            continue
+        if not groups.hasByName(role):
+            addRole(groups, role)
+        group = groups.getByName(role)
+        group.grantPrivileges(fullname, _getPrivilegeType(column), privilege)
+
+def _getPrivilegeType(column):
+    return PrivilegeObject.TABLE if column is None else PrivilegeObject.COLUMN

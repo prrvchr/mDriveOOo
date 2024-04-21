@@ -20,3 +20,5 @@ Column|Name
 18|IsReadOnly
 19|IsVersionable
 20|TimeStamp
+21|RowStart
+22|RowEnd

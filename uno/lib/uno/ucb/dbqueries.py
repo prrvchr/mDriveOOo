@@ -43,12 +43,13 @@ def getSqlQuery(ctx, name, format=None):
 # Create Static Table Queries
     if name == 'createTableTables':
         c1 = '"Table" INTEGER NOT NULL PRIMARY KEY'
-        c2 = '"Name" VARCHAR(100) NOT NULL'
-        c3 = '"Identity" INTEGER DEFAULT NULL'
-        c4 = '"View" BOOLEAN DEFAULT TRUE'
-        c5 = '"Versioned" BOOLEAN DEFAULT FALSE'
-        k1 = 'CONSTRAINT "UniqueTablesName" UNIQUE("Name")'
-        c = (c1, c2, c3, c4, c5, k1)
+        c2 = '"Catalog" VARCHAR(100) NOT NULL'
+        c3 = '"Schema" VARCHAR(100) NOT NULL'
+        c4 = '"Name" VARCHAR(100) NOT NULL'
+        c5 = '"Identity" INTEGER DEFAULT NULL'
+        c6 = '"View" BOOLEAN DEFAULT TRUE'
+        k1 = 'CONSTRAINT "UniqueTablesName" UNIQUE("Catalog", "Schema", "Name")'
+        c = (c1, c2, c3, c4, c5, c6, k1)
         query = 'CREATE TEXT TABLE "Tables"(%s);' % ','.join(c)
     elif name == 'createTableColumns':
         c1 = '"Column" INTEGER NOT NULL PRIMARY KEY'
@@ -59,13 +60,13 @@ def getSqlQuery(ctx, name, format=None):
     elif name == 'createTableTableColumn':
         c1 = '"Table" INTEGER NOT NULL'
         c2 = '"Column" INTEGER NOT NULL'
-        c3 = '"Type" VARCHAR(100) NOT NULL'
-        c4 = '"Default" VARCHAR(100) DEFAULT NULL'
-        c5 = '"Options" VARCHAR(100) DEFAULT NULL'
-        c6 = '"Primary" BOOLEAN NOT NULL'
-        c7 = '"Unique" BOOLEAN NOT NULL'
-        c8 = '"ForeignTable" INTEGER DEFAULT NULL'
-        c9 = '"ForeignColumn" INTEGER DEFAULT NULL'
+        c3 = '"TypeName" VARCHAR(100) NOT NULL'
+        c4 = '"Type" INTEGER NOT NULL'
+        c5 = '"Scale" INTEGER DEFAULT NULL'
+        c6 = '"IsNullable" INTEGER DEFAULT 0 NOT NULL'
+        c7 = '"Default" VARCHAR(100) DEFAULT NULL'
+        c8 = '"IsRowVersion" BOOLEAN DEFAULT NULL'
+        c9 = '"Primary" BOOLEAN DEFAULT NULL'
         k1 = 'PRIMARY KEY("Table","Column")'
         k2 = 'CONSTRAINT "ForeignTableColumnTable" FOREIGN KEY("Table") REFERENCES '
         k2 += '"Tables"("Table") ON DELETE CASCADE ON UPDATE CASCADE'
@@ -73,6 +74,40 @@ def getSqlQuery(ctx, name, format=None):
         k3 += '"Columns"("Column") ON DELETE CASCADE ON UPDATE CASCADE'
         c = (c1, c2, c3, c4, c5, c6, c7, c8, c9, k1, k2, k3)
         query = 'CREATE TEXT TABLE "TableColumn"(%s);' % ','.join(c)
+    elif name == 'createTableForeignKeys':
+        c1 = '"Table" INTEGER NOT NULL'
+        c2 = '"Column" INTEGER NOT NULL'
+        c3 = '"ReferencedTable" INTEGER NOT NULL'
+        c4 = '"RelatedColumn" INTEGER NOT NULL'
+        c5 = '"UpdateRule" INTEGER NOT NULL'
+        c6 = '"DeleteRule" INTEGER NOT NULL'
+        k1 = 'CONSTRAINT "ForeignForeignKeysTable" FOREIGN KEY("Table") REFERENCES '
+        k1 += '"Tables"("Table") ON DELETE CASCADE ON UPDATE CASCADE'
+        k2 = 'CONSTRAINT "ForeignForeignKeysColumn" FOREIGN KEY("Column") REFERENCES '
+        k2 += '"Columns"("Column") ON DELETE CASCADE ON UPDATE CASCADE'
+        c = (c1, c2, c3, c4, c5, c6, k1, k2)
+        query = 'CREATE TEXT TABLE "ForeignKeys"(%s);' % ','.join(c)
+    elif name == 'createTableIndexes':
+        c1 = '"Index" INTEGER NOT NULL'
+        c2 = '"Table" INTEGER NOT NULL'
+        c3 = '"Column" INTEGER NOT NULL'
+        k1 = 'CONSTRAINT "ForeignIndexesTable" FOREIGN KEY("Table") REFERENCES '
+        k1 += '"Tables"("Table") ON DELETE CASCADE ON UPDATE CASCADE'
+        k2 = 'CONSTRAINT "ForeignIndexesColumn" FOREIGN KEY("Column") REFERENCES '
+        k2 += '"Columns"("Column") ON DELETE CASCADE ON UPDATE CASCADE'
+        c = (c1, c2, c3, k1, k2)
+        query = 'CREATE TEXT TABLE "Indexes"(%s);' % ','.join(c)
+    elif name == 'createTablePrivileges':
+        c1 = '"Table" INTEGER NOT NULL'
+        c2 = '"Column" INTEGER DEFAULT NULL'
+        c3 = '"Role" VARCHAR(100) NOT NULL'
+        c4 = '"Privilege" INTEGER NOT NULL'
+        k1 = 'CONSTRAINT "ForeignPrivilegesTable" FOREIGN KEY("Table") REFERENCES '
+        k1 += '"Tables"("Table") ON DELETE CASCADE ON UPDATE CASCADE'
+        k2 = 'CONSTRAINT "ForeignPrivilegesColumn" FOREIGN KEY("Column") REFERENCES '
+        k2 += '"Columns"("Column") ON DELETE CASCADE ON UPDATE CASCADE'
+        c = (c1, c2, c3, c4, k1, k2)
+        query = 'CREATE TEXT TABLE "Privileges"(%s);' % ','.join(c)
     elif name == 'createTableSettings':
         c1 = '"Id" INTEGER NOT NULL PRIMARY KEY'
         c2 = '"Name" VARCHAR(100) NOT NULL'
@@ -216,7 +251,7 @@ GRANT SELECT ON "Children" TO "%(Role)s";''' % format
         query = '''\
 CREATE VIEW "Path" AS WITH RECURSIVE TREE ("UserId", "ParentId", "ItemId", "Path", "Uri") AS (
     SELECT "UserId", CAST(NULL AS VARCHAR(100)), "RootId", '', '' FROM "Users"
-  UNION ALL
+  UNION
     SELECT I."UserId", C."ParentId", C."ItemId", TRIM(T."Path") || T."Uri" || '%(Separator)s', C."Uri"
     FROM "Items" AS I
     INNER JOIN "Children" AS C ON I."ItemId" = C."ItemId"
@@ -226,56 +261,82 @@ CREATE VIEW "Path" AS WITH RECURSIVE TREE ("UserId", "ParentId", "ItemId", "Path
   FROM TREE;
 GRANT SELECT ON "Path" TO "%(Role)s";''' % format
 
-# Create User
-    elif name == 'createUser':
-        q = """\
-CREATE USER "%(User)s" PASSWORD '%(Password)s'"""
-        if format.get('Admin', False):
-            q += ' ADMIN'
-        query = q % format
-
-    elif name == 'createRole':
-        query = 'CREATE ROLE "%(Role)s";' % format
-
-    elif name == 'grantRole':
-        query = 'GRANT "%(Role)s" TO "%(User)s";' % format
-
-    elif name == 'grantPrivilege':
-        query = 'GRANT %(Privilege)s ON TABLE "%(Table)s" TO "%(Role)s";' % format
-
+# set session
     elif name == 'setSession':
         query = "SET SESSION AUTHORIZATION '%s'" % format
 
 # Select Queries
     elif name == 'getTableNames':
-        query = 'SELECT "Name" FROM "Tables" ORDER BY "Table";'
+        query = 'SELECT "Catalog", "Schema", "Name" FROM "Tables" ORDER BY "Table";'
 
     elif name == 'getTables':
-        s1 = '"T"."Table" AS "TableId"'
-        s2 = '"C"."Column" AS "ColumnId"'
-        s3 = '"T"."Name" AS "Table"'
-        s4 = '"C"."Name" AS "Column"'
-        s5 = '"TC"."Type"'
-        s6 = '"TC"."Default"'
-        s7 = '"TC"."Options"'
-        s8 = '"TC"."Primary"'
-        s9 = '"TC"."Unique"'
-        s10 = '"TC"."ForeignTable" AS "ForeignTableId"'
-        s11 = '"TC"."ForeignColumn" AS "ForeignColumnId"'
-        s12 = '"T2"."Name" AS "ForeignTable"'
-        s13 = '"C2"."Name" AS "ForeignColumn"'
-        s14 = '"T"."View"'
-        s15 = '"T"."Versioned"'
-        s = (s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15)
+        c1 = '"C"."Name"'
+        c2 = '"TC"."TypeName"'
+        c3 = '"TC"."Type"'
+        c4 = '"TC"."Scale"'
+        c5 = '"TC"."IsNullable"'
+        c6 = '"TC"."Default"'
+        c7 = '"TC"."IsRowVersion"'
+        c8 = '"TC"."Primary"'
+        c = (c1, c2, c3, c4, c5, c6, c7, c8)
         f1 = '"Tables" AS "T"'
         f2 = 'JOIN "TableColumn" AS "TC" ON "T"."Table"="TC"."Table"'
         f3 = 'JOIN "Columns" AS "C" ON "TC"."Column"="C"."Column"'
-        f4 = 'LEFT JOIN "Tables" AS "T2" ON "TC"."ForeignTable"="T2"."Table"'
-        f5 = 'LEFT JOIN "Columns" AS "C2" ON "TC"."ForeignColumn"="C2"."Column"'
-        w = '"T"."Name"=?'
+        f = (f1, f2, f3)
+        w = '"T"."Catalog"=? AND "T"."Schema"=? AND "T"."Name"=?'
+        s = (','.join(c), ' '.join(f), w)
+        query = 'SELECT %s FROM %s WHERE %s;' % s
+
+    elif name == 'getIndexes':
+        c1 = '"T"."Catalog"'
+        c2 = '"T"."Schema"'
+        c3 = '"T"."Name"'
+        c4 = 'ARRAY_AGG("C"."Name")'
+        c = (c1, c2, c3, c4)
+        f1 = '"Indexes" AS "I"'
+        f2 = 'JOIN "Tables" AS "T" ON "I"."Table"="T"."Table"'
+        f3 = 'JOIN "Columns" AS "C" ON "I"."Column"="C"."Column"'
+        f = (f1, f2, f3)
+        g = '"T"."Catalog", "T"."Schema", "T"."Name"'
+        s = (','.join(c), ' '.join(f), g)
+        query = 'SELECT %s FROM %s GROUP BY %s;' % s
+
+    elif name == 'getForeignKeys':
+        c1 = '"T"."Catalog"'
+        c2 = '"T"."Schema"'
+        c3 = '"T"."Name"'
+        c4 = '"C"."Name"'
+        c5 = '"FT"."Catalog"'
+        c6 = '"FT"."Schema"'
+        c7 = '"FT"."Name"'
+        c8 = '"K"."UpdateRule"'
+        c9 = '"K"."DeleteRule"'
+        c10 = '"FC"."Name"'
+        c = (c1, c2, c3, c4, c5, c6, c7, c8, c9, c10)
+        f1 = '"ForeignKeys" AS "K"'
+        f2 = 'JOIN "Tables" AS "T" ON "K"."Table"="T"."Table"'
+        f3 = 'JOIN "Columns" AS "C" ON "K"."Column"="C"."Column"'
+        f4 = 'JOIN "Tables" AS "FT" ON "K"."ReferencedTable"="FT"."Table"'
+        f5 = 'JOIN "Columns" AS "FC" ON "K"."RelatedColumn"="FC"."Column"'
         f = (f1, f2, f3, f4, f5)
-        p = (','.join(s), ' '.join(f), w)
-        query = 'SELECT %s FROM %s WHERE %s;' % p
+        s = (','.join(c), ' '.join(f))
+        query = 'SELECT %s FROM %s;' % s
+
+    elif name == 'getPrivileges':
+        c1 = '"T"."Catalog"'
+        c2 = '"T"."Schema"'
+        c3 = '"T"."Name"'
+        c4 = '"C"."Column"'
+        c5 = '"P"."Role"'
+        c6 = 'SUM("P"."Privilege")'
+        c = (c1, c2, c3, c4, c5, c6)
+        f1 = '"Privileges" AS "P"'
+        f2 = 'JOIN "Tables" AS "T" ON "P"."Table"="T"."Table"'
+        f3 = 'LEFT JOIN "Columns" AS "C" ON "P"."Column"="C"."Column"'
+        f = (f1, f2, f3)
+        g = '"T"."Catalog", "T"."Schema", "T"."Name", "C"."Column", "P"."Role"'
+        s = (','.join(c), ' '.join(f), g)
+        query = 'SELECT %s FROM %s GROUP BY %s;' % s
 
     elif name == 'getContentType':
         query = """\
@@ -763,11 +824,13 @@ CREATE PROCEDURE "MergeParent"(IN ITEMID VARCHAR(100),
     END IF;
     DELETE FROM "Parents" WHERE "ChildId"=ITEMID AND "ItemId" NOT IN (UNNEST(TMP));
     WHILE INDEX <= CARDINALITY(TMP) DO
-      MERGE INTO "Parents" USING (VALUES(ITEMID, TMP[INDEX], DATETIME)) 
-      AS vals(x,y,z) ON "Parents"."ChildId"=vals.x AND "Parents"."ItemId"=vals.y 
-        WHEN NOT MATCHED THEN 
-          INSERT ("ChildId","ItemId","TimeStamp") 
-          VALUES vals.x, vals.y, vals.z;
+      IF ITEMID != TMP[INDEX] THEN
+        MERGE INTO "Parents" USING (VALUES(ITEMID, TMP[INDEX], DATETIME)) 
+        AS vals(x,y,z) ON "Parents"."ChildId"=vals.x AND "Parents"."ItemId"=vals.y 
+          WHEN NOT MATCHED THEN 
+            INSERT ("ChildId","ItemId","TimeStamp") 
+            VALUES vals.x, vals.y, vals.z;
+      END IF;
       SET INDEX = INDEX + 1;
     END WHILE;
   END;
