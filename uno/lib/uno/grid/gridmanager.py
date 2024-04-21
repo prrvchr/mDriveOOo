@@ -52,9 +52,10 @@ from collections import OrderedDict
 import traceback
 
 
-class GridManagerBase(unohelper.Base):
-    def __init__(self, ctx, url, model, window, setting, selection, resources=None, maxi=None, multi=False, factor=5):
+class GridManager(unohelper.Base):
+    def __init__(self, ctx, url, model, window, quote, setting, selection, resources=None, maxi=None, multi=False, factor=5):
         self._ctx = ctx
+        self._quote = quote
         self._factor = factor
         self._datasource = None
         self._table = None
@@ -82,7 +83,7 @@ class GridManagerBase(unohelper.Base):
         model.setSortableModel(grid)
         grid.initialize((model, ))
         self._view = GridView(ctx, window, WindowHandler(self), grid, selection)
-        self._column = self._view.getGridColumnModel()
+        self._column = self._view.getGrid().Model.ColumnModel
 
     @property
     def Model(self):
@@ -92,11 +93,14 @@ class GridManagerBase(unohelper.Base):
         return self._column
 
 # GridManager getter methods
+    def getGridWidth(self):
+        return self._view.getGrid().Model.Width
+
     def hasSelectedRows(self):
         return self._view.hasSelectedRows()
 
     def getUnsortedIndex(self, index):
-        return self._view.getGridDataModel().getRowHeading(index)
+        return self._view.getGrid().Model.GridDataModel.getRowHeading(index)
 
     def getSelectedRows(self):
         rows = []
@@ -125,27 +129,31 @@ class GridManagerBase(unohelper.Base):
     def _getRowFilter(self, row):
         filters = []
         for identifier in self._indexes:
-            value = self._getRowQuotedValue(identifier, row)
-            filter = '"%s" = %s' % (identifier, value)
+            column = self._getQuotedIdentifier(identifier)
+            value = self._getQuotedValue(identifier, row)
+            filter = '%s = %s' % (column, value)
             filters.append(filter)
         return ' AND '.join(filters)
 
     def _getRowStructuredFilter(self, index):
         filters = []
-        row = self._view.getGridDataModel().getRowHeading(index)
+        row = self._view.getGrid().Model.GridDataModel.getRowHeading(index)
         for identifier in self._indexes:
-            value = self._getRowQuotedValue(identifier, row)
+            value = self._getQuotedValue(identifier, row)
             filter = getPropertyValue(identifier, value, 0, EQUAL)
             filters.append(filter)
         return tuple(filters)
 
-    def _getRowQuotedValue(self, identifier, row):
+    def _getQuotedValue(self, identifier, row):
         value = self._getRowValue(identifier, row)
         if self._types[identifier] in (CHAR, VARCHAR, LONGVARCHAR):
             value = "'%s'" % value.replace("'", "''")
         else:
             value = "%s" % value
         return value
+
+    def _getQuotedIdentifier(self, identifier):
+        return "%s%s%s" % (self._quote, identifier, self._quote)
 
     def _getRowValue(self, identifier, row):
         return self._model.getCellData(self._indexes[identifier], row)
@@ -200,7 +208,7 @@ class GridManagerBase(unohelper.Base):
             else:
                 modified = self._removeColumn(identifiers, identifier)
         if modified:
-            self._setDefaultWidths()
+            self.setDefaultWidths()
             self._view.setColumns(self._url, identifiers)
 
     def isSelected(self, image):
@@ -210,7 +218,7 @@ class GridManagerBase(unohelper.Base):
         return image.endswith(self._view.getUnSelected())
 
     def setColumnOrder(self):
-        model = self._view.getGridDataModel()
+        model = self._view.getGrid().Model.GridDataModel
         pair = model.getCurrentSortOrder()
         print("GridManager.setColumnOrder() First: %s Second: %s " % (pair.First, pair.Second))
 
@@ -228,7 +236,7 @@ class GridManagerBase(unohelper.Base):
         else:
             for identifier in identifiers:
                 self._createColumn(identifier)
-            self._setDefaultWidths()
+            self.setDefaultWidths()
         return identifiers
 
     def _saveWidths(self):
@@ -353,7 +361,7 @@ class GridManagerBase(unohelper.Base):
             else:
                 column.ColumnWidth = flex * self._factor
 
-    def _setDefaultWidths(self):
+    def setDefaultWidths(self):
         for column in self._column.getColumns():
             flex = len(column.Title)
             width = flex * self._factor

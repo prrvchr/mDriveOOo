@@ -345,6 +345,16 @@ public class UnoHelper
         return sw.toString();
     }
 
+    public static WrappedTargetException getWrappedException(java.lang.Exception e)
+    {
+        WrappedTargetException exception = null;
+        if (e != null) {
+            Exception ex = new Exception(e.getMessage());
+            exception = getWrappedException(ex);
+        }
+        return exception;
+    }
+
     public static WrappedTargetException getWrappedException(Exception e)
     {
         WrappedTargetException exception = null;
@@ -359,6 +369,11 @@ public class UnoHelper
     public static java.sql.SQLException getSQLException(java.lang.Exception e)
     {
         return new java.sql.SQLException(e.getMessage(), e);
+    }
+
+    public static SQLException getSQLException(java.sql.SQLException e)
+    {
+        return new SQLException(e.getMessage());
     }
 
     public static SQLException getSQLException(Exception e, XInterface component)

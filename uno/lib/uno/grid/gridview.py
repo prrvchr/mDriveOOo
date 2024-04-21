@@ -53,12 +53,6 @@ class GridView(unohelper.Base):
     def getGrid(self):
         return self._getGrid()
 
-    def getGridDataModel(self):
-        return self._getGrid().Model.GridDataModel
-
-    def getGridColumnModel(self):
-        return self._getGrid().Model.ColumnModel
-
     def hasSelectedRows(self):
         return self._getGrid().hasSelectedRows()
 

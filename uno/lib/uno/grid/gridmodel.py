@@ -40,10 +40,10 @@ from ..unotool import hasInterface
 import traceback
 
 
-class GridModelBase(unohelper.Base,
-                    XWeak,
-                    XAdapter,
-                    XMutableGridDataModel):
+class GridModel(unohelper.Base,
+                XWeak,
+                XAdapter,
+                XMutableGridDataModel):
     def __init__(self, ctx):
         self._ctx = ctx
         self._sortable = None

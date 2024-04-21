@@ -85,8 +85,8 @@ public class PropertySetAdapter
     private final Object lock;
     private final Object eventSource;
     // after registerListeners(), these are read-only:
-    private final Map<String,PropertyData> propertiesByName = new HashMap<String,PropertyData>();
-    private final Map<Integer,PropertyData> propertiesByHandle = new HashMap<Integer,PropertyData>();
+    private final Map<String, PropertyData> propertiesByName = new HashMap<String, PropertyData>();
+    private final Map<Integer, PropertyData> propertiesByHandle = new HashMap<Integer, PropertyData>();
     private AtomicInteger nextHandle = new AtomicInteger(1);
     // interface containers are locked internally:
     protected final MultiTypeInterfaceContainer boundListeners = new MultiTypeInterfaceContainer();
@@ -459,12 +459,12 @@ public class PropertySetAdapter
     {
         PropertyChangeEvent[] events = new PropertyChangeEvent[names.length];
         int count = 0;
-        for (int i = 0; i < names.length; i++) {
+        for (String name : names) {
             try {
-                PropertyData data = getPropertyData(names[i]);
-                Object value = getPropertyValue(names[i]);
-                events[count++] = new PropertyChangeEvent(eventSource, names[i],
-                        false, data.property.Handle, value, value);
+                PropertyData data = getPropertyData(name);
+                Object value = getPropertyValue(name);
+                events[count++] = new PropertyChangeEvent(eventSource, name, false,
+                                                          data.property.Handle, value, value);
             }
             catch (UnknownPropertyException e) {
             }
@@ -538,6 +538,5 @@ public class PropertySetAdapter
             }
         }
     }
-
 
 }

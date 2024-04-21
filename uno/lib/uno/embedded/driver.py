@@ -60,6 +60,7 @@ from .configuration import g_basename
 from .configuration import g_protocol
 from .configuration import g_url
 from .configuration import g_user
+from .configuration import g_lover
 
 import traceback
 
@@ -68,11 +69,12 @@ class Driver(unohelper.Base,
              XServiceInfo,
              XDriver):
 
-    def __init__(self, ctx, lock, service, name):
+    def __init__(self, ctx, lock, service, name, index):
         self._ctx = ctx
         self._lock = lock
         self._service = service
         self._name = name
+        self._index = index
         self._logger = getLogger(ctx, g_defaultlog, g_basename)
         # FIXME: Driver is lazy loaded in connect() driver method to be able to throw
         # FIXME: an exception if jdbcDriverOOo extension is not installed.
@@ -83,23 +85,28 @@ class Driver(unohelper.Base,
 
     # XDriver
     def connect(self, url, infos):
+        # XXX: We need to test first if configuration is OK...
+        driver = self._getDriver()
+        newinfos, document, storage, location = self._getConnectionInfo(infos)
+        if storage is None or location is None:
+            self._logException(112, url, ' ')
+            raise self._getException(1001, None, 111, 112, url, '\n')
+        handler = self._getDocumentHandler(location)
+        # XXX: Getting path from handler unpacks the database files
+        path = handler.getConnectionUrl(storage)
+        self._logger.logprb(INFO, 'Driver', 'connect()', 113, location)
         try:
-            newinfos, document, storage, location = self._getConnectionInfo(infos)
-            if storage is None or location is None:
-                self._logException(112, url, ' ')
-                raise self._getException(1001, None, 111, url, '\n')
-            handler = self._getDocumentHandler(location)
-            path = handler.getConnectionUrl(document, storage, location)
-            self._logger.logprb(INFO, 'Driver', 'connect()', 113, location)
-            connection = self._getDriver().connect(path, newinfos)
-            version = connection.getMetaData().getDriverVersion()
-            self._logger.logprb(INFO, 'Driver', 'connect()', 114, g_dbname, version, g_user)
-            return connection
-        except SQLException as e:
-            raise e
+            connection = driver.connect(path, newinfos)
         except Exception as e:
             self._logger.logprb(SEVERE, 'Driver', 'connect()', 115, str(e), traceback.format_exc())
+            # XXX: Database files will only be deleted if they have been unpacked
+            handler.removeFolder()
             raise e
+        # XXX: Connection has been done we can add close and change listener to document
+        self._setDocumentHandler(document, handler)
+        version = connection.getMetaData().getDriverVersion()
+        self._logger.logprb(INFO, 'Driver', 'connect()', 114, g_dbname, version, g_user)
+        return connection
 
     def acceptsURL(self, url):
         accept = url.startswith(g_url)
@@ -108,8 +115,10 @@ class Driver(unohelper.Base,
 
     def getPropertyInfo(self, url, infos):
         try:
+            # XXX: We need to test first if configuration is OK...
+            driver = self._getDriver()
             self._logger.logprb(INFO, 'Driver', 'getPropertyInfo()', 141, url)
-            drvinfo = self._getDriver().getPropertyInfo(g_protocol, infos)
+            drvinfo = driver.getPropertyInfo(g_protocol, infos)
             for info in drvinfo:
                 self._logger.logprb(INFO, 'Driver', 'getPropertyInfo()', 142, info.Name, info.Value)
             return drvinfo
@@ -138,21 +147,34 @@ class Driver(unohelper.Base,
         # FIXME: If jdbcDriverOOo is not installed,
         # FIXME: we need to throw SQLException
         if self._driver is None:
-            version = getExtensionVersion(self._ctx, g_jdbcid)
-            if version is None:
-                self._logException(122, g_jdbcext, ' ', g_extension)
-                raise self._getException(1001, None, 121, g_jdbcext, '\n', g_extension)
-            elif not checkVersion(version, g_jdbcver):
-                self._logException(124, version, g_jdbcext, ' ', g_jdbcver)
-                raise self._getException(1001, None, 123, version, g_jdbcext, '\n', g_jdbcver)
-            else:
-                self._driver = createService(self._ctx, self._service)
+            self._checkConfiguration()
+            self._driver = createService(self._ctx, self._service)
         return self._driver
+
+    def _checkConfiguration(self):
+        self._checkLibreOffice()
+        version = getExtensionVersion(self._ctx, g_jdbcid)
+        if version is None:
+            self._logException(122, g_jdbcext, ' ', g_extension)
+            raise self._getException(1001, None, 121, 123, g_jdbcext, '\n', g_extension)
+        if not checkVersion(version, g_jdbcver):
+            self._logException(125, version, g_jdbcext, ' ', g_jdbcver)
+            raise self._getException(1001, None, 122, 125, version, g_jdbcext, '\n', g_jdbcver)
+
+    def _checkLibreOffice(self):
+        configuration = getConfiguration(self._ctx, '/org.openoffice.Setup/Product')
+        name = configuration.getByName('ooName')
+        version = configuration.getByName('ooSetupVersion')
+        if not checkVersion(version, g_lover):
+            self._logException(124, name, version, ' ', name, g_lover)
+            raise self._getException(1001, None, 122, 124, name, version, '\n', name, g_lover)
 
     def _getConnectionInfo(self, infos):
         document = storage = url = None
         service = getConfiguration(self._ctx, g_identifier).getByName('ConnectionService')
         newinfos = {'Url': g_url, 'ConnectionService': service}
+        if g_user:
+            newinfos['user'] = g_user
         for info in infos:
             if info.Name == 'URL':
                 url = info.Value
@@ -162,13 +184,14 @@ class Driver(unohelper.Base,
                 document = info.Value
             else:
                 newinfos[info.Name] = info.Value
-                print("Driver._getConnectionInfo() Name: %s - Value: %s" % (info.Name, info.Value))
         return getPropertyValueSet(newinfos), document, storage, url
 
     def _getHandler(self, location):
         document = None
-        for handler in self._handlers:
+        # XXX: If we want to be able to remove dead handler we need to do copy
+        for handler in self._handlers[:]:
             url = handler.URL
+            # XXX: The URL is None for a closed connection and can be cleared.
             if url is None:
                 self._handlers.remove(handler)
             elif url == location:
@@ -179,19 +202,36 @@ class Driver(unohelper.Base,
         with self._lock:
             handler = self._getHandler(location)
             if handler is None:
-                handler = DocumentHandler(self._ctx, self._lock, self._logger, location)
-                self._handlers.append(handler)
+                handler = DocumentHandler(self._ctx, self._lock, self._logger, location, self._index)
             return handler
+
+    def _setDocumentHandler(self, document, handler):
+        with self._lock:
+            # FIXME: We only add handler if connection is successful
+            if handler not in self._handlers:
+                if self._setListener(document, handler):
+                    self._handlers.append(handler)
+
+    def _setListener(self, document, handler):
+        # FIXME: With OpenOffice there is no Document in the info
+        # FIXME: parameter provided during the connection
+        if document is None:
+            document = handler.getDocument()
+        if document is not None:
+            document.addStorageChangeListener(handler)
+            document.addCloseListener(handler)
+            return True
+        return False
 
     def _logException(self, resource, *args):
         self._logger.logprb(SEVERE, 'Driver', 'connect()', resource, *args)
 
-    def _getException(self, code, exception, resource, *args):
+    def _getException(self, code, exception, state, resource, *args):
         error = SQLException()
         error.ErrorCode = code
         error.NextException = exception
-        error.SQLState = self._logger.resolveString(resource)
-        error.Message = self._logger.resolveString(resource +1, *args)
+        error.SQLState = self._logger.resolveString(state)
+        error.Message = self._logger.resolveString(resource, *args)
         error.Context = self
         return error
 
