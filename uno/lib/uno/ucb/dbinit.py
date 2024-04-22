@@ -41,14 +41,20 @@ from .dbconfig import g_typeinfo
 from .dbconfig import g_privilege
 
 from .dbtool import addRole
-from .dbtool import createStaticTable
 from .dbtool import createDataBaseTables
 from .dbtool import createDataBaseIndexes
 from .dbtool import createDataBaseForeignKeys
 from .dbtool import createRoleAndPrivileges
 from .dbtool import executeQueries
+from .dbtool import getDataBaseTables
+from .dbtool import getDataBaseIndexes
+from .dbtool import getDataBaseForeignKeys
 from .dbtool import getDataSourceCall
 from .dbtool import getDataSourceConnection
+from .dbtool import getForeignKeys
+from .dbtool import getStaticTables
+from .dbtool import getUniqueIndexes
+from .dbtool import setStaticTable
 
 from .dbqueries import getSqlQuery
 
@@ -63,49 +69,41 @@ def getDataBaseConnection(ctx, url, user, pwd, new):
     return getDataSourceConnection(ctx, url, user, pwd, new, infos)
 
 def createDataBase(ctx, logger, connection, odb, version):
-    print("dbint.createDataBase() 1")
     logger.logprb(INFO, 'DataBase', '_createDataBase()', 411, version)
-    statement = connection.createStatement()
-    createStaticTable(ctx, statement, _getStaticTables(), g_csv, True)
     tables = connection.getTables()
+    statement = connection.createStatement()
+    _createStaticTables(ctx, tables, statement)
     _createTables(ctx, connection, statement, tables)
     _createIndexes(ctx, statement, tables)
     _createForeignKeys(ctx, statement, tables)
-    print("dbint.createDataBase() 2")
     _createRoleAndPrivileges(ctx, statement, tables, connection.getGroups())
-    print("dbint.createDataBase() 3")
     executeQueries(ctx, statement, _getQueries())
     statement.close()
     connection.getParent().DatabaseDocument.storeAsURL(odb, ())
     logger.logprb(INFO, 'DataBase', '_createDataBase()', 412)
-    print("dbint.createDataBase() 4")
 
 def _getConnectionInfos():
     infos = {'TypeInfoSettings': g_typeinfo, 'TablePrivilegesSettings': g_privilege}
     return getPropertyValueSet(infos)
 
-def _getStaticTables():
-    tables = ('Tables',
-              'Columns',
-              'TableColumn',
-              'ForeignKeys',
-              'Indexes',
-              'Privileges',
-              'Settings')
-    return tables
+def _createStaticTables(ctx, tables, statement):
+    createDataBaseTables(tables, getStaticTables().items())
+    createDataBaseIndexes(tables, getUniqueIndexes())
+    createDataBaseForeignKeys(tables, getForeignKeys())
+    setStaticTable(ctx, statement, getStaticTables().keys(), g_csv, True)
 
 def _createTables(ctx, connection, statement, tables):
     call = getDataSourceCall(ctx, connection, 'getTables')
     query = getSqlQuery(ctx, 'getTableNames')
-    createDataBaseTables(statement, tables, call, query, g_rowversion)
+    createDataBaseTables(tables, getDataBaseTables(statement, query, call, g_rowversion))
 
 def _createIndexes(ctx, statement, tables):
     query = getSqlQuery(ctx, 'getIndexes')
-    createDataBaseIndexes(statement, tables, query)
+    createDataBaseIndexes(tables, getDataBaseIndexes(statement, query))
 
 def _createForeignKeys(ctx, statement, tables):
     query = getSqlQuery(ctx, 'getForeignKeys')
-    createDataBaseForeignKeys(statement, tables, query)
+    createDataBaseForeignKeys(tables, getDataBaseForeignKeys(statement, query))
 
 def _createRoleAndPrivileges(ctx, statement, tables, groups):
     query = getSqlQuery(ctx, 'getPrivileges')

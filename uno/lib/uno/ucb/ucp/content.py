@@ -230,8 +230,10 @@ class Content(unohelper.Base,
     def getContentType(self):
         return self.MetaData.get('ContentType')
     def addContentEventListener(self, listener):
+        print("Content.addContentEventListener() 1")
         self._contentListeners.append(listener)
     def removeContentEventListener(self, listener):
+        print("Content.removeContentEventListener() 1")
         if listener in self._contentListeners:
             self._contentListeners.remove(listener)
 
@@ -240,6 +242,7 @@ class Content(unohelper.Base,
         print("Content.createCommandIdentifier() 1")
         return 1
     def execute(self, command, cmdid, environment):
+        print("Content.execute() 1 Command.Name: %s - Identifier: %s" % (command.Name, self._identifier))
         self._logger.logprb(INFO, 'Content', 'execute()', 631, command.Name, self._identifier)
         if command.Name == 'getCommandInfo':
             return CommandInfo(self._getCommandInfo())
@@ -303,8 +306,10 @@ class Content(unohelper.Base,
                 self._user.deleteNewIdentifier(self.Id)
 
         elif command.Name == 'transfer':
+            print("Content.execute() 2 Command.Name: %s - Identifier: %s" % (command.Name, self._identifier))
             # see github/libreoffice/ucb/source/core/ucbcmds.cxx
             if not self.IsFolder:
+                print("Content.execute() 3 Command.Name: %s - Identifier: %s" % (command.Name, self._identifier))
                 msg = self._logger.resolveString(633, self._identifier)
                 UnsupportedCommandException(msg, self)
             title = command.Argument.NewTitle
@@ -343,6 +348,12 @@ class Content(unohelper.Base,
                 # TODO: must delete object
                 pass 
 
+        elif command.Name == 'addProperty':
+            print("Content.execute() 3 Command.Name: %s - Identifier: %s" % (command.Name, self._identifier))
+
+        elif command.Name == 'removeProperty':
+            print("Content.execute() 4 Command.Name: %s - Identifier: %s" % (command.Name, self._identifier))
+
         elif command.Name == 'flush':
             pass
 
@@ -364,8 +375,10 @@ class Content(unohelper.Base,
             value = None
             if (hasattr(property, 'Name') and
                 property.Name in self._propertySetInfo):
+                print("Content._getPropertiesValues() Name: %s" % (property.Name, ))
                 value, level, msg = self._getPropertyValue(property.Name)
             else:
+                print("Content._getPropertiesValues() ERROR")
                 msg = "ERROR: Requested property: %s is not available" % property.Name
                 level = SEVERE
             self._logger.logp(level, 'Content', '_getPropertiesValues()', msg)
@@ -494,10 +507,8 @@ class Content(unohelper.Base,
 
     def _updateFolderContent(self, properties):
         updated = False
-        print("Content._updateFolderContent() 1 ConnectionMode: %s - SessionMode: %s" % (self.ConnectionMode,self._user.SessionMode))
         if ONLINE == self.ConnectionMode == self._user.SessionMode:
             self._logger.logprb(INFO, 'Content', '_updateFolderContent()', 621, self._identifier)
-            print("Content._updateFolderContent() 2 Url: %s" % self._identifier)
             updated = self._user.Provider.updateFolderContent(self)
         select = self._user.getChildren(self._authority, self.Id, properties)
         return select, updated
@@ -526,6 +537,8 @@ class Content(unohelper.Base,
         commands['getCommandInfo'] =          getCommandInfo('getCommandInfo',     'com.sun.star.ucb.XCommandInfo')
         commands['getPropertySetInfo'] =      getCommandInfo('getPropertySetInfo', 'com.sun.star.beans.XPropertySetInfo')
         commands['getPropertyValues'] =       getCommandInfo('getPropertyValues',  '[]com.sun.star.beans.Property')
+        commands['addProperty'] =             getCommandInfo('addProperty')
+        commands['removeProperty'] =          getCommandInfo('removeProperty')
         commands['insert'] =                  getCommandInfo('insert',             'com.sun.star.ucb.InsertCommandArgument2')
         commands['open'] =                    getCommandInfo('open',               'com.sun.star.ucb.OpenCommandArgument3')
         commands['setPropertyValues'] =       getCommandInfo('setPropertyValues',  '[]com.sun.star.beans.PropertyValue')

@@ -33,7 +33,6 @@ from .dbtool import createDataSource
 from .dbtool import createDataBaseTables
 from .dbtool import createDataBaseIndexes
 from .dbtool import createDataBaseForeignKeys
-from .dbtool import createStaticTable
 from .dbtool import createRoleAndPrivileges
 from .dbtool import currentDateTime
 from .dbtool import currentDateTimeInTZ
@@ -45,6 +44,9 @@ from .dbtool import getConnectionUrl
 from .dbtool import getDataBaseConnection
 from .dbtool import getDataBaseInfo
 from .dbtool import getDataBaseUrl
+from .dbtool import getDataBaseTables
+from .dbtool import getDataBaseIndexes
+from .dbtool import getDataBaseForeignKeys
 from .dbtool import getDataFromResult
 from .dbtool import getDataSource
 from .dbtool import getDataSourceCall
@@ -69,6 +71,11 @@ from .dbtool import getDateTimeToString
 from .dbtool import getUnoType
 from .dbtool import getValueFromResult
 from .dbtool import registerDataSource
+from .dbtool import setStaticTable
 from .dbtool import toUnoDateTime
+
+from .dbinit import getStaticTables
+from .dbinit import getUniqueIndexes
+from .dbinit import getForeignKeys
 
 from .array import Array

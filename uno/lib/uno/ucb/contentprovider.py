@@ -105,9 +105,11 @@ class ContentProvider(unohelper.Base,
     # XContentProvider
     def queryContent(self, identifier):
         try:
+            print("ContentProvider.queryContent() 1")
             url = identifier.getContentIdentifier()
             content = self._datasource.queryContent(self, self._authority, url)
             self._logger.logprb(INFO, self._cls, 'queryContent()', 231, url)
+            print("ContentProvider.queryContent() 2")
             return content
         except IllegalIdentifierException as e:
             self._logger.logprb(INFO, self._cls, 'queryContent()', 232, e.Message)
@@ -118,6 +120,7 @@ class ContentProvider(unohelper.Base,
             print(msg)
 
     def compareContentIds(self, id1, id2):
+        print("ContentProvider.compareContentIds() 1")
         uri1 = self._datasource.parseIdentifier(id1)
         uri2 = self._datasource.parseIdentifier(id2)
         auth1 = uri1.getAuthority() if uri1.hasAuthority() else self._datasource.getDefaultUser()

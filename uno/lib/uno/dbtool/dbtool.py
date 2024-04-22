@@ -444,15 +444,6 @@ def getRowValue(row, dbtype, index=1, default=None):
         value = default
     return value
 
-def createStaticTable(ctx, statement, tables, csv, readonly=False):
-    for table in tables:
-        query = getSqlQuery(ctx, 'createTable' + table)
-        statement.executeUpdate(query)
-    for table in tables:
-        statement.executeUpdate(getSqlQuery(ctx, 'setTableSource', (table, csv % table)))
-        if readonly:
-            statement.executeUpdate(getSqlQuery(ctx, 'setTableReadOnly', table))
-
 def executeSqlQueries(statement, queries):
     for query in queries:
         statement.executeQuery(query)
@@ -557,134 +548,47 @@ def _getTimeZone():
     offset = time.timezone if time.localtime().tm_isdst else time.altzone
     return offset / 60 * -1
 
-def createDataBaseTables(statement, tables, call, query, rowversion):
-    for catalog, schema, name in _getTableNames(statement, query):
+def createDataBaseTables(tables, items):
+    for name, item in items:
+        catalog = item.get('CatalogName')
+        schema = item.get('SchemaName')
         table = tables.createDataDescriptor()
+        table.setPropertyValue('Name', name)
         table.setPropertyValue('CatalogName', catalog)
         table.setPropertyValue('SchemaName', schema)
-        table.setPropertyValue('Name', name)
-        columns = table.getColumns()
-        primarykeys = []
-        # FIXME: Here we assume that only two columns (START and END)
-        # FIXME: are required to declare a system versioning table
-        index = 0
-        call.setString(1, catalog)
-        call.setString(2, schema)
-        call.setString(3, name)
-        result = call.executeQuery()
-        while result.next():
-            column = columns.createDataDescriptor()
-            column.setPropertyValue('Name', result.getString(1))
-            column.setPropertyValue('CatalogName', table.CatalogName)
-            column.setPropertyValue('SchemaName', table.SchemaName)
-            column.setPropertyValue('TypeName', result.getString(2))
-            column.setPropertyValue('Type', result.getInt(3))
-            scale = result.getInt(4)
-            if not result.wasNull():
-                column.setPropertyValue('Scale', scale)
-            nullable = result.getInt(5)
-            if not result.wasNull():
-                column.setPropertyValue('IsNullable', nullable)
-            default = result.getString(6)
-            if not result.wasNull():
-                column.setPropertyValue('DefaultValue', default)
-            column.setPropertyValue('IsRowVersion', result.getBoolean(7))
-            if column.IsRowVersion:
-                column.setPropertyValue('IsAutoIncrement', True)
-                column.setPropertyValue('AutoIncrementCreation', rowversion[index])
-                index = 0 if index else 1
-            pk = result.getBoolean(8)
-            if not result.wasNull() and pk:
-                primarykeys.append(column.Name)
-            columns.appendByDescriptor(column)
-        if primarykeys:
+        table.setPropertyValue('Type',  item.get('Type', 'TABLE'))
+        _createTableColumns(table.getColumns(), item.get('Columns'), catalog, schema)
+        primarykeys = item.get('PrimaryKeys')
+        if primarykeys is not None:
             _createPrimaryKey(table, primarykeys)
         tables.appendByDescriptor(table)
-    call.close()
 
-def _getTableNames(statement, query):
-    result = statement.executeQuery(query)
-    while result.next():
-        yield result.getString(1), result.getString(2), result.getString(3)
-    result.close()
+def setStaticTable(ctx, statement, tables, csv, readonly=False):
+    for table in tables:
+        statement.executeUpdate(getSqlQuery(ctx, 'setTableSource', (table, csv % table)))
+        if readonly:
+            statement.executeUpdate(getSqlQuery(ctx, 'setTableReadOnly', table))
 
-def _createPrimaryKey(table, primarykeys):
-    keys = table.getKeys()
-    key = keys.createDataDescriptor()
-    key.setPropertyValue('Name', 'PK_%s' % table.Name)
-    key.setPropertyValue("Type", PRIMARY)
-    _addColums(key.getColumns(), primarykeys)
-    keys.appendByDescriptor(key)
-
-def createDataBaseIndexes(statement, tables, query):
+def createDataBaseIndexes(tables, items):
     i = 1
-    result = statement.executeQuery(query)
-    while result.next():
-        catalog = result.getString(1)
-        if result.wasNull():
+    for name, unique, columns in items:
+        if not tables.hasByName(name):
             continue
-        schema = result.getString(2)
-        if result.wasNull():
-            continue
-        name = result.getString(3)
-        if result.wasNull():
-            continue
-        fullname = catalog + '.' + schema + '.' + name
-        if not tables.hasByName(fullname):
-            continue
-        table = tables.getByName(fullname)
-        columns = result.getArray(4)
-        if result.wasNull():
-            continue
+        table = tables.getByName(name)
         indexes = table.getIndexes()
         index = indexes.createDataDescriptor()
         index.setPropertyValue('Name', 'IDX_%s_%s' % (table.Name, i))
+        index.setPropertyValue('IsUnique', unique)
         i += 1
-        _addColums(index.getColumns(), columns.getArray(None))
+        _addColums(index.getColumns(), columns)
         indexes.appendByDescriptor(index)
-    result.close()
 
-def createDataBaseForeignKeys(statement, tables, query):
+def createDataBaseForeignKeys(tables, items):
     i = 1
-    result = statement.executeQuery(query)
-    while result.next():
-        catalog = result.getString(1)
-        if result.wasNull():
+    for name, column, referencedtable, relatedcolumn, updaterule, deleterule in items:
+        if not tables.hasByName(name) or not tables.hasByName(referencedtable):
             continue
-        schema = result.getString(2)
-        if result.wasNull():
-            continue
-        name = result.getString(3)
-        if result.wasNull():
-            continue
-        fullname = catalog + '.' + schema + '.' + name
-        if not tables.hasByName(fullname):
-            continue
-        column = result.getString(4)
-        if result.wasNull():
-            continue
-        fcatalog = result.getString(5)
-        if result.wasNull():
-            continue
-        fschema = result.getString(6)
-        if result.wasNull():
-            continue
-        fname = result.getString(7)
-        if result.wasNull():
-            continue
-        referencedtable = fcatalog + '.' + fschema + '.' + fname
-        if not tables.hasByName(referencedtable):
-            continue
-        updaterule = result.getInt(8)
-        if result.wasNull():
-            continue
-        deleterule = result.getInt(9)
-        if result.wasNull():
-            continue
-        relatedcolumn = result.getString(10)
-        if result.wasNull():
-            continue
-        table = tables.getByName(fullname)
+        table = tables.getByName(name)
         keys = table.getKeys()
         key = keys.createDataDescriptor()
         key.setPropertyValue('Name', 'FK_%s_%s' % (table.Name, i))
@@ -695,6 +599,140 @@ def createDataBaseForeignKeys(statement, tables, query):
         i += 1
         _addColum(key.getColumns(), column, relatedcolumn)
         keys.appendByDescriptor(key)
+
+def _createTableColumns(columns, items, catalog, schema):
+    for item in items:
+        column = columns.createDataDescriptor()
+        column.setPropertyValue('CatalogName', catalog)
+        column.setPropertyValue('SchemaName', schema)
+        for name, value in item.items():
+            column.setPropertyValue(name, value)
+        columns.appendByDescriptor(column)
+
+def _createPrimaryKey(table, primarykeys):
+    keys = table.getKeys()
+    key = keys.createDataDescriptor()
+    key.setPropertyValue('Name', 'PK_%s' % table.Name)
+    key.setPropertyValue("Type", PRIMARY)
+    _addColums(key.getColumns(), primarykeys)
+    keys.appendByDescriptor(key)
+
+def getDataBaseTables(statement, query, call, rowversion):
+    for catalog, schema, table in _getTableNames(statement, query):
+        columns, primarykeys = _getColumns(call, catalog, schema, table, rowversion)
+        data = {'CatalogName': catalog, 'SchemaName': schema, 'Columns': columns}
+        if primarykeys:
+            data['PrimaryKeys'] = primarykeys
+        yield table, data
+    call.close()
+
+def _getTableNames(statement, query):
+    result = statement.executeQuery(query)
+    while result.next():
+        yield result.getString(1), result.getString(2), result.getString(3)
+    result.close()
+
+def _getColumns(call, catalog, schema, table, rowversion):
+    columns = []
+    primarykeys = []
+    index = 0
+    call.setString(1, catalog)
+    call.setString(2, schema)
+    call.setString(3, table)
+    result = call.executeQuery()
+    while result.next():
+        name = result.getString(1)
+        column = {'Name': name}
+        column['CatalogName'] = catalog
+        column['SchemaName'] = schema
+        column['TypeName'] = result.getString(2)
+        column['Type'] = result.getInt(3)
+        scale = result.getInt(4)
+        if not result.wasNull():
+            column['Scale'] = scale
+        nullable = result.getInt(5)
+        if not result.wasNull():
+            column['IsNullable'] = nullable
+        default = result.getString(6)
+        if not result.wasNull():
+            column['DefaultValue'] = default
+        isrowversion = result.getBoolean(7)
+        if not result.wasNull() and isrowversion:
+            column['IsRowVersion'] = isrowversion
+            column['IsAutoIncrement'] = True
+            # FIXME: Here we assume that only two columns (START and END)
+            # FIXME: are required to declare a system versioning table
+            column['AutoIncrementCreation'] = rowversion[index]
+            index = 0 if index else 1
+        columns.append(column)
+        pk = result.getBoolean(8)
+        if not result.wasNull() and pk:
+            primarykeys.append(name)
+    result.close()
+    return columns, primarykeys
+
+def getDataBaseIndexes(statement, query):
+    result = statement.executeQuery(query)
+    while result.next():
+        catalog = result.getString(1)
+        if result.wasNull():
+            catalog = ''
+        schema = result.getString(2)
+        if result.wasNull():
+            schema = ''
+        name = result.getString(3)
+        if result.wasNull():
+            continue
+        unique = result.getBoolean(4)
+        if result.wasNull():
+            unique = False
+        columns = result.getArray(5)
+        if result.wasNull():
+            continue
+        yield catalog + '.' + schema + '.' + name, unique, columns.getArray(None)
+    result.close()
+
+def getDataBaseForeignKeys(statement, query):
+    i = 1
+    result = statement.executeQuery(query)
+    while result.next():
+        names = []
+        catalog = result.getString(1)
+        if not result.wasNull():
+            names.append(catalog)
+        schema = result.getString(2)
+        if not result.wasNull():
+            names.append(schema)
+        name = result.getString(3)
+        if result.wasNull():
+            continue
+        names.append(name)
+        table = '.'.join(names)
+        column = result.getString(4)
+        if result.wasNull():
+            continue
+        fnames = []
+        fcatalog = result.getString(5)
+        if not result.wasNull():
+            fnames.append(fcatalog)
+        fschema = result.getString(6)
+        if not result.wasNull():
+            fnames.append(fschema)
+        fname = result.getString(7)
+        if result.wasNull():
+            continue
+        fnames.append(fname)
+        referencedtable = '.'.join(fnames)
+        updaterule = result.getInt(8)
+        if result.wasNull():
+            updaterule = 0
+        deleterule = result.getInt(9)
+        if result.wasNull():
+            deleterule = 0
+        relatedcolumn = result.getString(10)
+        if result.wasNull():
+            continue
+        yield table, column, referencedtable, relatedcolumn, updaterule, deleterule
     result.close()
 
 def _addColums(columns, items):

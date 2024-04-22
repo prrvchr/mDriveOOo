@@ -1,4 +1,4 @@
-Table|Catalog|Schema|Name|Identity|View
+Table|CatalogName|SchemaName|Name|Identity|View
 0|PUBLIC|PUBLIC|Users|0|
 1|PUBLIC|PUBLIC|Items|5|
 2|PUBLIC|PUBLIC|Parents||

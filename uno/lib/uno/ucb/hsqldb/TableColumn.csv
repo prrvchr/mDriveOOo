@@ -1,4 +1,4 @@
-Table|Column|TypeName|Type|Scale|IsNullable|Default|IsRowVersion|Primary
+Table|Column|TypeName|Type|Scale|IsNullable|DefaultValue|IsRowVersion|Primary
 0|0|VARCHAR|12|100|0|||TRUE
 0|1|VARCHAR|12|100|0|||
 0|2|VARCHAR|12|100|1|||
