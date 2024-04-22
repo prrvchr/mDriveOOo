@@ -32,51 +32,51 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from .unotool import getPropertyValueSet
 
-from .dbconfig import g_catalog
-from .dbconfig import g_schema
-from .dbconfig import g_rowversion
-from .dbconfig import g_role
-from .dbconfig import g_sep
-from .dbconfig import g_typeinfo
-from .dbconfig import g_privilege
-
-from .dbtool import addRole
-from .dbtool import createDataBaseTables
-from .dbtool import createDataBaseIndexes
-from .dbtool import createDataBaseForeignKeys
+from .dbtool import createStaticTables
+from .dbtool import createTables
+from .dbtool import createIndexes
+from .dbtool import createForeignKeys
 from .dbtool import createRoleAndPrivileges
 from .dbtool import executeQueries
+from .dbtool import getConnectionInfos
 from .dbtool import getDataBaseTables
 from .dbtool import getDataBaseIndexes
 from .dbtool import getDataBaseForeignKeys
-from .dbtool import getDataSourceCall
 from .dbtool import getDataSourceConnection
+from .dbtool import getDriverInfos
+from .dbtool import getTableNames
+from .dbtool import getTables
+from .dbtool import getIndexes
 from .dbtool import getForeignKeys
-from .dbtool import getStaticTables
-from .dbtool import getUniqueIndexes
-from .dbtool import setStaticTable
-
-from .dbqueries import getSqlQuery
+from .dbtool import getPrivileges
 
 from .configuration import g_separator
 
 from .dbconfig import g_csv
+from .dbconfig import g_privilege
+from .dbconfig import g_role
+from .dbconfig import g_typeinfo
 
 import traceback
 
-def getDataBaseConnection(ctx, url, user, pwd, new):
-    infos = _getConnectionInfos() if new else None
+def getDataBaseConnection(ctx, url, user, pwd, new, infos=None):
+    if new:
+        options = {'AutoIncrementCreation':   lambda x: x.Value,
+                   'RowVersionCreation':      lambda x: x.Choices,
+                   'TypeInfoSettings':        lambda x: x.Choices,
+                   'TablePrivilegesSettings': lambda x: x.Choices}
+        infos = getDriverInfos(ctx, url, options)
     return getDataSourceConnection(ctx, url, user, pwd, new, infos)
 
 def createDataBase(ctx, logger, connection, odb, version):
     logger.logprb(INFO, 'DataBase', '_createDataBase()', 411, version)
     tables = connection.getTables()
     statement = connection.createStatement()
-    _createStaticTables(ctx, tables, statement)
-    _createTables(ctx, connection, statement, tables)
-    _createIndexes(ctx, statement, tables)
-    _createForeignKeys(ctx, statement, tables)
-    _createRoleAndPrivileges(ctx, statement, tables, connection.getGroups())
+    createStaticTables(tables, statement, g_csv, True)
+    _createTables(connection, statement, tables)
+    _createIndexes(statement, tables)
+    _createForeignKeys(statement, tables)
+    _createRoleAndPrivileges(statement, tables, connection.getGroups())
     executeQueries(ctx, statement, _getQueries())
     statement.close()
     connection.getParent().DatabaseDocument.storeAsURL(odb, ())
@@ -86,28 +86,18 @@ def _getConnectionInfos():
     infos = {'TypeInfoSettings': g_typeinfo, 'TablePrivilegesSettings': g_privilege}
     return getPropertyValueSet(infos)
 
-def _createStaticTables(ctx, tables, statement):
-    createDataBaseTables(tables, getStaticTables().items())
-    createDataBaseIndexes(tables, getUniqueIndexes())
-    createDataBaseForeignKeys(tables, getForeignKeys())
-    setStaticTable(ctx, statement, getStaticTables().keys(), g_csv, True)
+def _createTables(connection, statement, tables):
+    infos = getConnectionInfos(connection, 'AutoIncrementCreation', 'RowVersionCreation')
+    createTables(tables, getDataBaseTables(connection, statement, getTables(), getTableNames(), infos[0], infos[1]))
 
-def _createTables(ctx, connection, statement, tables):
-    call = getDataSourceCall(ctx, connection, 'getTables')
-    query = getSqlQuery(ctx, 'getTableNames')
-    createDataBaseTables(tables, getDataBaseTables(statement, query, call, g_rowversion))
+def _createIndexes(statement, tables):
+    createIndexes(tables, getDataBaseIndexes(statement, getIndexes()))
 
-def _createIndexes(ctx, statement, tables):
-    query = getSqlQuery(ctx, 'getIndexes')
-    createDataBaseIndexes(tables, getDataBaseIndexes(statement, query))
+def _createForeignKeys(statement, tables):
+    createForeignKeys(tables, getDataBaseForeignKeys(statement, getForeignKeys()))
 
-def _createForeignKeys(ctx, statement, tables):
-    query = getSqlQuery(ctx, 'getForeignKeys')
-    createDataBaseForeignKeys(tables, getDataBaseForeignKeys(statement, query))
-
-def _createRoleAndPrivileges(ctx, statement, tables, groups):
-    query = getSqlQuery(ctx, 'getPrivileges')
-    createRoleAndPrivileges(statement, tables, groups, query)
+def _createRoleAndPrivileges(statement, tables, groups):
+    createRoleAndPrivileges(statement, tables, groups, getPrivileges())
 
 def _getQueries():
     return (('createGetTitle',{'Role': g_role}),

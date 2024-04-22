@@ -38,10 +38,6 @@ g_shutdown = ';shutdown=true'
 g_csv = '%s.csv;fs=|;ignore_first=true;encoding=UTF-8;quoted=true'
 g_version = '2.5.1'
 g_role = 'FrontOffice'
-g_catalog = 'PUBLIC'
-g_schema = 'PUBLIC'
-g_rowversion = ('GENERATED ALWAYS AS ROW START', 'GENERATED ALWAYS AS ROW END')
-g_sep = '.'
 g_dba = 'AD'
 # XXX: If we want to be able to adjust the temporal
 # XXX: SQL type we need to pass there settings

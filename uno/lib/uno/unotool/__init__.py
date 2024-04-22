@@ -40,6 +40,7 @@ from .unotool import getConnectionMode
 from .unotool import getContainerWindow
 from .unotool import getCurrentLocale
 from .unotool import getDateTime
+from .unotool import getDefaultPropertyValueSet
 from .unotool import getDesktop
 from .unotool import getDialog
 from .unotool import getDialogUrl

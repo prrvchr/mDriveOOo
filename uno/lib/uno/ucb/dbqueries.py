@@ -32,97 +32,16 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from .logger import getLogger
 
-from .configuration import g_errorlog
+from .configuration import g_defaultlog
 
 g_basename = 'dbqueries'
 
 
 def getSqlQuery(ctx, name, format=None):
 
-# Set Static Table Queries
-    if name == 'setTableSource':
-        query = 'SET TABLE "%s" SOURCE "%s"' % format
-    elif name == 'setTableHeader':
-        query = 'SET TABLE "%s" SOURCE HEADER "%s"' % format
-    elif name == 'setTableReadOnly':
-        query = 'SET TABLE "%s" READONLY TRUE' % format
-
 # Select queries for creating table, index, foreignkey and privileges from static table
-    elif name == 'getTableNames':
-        query = 'SELECT "CatalogName", "SchemaName", "Name" FROM "Tables" ORDER BY "Table";'
-
-    elif name == 'getTables':
-        c1 = '"C"."Name"'
-        c2 = '"TC"."TypeName"'
-        c3 = '"TC"."Type"'
-        c4 = '"TC"."Scale"'
-        c5 = '"TC"."IsNullable"'
-        c6 = '"TC"."DefaultValue"'
-        c7 = '"TC"."IsRowVersion"'
-        c8 = '"TC"."Primary"'
-        c = (c1, c2, c3, c4, c5, c6, c7, c8)
-        f1 = '"Tables" AS "T"'
-        f2 = 'JOIN "TableColumn" AS "TC" ON "T"."Table"="TC"."Table"'
-        f3 = 'JOIN "Columns" AS "C" ON "TC"."Column"="C"."Column"'
-        f = (f1, f2, f3)
-        w = '"T"."CatalogName"=? AND "T"."SchemaName"=? AND "T"."Name"=?'
-        s = (','.join(c), ' '.join(f), w)
-        query = 'SELECT %s FROM %s WHERE %s;' % s
-
-    elif name == 'getIndexes':
-        c1 = '"T"."CatalogName"'
-        c2 = '"T"."SchemaName"'
-        c3 = '"T"."Name"'
-        c4 = '"I"."Unique"'
-        c5 = 'ARRAY_AGG("C"."Name")'
-        c = (c1, c2, c3, c4, c5)
-        f1 = '"Indexes" AS "I"'
-        f2 = 'JOIN "Tables" AS "T" ON "I"."Table"="T"."Table"'
-        f3 = 'JOIN "Columns" AS "C" ON "I"."Column"="C"."Column"'
-        f = (f1, f2, f3)
-        g = '"T"."CatalogName", "T"."SchemaName", "T"."Name", "I"."Unique"'
-        s = (','.join(c), ' '.join(f), g)
-        query = 'SELECT %s FROM %s GROUP BY %s;' % s
-
-    elif name == 'getForeignKeys':
-        c1 = '"T"."CatalogName"'
-        c2 = '"T"."SchemaName"'
-        c3 = '"T"."Name"'
-        c4 = '"C"."Name"'
-        c5 = '"FT"."CatalogName"'
-        c6 = '"FT"."SchemaName"'
-        c7 = '"FT"."Name"'
-        c8 = '"K"."UpdateRule"'
-        c9 = '"K"."DeleteRule"'
-        c10 = '"FC"."Name"'
-        c = (c1, c2, c3, c4, c5, c6, c7, c8, c9, c10)
-        f1 = '"ForeignKeys" AS "K"'
-        f2 = 'JOIN "Tables" AS "T" ON "K"."Table"="T"."Table"'
-        f3 = 'JOIN "Columns" AS "C" ON "K"."Column"="C"."Column"'
-        f4 = 'JOIN "Tables" AS "FT" ON "K"."ReferencedTable"="FT"."Table"'
-        f5 = 'JOIN "Columns" AS "FC" ON "K"."RelatedColumn"="FC"."Column"'
-        f = (f1, f2, f3, f4, f5)
-        s = (','.join(c), ' '.join(f))
-        query = 'SELECT %s FROM %s;' % s
-
-    elif name == 'getPrivileges':
-        c1 = '"T"."CatalogName"'
-        c2 = '"T"."SchemaName"'
-        c3 = '"T"."Name"'
-        c4 = '"C"."Column"'
-        c5 = '"P"."Role"'
-        c6 = 'SUM("P"."Privilege")'
-        c = (c1, c2, c3, c4, c5, c6)
-        f1 = '"Privileges" AS "P"'
-        f2 = 'JOIN "Tables" AS "T" ON "P"."Table"="T"."Table"'
-        f3 = 'LEFT JOIN "Columns" AS "C" ON "P"."Column"="C"."Column"'
-        f = (f1, f2, f3)
-        g = '"T"."CatalogName", "T"."SchemaName", "T"."Name", "C"."Column", "P"."Role"'
-        s = (','.join(c), ' '.join(f), g)
-        query = 'SELECT %s FROM %s GROUP BY %s;' % s
-
 # Create Function Queries
-    elif name == 'createGetTitle':
+    if name == 'createGetTitle':
         query = '''\
 CREATE FUNCTION "GetTitle"(IN TITLE VARCHAR(100),
                            IN URN VARCHAR(100),
@@ -826,7 +745,7 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
 
 # Queries don't exist!!!
     else:
-        logger = getLogger(ctx, g_errorlog, g_basename)
-        logger.logp(SEVERE, g_basename, 'getSqlQuery()', 101, name)
+        logger = getLogger(ctx, g_defaultlog, g_basename)
+        logger.logprb(SEVERE, g_basename, 'getSqlQuery()', 101, name)
         query = None
     return query

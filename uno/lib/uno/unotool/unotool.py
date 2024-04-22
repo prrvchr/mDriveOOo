@@ -351,6 +351,12 @@ def createService(ctx, name, *args, **kwargs):
         service = ctx.ServiceManager.createInstanceWithContext(name, ctx)
     return service
 
+def getDefaultPropertyValueSet(args, default):
+    properties = []
+    for key in args:
+        properties.append(getPropertyValue(key, default))
+    return tuple(properties)
+
 def getPropertyValueSet(kwargs):
     properties = []
     for key, value in kwargs.items():

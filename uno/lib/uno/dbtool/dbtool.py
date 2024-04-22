@@ -79,6 +79,7 @@ from com.sun.star.logging.LogLevel import SEVERE
 from .object import Object
 
 from ..unotool import createService
+from ..unotool import getDefaultPropertyValueSet
 from ..unotool import getPropertyValue
 from ..unotool import getPropertyValueSet
 from ..unotool import getResourceLocation
@@ -98,6 +99,7 @@ from ..logger import getLogger
 
 from ..configuration import g_errorlog
 from ..configuration import g_identifier
+from keyring.util import properties
 
 g_basename = 'dbtool'
 
@@ -548,7 +550,16 @@ def _getTimeZone():
     offset = time.timezone if time.localtime().tm_isdst else time.altzone
     return offset / 60 * -1
 
-def createDataBaseTables(tables, items):
+def getConnectionInfos(connection, *options):
+    infos = []
+    # XXX: We need infos in the same order as the given options
+    for option in options:
+        for info in connection.getMetaData().getConnectionInfo():
+            if info.Name == option:
+                infos.append(info.Value)
+    return infos
+
+def createTables(tables, items):
     for name, item in items:
         catalog = item.get('CatalogName')
         schema = item.get('SchemaName')
@@ -563,13 +574,7 @@ def createDataBaseTables(tables, items):
             _createPrimaryKey(table, primarykeys)
         tables.appendByDescriptor(table)
 
-def setStaticTable(ctx, statement, tables, csv, readonly=False):
-    for table in tables:
-        statement.executeUpdate(getSqlQuery(ctx, 'setTableSource', (table, csv % table)))
-        if readonly:
-            statement.executeUpdate(getSqlQuery(ctx, 'setTableReadOnly', table))
-
-def createDataBaseIndexes(tables, items):
+def createIndexes(tables, items):
     i = 1
     for name, unique, columns in items:
         if not tables.hasByName(name):
@@ -583,7 +588,7 @@ def createDataBaseIndexes(tables, items):
         _addColums(index.getColumns(), columns)
         indexes.appendByDescriptor(index)
 
-def createDataBaseForeignKeys(tables, items):
+def createForeignKeys(tables, items):
     i = 1
     for name, column, referencedtable, relatedcolumn, updaterule, deleterule in items:
         if not tables.hasByName(name) or not tables.hasByName(referencedtable):
@@ -617,9 +622,10 @@ def _createPrimaryKey(table, primarykeys):
     _addColums(key.getColumns(), primarykeys)
     keys.appendByDescriptor(key)
 
-def getDataBaseTables(statement, query, call, rowversion):
-    for catalog, schema, table in _getTableNames(statement, query):
-        columns, primarykeys = _getColumns(call, catalog, schema, table, rowversion)
+def getDataBaseTables(connection, statement, query, sql, autoincrement, rowversion):
+    call = connection.prepareCall(query)
+    for catalog, schema, table in _getTableNames(statement, sql):
+        columns, primarykeys = _getColumns(call, catalog, schema, table, autoincrement, rowversion)
         data = {'CatalogName': catalog, 'SchemaName': schema, 'Columns': columns}
         if primarykeys:
             data['PrimaryKeys'] = primarykeys
@@ -632,7 +638,7 @@ def _getTableNames(statement, query):
         yield result.getString(1), result.getString(2), result.getString(3)
     result.close()
 
-def _getColumns(call, catalog, schema, table, rowversion):
+def _getColumns(call, catalog, schema, table, autoincrement, rowversion):
     columns = []
     primarykeys = []
     index = 0
@@ -664,8 +670,12 @@ def _getColumns(call, catalog, schema, table, rowversion):
             # FIXME: are required to declare a system versioning table
             column['AutoIncrementCreation'] = rowversion[index]
             index = 0 if index else 1
+        isautoincrement = result.getBoolean(8)
+        if not result.wasNull() and isautoincrement:
+            column['IsAutoIncrement'] = isautoincrement
+            column['AutoIncrementCreation'] = autoincrement
         columns.append(column)
-        pk = result.getBoolean(8)
+        pk = result.getBoolean(9)
         if not result.wasNull() and pk:
             primarykeys.append(name)
     result.close()
@@ -784,3 +794,21 @@ def createRoleAndPrivileges(statement, tables, groups, query):
 
 def _getPrivilegeType(column):
     return PrivilegeObject.TABLE if column is None else PrivilegeObject.COLUMN
+
+def getDriverInfos(ctx, location, options):
+    infos = {}
+    properties = getDefaultPropertyValueSet(options, '')
+    for name, value in _getDriverPropertyInfo(ctx, location, properties, options):
+        infos[name] = value
+    return getPropertyValueSet(infos) if infos else None
+
+def _getDriverPropertyInfo(ctx, location, properties, options):
+    url = g_protocol + location
+    service = 'com.sun.star.sdbc.DriverManager'
+    drivers = createService(ctx, service).createEnumeration()
+    while drivers.hasMoreElements():
+        driver = drivers.nextElement()
+        if driver is not None and driver.acceptsURL(url):
+            for info in driver.getPropertyInfo(url, properties):
+                yield info.Name, options[info.Name](info)
+
