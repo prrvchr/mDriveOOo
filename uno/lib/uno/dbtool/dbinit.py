@@ -27,13 +27,15 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from com.sun.star.sdbc.ColumnValue import NO_NULLS
+from com.sun.star.sdbc.ColumnValue import NULLABLE
+
 from com.sun.star.sdbc.DataType import BOOLEAN
 from com.sun.star.sdbc.DataType import INTEGER
 from com.sun.star.sdbc.DataType import SMALLINT
 from com.sun.star.sdbc.DataType import VARCHAR
 
-from com.sun.star.sdbc.ColumnValue import NO_NULLS
-from com.sun.star.sdbc.ColumnValue import NULLABLE
+from com.sun.star.sdbc.KeyRule import CASCADE
 
 from .dbtool import createTables
 from .dbtool import createIndexes
@@ -315,14 +317,14 @@ def _getUniqueIndexes(*args):
     return tuple(indexes)
 
 def _getForeignKeys(*args):
-    foreignkeys = [('PUBLIC.PUBLIC.TableColumn', 'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  0, 0),
-                   ('PUBLIC.PUBLIC.TableColumn', 'Column', 'PUBLIC.PUBLIC.Columns', 'Column', 0, 0),
-                   ('PUBLIC.PUBLIC.ForeignKeys', 'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  0, 0),
-                   ('PUBLIC.PUBLIC.ForeignKeys', 'Column', 'PUBLIC.PUBLIC.Columns', 'Column', 0, 0),
-                   ('PUBLIC.PUBLIC.Indexes',     'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  0, 0),
-                   ('PUBLIC.PUBLIC.Indexes',     'Column', 'PUBLIC.PUBLIC.Columns', 'Column', 0, 0),
-                   ('PUBLIC.PUBLIC.Privileges',  'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  0, 0),
-                   ('PUBLIC.PUBLIC.Privileges',  'Column', 'PUBLIC.PUBLIC.Columns', 'Column', 0, 0)]
+    foreignkeys = [('PUBLIC.PUBLIC.TableColumn', 'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
+                   ('PUBLIC.PUBLIC.TableColumn', 'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE),
+                   ('PUBLIC.PUBLIC.ForeignKeys', 'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
+                   ('PUBLIC.PUBLIC.ForeignKeys', 'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE),
+                   ('PUBLIC.PUBLIC.Indexes',     'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
+                   ('PUBLIC.PUBLIC.Indexes',     'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE),
+                   ('PUBLIC.PUBLIC.Privileges',  'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
+                   ('PUBLIC.PUBLIC.Privileges',  'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE)]
     for foreignkey in args:
         foreignkeys.append(foreignkey)
     return tuple(foreignkeys)

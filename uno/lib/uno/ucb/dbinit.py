@@ -30,11 +30,11 @@
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from com.sun.star.sdbc.DataType import INTEGER
-from com.sun.star.sdbc.DataType import VARCHAR
-
 from com.sun.star.sdbc.ColumnValue import NO_NULLS
 from com.sun.star.sdbc.ColumnValue import NULLABLE
+
+from com.sun.star.sdbc.DataType import INTEGER
+from com.sun.star.sdbc.DataType import VARCHAR
 
 from .dbtool import createStaticTables
 from .dbtool import createStaticIndexes
@@ -101,37 +101,8 @@ def _createForeignKeys(statement, tables):
 def _createRoleAndPrivileges(statement, tables, groups):
     createRoleAndPrivileges(statement, tables, groups, getPrivileges())
 
-def _getQueries():
-    return (('createGetTitle',{'Role': g_role}),
-            ('createGetUniqueName',{'Role': g_role, 'Prefix': ' ~', 'Suffix': ''}),
-
-            ('createChildView',{'Role': g_role}),
-            ('createTwinView',{'Role': g_role}),
-            ('createUriView',{'Role': g_role}),
-            ('createItemView',{'Role': g_role}),
-            ('createTitleView',{'Role': g_role}),
-            ('createChildrenView',{'Role': g_role}),
-            ('createPathView',{'Role': g_role, 'Separator': g_separator}),
-
-            ('createGetPath',{'Role': g_role}),
-            ('createGetItemId',{'Role': g_role, 'Separator': g_separator}),
-            ('createGetRoot',{'Role': g_role}),
-            ('createGetItem',{'Role': g_role}),
-            ('createGetNewTitle',{'Role': g_role}),
-            ('createUpdatePushItems',{'Role': g_role}),
-            ('createGetPushItems',{'Role': g_role}),
-            ('createGetPushProperties',{'Role': g_role}),
-            ('createGetItemParentIds',{'Role': g_role}),
-            ('createInsertUser',{'Role': g_role}),
-            ('createInsertSharedFolder',{'Role': g_role}),
-            ('createMergeItem',{'Role': g_role}),
-            ('createMergeParent',{'Role': g_role}),
-            ('createInsertItem',{'Role': g_role}),
-            ('createPullChanges',{'Role': g_role}),
-            ('createUpdateNewItemId',{'Role': g_role}))
-
 def _getStaticTables():
-    tables = {'Settings':    {'CatalogName': 'PUBLIC',
+    return {'Settings':      {'CatalogName': 'PUBLIC',
                               'SchemaName':  'PUBLIC',
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Id',
@@ -161,5 +132,33 @@ def _getStaticTables():
                                            'IsNullable': NULLABLE,
                                            'DefaultValue': 'NULL'}),
                               'PrimaryKeys': ('Id', )}}
-    return tables
+
+def _getQueries():
+    return (('createGetTitle',{'Role': g_role}),
+            ('createGetUniqueName',{'Role': g_role, 'Prefix': ' ~', 'Suffix': ''}),
+
+            ('createChildView',{'Role': g_role}),
+            ('createTwinView',{'Role': g_role}),
+            ('createUriView',{'Role': g_role}),
+            ('createItemView',{'Role': g_role}),
+            ('createTitleView',{'Role': g_role}),
+            ('createChildrenView',{'Role': g_role}),
+            ('createPathView',{'Role': g_role, 'Separator': g_separator}),
+
+            ('createGetPath',{'Role': g_role}),
+            ('createGetItemId',{'Role': g_role, 'Separator': g_separator}),
+            ('createGetRoot',{'Role': g_role}),
+            ('createGetItem',{'Role': g_role}),
+            ('createGetNewTitle',{'Role': g_role}),
+            ('createUpdatePushItems',{'Role': g_role}),
+            ('createGetPushItems',{'Role': g_role}),
+            ('createGetPushProperties',{'Role': g_role}),
+            ('createGetItemParentIds',{'Role': g_role}),
+            ('createInsertUser',{'Role': g_role}),
+            ('createInsertSharedFolder',{'Role': g_role}),
+            ('createMergeItem',{'Role': g_role}),
+            ('createMergeParent',{'Role': g_role}),
+            ('createInsertItem',{'Role': g_role}),
+            ('createPullChanges',{'Role': g_role}),
+            ('createUpdateNewItemId',{'Role': g_role}))
 
