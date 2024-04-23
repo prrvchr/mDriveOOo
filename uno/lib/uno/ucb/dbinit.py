@@ -53,19 +53,15 @@ from .dbtool import getPrivileges
 from .configuration import g_separator
 
 from .dbconfig import g_csv
-from .dbconfig import g_privilege
 from .dbconfig import g_role
-from .dbconfig import g_typeinfo
+from .dbconfig import g_drvinfos
+
 
 import traceback
 
 def getDataBaseConnection(ctx, url, user, pwd, new, infos=None):
     if new:
-        options = {'AutoIncrementCreation':   lambda x: x.Value,
-                   'RowVersionCreation':      lambda x: x.Choices,
-                   'TypeInfoSettings':        lambda x: x.Choices,
-                   'TablePrivilegesSettings': lambda x: x.Choices}
-        infos = getDriverInfos(ctx, url, options)
+        infos = getDriverInfos(ctx, url, g_drvinfos)
     return getDataSourceConnection(ctx, url, user, pwd, new, infos)
 
 def createDataBase(ctx, logger, connection, odb, version):
@@ -81,10 +77,6 @@ def createDataBase(ctx, logger, connection, odb, version):
     statement.close()
     connection.getParent().DatabaseDocument.storeAsURL(odb, ())
     logger.logprb(INFO, 'DataBase', '_createDataBase()', 412)
-
-def _getConnectionInfos():
-    infos = {'TypeInfoSettings': g_typeinfo, 'TablePrivilegesSettings': g_privilege}
-    return getPropertyValueSet(infos)
 
 def _createTables(connection, statement, tables):
     infos = getConnectionInfos(connection, 'AutoIncrementCreation', 'RowVersionCreation')
