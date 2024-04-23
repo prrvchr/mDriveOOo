@@ -283,28 +283,7 @@ def _getStaticTables(**kwargs):
                                            'TypeName': 'BOOLEAN',
                                            'Type': BOOLEAN,
                                            'IsNullable': NO_NULLS,
-                                           'DefaultValue': 'TRUE'})},
-              'Privileges':  {'CatalogName': 'PUBLIC',
-                              'SchemaName':  'PUBLIC',
-                              'Type':        'TEXT TABLE',
-                              'Columns': ({'Name': 'Table',
-                                           'TypeName': 'INTEGER',
-                                           'Type': INTEGER,
-                                           'IsNullable': NO_NULLS},
-                                          {'Name': 'Column',
-                                           'TypeName': 'INTEGER',
-                                           'Type': INTEGER,
-                                           'IsNullable': NULLABLE,
-                                           'DefaultValue': 'NULL'},
-                                          {'Name': 'Role',
-                                           'TypeName': 'VARCHAR',
-                                           'Type': VARCHAR,
-                                           'Scale': 100,
-                                           'IsNullable': NO_NULLS},
-                                          {'Name': 'Privilege',
-                                           'TypeName': 'INTEGER',
-                                           'Type': INTEGER,
-                                           'IsNullable': NO_NULLS})}}
+                                           'DefaultValue': 'TRUE'})}}
     for name, value in kwargs.items():
         tables[name] = value
     return tables
