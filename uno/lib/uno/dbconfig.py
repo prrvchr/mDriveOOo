@@ -62,3 +62,11 @@ g_view = {'UserTable': 'Users',
 
 
 g_bookmark = 'Bookmark'
+
+# XXX: If we want to be able to create DataBase we need to get some
+# XXX: DriverPropertyInfo from the driver. Here is the necessary information
+g_drvinfos = {'AutoIncrementCreation':   lambda x: x.Value,
+              'RowVersionCreation':      lambda x: x.Choices,
+              'TypeInfoSettings':        lambda x: x.Choices,
+              'TablePrivilegesSettings': lambda x: x.Choices}
+

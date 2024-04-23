@@ -1,8 +1,8 @@
-Table|Name|Identity|View|Versioned
-0|Users|||false
-1|Books|||true
-2|Groups|||true
-3|Cards|||true
-4|BookCards|||false
-5|GroupCards|||false
-6|CardValues|||false
+Table|CatalogName|SchemaName|Name|Identity|View
+0|PUBLIC|PUBLIC|Users||
+1|PUBLIC|PUBLIC|Books||
+2|PUBLIC|PUBLIC|Groups||
+3|PUBLIC|PUBLIC|Cards||
+4|PUBLIC|PUBLIC|BookCards||
+5|PUBLIC|PUBLIC|GroupCards||
+6|PUBLIC|PUBLIC|CardValues||
