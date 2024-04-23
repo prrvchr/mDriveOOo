@@ -757,12 +757,6 @@ def _addColum(columns, name, relatedcolumn):
     column.setPropertyValue('RelatedColumn', relatedcolumn)
     columns.appendByDescriptor(column)
 
-def addRole(groups, role):
-    if not groups.hasByName(role):
-        group = groups.createDataDescriptor()
-        group.Name = role
-        groups.appendByDescriptor(group)
-
 def createRoleAndPrivileges(statement, tables, groups, query):
     result = statement.executeQuery(query)
     while result.next():
@@ -788,7 +782,7 @@ def createRoleAndPrivileges(statement, tables, groups, query):
         if result.wasNull():
             continue
         if not groups.hasByName(role):
-            addRole(groups, role)
+            _addRole(groups, role)
         group = groups.getByName(role)
         group.grantPrivileges(fullname, _getPrivilegeType(column), privilege)
 
@@ -813,4 +807,28 @@ def _getDriverPropertyInfo(ctx, location, properties, options):
                 if info.Name in options:
                     yield info.Name, options[info.Name](info)
             break
+
+def createUser(connection, name, password='', role=None):
+    users = connection.getUsers()
+    if not users.hasByName(name):
+        user = users.createDataDescriptor()
+        user.setPropertyValue('Name', name)
+        user.setPropertyValue('Password', password)
+        users.appendByDescriptor(user)
+        if role is not None:
+            return self._addGroup(users, name, role)
+    return True
+
+def _addGroup(users, name, role):
+    if users.hasByName(name):
+        groups = users.getByName(name).getGroups()
+        _addRole(groups, role)
+        return True
+    return False
+
+def _addRole(groups, role):
+    if not groups.hasByName(role):
+        group = groups.createDataDescriptor()
+        group.setPropertyValue('Name', role)
+        groups.appendByDescriptor(group)
 

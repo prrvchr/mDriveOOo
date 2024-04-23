@@ -27,13 +27,13 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .dbtool import addRole
 from .dbtool import checkDataBase
 from .dbtool import createDataSource
 from .dbtool import createTables
 from .dbtool import createIndexes
 from .dbtool import createForeignKeys
 from .dbtool import createRoleAndPrivileges
+from .dbtool import createUser
 from .dbtool import currentDateTime
 from .dbtool import currentDateTimeInTZ
 from .dbtool import currentUnoDateTime

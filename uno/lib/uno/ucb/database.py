@@ -45,7 +45,7 @@ from .unotool import getSimpleFile
 
 from .dbqueries import getSqlQuery
 
-from .dbtool import addRole
+from .dbtool import createUser
 from .dbtool import currentDateTimeInTZ
 from .dbtool import currentUnoDateTime
 from .dbtool import getDataSourceCall
@@ -111,21 +111,7 @@ class DataBase():
         self._statement.execute(query)
 
     def createUser(self, name, password):
-        users = self.Connection.getUsers()
-        if not users.hasByName(name):
-            user = users.createDataDescriptor()
-            user.Name = name
-            user.Password = password
-            users.appendByDescriptor(user)
-            return self._addGroup(users, name)
-        return True
-
-    def _addGroup(self, users, name):
-        if users.hasByName(name):
-            groups = users.getByName(name).getGroups()
-            addRole(groups, g_role)
-            return True
-        return False
+        return createUser(self.Connection, name, password, g_role)
 
     def createSharedFolder(self, user, itemid, folder, mediatype, datetime, timestamp):
         call = self._getCall('insertSharedFolder')
