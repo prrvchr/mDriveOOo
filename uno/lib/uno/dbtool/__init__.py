@@ -76,6 +76,9 @@ from .dbtool import registerDataSource
 from .dbtool import toUnoDateTime
 
 from .dbinit import createStaticTables
+from .dbinit import createStaticIndexes
+from .dbinit import createStaticForeignKeys
+from .dbinit import setStaticTable
 from .dbinit import getTableNames
 from .dbinit import getTables
 from .dbinit import getIndexes

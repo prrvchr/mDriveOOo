@@ -30,9 +30,16 @@
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .unotool import getPropertyValueSet
+from com.sun.star.sdbc.DataType import INTEGER
+from com.sun.star.sdbc.DataType import VARCHAR
+
+from com.sun.star.sdbc.ColumnValue import NO_NULLS
+from com.sun.star.sdbc.ColumnValue import NULLABLE
 
 from .dbtool import createStaticTables
+from .dbtool import createStaticIndexes
+from .dbtool import createStaticForeignKeys
+from .dbtool import setStaticTable
 from .dbtool import createTables
 from .dbtool import createIndexes
 from .dbtool import createForeignKeys
@@ -68,7 +75,10 @@ def createDataBase(ctx, logger, connection, odb, version):
     logger.logprb(INFO, 'DataBase', '_createDataBase()', 411, version)
     tables = connection.getTables()
     statement = connection.createStatement()
-    createStaticTables(tables, statement, g_csv, True)
+    stables = createStaticTables(tables, **_getStaticTables())
+    createStaticIndexes(tables)
+    createStaticForeignKeys(tables)
+    setStaticTable(statement, stables, g_csv, True)
     _createTables(connection, statement, tables)
     _createIndexes(statement, tables)
     _createForeignKeys(statement, tables)
@@ -119,3 +129,37 @@ def _getQueries():
             ('createInsertItem',{'Role': g_role}),
             ('createPullChanges',{'Role': g_role}),
             ('createUpdateNewItemId',{'Role': g_role}))
+
+def _getStaticTables():
+    tables = {'Settings':    {'CatalogName': 'PUBLIC',
+                              'SchemaName':  'PUBLIC',
+                              'Type':        'TEXT TABLE',
+                              'Columns': ({'Name': 'Id',
+                                           'TypeName': 'INTEGER',
+                                           'Type': INTEGER,
+                                           'IsNullable': NO_NULLS},
+                                          {'Name': 'Name',
+                                           'TypeName': 'VARCHAR',
+                                           'Type': VARCHAR,
+                                           'Scale': 100,
+                                           'IsNullable': NO_NULLS},
+                                          {'Name': 'Value1',
+                                           'TypeName': 'VARCHAR',
+                                           'Type': VARCHAR,
+                                           'Scale': 100,
+                                           'IsNullable': NO_NULLS},
+                                          {'Name': 'Value2',
+                                           'TypeName': 'VARCHAR',
+                                           'Type': VARCHAR,
+                                           'Scale': 100,
+                                           'IsNullable': NULLABLE,
+                                           'DefaultValue': 'NULL'},
+                                          {'Name': 'Value3',
+                                           'TypeName': 'VARCHAR',
+                                           'Type': VARCHAR,
+                                           'Scale': 100,
+                                           'IsNullable': NULLABLE,
+                                           'DefaultValue': 'NULL'}),
+                              'PrimaryKeys': ('Id', )}}
+    return tables
+

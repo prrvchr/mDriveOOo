@@ -564,3 +564,4 @@ class DataBase():
         #query = self.Connection.getQueries().getByName(name).Command
         #self._CallsPool[name] = self.Connection.prepareCall(query)
         return self.Connection.prepareCommand(name, QUERY)
+
