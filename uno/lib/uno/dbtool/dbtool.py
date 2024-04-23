@@ -810,5 +810,7 @@ def _getDriverPropertyInfo(ctx, location, properties, options):
         driver = drivers.nextElement()
         if driver is not None and driver.acceptsURL(url):
             for info in driver.getPropertyInfo(url, properties):
-                yield info.Name, options[info.Name](info)
+                if info.Name in options:
+                    yield info.Name, options[info.Name](info)
+            break
 

@@ -154,10 +154,6 @@ CREATE VIEW "Path" AS WITH RECURSIVE TREE ("UserId", "ParentId", "ItemId", "Path
   FROM TREE;
 GRANT SELECT ON "Path" TO "%(Role)s";''' % format
 
-# set session
-    elif name == 'setSession':
-        query = "SET SESSION AUTHORIZATION '%s'" % format
-
 # Select Queries
     elif name == 'getContentType':
         query = """\
@@ -203,9 +199,6 @@ SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Uri" = ?;'''
 
     elif name == 'hasTitle':
         query = 'SELECT COUNT("Title") > 0 FROM "Child" WHERE "UserId" = ? AND "ParentId" = ? AND "Title" = ?;'
-
-    elif name == 'getToken':
-        query = 'SELECT "Token" FROM "Users" WHERE "UserId" = ?;'
 
 # Insert Queries
     elif name == 'insertNewIdentifier':

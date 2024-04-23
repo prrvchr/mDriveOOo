@@ -54,7 +54,6 @@ from .dbtool import getDataFromResult
 from .dbinit import createDataBase
 from .dbinit import getDataBaseConnection
 
-from .dbconfig import g_dba
 from .dbconfig import g_role
 from .dbconfig import g_version
 
@@ -468,10 +467,6 @@ class DataBase():
         update.setString(2, userid)
         update.executeUpdate()
         update.close()
-
-    def setSession(self, user=g_dba):
-        query = getSqlQuery(self._ctx, 'setSession', user)
-        self._statement.execute(query)
 
     # Procedure to retrieve all the UPDATE AND INSERT in the 'Capabilities' table
     def getPushItems(self, userid, start, end):

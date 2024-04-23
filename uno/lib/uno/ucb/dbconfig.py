@@ -36,9 +36,9 @@ g_class = 'org.hsqldb.jdbcDriver'
 g_options = ';hsqldb.default_table_type=cached;ifexists=false'
 g_shutdown = ';shutdown=true'
 g_csv = '%s.csv;fs=|;ignore_first=true;encoding=UTF-8;quoted=true'
-g_version = '2.5.1'
+g_version = '2.7.2'
 g_role = 'FrontOffice'
-g_dba = 'AD'
+
 # XXX: If we want to be able to create DataBase we need to get some
 # XXX: DriverPropertyInfo from the driver. Here is the necessary information
 g_drvinfos = {'AutoIncrementCreation':   lambda x: x.Value,
