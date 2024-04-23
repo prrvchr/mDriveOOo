@@ -39,110 +39,12 @@ g_basename = 'dbqueries'
 
 def getSqlQuery(ctx, name, format=None):
 
-# Create Text Table Queries
-    if name == 'createTableTables':
-        c1 = '"Table" INTEGER NOT NULL PRIMARY KEY'
-        c2 = '"Name" VARCHAR(100) NOT NULL'
-        c3 = '"Identity" INTEGER DEFAULT NULL'
-        c4 = '"View" BOOLEAN DEFAULT TRUE'
-        c5 = '"Versioned" BOOLEAN DEFAULT FALSE'
-        k1 = 'CONSTRAINT "UniqueTablesName" UNIQUE("Name")'
-        c = (c1, c2, c3, c4, c5, k1)
-        query = 'CREATE TEXT TABLE IF NOT EXISTS "Tables"(%s)' % ','.join(c)
+# Create User and Schema Query
+    if name == 'createUserSchema':
+        query = 'CREATE SCHEMA "%(Schema)s" AUTHORIZATION "%(Name)s";' % format
 
-    elif name == 'createTableColumns':
-        c1 = '"Column" INTEGER NOT NULL PRIMARY KEY'
-        c2 = '"Name" VARCHAR(100) NOT NULL'
-        k1 = 'CONSTRAINT "UniqueColumnsName" UNIQUE("Name")'
-        c = (c1, c2, k1)
-        query = 'CREATE TEXT TABLE IF NOT EXISTS "Columns"(%s)' % ','.join(c)
-
-    elif name == 'createTableTableColumn':
-        c1 = '"Table" INTEGER NOT NULL'
-        c2 = '"Column" INTEGER NOT NULL'
-        c3 = '"Type" VARCHAR(100) NOT NULL'
-        c4 = '"Default" VARCHAR(100) DEFAULT NULL'
-        c5 = '"Options" VARCHAR(100) DEFAULT NULL'
-        c6 = '"Primary" BOOLEAN NOT NULL'
-        c7 = '"Unique" BOOLEAN NOT NULL'
-        c8 = '"ForeignTable" INTEGER DEFAULT NULL'
-        c9 = '"ForeignColumn" INTEGER DEFAULT NULL'
-        k1 = 'PRIMARY KEY("Table","Column")'
-        k2 = 'CONSTRAINT "ForeignTablesTable" FOREIGN KEY("Table") REFERENCES '
-        k2 += '"Tables"("Table") ON DELETE CASCADE ON UPDATE CASCADE'
-        k3 = 'CONSTRAINT "ForeignColumnsColumn" FOREIGN KEY("Column") REFERENCES '
-        k3 += '"Columns"("Column") ON DELETE CASCADE ON UPDATE CASCADE'
-        c = (c1, c2, c3, c4, c5, c6, c7, c8, c9, k1, k2, k3)
-        query = 'CREATE TEXT TABLE IF NOT EXISTS "TableColumn"(%s)' % ','.join(c)
-
-    elif name == 'createTableResources':
-        c1 = '"Resource" INTEGER NOT NULL PRIMARY KEY'
-        c2 = '"Path" VARCHAR(100) NOT NULL'
-        c3 = '"Name" VARCHAR(100) DEFAULT NULL'
-        c4 = '"View" VARCHAR(100) DEFAULT NULL'
-        c5 = '"Method" SMALLINT DEFAULT NULL'
-        c = (c1, c2, c3, c4, c5)
-        query = 'CREATE TEXT TABLE IF NOT EXISTS "Resources"(%s)' % ','.join(c)
-
-    elif name == 'createTableProperties':
-        c1 = '"Property" INTEGER NOT NULL PRIMARY KEY'
-        c2 = '"Resource" INTEGER NOT NULL'
-        c3 = '"Path" VARCHAR(100) NOT NULL'
-        c4 = '"Name" VARCHAR(100) DEFAULT NULL'
-        k1 = 'CONSTRAINT "ForeignResourcesResource" FOREIGN KEY("Resource") REFERENCES '
-        k1 += '"Resources"("Resource") ON DELETE CASCADE ON UPDATE CASCADE'
-        c = (c1, c2, c3, c4, k1)
-        query = 'CREATE TEXT TABLE IF NOT EXISTS "Properties"(%s)' % ','.join(c)
-
-    elif name == 'createTableTypes':
-        c1 = '"Type" INTEGER NOT NULL PRIMARY KEY'
-        c2 = '"Path" VARCHAR(100) NOT NULL'
-        c3 = '"Name" VARCHAR(100) DEFAULT NULL'
-        c = (c1, c2, c3)
-        query = 'CREATE TEXT TABLE IF NOT EXISTS "Types"(%s)' % ','.join(c)
-
-    elif name == 'createTablePropertyType':
-        c1 = '"Property" INTEGER NOT NULL'
-        c2 = '"Type" INTEGER NOT NULL'
-        k1 = 'CONSTRAINT "ForeignPropertiesProperty" FOREIGN KEY("Property") REFERENCES '
-        k1 += '"Properties"("Property") ON DELETE CASCADE ON UPDATE CASCADE'
-        k2 = 'CONSTRAINT "ForeignTypesType" FOREIGN KEY("Type") REFERENCES '
-        k2 += '"Types"("Type") ON DELETE CASCADE ON UPDATE CASCADE'
-        c = (c1, c2, k1, k2)
-        query = 'CREATE TEXT TABLE IF NOT EXISTS "PropertyType"(%s)' % ','.join(c)
-
-    elif name == 'setTableSource':
-        query = 'SET TABLE "%s" SOURCE "%s"' % format
-
-    elif name == 'setTableHeader':
-        query = 'SET TABLE "%s" SOURCE HEADER "%s"' % format
-
-    elif name == 'setTableReadOnly':
-        query = 'SET TABLE "%s" READONLY TRUE' % format
-
-# Create Cached Table Options
-    elif name == 'getPrimayKey':
-        query = 'PRIMARY KEY(%s)' % ','.join(format)
-
-    elif name == 'getUniqueConstraint':
-        query = 'CONSTRAINT "Unique%(Table)s%(Column)s" UNIQUE("%(Column)s")' % format
-
-    elif name == 'getForeignConstraint':
-        q = 'CONSTRAINT "Foreign%(Table)s%(Column)s" FOREIGN KEY("%(Column)s") REFERENCES '
-        q += '"%(ForeignTable)s"("%(ForeignColumn)s") ON DELETE CASCADE ON UPDATE CASCADE'
-        query = q % format
-
-# Create Cached Table Queries
-    elif name == 'createTable':
-        query = 'CREATE CACHED TABLE IF NOT EXISTS "%s"(%s)' % format
-
-    elif name == 'getPeriodColumns':
-        query = '"RowStart" TIMESTAMP(6) WITH TIME ZONE GENERATED ALWAYS AS ROW START,'
-        query += '"RowEnd" TIMESTAMP(6) WITH TIME ZONE GENERATED ALWAYS AS ROW END,'
-        query += 'PERIOD FOR SYSTEM_TIME("RowStart","RowEnd")'
-
-    elif name == 'getSystemVersioning':
-        query = ' WITH SYSTEM VERSIONING'
+    elif name == 'setUserSchema':
+        query = 'ALTER USER "%(Name)s" SET INITIAL SCHEMA "%(Schema)s";' % format
 
 # Create Dynamic View Queries
     elif name == 'createUserView':
@@ -184,65 +86,7 @@ GRANT SELECT ON "%(Schema)s"."%(Name)s" TO "%(User)s";
     elif name == 'deleteView':
         query = 'DROP VIEW IF EXISTS "%(Schema)s"."%(OldName)s";' % format
 
-# Create User and Schema Query
-    elif name == 'createUser':
-        q = """CREATE USER "%(Name)s" PASSWORD '%(Password)s'"""
-        q += ' ADMIN;' if format.get('Admin') else ';'
-        query = q % format
-
-    elif name == 'createUserSchema':
-        query = 'CREATE SCHEMA "%(Schema)s" AUTHORIZATION "%(Name)s";' % format
-
-    elif name == 'setUserSchema':
-        query = 'ALTER USER "%(Name)s" SET INITIAL SCHEMA "%(Schema)s";' % format
-
-    elif name == 'setUserPassword':
-        query = """ALTER USER "%(Name)s" SET PASSWORD '%(Password)s'""" % format
-
-# Get last IDENTITY value that was inserted into a table by the current session
-    elif name == 'getIdentity':
-        query = 'CALL IDENTITY();'
-
-# Get Users and Privileges Query
-    elif name == 'getUsers':
-        query = 'SELECT * FROM INFORMATION_SCHEMA.SYSTEM_USERS'
-    elif name == 'getPrivileges':
-        query = 'SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES'
-    elif name == 'changePassword':
-        query = "SET PASSWORD '%s'" % format
-
 # Select Queries
-    # DataBase creation Select Queries
-    elif name == 'getTableNames':
-        query = 'SELECT "Name" FROM PUBLIC."Tables" ORDER BY "Table";'
-
-    elif name == 'getTables':
-        s1 = '"T"."Table" AS "TableId"'
-        s2 = '"C"."Column" AS "ColumnId"'
-        s3 = '"T"."Name" AS "Table"'
-        s4 = '"C"."Name" AS "Column"'
-        s5 = '"TC"."Type"'
-        s6 = '"TC"."Default"'
-        s7 = '"TC"."Options"'
-        s8 = '"TC"."Primary"'
-        s9 = '"TC"."Unique"'
-        s10 = '"TC"."ForeignTable" AS "ForeignTableId"'
-        s11 = '"TC"."ForeignColumn" AS "ForeignColumnId"'
-        s12 = '"T2"."Name" AS "ForeignTable"'
-        s13 = '"C2"."Name" AS "ForeignColumn"'
-        s14 = '"T"."View"'
-        s15 = '"T"."Versioned"'
-        s = (s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15)
-        f1 = '"Tables" AS "T"'
-        f2 = 'JOIN "TableColumn" AS "TC" ON "T"."Table" = "TC"."Table"'
-        f3 = 'JOIN "Columns" AS "C" ON "TC"."Column" = "C"."Column"'
-        f4 = 'LEFT JOIN "Tables" AS "T2" ON "TC"."ForeignTable" = "T2"."Table"'
-        f5 = 'LEFT JOIN "Columns" AS "C2" ON "TC"."ForeignColumn" = "C2"."Column"'
-        w = '"T"."Name" = ?'
-        f = (f1, f2, f3, f4, f5)
-        p = (', '.join(s), ' '.join(f), w)
-        query = 'SELECT %s FROM %s WHERE %s' % p
-
     elif name == 'getViews':
         s1 = '"T1"."Table" AS "TableId"'
         s2 = '"TL"."Label" AS "LabelId"'

@@ -38,6 +38,7 @@ from com.sun.star.sdb.CommandType import QUERY
 from com.sun.star.sdbc.DataType import VARCHAR
 
 from ..dbtool import Array
+from ..dbtool import createUser
 from ..dbtool import currentDateTimeInTZ
 from ..dbtool import getDataFromResult
 from ..dbtool import getDataSourceCall
@@ -70,28 +71,20 @@ import traceback
 
 class DataBase(object):
     def __init__(self, ctx, url, user='', pwd=''):
-        try:
-            print("DataBase.__init__() 1")
-            self._ctx = ctx
-            self._statement = None
-            self._fieldsMap = {}
-            self._batchedCalls = OrderedDict()
-            config = getConfiguration(ctx, g_identifier, False)
-            self._addressbook = config.getByName('AddressBookName')
-            self._url = url
-            odb = url + '.odb'
-            new = not getSimpleFile(ctx).exists(odb)
-            print("DataBase.__init__() 2")
-            connection = getDataBaseConnection(ctx, url, user, pwd, new)
-            print("DataBase.__init__() 3")
-            self._version = connection.getMetaData().getDriverVersion()
-            if new and self.isUptoDate():
-                print("DataBase.__init__() 4")
-                createDataBase(ctx, connection, odb, self._addressbook)
-                print("DataBase.__init__() 5")
-            connection.close()
-        except Exception as e:
-            traceback.print_exc()
+        self._ctx = ctx
+        self._statement = None
+        self._fieldsMap = {}
+        self._batchedCalls = OrderedDict()
+        config = getConfiguration(ctx, g_identifier, False)
+        self._addressbook = config.getByName('AddressBookName')
+        self._url = url
+        odb = url + '.odb'
+        new = not getSimpleFile(ctx).exists(odb)
+        connection = getDataBaseConnection(ctx, url, user, pwd, new)
+        self._version = connection.getMetaData().getDriverVersion()
+        if new and self.isUptoDate():
+            createDataBase(ctx, connection, odb, self._addressbook)
+        connection.close()
 
     @property
     def Connection(self):
@@ -185,24 +178,21 @@ class DataBase(object):
         return metadata, books
 
     def createUser(self, schema, userid, name, password):
-        format = {'Public': 'PUBLIC',
-                  'Schema': schema,
-                  'User': userid,
-                  'Name': name,
-                  'Password': password,
-                  'CardView': g_cardview,
-                  'View': self._getViewName(),
-                  'Admin': g_admin}
-        statement = self.Connection.createStatement()
-        query = getSqlQuery(self._ctx, 'createUser', format)
-        status = statement.executeUpdate(query)
-        query = getSqlQuery(self._ctx, 'createUserSchema', format)
-        statement.execute(query)
-        query = getSqlQuery(self._ctx, 'setUserSchema', format)
-        statement.execute(query)
-        query = getSqlQuery(self._ctx, 'createUserView', format)
-        statement.execute(query)
-        statement.close()
+        if createUser(self.Connection, name, password):
+            statement = self.Connection.createStatement()
+            format = {'Public': 'PUBLIC',
+                      'Schema': schema,
+                      'User': userid,
+                      'Name': name,
+                      'CardView': g_cardview,
+                      'View': self._getViewName()}
+            query = getSqlQuery(self._ctx, 'createUserSchema', format)
+            statement.execute(query)
+            query = getSqlQuery(self._ctx, 'setUserSchema', format)
+            statement.execute(query)
+            query = getSqlQuery(self._ctx, 'createUserView', format)
+            statement.execute(query)
+            statement.close()
 
     def selectUser(self, server, name):
         metadata = None
