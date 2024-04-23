@@ -301,9 +301,7 @@ def _getForeignKeys(*args):
                    ('PUBLIC.PUBLIC.ForeignKeys', 'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
                    ('PUBLIC.PUBLIC.ForeignKeys', 'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE),
                    ('PUBLIC.PUBLIC.Indexes',     'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
-                   ('PUBLIC.PUBLIC.Indexes',     'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE),
-                   ('PUBLIC.PUBLIC.Privileges',  'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
-                   ('PUBLIC.PUBLIC.Privileges',  'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE)]
+                   ('PUBLIC.PUBLIC.Indexes',     'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE)]
     for foreignkey in args:
         foreignkeys.append(foreignkey)
     return tuple(foreignkeys)

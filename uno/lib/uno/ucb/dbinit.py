@@ -36,6 +36,8 @@ from com.sun.star.sdbc.ColumnValue import NULLABLE
 from com.sun.star.sdbc.DataType import INTEGER
 from com.sun.star.sdbc.DataType import VARCHAR
 
+from com.sun.star.sdbc.KeyRule import CASCADE
+
 from .dbtool import createStaticTables
 from .dbtool import createStaticIndexes
 from .dbtool import createStaticForeignKeys
@@ -77,7 +79,7 @@ def createDataBase(ctx, logger, connection, odb, version):
     statement = connection.createStatement()
     statics = createStaticTables(tables, **_getStaticTables())
     createStaticIndexes(tables)
-    createStaticForeignKeys(tables)
+    createStaticForeignKeys(tables, *_getForeignKeys())
     setStaticTable(statement, statics, g_csv, True)
     _createTables(connection, statement, tables)
     _createIndexes(statement, tables)
@@ -153,6 +155,10 @@ def _getStaticTables():
                                            'IsNullable': NULLABLE,
                                            'DefaultValue': 'NULL'}),
                               'PrimaryKeys': ('Id', )}}
+
+def _getForeignKeys():
+    return (('PUBLIC.PUBLIC.Privileges', 'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
+            ('PUBLIC.PUBLIC.Privileges', 'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE))
 
 def _getQueries():
     return (('createGetTitle',{'Role': g_role}),
