@@ -30,6 +30,7 @@
 import uno
 import unohelper
 
+from com.sun.star.sdbc import XCloseable
 from com.sun.star.sdbc import XRow
 from com.sun.star.sdbc import XResultSet
 from com.sun.star.sdbc import XResultSetMetaDataSupplier
@@ -158,14 +159,14 @@ class Row(unohelper.Base,
 
 class DynamicResultSet(unohelper.Base,
                        XDynamicResultSet):
-    def __init__(self, user, authority, select):
+    def __init__(self, user, authority, call):
         self._user = user
         self._authority = authority
-        self._select = select
+        self._call = call
 
     # XDynamicResultSet
     def getStaticResultSet(self):
-        return ContentResultSet(self._user, self._authority, self._select)
+        return ContentResultSet(self._user, self._authority, self._call)
     def setListener(self, listener):
         pass
     def connectToCache(self, cache):
@@ -179,12 +180,13 @@ class ContentResultSet(unohelper.Base,
                        XResultSet,
                        XRow,
                        XResultSetMetaDataSupplier,
-                       XContentAccess):
-    def __init__(self, user, authority, select):
+                       XContentAccess,
+                       XCloseable):
+    def __init__(self, user, authority, call):
         try:
             self._user = user
             self._authority = authority
-            result = select.executeQuery()
+            result = call.executeQuery()
             result.last()
             self.RowCount = result.getRow()
             self.IsRowCountFinal = True
@@ -286,8 +288,15 @@ class ContentResultSet(unohelper.Base,
         return Identifier(self.queryContentIdentifierString())
     def queryContent(self):
         url = self.queryContentIdentifierString()
-        itemid = self._user.getItemByUrl(url)
-        return self._user.getContent(self._authority, itemid)
+        print("ContentResultSet.queryContent() 2 url: %s" % url)
+        return self._user.getContentByUrl(self._authority, url)
+
+    # XCloseable
+    def close(self):
+        call = self._result.getStatement()
+        self._result.close()
+        call.close()
+        print("ContentResultSet.close()")
 
     def _getPropertySetInfo(self):
         properties = {}

@@ -99,7 +99,6 @@ from ..logger import getLogger
 
 from ..configuration import g_errorlog
 from ..configuration import g_identifier
-from keyring.util import properties
 
 g_basename = 'dbtool'
 
@@ -182,6 +181,7 @@ def checkDataBase(ctx, connection):
 def executeQueries(ctx, statement, queries):
     for name, format in queries:
         query = getSqlQuery(ctx, name, format)
+        print("dbtools.executeQueries() Query: %s" % query)
         statement.executeQuery(query)
 
 def getDataSourceClassPath(ctx, identifier):
@@ -816,7 +816,7 @@ def createUser(connection, name, password='', role=None):
         user.setPropertyValue('Password', password)
         users.appendByDescriptor(user)
         if role is not None:
-            return self._addGroup(users, name, role)
+            return _addGroup(users, name, role)
     return True
 
 def _addGroup(users, name, role):

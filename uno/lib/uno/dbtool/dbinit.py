@@ -41,6 +41,7 @@ from .dbtool import createTables
 from .dbtool import createIndexes
 from .dbtool import createForeignKeys
 
+from collections import OrderedDict
 import traceback
 
 
@@ -139,7 +140,8 @@ def _setStaticTable(statement, tables, csv, readonly):
             statement.executeUpdate(_getTableReadOnly(table))
 
 def _getStaticTables(**kwargs):
-    tables = {'Tables':      {'CatalogName': 'PUBLIC',
+    tables = OrderedDict()
+    tables['Tables'] =       {'CatalogName': 'PUBLIC',
                               'SchemaName':  'PUBLIC',
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Table',
@@ -171,8 +173,8 @@ def _getStaticTables(**kwargs):
                                            'Type': BOOLEAN,
                                            'IsNullable': NULLABLE,
                                            'DefaultValue': 'FALSE'}),
-                              'PrimaryKeys': ('Table', )},
-              'Columns':     {'CatalogName': 'PUBLIC',
+                              'PrimaryKeys': ('Table', )}
+    tables['Columns'] =      {'CatalogName': 'PUBLIC',
                               'SchemaName':  'PUBLIC',
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Column',
@@ -184,8 +186,8 @@ def _getStaticTables(**kwargs):
                                            'Type': VARCHAR,
                                            'Scale': 100,
                                            'IsNullable': NO_NULLS}),
-                              'PrimaryKeys': ('Column', )},
-              'TableColumn': {'CatalogName': 'PUBLIC',
+                              'PrimaryKeys': ('Column', )}
+    tables['TableColumn'] =  {'CatalogName': 'PUBLIC',
                               'SchemaName':  'PUBLIC',
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Table',
@@ -236,8 +238,8 @@ def _getStaticTables(**kwargs):
                                            'Type': BOOLEAN,
                                            'IsNullable': NULLABLE,
                                            'DefaultValue': 'NULL'}),
-                              'PrimaryKeys': ('Table', 'Column')},
-              'ForeignKeys': {'CatalogName': 'PUBLIC',
+                              'PrimaryKeys': ('Table', 'Column')}
+    tables['ForeignKeys'] =  {'CatalogName': 'PUBLIC',
                               'SchemaName':  'PUBLIC',
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Table',
@@ -263,8 +265,8 @@ def _getStaticTables(**kwargs):
                                           {'Name': 'DeleteRule',
                                            'TypeName': 'INTEGER',
                                            'Type': INTEGER,
-                                           'IsNullable': NO_NULLS})},
-              'Indexes':     {'CatalogName': 'PUBLIC',
+                                           'IsNullable': NO_NULLS})}
+    tables['Indexes'] =      {'CatalogName': 'PUBLIC',
                               'SchemaName':  'PUBLIC',
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Index',
@@ -283,7 +285,7 @@ def _getStaticTables(**kwargs):
                                            'TypeName': 'BOOLEAN',
                                            'Type': BOOLEAN,
                                            'IsNullable': NO_NULLS,
-                                           'DefaultValue': 'TRUE'})}}
+                                           'DefaultValue': 'TRUE'})}
     for name, value in kwargs.items():
         tables[name] = value
     return tables

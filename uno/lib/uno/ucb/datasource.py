@@ -72,8 +72,7 @@ class DataSource(unohelper.Base,
         self._urifactory = getUriFactory(ctx)
         self._transformer = getUrlTransformer(ctx)
         database.addCloseListener(self)
-        folder, link = database.getContentType()
-        self._provider = Provider(ctx, logger, folder, link)
+        self._provider = Provider(ctx, logger)
         self.Replicator = Replicator(ctx, database.Url, self._provider, self._users, self._sync, self._lock)
         self.DataBase = database
         self._logger.logprb(INFO, 'DataSource', '__init__()', 301)
@@ -89,11 +88,10 @@ class DataSource(unohelper.Base,
     # FIXME: Get called from ParameterizedProvider.queryContent()
     def queryContent(self, source, authority, url):
         user, uri = self._getUser(source, authority, url)
-        itemid = user.getItemByUri(uri)
-        if itemid is None:
+        if uri is None:
             msg = self._logger.resolveString(311, url)
             raise IllegalIdentifierException(msg, source)
-        content = user.getContent(authority, itemid)
+        content = user.getContent(authority, uri)
         if content is None:
             msg = self._logger.resolveString(311, url)
             raise IllegalIdentifierException(msg, source)

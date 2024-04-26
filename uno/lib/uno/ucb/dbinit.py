@@ -59,14 +59,14 @@ from .dbtool import getIndexes
 from .dbtool import getForeignKeys
 from .dbtool import getPrivileges
 
-from .configuration import g_separator
-
 from .dbconfig import g_csv
 from .dbconfig import g_role
+from .dbconfig import g_queries
 from .dbconfig import g_drvinfos
 
-
+from collections import OrderedDict
 import traceback
+
 
 def getDataBaseConnection(ctx, url, user, pwd, new, infos=None):
     if new:
@@ -104,7 +104,8 @@ def _createRoleAndPrivileges(statement, tables, groups):
     createRoleAndPrivileges(statement, tables, groups, getPrivileges())
 
 def _getStaticTables():
-    return {'Privileges':    {'CatalogName': 'PUBLIC',
+    tables = OrderedDict()
+    tables['Privileges'] =   {'CatalogName': 'PUBLIC',
                               'SchemaName':  'PUBLIC',
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Table',
@@ -124,68 +125,34 @@ def _getStaticTables():
                                           {'Name': 'Privilege',
                                            'TypeName': 'INTEGER',
                                            'Type': INTEGER,
-                                           'IsNullable': NO_NULLS})},
-            'Settings':      {'CatalogName': 'PUBLIC',
-                              'SchemaName':  'PUBLIC',
-                              'Type':        'TEXT TABLE',
-                              'Columns': ({'Name': 'Id',
-                                           'TypeName': 'INTEGER',
-                                           'Type': INTEGER,
-                                           'IsNullable': NO_NULLS},
-                                          {'Name': 'Name',
-                                           'TypeName': 'VARCHAR',
-                                           'Type': VARCHAR,
-                                           'Scale': 100,
-                                           'IsNullable': NO_NULLS},
-                                          {'Name': 'Value1',
-                                           'TypeName': 'VARCHAR',
-                                           'Type': VARCHAR,
-                                           'Scale': 100,
-                                           'IsNullable': NO_NULLS},
-                                          {'Name': 'Value2',
-                                           'TypeName': 'VARCHAR',
-                                           'Type': VARCHAR,
-                                           'Scale': 100,
-                                           'IsNullable': NULLABLE,
-                                           'DefaultValue': 'NULL'},
-                                          {'Name': 'Value3',
-                                           'TypeName': 'VARCHAR',
-                                           'Type': VARCHAR,
-                                           'Scale': 100,
-                                           'IsNullable': NULLABLE,
-                                           'DefaultValue': 'NULL'}),
-                              'PrimaryKeys': ('Id', )}}
+                                           'IsNullable': NO_NULLS})}
+    return tables
 
 def _getForeignKeys():
     return (('PUBLIC.PUBLIC.Privileges', 'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
             ('PUBLIC.PUBLIC.Privileges', 'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE))
 
 def _getQueries():
-    return (('createGetTitle',{'Role': g_role}),
-            ('createGetUniqueName',{'Role': g_role, 'Prefix': ' ~', 'Suffix': ''}),
+    return (('createGetUniqueName', g_queries),
 
-            ('createChildView',{'Role': g_role}),
-            ('createTwinView',{'Role': g_role}),
-            ('createUriView',{'Role': g_role}),
-            ('createItemView',{'Role': g_role}),
-            ('createTitleView',{'Role': g_role}),
-            ('createChildrenView',{'Role': g_role}),
-            ('createPathView',{'Role': g_role, 'Separator': g_separator}),
+            ('createChildView', g_queries),
+            ('createTwinView', g_queries),
+            ('createDuplicateView', g_queries),
+            ('createPathView', g_queries),
+            ('createChildrenView', g_queries),
 
-            ('createGetPath',{'Role': g_role}),
-            ('createGetItemId',{'Role': g_role, 'Separator': g_separator}),
-            ('createGetRoot',{'Role': g_role}),
-            ('createGetItem',{'Role': g_role}),
-            ('createGetNewTitle',{'Role': g_role}),
-            ('createUpdatePushItems',{'Role': g_role}),
-            ('createGetPushItems',{'Role': g_role}),
-            ('createGetPushProperties',{'Role': g_role}),
-            ('createGetItemParentIds',{'Role': g_role}),
-            ('createInsertUser',{'Role': g_role}),
-            ('createInsertSharedFolder',{'Role': g_role}),
-            ('createMergeItem',{'Role': g_role}),
-            ('createMergeParent',{'Role': g_role}),
-            ('createInsertItem',{'Role': g_role}),
-            ('createPullChanges',{'Role': g_role}),
-            ('createUpdateNewItemId',{'Role': g_role}))
+            ('createGetItemId', g_queries),
+            ('createGetItem', g_queries),
+            ('createGetNewTitle', g_queries),
+            ('createUpdatePushItems', g_queries),
+            ('createGetPushItems', g_queries),
+            ('createGetPushProperties', g_queries),
+            ('createGetItemParentIds', g_queries),
+            ('createInsertUser', g_queries),
+            ('createInsertSharedFolder', g_queries),
+            ('createMergeItem', g_queries),
+            ('createMergeParent', g_queries),
+            ('createInsertItem', g_queries),
+            ('createPullChanges', g_queries),
+            ('createUpdateNewItemId', g_queries))
 

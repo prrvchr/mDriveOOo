@@ -168,7 +168,7 @@ class Content(unohelper.Base,
 
     @property
     def _identifier(self):
-        return self._user.getContentIdentifier(self._authority, self.Id, self.Path, self.Title)
+        return self._user.getContentIdentifier(self._authority, self.Path, self.Title)
 
     # XComponent
     def dispose(self):
@@ -189,7 +189,7 @@ class Content(unohelper.Base,
         content = None
         try:
             if not self.IsRoot:
-                content = self._user.getContent(self._authority, self.ParentId)
+                content = self._user.getContentByParent(self._authority, self.ParentId, self.Path)
         except Exception as e:
             self._logger.logprb(SEVERE, 'Content', 'getParent()', 651, e, traceback.format_exc())
         return content
@@ -262,6 +262,7 @@ class Content(unohelper.Base,
             self._user.updateContent(self.Id, 'Trashed', True)
 
         elif command.Name == 'open':
+            print("Content.execute() 2 Open")
             if self.IsFolder:
                 select = self._getFolderContent(command.Argument.Properties)
                 return DynamicResultSet(self._user, self._authority, select)
@@ -316,13 +317,14 @@ class Content(unohelper.Base,
             source = command.Argument.SourceURL
             move = command.Argument.MoveData
             clash = command.Argument.NameClash
+            path = self.Path + self.Title
             # Transfer command is used for document 'File Save' or 'File Save As'
             # NewTitle come from:
             # - Last segment path of 'XContent.getIdentifier().getContentIdentifier()' for OpenOffice
             # - Property 'Title' of 'XContent' for LibreOffice
             # If the content has been renamed, the last segment is the new Title of the content
             # We check if 'NewTitle' is a child of this folder by recovering its ItemId
-            itemid = self._user.DataBase.getChildId(self.Id, title)
+            itemid = self._user.DataBase.getChildId(self.Id, path, title)
             if itemid is None or clash != OVERWRITE:
                 # ItemId could not be found: 'NewTitle' does not exist in the folder...
                 # or NewTitle exist but we don't have the OVERWRITE flag set...
@@ -378,7 +380,7 @@ class Content(unohelper.Base,
                 print("Content._getPropertiesValues() Name: %s" % (property.Name, ))
                 value, level, msg = self._getPropertyValue(property.Name)
             else:
-                print("Content._getPropertiesValues() ERROR")
+                print("Content._getPropertiesValues() ERROR Requested property: %s is not available" % property.Name)
                 msg = "ERROR: Requested property: %s is not available" % property.Name
                 level = SEVERE
             self._logger.logp(level, 'Content', '_getPropertiesValues()', msg)
@@ -395,6 +397,12 @@ class Content(unohelper.Base,
                 value = self._url
         elif name == 'CreatableContentsInfo':
             value = self._getCreatableContentsInfo()
+        elif name == 'TargetURL':
+            print("Content._getPropertyValue() Name: %s" % name)
+            value = self.Id
+        elif name == 'BaseURI':
+            print("Content._getPropertyValue() Name: %s" % name)
+            value = self.Path + self.Title
         else:
             value = self.MetaData.get(name)
         msg = "Name: %s - Value: %s" % (name, value)
@@ -410,6 +418,7 @@ class Content(unohelper.Base,
                     property.Name in self._propertySetInfo):
                     result, level, msg = self._setPropertyValue(environment, property)
                 else:
+                    print("Content._setPropertiesValues() ERROR Requested property: %s is not available" % property.Name)
                     msg = "ERROR: Requested property: %s is not available" % property.Name
                     level = SEVERE
                     error = UnknownPropertyException(msg, self)
@@ -470,7 +479,7 @@ class Content(unohelper.Base,
             print("Content.setTitle() 4 Title: %s" % (title, ))
             # FIXME: When you change Title you must change also the Identifier.getContentIdentifier()
             if self._user.Provider.SupportDuplicate:
-                newtitle = self._user.DataBase.getNewTitle(title, self.ParentId, self.IsFolder)
+                newtitle = self._user.DataBase.getNewTitle(title, self.ParentId)
             else:
                 newtitle = title
             print("Content.setTitle() 5 Title: %s - New Title: %s" % (title, newtitle))
@@ -510,7 +519,8 @@ class Content(unohelper.Base,
         if ONLINE == self.ConnectionMode == self._user.SessionMode:
             self._logger.logprb(INFO, 'Content', '_updateFolderContent()', 621, self._identifier)
             updated = self._user.Provider.updateFolderContent(self)
-        select = self._user.getChildren(self._authority, self.Id, properties)
+        path = self.Path + self.Title
+        select = self._user.getChildren(self._authority, path, properties)
         return select, updated
 
     def _getDocumentContent(self, sf):
@@ -570,5 +580,7 @@ class Content(unohelper.Base,
         properties['Size'] =                  getProperty('Size',                  'hyper',                                BOUND | RO)
         properties['Title'] =                 getProperty('Title',                 'string',                               BOUND | CONSTRAINED)
         properties['TitleOnServer'] =         getProperty('TitleOnServer',         'string',                               BOUND)
+        properties['TargetURL'] =             getProperty('TargetURL',             'string',                               BOUND)
+        properties['BaseURI'] =               getProperty('BaseURI',               'string',                               BOUND)
         return properties
 
