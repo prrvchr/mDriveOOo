@@ -312,15 +312,13 @@ class Provider(ProviderBase):
             for prefix, event, value in events:
                 if (prefix, event) == ('id', 'string'):
                     rootid = value
-                elif (prefix, event) == ('name', 'string'):
-                    name = value
                 elif (prefix, event) == ('createdDateTime', 'string'):
                     created = self.parseDateTime(value)
                 elif (prefix, event) == ('lastModifiedDateTime', 'string'):
                     modified = self.parseDateTime(value)
             del events[:]
         parser.close()
-        return rootid, name, created, modified, g_ucpfolder, False, True, False, False, False
+        return rootid, created, modified
 
     def parseUploadLocation(self, response):
         url =  None
