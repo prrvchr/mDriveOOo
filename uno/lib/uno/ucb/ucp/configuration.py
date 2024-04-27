@@ -26,6 +26,13 @@
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
-ucbseparator = '/'
-ucbfolder = 'application/vnd.sun.staroffice.fsys-folder'
-ucbfile = 'application/vnd.sun.staroffice.fsys-file'
+
+g_ucbseparator = '/'
+g_ucbprefix =    ' ~'
+g_ucbsuffix =    ''
+
+g_ucboffice = 'application/vnd.oasis.opendocument'
+
+g_ucbfolder = 'application/vnd.sun.star.hierarchy-folder'
+g_ucbfile = 'application/vnd.sun.star.hierarchy-file'
+g_ucblink = 'application/vnd.sun.star.hierarchy-link'

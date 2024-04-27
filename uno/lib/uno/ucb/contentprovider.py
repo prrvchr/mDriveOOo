@@ -71,7 +71,8 @@ from .configuration import g_extension
 from .configuration import g_identifier
 from .configuration import g_defaultlog
 from .configuration import g_scheme
-from .configuration import g_separator
+
+from .ucp import g_ucbseparator
 
 import traceback
 
@@ -159,7 +160,7 @@ class ContentProvider(unohelper.Base,
             msg = self._getExceptionMessage(method, 223, g_jdbcext, driver, g_jdbcext, g_jdbcver)
             raise IllegalIdentifierException(msg, self)
         else:
-            path = g_folder + g_separator + g_scheme
+            path = g_folder + g_ucbseparator + g_scheme
             url = getConnectionUrl(self._ctx, path)
             try:
                 database = DataBase(self._ctx, self._logger, url)

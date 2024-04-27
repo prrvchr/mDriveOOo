@@ -168,7 +168,7 @@ class Replicator(Thread):
         pages, count, token = self._provider.firstPull(user)
         print("Replicator._initUser() Pages: %s - Count: %s - Token : %s" % (pages, count, token))
         self._provider.initUser(self.DataBase, user, token)
-        user.SyncMode = 1
+        user.releaseLock()
         self._fullPull = True
         self._logger.logprb(INFO, g_basename, '_initUser()', 222, user.Name)
 
@@ -234,14 +234,13 @@ class Replicator(Thread):
             # then the user's TimeStamp will not be updated
             # INSERT procedures, new files and folders are synced here.
             if action & INSERT:
-                mediatype = metadata.get('MediaType')
                 created = getDateTimeToString(metadata.get('DateCreated'))
-                if self._provider.isFolder(mediatype):
+                if metadata.get('IsFolder'):
                     newid = self._provider.createFolder(user, itemid, metadata)
                     self._logger.logprb(INFO, g_basename, '_pushItem()', 311, metadata.get('Title'), created)
-                elif self._provider.isLink(mediatype):
+                elif metadata.get('IsLink'):
                     pass
-                elif self._provider.isDocument(mediatype):
+                elif metadata.get('IsDocument'):
                     newid, args = self._provider.uploadFile(314, user, itemid, metadata, created, chunk, retry, delay, True)
                     self._logger.logprb(INFO, g_basename, '_pushItem()', *args)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)

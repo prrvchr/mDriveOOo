@@ -52,7 +52,6 @@ from .provider import Provider
 from .replicator import Replicator
 
 from .configuration import g_extension
-from .configuration import g_separator
 
 from threading import Event
 from threading import Lock
@@ -88,13 +87,16 @@ class DataSource(unohelper.Base,
     # FIXME: Get called from ParameterizedProvider.queryContent()
     def queryContent(self, source, authority, url):
         user, uri = self._getUser(source, authority, url)
+        print("DataSource.queryContent() 1")
         if uri is None:
             msg = self._logger.resolveString(311, url)
             raise IllegalIdentifierException(msg, source)
+        user.setLock()
         content = user.getContent(authority, uri)
         if content is None:
             msg = self._logger.resolveString(311, url)
             raise IllegalIdentifierException(msg, source)
+        print("DataSource.queryContent() 2")
         return content
 
     # XCloseListener

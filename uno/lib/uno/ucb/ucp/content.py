@@ -48,6 +48,7 @@ from com.sun.star.container import XChild
 from com.sun.star.lang import IllegalAccessException
 from com.sun.star.lang import NoSupportException
 from com.sun.star.lang import XComponent
+from com.sun.star.lang import XServiceInfo
 
 from com.sun.star.ucb import CommandAbortedException
 from com.sun.star.ucb import IllegalIdentifierException
@@ -88,10 +89,14 @@ from .contenthelper import getMimeType
 
 from .identifier import Identifier
 
+from .configuration import g_ucbprefix
+from .configuration import g_ucbsuffix
+
 import traceback
 
 
 class Content(unohelper.Base,
+              XServiceInfo,
               XContent,
               XComponent,
               XCommandProcessor2,
@@ -112,6 +117,7 @@ class Content(unohelper.Base,
         self._logger = user._logger
         self._commandInfo = self._getCommandInfo()
         self._propertySetInfo = self._getPropertySetInfo()
+        self._services = ('com.sun.star.ucb.Content', )
         self._logger.logprb(INFO, 'Content', '__init__()', 601)
 
     @property
@@ -126,6 +132,12 @@ class Content(unohelper.Base,
     @property
     def IsRoot(self):
         return self.MetaData.get('IsRoot')
+    @property
+    def IsRenamed(self):
+        return self.MetaData.get('Name') != self.Title
+    @property
+    def CanRename(self):
+        return self.MetaData.get('CanRename') and not self.IsRoot
     @property
     def CanAddChild(self):
         return self.MetaData.get('CanAddChild')
@@ -150,6 +162,9 @@ class Content(unohelper.Base,
     @property
     def Url(self):
         return self.MetaData.get('CasePreservingURL')
+    @property
+    def TitleOnServer(self):
+        return self.MetaData.get('TitleOnServer')
     @property
     def Title(self):
         return self.MetaData.get('Title')
@@ -217,7 +232,7 @@ class Content(unohelper.Base,
         return self._getCreatableContentsInfo()
     def createNewContent(self, info):
         self._logger.logprb(INFO, 'Content', 'createNewContent()', 661, self._identifier)
-        return self._user.createNewContent(self._authority, self.Id, self.Path, self.Title, self.Link, info.Type)
+        return self._user.createNewContent(self._authority, self.Id, self.Path, self.Title, info.Type)
 
     # XContent
     def getIdentifier(self):
@@ -232,6 +247,19 @@ class Content(unohelper.Base,
     def addContentEventListener(self, listener):
         print("Content.addContentEventListener() 1")
         self._contentListeners.append(listener)
+        if self.Id == self._user.RootId:
+            print("Content.addContentEventListener() 2")
+            event = uno.createUnoStruct('com.sun.star.ucb.ContentEvent')
+            event.Action = INSERTED
+            event.Source = self
+            url = 'vnd-google://prrvchr@gmail.com/Backup'
+            #event.Content = self._user.getContentByUrl(self._authority, url)
+            event.Id = Identifier(url)
+            for listener in self._contentListeners:
+                listener.contentEvent(event)
+                print("Content.addContentEventListener() 3")
+            print("Content.addContentEventListener() 4")
+
     def removeContentEventListener(self, listener):
         print("Content.removeContentEventListener() 1")
         if listener in self._contentListeners:
@@ -263,8 +291,13 @@ class Content(unohelper.Base,
 
         elif command.Name == 'open':
             print("Content.execute() 2 Open")
+            print("Content.execute() 3 Open Environement: %s" % environment.getProgressHandler())
+            
             if self.IsFolder:
-                select = self._getFolderContent(command.Argument.Properties)
+                properties = command.Argument.Properties
+                for property in properties:
+                    print("Content open Property Name: %s" % property.Name)
+                select = self._getFolderContent(properties)
                 return DynamicResultSet(self._user, self._authority, select)
             elif self.IsDocument:
                 sf = getSimpleFile(self._ctx)
@@ -272,12 +305,15 @@ class Content(unohelper.Base,
                 if not size:
                     msg = self._logger.resolveString(632, self._identifier)
                     raise CommandAbortedException(msg, self)
-                sink = command.Argument.Sink
+                input = command.Argument.Sink
                 isreadonly = self.MetaData.get('IsReadOnly')
-                if hasInterface(sink, 'com.sun.star.io.XActiveDataSink'):
-                    sink.setInputStream(sf.openFileRead(url))
-                elif not isreadonly and hasInterface(sink, 'com.sun.star.io.XActiveDataStreamer'):
-                    sink.setStream(sf.openFileReadWrite(url))
+                sink = hasInterface(input, 'com.sun.star.io.XActiveDataSink')
+                stream = hasInterface(input, 'com.sun.star.io.XActiveDataStreamer')
+                print("Content.opendocument Is Sink: %s - Is Stream: %s" % (sink, stream))
+                if sink:
+                    input.setInputStream(sf.openFileRead(url))
+                elif not isreadonly and stream:
+                    input.setStream(sf.openFileReadWrite(url))
 
         elif command.Name == 'createNewContent' and self.IsFolder:
             return self.createNewContent(command.Argument)
@@ -313,18 +349,20 @@ class Content(unohelper.Base,
                 print("Content.execute() 3 Command.Name: %s - Identifier: %s" % (command.Name, self._identifier))
                 msg = self._logger.resolveString(633, self._identifier)
                 UnsupportedCommandException(msg, self)
-            title = command.Argument.NewTitle
+            newtitle = command.Argument.NewTitle
             source = command.Argument.SourceURL
             move = command.Argument.MoveData
             clash = command.Argument.NameClash
-            path = self.Path + self.Title
+            mimetype = command.Argument.MimeType
             # Transfer command is used for document 'File Save' or 'File Save As'
             # NewTitle come from:
             # - Last segment path of 'XContent.getIdentifier().getContentIdentifier()' for OpenOffice
             # - Property 'Title' of 'XContent' for LibreOffice
             # If the content has been renamed, the last segment is the new Title of the content
             # We check if 'NewTitle' is a child of this folder by recovering its ItemId
-            itemid = self._user.DataBase.getChildId(self.Id, path, title)
+            print("Content.execute() 4 newtitle: %s - path: %s" % (newtitle, self.Path + self.Title))
+            itemid = self._user.getChildId(self.Id, self.Path, self.Title, newtitle)
+            print("Content.execute() transfert id: %s" % itemid)
             if itemid is None or clash != OVERWRITE:
                 # ItemId could not be found: 'NewTitle' does not exist in the folder...
                 # or NewTitle exist but we don't have the OVERWRITE flag set...
@@ -391,18 +429,19 @@ class Content(unohelper.Base,
         value = None
         # Dynamic values
         if name == 'CasePreservingURL':
-            if self._url is None:
-                value = self._identifier
-            else:
-                value = self._url
+            url = self._user.getContentIdentifier(self._authority, self.Path, self.Title)
+            print("Content._getPropertyValue() Name: %s - Url: %s" % (name, url))
+            value = url
         elif name == 'CreatableContentsInfo':
             value = self._getCreatableContentsInfo()
         elif name == 'TargetURL':
-            print("Content._getPropertyValue() Name: %s" % name)
-            value = self.Id
+            value = ''
+            print("Content._getPropertyValue() Name: %s - Value: %s" % (name, value))
         elif name == 'BaseURI':
             print("Content._getPropertyValue() Name: %s" % name)
-            value = self.Path + self.Title
+            value = ''
+        elif name == 'CanRename':
+            value = self.CanRename and not self.IsRenamed
         else:
             value = self.MetaData.get(name)
         msg = "Name: %s - Value: %s" % (name, value)
@@ -413,12 +452,9 @@ class Content(unohelper.Base,
         try:
             results = []
             for property in properties:
-                if (hasattr(property, 'Name') and
-                    hasattr(property, 'Value') and
-                    property.Name in self._propertySetInfo):
-                    result, level, msg = self._setPropertyValue(environment, property)
+                if (property.Name in self._propertySetInfo):
+                    result, level, msg = self._setPropertyValue(environment, property.Name, property.Value)
                 else:
-                    print("Content._setPropertiesValues() ERROR Requested property: %s is not available" % property.Name)
                     msg = "ERROR: Requested property: %s is not available" % property.Name
                     level = SEVERE
                     error = UnknownPropertyException(msg, self)
@@ -430,8 +466,7 @@ class Content(unohelper.Base,
             msg = "Content._setPropertiesValues() Error: %s" % traceback.format_exc()
             print(msg)
 
-    def _setPropertyValue(self, environment, property):
-        name, value = property.Name, property.Value
+    def _setPropertyValue(self, environment, name, value):
         print("Content._setPropertyValue() 1 %s - %s" % (name, value))
         if self._propertySetInfo.get(name).Attributes & READONLY:
             msg = "ERROR: Requested property: %s is READONLY" % name
@@ -454,44 +489,33 @@ class Content(unohelper.Base,
             result = None
         return result, level, msg
 
-    def _setTitle(self, environment, title):
-        print("Content.setTitle() 2 Title: %s" % (title, ))
-        if u'~' in title:
-            msg = "Can't set property: Title value: %s contains invalid character: '~'." % title
+    def _setTitle(self, environment, newtitle):
+        print("Content.setTitle() 2 Title: %s" % (newtitle, ))
+        if len(newtitle) == 0:
+            msg = "ERROR: Requested property: Title value is EMPTY"
             level = SEVERE
-            args = {'Uri':          uno.Any('string', self._identifier),
-                    'ResourceName': uno.Any('string', title)}
-            error = getInteractiveAugmentedIOException(msg, environment,
-                                                       'QUERY', 'INVALID_CHARACTER',
-                                                       getPropertyValueSet(args))
-            result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
-        elif not self._user.Provider.SupportDuplicate and self._user.DataBase.hasTitle(self._user.Id, self.ParentId, title):
-            print("Content.setTitle() 3 Title: %s" % (title, ))
-            msg = "Can't set property: %s value: %s - Name Clash Error" % ('Title', title)
+            error = IllegalAccessException(msg, self)
+            result = uno.Any('com.sun.star.lang.IllegalAccessException', error)
+        elif self.Title != self.MetaData.get('Name'):
+            msg = "ERROR: Requested property: Title can't be changed"
             level = SEVERE
-            data = getPropertyValueSet({'TargetFolderURL': self._identifier,
-                                        'ClashingName': title,
-                                        'ProposedNewName': '%s(1)' % title})
-            #data = getPropertyValueSet({'Uri': self._identifier,'ResourceName': title})
-            error = getInteractiveAugmentedIOException(msg, environment, 'QUERY', 'ALREADY_EXISTING', data)
-            result = uno.Any('com.sun.star.ucb.InteractiveAugmentedIOException', error)
+            error = IllegalAccessException(msg, self)
+            result = uno.Any('com.sun.star.lang.IllegalAccessException', error)
+        elif self._user.DataBase.hasTitle(self._user.Id, self.ParentId, newtitle):
+            msg = "ERROR: Requested property: Title duplicate name clash"
+            level = SEVERE
+            error = IllegalAccessException(msg, self)
+            result = uno.Any('com.sun.star.lang.IllegalAccessException', error)
         else:
-            print("Content.setTitle() 4 Title: %s" % (title, ))
-            # FIXME: When you change Title you must change also the Identifier.getContentIdentifier()
-            if self._user.Provider.SupportDuplicate:
-                newtitle = self._user.DataBase.getNewTitle(title, self.ParentId)
-            else:
-                newtitle = title
-            print("Content.setTitle() 5 Title: %s - New Title: %s" % (title, newtitle))
-            self.MetaData['Title'] = title
+            self.MetaData['Title'] = newtitle
             self.MetaData['TitleOnServer'] = newtitle
             # If the identifier is new then the content is not yet in the database.
             # It will be inserted by the insert command of the XCommandProcessor2.execute()
             # But we must make this content accessible by an appropriate entry in the user paths cache
             if not self._isNew():
-                self._user.updateContent(self.Id, 'Title', title)
+                self._user.updateContent(self.Id, 'Title', newtitle)
                 print("Content.setTitle() 7 Url: %s" % self._identifier)
-            msg = "Set property: %s value: %s" % ('Title', title)
+            msg = "Set property: %s value: %s" % ('Title', newtitle)
             level = INFO
             result = None
         return result, level, msg
@@ -519,8 +543,7 @@ class Content(unohelper.Base,
         if ONLINE == self.ConnectionMode == self._user.SessionMode:
             self._logger.logprb(INFO, 'Content', '_updateFolderContent()', 621, self._identifier)
             updated = self._user.Provider.updateFolderContent(self)
-        path = self.Path + self.Title
-        select = self._user.getChildren(self._authority, path, properties)
+        select = self._user.getChildren(self._authority, self.Path, self.TitleOnServer, properties)
         return select, updated
 
     def _getDocumentContent(self, sf):
@@ -558,13 +581,15 @@ class Content(unohelper.Base,
 
     def _getPropertySetInfo(self):
         RO = 0 if self._isNew() else READONLY
+        RW = 0 if self.CanRename else READONLY
         properties = {}
-        properties['CasePreservingURL'] =     getProperty('CasePreservingURL',     'string',                               BOUND | RO)
+        properties['CasePreservingURL'] =     getProperty('CasePreservingURL',     'string',                               BOUND | READONLY)
         properties['ConnectionMode'] =        getProperty('ConnectionMode',        'short',                                BOUND | READONLY)
         properties['ContentType'] =           getProperty('ContentType',           'string',                               BOUND | RO)
         properties['CreatableContentsInfo'] = getProperty('CreatableContentsInfo', '[]com.sun.star.ucb.ContentInfo',       BOUND | RO)
         properties['DateCreated'] =           getProperty('DateCreated',           'com.sun.star.util.DateTime',           BOUND | READONLY)
         properties['DateModified'] =          getProperty('DateModified',          'com.sun.star.util.DateTime',           BOUND | RO)
+        properties['CanRename'] =             getProperty('CanRename',             'boolean',                              BOUND | RO)
         properties['IsCompactDisc'] =         getProperty('IsCompactDisc',         'boolean',                              BOUND | RO)
         properties['IsDocument'] =            getProperty('IsDocument',            'boolean',                              BOUND | RO)
         properties['IsFloppy'] =              getProperty('IsFloppy',              'boolean',                              BOUND | RO)
@@ -578,8 +603,8 @@ class Content(unohelper.Base,
         properties['MediaType'] =             getProperty('MediaType',             'string',                               BOUND | READONLY)
         properties['ObjectId'] =              getProperty('ObjectId',              'string',                               BOUND | RO)
         properties['Size'] =                  getProperty('Size',                  'hyper',                                BOUND | RO)
-        properties['Title'] =                 getProperty('Title',                 'string',                               BOUND | CONSTRAINED)
-        properties['TitleOnServer'] =         getProperty('TitleOnServer',         'string',                               BOUND)
+        properties['Title'] =                 getProperty('Title',                 'string',                               BOUND | CONSTRAINED | RW)
+        properties['TitleOnServer'] =         getProperty('TitleOnServer',         'string',                               BOUND | RW)
         properties['TargetURL'] =             getProperty('TargetURL',             'string',                               BOUND)
         properties['BaseURI'] =               getProperty('BaseURI',               'string',                               BOUND)
         return properties

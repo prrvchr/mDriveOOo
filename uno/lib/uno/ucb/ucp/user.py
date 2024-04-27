@@ -70,12 +70,15 @@ from .identifier import Identifier
 from .contenthelper import getContentInfo
 from .contenthelper import getExceptionMessage
 
+from .configuration import g_ucbfolder
+from .configuration import g_ucbfile
+from .configuration import g_ucbseparator
+
 from ..configuration import g_extension
 from ..configuration import g_scheme
-from ..configuration import g_separator
-from ..configuration import g_folder
-from ..configuration import g_content
+from ..configuration import g_ucpfolder
 
+from threading import Event
 import binascii
 import traceback
 
@@ -124,11 +127,12 @@ class User():
         self.MetaData = metadata
         self.DataBase = DataBase(ctx, logger, database.Url, name, password)
         rootid = metadata.get('RootId')
-        self._ids = {'/': rootid}
         self._paths = {}
         self._contents = {}
+        self._lock = None
         if new:
             # Start Replicator for pushing changes…
+            self._lock = Event()
             self._sync.set()
         self._logger.logprb(INFO, 'User', method, 509)
         print("User.__init__()")
@@ -171,6 +175,22 @@ class User():
     def setToken(self, token):
         self.MetaData['Token'] = token
 
+    # method called from Replicator
+    def setLock(self):
+        blocking = self.SyncMode == 0
+        print("User.setLock() 1 bloking: %s" % blocking)
+        if self._lock is not None and not self.SyncMode:
+            self._lock.wait()
+        print("User.setLock() 2")
+
+    def releaseLock(self):
+        self.SyncMode = 1
+        print("User.releaseLock() 1")
+        if self._lock is not None and not self._lock.is_set():
+            print("User.releaseLock() 2")
+            self._lock.set()
+        print("User.releaseLock() 3")
+
     # method called from ContentResultSet.queryContent()
     def getContentByUrl(self, authority, url):
         uri = self._getUriFactory().parse(url)
@@ -179,10 +199,7 @@ class User():
     # method called from Content.getParent()
     def getContentByParent(self, authority, itemid, path):
         isroot = itemid == self.RootId
-        if not isroot:
-            # XXX: If this is not the root then we need to remove any trailing slash
-            path = path.rstrip(g_separator)
-        return self._getContent(authority, path, isroot)
+        return self._getContent(authority, self._getPath(path, isroot), isroot)
 
     # method called from DataSource.queryContent()
     def getContent(self, authority, uri):
@@ -204,14 +221,15 @@ class User():
                 data, itemid = self._getMetaData(path)
         if itemid is not None:
             if itemid in self._contents:
+                print("User._getContent() 3")
                 content = self._contents[itemid]
             else:
                 if data is None:
                     data, itemid = self._getMetaData(path)
-                print("User._getContent() 3")
+                print("User._getContent() 4")
                 content = Content(self._ctx, self, authority, data)
                 self._contents[itemid] = content
-        print("User._getContent() 4")
+        print("User._getContent() 5")
         return content
 
     def _getMetaData(self, path):
@@ -226,21 +244,21 @@ class User():
         print("User.getContentIdentifier() : %s" % identifier)
         return identifier
 
-    def createNewContent(self, authority, parentid, path, title, link, contentype):
-        data = self._getNewContent(parentid, path, title, link, contentype)
+    def createNewContent(self, authority, parentid, path, title, contentype):
+        data = self._getNewContent(parentid, path, title, contentype)
         content = Content(self._ctx, self, authority, data, True)
         return content
 
     def getTargetUrl(self, itemid):
-        return self.Provider.SourceURL + g_separator + itemid
+        return self.Provider.SourceURL + g_ucbseparator + itemid
 
     def getCreatableContentsInfo(self, canaddchild):
         print("Content.getCreatableContentsInfo() 1")
         content = []
         if self.CanAddChild and canaddchild:
             properties = (getProperty('Title', 'string', BOUND), )
-            content.append(getContentInfo(self.Provider.Folder, KIND_FOLDER, properties))
-            content.append(getContentInfo(self.Provider.Office, KIND_DOCUMENT, properties))
+            content.append(getContentInfo(g_ucbfolder, KIND_FOLDER, properties))
+            content.append(getContentInfo(g_ucbfile, KIND_DOCUMENT, properties))
             print("Content.getCreatableContentsInfo() 2")
             #if self.Provider.hasProprietaryFormat:
             #    content.append(getContentInfo(self.Provider.ProprietaryFormat, KIND_DOCUMENT, properties))
@@ -274,8 +292,7 @@ class User():
             # Start Replicator for pushing changes…
             self._sync.set()
         if clear:
-            # if Title as been changed then we need to clear identifier cache
-            self._ids = {'/': self.RootId}
+            # if Title as been changed then we need to clear paths cache
             self._paths = {}
 
     def insertNewContent(self, authority, content):
@@ -290,62 +307,84 @@ class User():
         if self.Provider.GenerateIds:
             self.DataBase.deleteNewIdentifier(self.Id, itemid)
 
-    def getChildren(self, authority, path, properties):
+    def getChildren(self, authority, path, title, properties):
         scheme = self._getContentScheme(authority)
-        if not path.endswith(g_separator):
-            # XXX: If the path doesn't end with a slash, we need to add one
-            path += g_separator
-        print("User.getChildren() 1 scheme: %s - path: %s" % (scheme, path))
-        return self.DataBase.getChildren(path, properties, self.SessionMode, scheme)
+        return self.DataBase.getChildren(self._composePath(path, title), properties, self.SessionMode, scheme)
+
+    def getChildId(self, parentid, path, title, newtitle):
+        return self.DataBase.getChildId(parentid, self._composePath(path, title), newtitle)
 
     def updateConnectionMode(self, itemid, mode):
         return self.DataBase.updateConnectionMode(self.Id, itemid, mode)
 
+    def getRootMetaData(self):
+        return self._getContentMetaData(self.RootId, g_ucbseparator, '', None, True, True,
+                                        g_ucbfolder, self.DateCreated, self.DateModified)
+
     # Private methods
     def _getContentScheme(self, authority):
-        name = self.Name if authority else ''
-        return '%s://%s' % (g_scheme, name)
+        scheme = g_scheme + '://'
+        if authority:
+            scheme += self.Name
+        return scheme
+
+    def _getPath(self, path, isroot):
+        # XXX: If this is not the root then we need to remove any trailing slash
+        if not isroot:
+            path = path.rstrip(g_ucbseparator)
+        return path
+
+    def _composePath(self, path, title):
+        path += title
+        # XXX: If the path doesn't end with a slash, we need to add one
+        if not path.endswith(g_ucbseparator):
+            path += g_ucbseparator
+        return path
+
+    def _getNewContent(self, parentid, path, title, contentype):
+        timestamp = currentUnoDateTime()
+        isfolder = contentype == g_ucbfolder
+        itemid = self._getNewIdentifier()
+        path = path + title + g_ucbseparator if parentid != self.RootId else path
+        return self._getContentMetaData(itemid, path, 'New File', parentid, False,
+                                        isfolder, contentype, timestamp, timestamp)
+
+    def _getContentMetaData(self, itemid, path, title, parentid, isroot, isfolder, contentype, created, modified):
+        return {'Id':                   itemid,
+                'ObjectId':             itemid,
+                'Name':                 title,
+                'Path':                 path,
+                'Title':                title,
+                'TitleOnServer':        title,
+                'ParentId':             parentid,
+                'DateCreated':          created,
+                'DateModified':         modified,
+                'ContentType':          contentype,
+                'MediaType':            g_ucpfolder if isfolder else '',
+                'Size':                 0,
+                'Link':                 '',
+                'Trashed':              False,
+                'IsRoot':               isroot,
+                'IsFolder':             isfolder,
+                'IsLink':               False,
+                'IsDocument':           not isfolder,
+                'CanAddChild':          isfolder,
+                'CanRename':            True,
+                'IsReadOnly':           False,
+                'IsVersionable':        not isfolder,
+                'ConnectionMode':       1,
+                'IsHidden':             False,
+                'IsVolume':             False,
+                'IsRemote':             False,
+                'IsRemoveable':         False,
+                'IsFloppy':             False,
+                'IsCompactDisc':        False}
+        return data
 
     def _getUriFactory(self):
         if self._factory is None:
             self._factory = getUriFactory(self._ctx)
         return self._factory
-
-    def _getNewContent(self, parentid, path, title, link, contentype):
-        timestamp = currentUnoDateTime()
-        isfolder = self.Provider.isFolder(contentype)
-        isdocument = self.Provider.isDocument(contentype)
-        itemid = self._getNewIdentifier()
-        path = path + title + g_separator if parentid != self.RootId else path
-        data = {'ConnectionMode':        1,
-                'ContentType':           contentype,
-                'DateCreated':           timestamp,
-                'DateModified':          timestamp,
-                'IsCompactDisc':         False,
-                'IsDocument':            isdocument,
-                'IsFloppy':              False,
-                'IsFolder':              isfolder,
-                'IsHidden':              False,
-                'IsReadOnly':            False,
-                'IsRemote':              False,
-                'IsRemoveable':          False,
-                'IsVersionable':         isdocument,
-                'IsVolume':              False,
-                'MediaType':             '' if isdocument else g_folder,
-                'ObjectId':              itemid,
-                'ParentId':              parentid,
-                'Size':                  0,
-                'Path':                  path,
-                'Title':                 'New File',
-                'TitleOnServer':         'New File',
-                'Id':                    itemid,
-                'Link':                  link,
-                'Trashed':               False,
-                'IsRoot':                False,
-                'IsLink':                False,
-                'CanAddChild':           isfolder,
-                'CanRename':             True}
-        return data
 
     def _getNewIdentifier(self):
         if self.Provider.GenerateIds:
@@ -356,34 +395,4 @@ class User():
 
     def _getExceptionMessage(self, method, code, *args):
         return getExceptionMessage(self._ctx, self._logger, 'User', method, code, g_extension, *args)
-
-    def getRootMetaData(self):
-        return {'Id': self.RootId,
-                'ObjectId': self.RootId,
-                'Path': g_separator,
-                'Title': '',
-                'ParentId': None,
-                'TitleOnServer': self.Name,
-                'DateCreated': self.DateCreated,
-                'DateModified': self.DateModified,
-                'ContentType': g_content[g_folder],
-                'MediaType': g_folder,
-                'Size': 0,
-                'Link': '',
-                'Trashed': False,
-                'IsRoot': True,
-                'IsFolder': True,
-                'IsLink': False,
-                'IsDocument': False,
-                'CanAddChild': True,
-                'CanRename': True,
-                'IsReadOnly': False,
-                'IsVersionable': False,
-                'ConnectionMode': 1,
-                'IsHidden': False,
-                'IsVolume': False,
-                'IsRemote': True,
-                'IsRemoveable': False,
-                'IsFloppy': False,
-                'IsCompactDisc': False}
 

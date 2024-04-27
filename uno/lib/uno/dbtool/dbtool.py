@@ -181,7 +181,7 @@ def checkDataBase(ctx, connection):
 def executeQueries(ctx, statement, queries):
     for name, format in queries:
         query = getSqlQuery(ctx, name, format)
-        print("dbtools.executeQueries() Query: %s" % query)
+        print("dbtool.executeQueries() Name: %s - Query: %s" % (name, query))
         statement.executeQuery(query)
 
 def getDataSourceClassPath(ctx, identifier):

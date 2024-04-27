@@ -27,8 +27,14 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .ucp import ucbseparator
-from .ucp import ucbfolder
+from .ucp import g_ucbseparator
+from .ucp import g_ucbprefix
+from .ucp import g_ucbsuffix
+
+from .ucp import g_ucbfolder
+from .ucp import g_ucbfile
+
+from .configuration import g_ucpfolder
 
 # DataSource configuration
 g_protocol = 'xdbc:hsqldb:'
@@ -42,16 +48,21 @@ g_csv = '%s.csv;fs=|;ignore_first=true;encoding=UTF-8;quoted=true'
 g_version = '2.7.2'
 g_role = 'FrontOffice'
 
-g_queries = {'Child':     'PUBLIC.PUBLIC."Child"',
+g_queries = {'Users':     'PUBLIC.PUBLIC."Users"',
+             'Items':     'PUBLIC.PUBLIC."Items"',
+             'Parents':   'PUBLIC.PUBLIC."Parents"',
+             'Child':     'PUBLIC.PUBLIC."Child"',
              'Twin':      'PUBLIC.PUBLIC."Twin"',
              'Duplicate': 'PUBLIC.PUBLIC."Duplicate"',
              'Path':      'PUBLIC.PUBLIC."Path"',
              'Children':  'PUBLIC.PUBLIC."Children"',
              'Role':      g_role,
-             'Separator': ucbseparator,
-             'Folder':    ucbfolder,
-             'Prefix':    ' ~',
-             'Suffix':    ''}
+             'Separator': g_ucbseparator,
+             'UcbFolder': g_ucbfolder,
+             'UcbFile':   g_ucbfile,
+             'UcpFolder': g_ucpfolder,
+             'Prefix':    g_ucbprefix,
+             'Suffix':    g_ucbsuffix}
 
 # XXX: If we want to be able to create DataBase we need to get some
 # XXX: DriverPropertyInfo from the driver. Here is the necessary information

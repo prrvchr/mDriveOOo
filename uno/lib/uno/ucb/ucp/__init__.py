@@ -27,9 +27,13 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .configuration import ucbseparator
-from .configuration import ucbfolder
-from .configuration import ucbfile
+from .configuration import g_ucbseparator
+from .configuration import g_ucbprefix
+from .configuration import g_ucbsuffix
+
+from .configuration import g_ucboffice
+from .configuration import g_ucbfolder
+from .configuration import g_ucbfile
 
 from .identifier import Identifier
 

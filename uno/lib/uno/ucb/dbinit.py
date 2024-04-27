@@ -133,7 +133,9 @@ def _getForeignKeys():
             ('PUBLIC.PUBLIC.Privileges', 'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE))
 
 def _getQueries():
-    return (('createGetUniqueName', g_queries),
+    return (('createGetIsFolder', g_queries),
+            ('createGetContentType', g_queries),
+            ('createGetUniqueName', g_queries),
 
             ('createChildView', g_queries),
             ('createTwinView', g_queries),
@@ -141,7 +143,6 @@ def _getQueries():
             ('createPathView', g_queries),
             ('createChildrenView', g_queries),
 
-            ('createGetItemId', g_queries),
             ('createGetItem', g_queries),
             ('createGetNewTitle', g_queries),
             ('createUpdatePushItems', g_queries),

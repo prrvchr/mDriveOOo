@@ -58,7 +58,6 @@ from .dbconfig import g_role
 from .dbconfig import g_version
 
 from .configuration import g_admin
-from .configuration import g_separator
 
 import os
 import traceback
@@ -113,7 +112,7 @@ class DataBase():
     def createUser(self, name, password):
         return createUser(self.Connection, name, password, g_role)
 
-    def createSharedFolder(self, user, itemid, folder, media, content, datetime, timestamp):
+    def createSharedFolder(self, user, itemid, folder, media, datetime, timestamp):
         call = self._getCall('insertSharedFolder')
         call.setString(1, user.Id)
         call.setString(2, user.RootId)
@@ -124,14 +123,13 @@ class DataBase():
         call.setTimestamp(7, timestamp)
         call.setTimestamp(8, timestamp)
         call.setString(9, media)
-        call.setString(10, content)
-        call.setLong(11, 0)
-        call.setNull(12, VARCHAR)
+        call.setLong(10, 0)
+        call.setNull(11, VARCHAR)
+        call.setBoolean(12, False)
         call.setBoolean(13, False)
         call.setBoolean(14, False)
         call.setBoolean(15, False)
         call.setBoolean(16, False)
-        call.setBoolean(17, False)
         call.executeUpdate()
         call.close()
 
@@ -172,6 +170,7 @@ class DataBase():
         return data
 
 # Procedures called by the Replicator
+    # XXX: Replicator uses its own database connection
     def getMetaData(self, user, item):
         rootid = user.RootId
         itemid = item.get('Id')
@@ -179,8 +178,7 @@ class DataBase():
             data = user.getRootMetaData()
         else:
             data = self.getItem(user.Id, itemid, False)
-        atroot = data.get('ParentId') == rootid
-        data['AtRoot'] = atroot
+        data['AtRoot'] = data.get('ParentId') == rootid
         return data
 
     def updateNewItemId(self, oldid, newid, created, modified):
@@ -252,17 +250,6 @@ class DataBase():
         update.close()
         return value
 
-    def getItemId(self, userid, url):
-        call = self._getCall('getItemId')
-        call.setString(1, userid)
-        call.setString(2, url)
-        call.execute()
-        itemid = call.getString(3)
-        if call.wasNull():
-            itemid = None
-        call.close()
-        return itemid
-
     def getNewIdentifier(self, userid):
         identifier = ''
         select = self._getCall('getNewIdentifier')
@@ -330,20 +317,22 @@ class DataBase():
         call.setTimestamp(6, item.get('DateCreated'))
         call.setTimestamp(7, item.get('DateModified'))
         call.setString(8, item.get('MediaType'))
-        call.setString(9, item.get('ContentType'))
-        call.setLong(10, item.get('Size'))
-        call.setString(11, item.get('Link'))
-        call.setBoolean(12, item.get('Trashed'))
-        call.setBoolean(13, item.get('CanAddChild'))
-        call.setBoolean(14, item.get('CanRename'))
-        call.setBoolean(15, item.get('IsReadOnly'))
-        call.setBoolean(16, item.get('IsVersionable'))
-        call.setString(17, item.get("ParentId"))
-        status = call.execute() == 0
-        title = call.getString(18)
-        item['Title'] = title
-        item['TitleOnServer'] = title
-        item['Path'] = call.getString(19)
+        call.setLong(9, item.get('Size'))
+        call.setString(10, item.get('Link'))
+        call.setBoolean(11, item.get('Trashed'))
+        call.setBoolean(12, item.get('CanAddChild'))
+        call.setBoolean(13, item.get('CanRename'))
+        call.setBoolean(14, item.get('IsReadOnly'))
+        call.setBoolean(15, item.get('IsVersionable'))
+        call.setString(16, item.get("ParentId"))
+        result = call.executeQuery
+        status = result.next()
+        if status:
+            item['Name'] = call.getString(1)
+            item['Title'] = call.getString(2)
+            item['TitleOnServer'] = call.getString(2)
+            item['Path'] = call.getString(3)
+        result.close()
         call.close()
         return status
 
@@ -514,29 +503,27 @@ class DataBase():
         call1.setTimestamp(6, item[2])
         call1.setTimestamp(7, item[3])
         call1.setString(8, item[4])
-        call1.setString(9, item[5])
-        size = item[6]
+        size = item[5]
         if os.name == 'nt':
             mx = 2 ** 32 / 2 -1
             if size > mx:
                 size = min(size, mx)
                 self._logger.logprb(SEVERE, 'DataBase', '_mergeItem()', 402, size, item[5])
-        call1.setLong(10, size)
-        call1.setString(11, item[7])
+        call1.setLong(9, size)
+        call1.setString(10, item[6])
+        call1.setBoolean(11, item[7])
         call1.setBoolean(12, item[8])
         call1.setBoolean(13, item[9])
         call1.setBoolean(14, item[10])
         call1.setBoolean(15, item[11])
-        call1.setBoolean(16, item[12])
         call1.addBatch()
         self._mergeParent(call2, item, itemid, timestamp)
         return 1
 
     def _mergeParent(self, call, item, itemid, timestamp):
         call.setString(2, itemid)
-        call.setString(3, item[13])
-        call.setArray(4, Array('VARCHAR', item[14]))
-        call.setObject(5, timestamp)
+        call.setArray(3, Array('VARCHAR', item[12]))
+        call.setObject(4, timestamp)
         call.addBatch()
 
     def _getCall(self, name, format=None):

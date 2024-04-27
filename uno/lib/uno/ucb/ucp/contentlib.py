@@ -163,16 +163,34 @@ class DynamicResultSet(unohelper.Base,
         self._user = user
         self._authority = authority
         self._call = call
+        self._listeners = []
 
     # XDynamicResultSet
     def getStaticResultSet(self):
         return ContentResultSet(self._user, self._authority, self._call)
     def setListener(self, listener):
+        print("DynamicResultSet.setListener() *****************************************")
         pass
     def connectToCache(self, cache):
+        print("DynamicResultSet.connectToCache() *****************************************")
         pass
     def getCapabilities(self):
         return uno.getConstantByName('com.sun.star.ucb.ContentResultSetCapability.SORTED')
+
+    # XComponent
+    def dispose(self):
+        print("DynamicResultSet.dispose() *****************************************")
+        event = uno.createUnoStruct('com.sun.star.lang.EventObject')
+        event.Source = self
+        for listener in self._listeners:
+            listener.disposing(event)
+
+    def addEventListener(self, listener):
+        self._listeners.append(listener)
+
+    def removeEventListener(self, listener):
+        if listener in self._listeners:
+            self._listeners.remove(listener)
 
 
 class ContentResultSet(unohelper.Base,
