@@ -44,6 +44,9 @@ from .dbtool import currentDateTimeInTZ
 
 from .unotool import generateUuid
 
+from .ucp import ucboffice
+from .ucp import ucbfile
+
 from .configuration import g_identifier
 from .configuration import g_scheme
 from .configuration import g_provider
@@ -54,6 +57,7 @@ from .configuration import g_drivefields
 from .configuration import g_itemfields
 from .configuration import g_chunk
 from .configuration import g_pages
+from .configuration import g_content
 from .configuration import g_folder
 from .configuration import g_office
 from .configuration import g_link
@@ -79,16 +83,16 @@ class Provider(ProviderBase):
         return g_upload
     @property
     def Office(self):
-        return g_office
+        return ucboffice
     @property
     def Document(self):
         return g_doc_map
     @property
     def Folder(self):
-        return self._folder
+        return g_folder
     @property
     def Link(self):
-        return self._link
+        return g_link
 
     def getFirstPullRoots(self, user):
         return (user.RootId, )
@@ -107,7 +111,7 @@ class Provider(ProviderBase):
     def initSharedDocuments(self, user, datetime):
         itemid = generateUuid()
         timestamp = currentUnoDateTime()
-        user.DataBase.createSharedFolder(user, itemid, self.SharedFolderName, g_folder, datetime, timestamp)
+        user.DataBase.createSharedFolder(user, itemid, self.SharedFolderName, g_folder, g_content(g_folder), datetime, timestamp)
         parameter = self.getRequestParameter(user.Request, 'getSharedFolderContent')
         iterator = self._parseSharedFolder(user.Request, parameter, itemid, timestamp)
         user.DataBase.pullItems(iterator, user.Id, datetime, 0)
@@ -148,7 +152,8 @@ class Provider(ProviderBase):
                             mimetype = value
                         elif (prefix, event) == ('value.item', 'end_map'):
                             if itemid and name:
-                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, path, parents
+                                content = g_content.get(mimetype, ucbfile)
+                                yield itemid, name, created, modified, mimetype, content, size, link, trashed, addchild, rename, readonly, versionable, path, parents
                     del events[:]
                 parser.close()
             response.close()

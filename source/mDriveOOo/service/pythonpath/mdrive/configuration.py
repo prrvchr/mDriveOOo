@@ -27,6 +27,8 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from .ucp import ucbfolder
+
 # Provider configuration
 g_scheme = 'vnd-microsoft'
 g_extension = 'mDriveOOo'
@@ -52,6 +54,8 @@ g_chunk = 320 * 1024
 g_office = 'application/vnd.oasis.opendocument'
 g_folder = 'application/vnd.microsoft-apps.folder'
 g_link = 'application/vnd.microsoft-apps.link'
+g_content = {g_folder: ucbfolder}
+
 g_doc_map = {'application/vnd.microsoft-apps.document':     'application/vnd.oasis.opendocument.text',
              'application/vnd.microsoft-apps.spreadsheet':  'application/x-vnd.oasis.opendocument.spreadsheet',
              'application/vnd.microsoft-apps.presentation': 'application/vnd.oasis.opendocument.presentation',
