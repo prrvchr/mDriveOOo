@@ -34,4 +34,11 @@
       <value>false</value>
     </prop>
   </node>
+  <node oor:name="Save">
+    <node oor:name="Document">
+      <prop oor:name="CreateBackup" oor:finalized="true">
+        <value>false</value>
+      </prop>
+    </node>
+  </node>
 </oor:component-data>

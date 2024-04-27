@@ -38,29 +38,24 @@ from com.sun.star.rest.HTTPStatusCode import ACCEPTED
 from com.sun.star.ucb import IllegalIdentifierException
 
 from .ucp import Provider as ProviderBase
+from .ucp import g_ucboffice
 
-from .dbtool import currentUnoDateTime
 from .dbtool import currentDateTimeInTZ
+from .dbtool import currentUnoDateTime
 
 from .unotool import generateUuid
-
-from .ucp import ucboffice
-from .ucp import ucbfile
 
 from .configuration import g_identifier
 from .configuration import g_scheme
 from .configuration import g_provider
 from .configuration import g_host
 from .configuration import g_url
+from .configuration import g_upload
 from .configuration import g_userfields
 from .configuration import g_drivefields
 from .configuration import g_itemfields
 from .configuration import g_chunk
 from .configuration import g_pages
-from .configuration import g_content
-from .configuration import g_folder
-from .configuration import g_office
-from .configuration import g_link
 from .configuration import g_doc_map
 
 import ijson
@@ -81,18 +76,6 @@ class Provider(ProviderBase):
     @property
     def UploadUrl(self):
         return g_upload
-    @property
-    def Office(self):
-        return ucboffice
-    @property
-    def Document(self):
-        return g_doc_map
-    @property
-    def Folder(self):
-        return g_folder
-    @property
-    def Link(self):
-        return g_link
 
     def getFirstPullRoots(self, user):
         return (user.RootId, )
@@ -111,7 +94,7 @@ class Provider(ProviderBase):
     def initSharedDocuments(self, user, datetime):
         itemid = generateUuid()
         timestamp = currentUnoDateTime()
-        user.DataBase.createSharedFolder(user, itemid, self.SharedFolderName, g_folder, g_content(g_folder), datetime, timestamp)
+        user.DataBase.createSharedFolder(user, itemid, self.SharedFolderName, g_ucpfolder, datetime, timestamp)
         parameter = self.getRequestParameter(user.Request, 'getSharedFolderContent')
         iterator = self._parseSharedFolder(user.Request, parameter, itemid, timestamp)
         user.DataBase.pullItems(iterator, user.Id, datetime, 0)
@@ -120,7 +103,6 @@ class Provider(ProviderBase):
         parents = [parent, ]
         trashed = rename = readonly = versionable = False
         addchild = True
-        path = ''
         while parameter.hasNextPage():
             response = request.execute(parameter)
             if response.Ok:
@@ -133,7 +115,7 @@ class Provider(ProviderBase):
                         if (prefix, event) == ('value.item', 'start_map'):
                             itemid = name = None
                             created = modified = timestamp
-                            mimetype = g_folder
+                            mimetype = g_ucpfolder
                             link = ''
                             size = 0
                         elif (prefix, event) == ('value.item.remoteItem.id', 'string'):
@@ -152,8 +134,7 @@ class Provider(ProviderBase):
                             mimetype = value
                         elif (prefix, event) == ('value.item', 'end_map'):
                             if itemid and name:
-                                content = g_content.get(mimetype, ucbfile)
-                                yield itemid, name, created, modified, mimetype, content, size, link, trashed, addchild, rename, readonly, versionable, path, parents
+                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, parents
                     del events[:]
                 parser.close()
             response.close()
@@ -164,7 +145,6 @@ class Provider(ProviderBase):
     def parseItems(self, request, parameter, link=''):
         readonly = versionable = False
         addchild = rename = True
-        path = ''
         while parameter.hasNextPage():
             response = request.execute(parameter)
             if response.Ok:
@@ -182,7 +162,7 @@ class Provider(ProviderBase):
                         elif (prefix, event) == ('value.item', 'start_map'):
                             itemid = name = None
                             created = modified = timestamp
-                            mimetype = g_folder
+                            mimetype = g_ucpfolder
                             size = 0
                             trashed = False
                             parents = []
@@ -204,7 +184,7 @@ class Provider(ProviderBase):
                             parents.append(value)
                         elif (prefix, event) == ('value.item', 'end_map'):
                             if itemid and name:
-                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, path, parents
+                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, parents
                     del events[:]
                 parser.close()
             response.close()
@@ -340,7 +320,7 @@ class Provider(ProviderBase):
                     modified = self.parseDateTime(value)
             del events[:]
         parser.close()
-        return rootid, name, created, modified, g_folder, False, True, False, False, False
+        return rootid, name, created, modified, g_ucpfolder, False, True, False, False, False
 
     def parseUploadLocation(self, response):
         url =  None

@@ -27,8 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .ucp import ucbfolder
-
 # Provider configuration
 g_scheme = 'vnd-microsoft'
 g_extension = 'mDriveOOo'
@@ -51,21 +49,15 @@ g_pages = 100
 # Data chunk: 327680 (320Ko) is the Request iter_content() buffer_size, must be a multiple of 64
 g_chunk = 320 * 1024
 
-g_office = 'application/vnd.oasis.opendocument'
-g_folder = 'application/vnd.microsoft-apps.folder'
-g_link = 'application/vnd.microsoft-apps.link'
-g_content = {g_folder: ucbfolder}
+g_ucpfolder = 'application/vnd.microsoft-apps.folder'
+g_ucplink   = 'application/vnd.microsoft-apps.link'
 
 g_doc_map = {'application/vnd.microsoft-apps.document':     'application/vnd.oasis.opendocument.text',
-             'application/vnd.microsoft-apps.spreadsheet':  'application/x-vnd.oasis.opendocument.spreadsheet',
+             'application/vnd.microsoft-apps.spreadsheet':  'application/vnd.oasis.opendocument.spreadsheet',
              'application/vnd.microsoft-apps.presentation': 'application/vnd.oasis.opendocument.presentation',
-             'application/vnd.microsoft-apps.drawing':      'application/pdf'}
+             'application/vnd.microsoft-apps.drawing':      'application/vnd.oasis.opendocument.graphics'}
 
 g_cache = 20
-g_admin = False
-
-# The URL separator
-g_separator = '/'
 
 # Resource strings files folder
 g_resource = 'resource'
