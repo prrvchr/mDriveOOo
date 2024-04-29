@@ -134,7 +134,7 @@ class Provider(ProviderBase):
                             mimetype = value
                         elif (prefix, event) == ('value.item', 'end_map'):
                             if itemid and name:
-                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, parents
+                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, parents, None
                     del events[:]
                 parser.close()
             response.close()
@@ -184,7 +184,7 @@ class Provider(ProviderBase):
                             parents.append(value)
                         elif (prefix, event) == ('value.item', 'end_map'):
                             if itemid and name:
-                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, parents
+                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, parents, None
                     del events[:]
                 parser.close()
             response.close()
