@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][4] et à notre [Politique de protection des données][5].**
 
-# version [1.1.1][6]
+# version [1.1.2][6]
 
 ## Introduction:
 
@@ -231,7 +231,15 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 - Correction d'une régression empêchant la création de nouveaux fichiers.
 - Intégration d'un correctif pour contourner le [dysfonctionnement #159988][51].
 
-### Que reste-t-il à faire pour la version 1.1.1:
+### Ce qui a été fait pour la version 1.1.2:
+
+- La création de la base de données, lors de la première connexion, utilise l'API UNO proposée par l'extension jdbcDriverOOo depuis la version 1.3.2. Cela permet d'enregistrer toutes les informations nécessaires à la création de la base de données dans 6 tables texte qui sont en fait [6 fichiers csv][52].
+- Réécriture des [vues SQL][53] nécessaires à la gestion des doublons. Désormais, le chemin d'un dossier ou d'un fichier est calculé par une vue récursive qui prend en charge les doublons.
+- L'installation de l'extension désactivera l'option permettant de créer une copie de sauvegarde (ie: fichier .bak) dans LibreOffice. Si cette option est validée alors l'extension n'est plus capable d'enregistrer les fichiers.
+- L'extension vous demandera d'installer les extensions OAuth2OOo et jdbcDriverOOo en version respectivement 1.3.4 et 1.3.2 minimum.
+- De nombreuses corrections.
+
+### Que reste-t-il à faire pour la version 1.1.2:
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 
@@ -263,7 +271,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [24]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
 [25]: <img/mDriveOOo.svg#middle>
 [26]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.1.1#right>
+[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.1.2#right>
 [28]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
 [29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [30]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
@@ -288,3 +296,5 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [49]: <https://peps.python.org/pep-0508/>
 [50]: <https://prrvchr.github.io/mDriveOOo/README_fr#pr%C3%A9requis>
 [51]: <https://bugs.documentfoundation.org/show_bug.cgi?id=159988>
+[52]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/ucb/hsqldb>
+[53]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L111>
