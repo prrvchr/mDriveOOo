@@ -151,7 +151,7 @@ class Provider(object):
             self.initSharedDocuments(user, datetime)
         for root in self.getFirstPullRoots(user):
             parameter = self.getRequestParameter(user.Request, 'getFirstPull', root)
-            iterator = self.parseItems(user.Request, parameter)
+            iterator = self.parseItems(user.Request, parameter, user.RootId)
             count +=  user.DataBase.pullItems(iterator, user.Id, datetime)
             page += parameter.PageCount
         return page, count, parameter.SyncToken
@@ -162,7 +162,7 @@ class Provider(object):
     def pullUser(self, user):
         timestamp = currentDateTimeInTZ()
         parameter = self.getRequestParameter(user.Request, 'getPull', user)
-        iterator = self.parseItems(user.Request, parameter)
+        iterator = self.parseItems(user.Request, parameter, user.RootId)
         count = user.DataBase.pullItems(iterator, user.Id, timestamp)
         return parameter.PageCount, count, parameter.SyncToken
 
@@ -213,7 +213,7 @@ class Provider(object):
     def parseNewIdentifiers(self, response):
         raise NotImplementedError
 
-    def parseItems(self, request, parameter):
+    def parseItems(self, request, parameter, rootid):
         raise NotImplementedError
 
     def parseChanges(self, user, parameter):
