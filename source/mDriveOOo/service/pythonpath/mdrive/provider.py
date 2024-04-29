@@ -339,6 +339,7 @@ class Provider(ProviderBase):
         newid = self._parseNewId(response)
         if newid and oldid != newid:
             database.updateItemId(newid, oldid)
+            self.updateNewItemId(oldid, newid)
         return newid
 
     def _parseNewId(self, response):
