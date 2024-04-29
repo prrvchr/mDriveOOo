@@ -32,7 +32,7 @@ import uno
 from com.sun.star.sdbc import SQLException
 from com.sun.star.sdbc import SQLWarning
 
-from com.sun.star.sdbc.KeyRule import CASCADE
+from com.sun.star.sdbcx.CheckOption import CASCADE
 
 from com.sun.star.sdbcx import PrivilegeObject
 
@@ -178,11 +178,10 @@ def checkDataBase(ctx, connection):
         error = getSqlException(state, 1112, msg)
     return version, error
 
-def executeQueries(ctx, statement, queries):
-    for name, format in queries:
-        query = getSqlQuery(ctx, name, format)
-        print("dbtool.executeQueries() Name: %s - Query: %s" % (name, query))
-        statement.executeQuery(query)
+def executeQueries(ctx, statement, queries, name='%s', format=None):
+    for item in queries:
+        query = name % item
+        statement.executeQuery(getSqlQuery(ctx, query, format))
 
 def getDataSourceClassPath(ctx, identifier):
     path = getResourceLocation(ctx, identifier, g_folder)
@@ -559,6 +558,17 @@ def getConnectionInfos(connection, *options):
                 infos.append(info.Value)
     return infos
 
+def createViews(ctx, views, items, command='%s', format=None):
+    for catalog, schema, name in items:
+        view = views.createDataDescriptor()
+        view.setPropertyValue('Name', name)
+        view.setPropertyValue('CatalogName', catalog)
+        view.setPropertyValue('SchemaName', schema)
+        query = getSqlQuery(ctx, command % name, format)
+        view.setPropertyValue('Command', query)
+        view.setPropertyValue('CheckOption', CASCADE)
+        views.appendByDescriptor(view)
+
 def createTables(tables, items):
     for name, item in items:
         catalog = item.get('CatalogName')
@@ -757,7 +767,17 @@ def _addColum(columns, name, relatedcolumn):
     column.setPropertyValue('RelatedColumn', relatedcolumn)
     columns.appendByDescriptor(column)
 
-def createRoleAndPrivileges(statement, tables, groups, query):
+def createRoleAndPrivileges(tables, groups, privileges):
+    for catalog, schema, name, type, role, privilege in privileges:
+        fullname = catalog + '.' + schema + '.' + name
+        if not tables.hasByName(fullname):
+            continue
+        if not groups.hasByName(role):
+            _addRole(groups, role)
+        group = groups.getByName(role)
+        group.grantPrivileges(fullname, type, privilege)
+
+def getTablePrivileges(statement, query):
     result = statement.executeQuery(query)
     while result.next():
         catalog = result.getString(1)
@@ -769,9 +789,6 @@ def createRoleAndPrivileges(statement, tables, groups, query):
         name = result.getString(3)
         if result.wasNull():
             continue
-        fullname = catalog + '.' + schema + '.' + name
-        if not tables.hasByName(fullname):
-            continue
         column = result.getString(4)
         if result.wasNull():
             column = None
@@ -781,10 +798,8 @@ def createRoleAndPrivileges(statement, tables, groups, query):
         privilege = result.getInt(6)
         if result.wasNull():
             continue
-        if not groups.hasByName(role):
-            _addRole(groups, role)
-        group = groups.getByName(role)
-        group.grantPrivileges(fullname, _getPrivilegeType(column), privilege)
+        yield catalog, schema, name, _getPrivilegeType(column), role, privilege
+    result.close()
 
 def _getPrivilegeType(column):
     return PrivilegeObject.TABLE if column is None else PrivilegeObject.COLUMN

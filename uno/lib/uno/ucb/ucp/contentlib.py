@@ -57,31 +57,24 @@ class CommandInfo(unohelper.Base,
                   XCommandInfo):
     def __init__(self, commands={}):
         self.commands = commands
-        print("CommandInfo.__init__()")
+
     # XCommandInfo
     def getCommands(self):
-        print("CommandInfo.getCommands()")
         return tuple(self.commands.values())
     def getCommandInfoByName(self, name):
-        print("CommandInfo.getCommandInfoByName(): %s" % name)
         if name in self.commands:
             return self.commands[name]
-        print("CommandInfo.getCommandInfoByName() Error: %s" % name)
         msg = 'Cant getCommandInfoByName, UnsupportedCommandException: %s' % name
         raise UnsupportedCommandException(msg, self)
     def getCommandInfoByHandle(self, handle):
-        print("CommandInfo.getCommandInfoByHandle(): %s" % handle)
         for command in self.commands.values():
             if command.Handle == handle:
                 return command
-        print("CommandInfo.getCommandInfoByHandle() Error: %s" % handle)
         msg = 'Cant getCommandInfoByHandle, UnsupportedCommandException: %s' % handle
         raise UnsupportedCommandException(msg, self)
     def hasCommandByName(self, name):
-        print("CommandInfo.hasCommandByName(): %s" % name)
         return name in self.commands
     def hasCommandByHandle(self, handle):
-        print("CommandInfo.hasCommandByHandle(): %s" % handle)
         for command in self.commands.values():
             if command.Handle == handle:
                 return True
@@ -92,6 +85,7 @@ class CommandInfoChangeNotifier(unohelper.Base,
                                 XCommandInfoChangeNotifier):
     def __init__(self):
         self.commandInfoListeners = []
+
     # XCommandInfoChangeNotifier
     def addCommandInfoChangeListener(self, listener):
         self.commandInfoListeners.append(listener)
@@ -169,17 +163,14 @@ class DynamicResultSet(unohelper.Base,
     def getStaticResultSet(self):
         return ContentResultSet(self._user, self._authority, self._call)
     def setListener(self, listener):
-        print("DynamicResultSet.setListener() *****************************************")
         pass
     def connectToCache(self, cache):
-        print("DynamicResultSet.connectToCache() *****************************************")
         pass
     def getCapabilities(self):
         return uno.getConstantByName('com.sun.star.ucb.ContentResultSetCapability.SORTED')
 
     # XComponent
     def dispose(self):
-        print("DynamicResultSet.dispose() *****************************************")
         event = uno.createUnoStruct('com.sun.star.lang.EventObject')
         event.Source = self
         for listener in self._listeners:
@@ -201,19 +192,14 @@ class ContentResultSet(unohelper.Base,
                        XContentAccess,
                        XCloseable):
     def __init__(self, user, authority, call):
-        try:
-            self._user = user
-            self._authority = authority
-            result = call.executeQuery()
-            result.last()
-            self.RowCount = result.getRow()
-            self.IsRowCountFinal = True
-            result.beforeFirst()
-            self._result = result
-            print("ContentResultSet.__init__() %s" % self.RowCount)
-        except Exception as e:
-            msg = "Error: %s - %s" % (e, traceback.format_exc())
-            print(msg)
+        self._user = user
+        self._authority = authority
+        result = call.executeQuery()
+        result.last()
+        self.RowCount = result.getRow()
+        self.IsRowCountFinal = True
+        result.beforeFirst()
+        self._result = result
 
     # XResultSet
     def next(self):
@@ -306,7 +292,6 @@ class ContentResultSet(unohelper.Base,
         return Identifier(self.queryContentIdentifierString())
     def queryContent(self):
         url = self.queryContentIdentifierString()
-        print("ContentResultSet.queryContent() 2 url: %s" % url)
         return self._user.getContentByUrl(self._authority, url)
 
     # XCloseable
@@ -314,7 +299,6 @@ class ContentResultSet(unohelper.Base,
         call = self._result.getStatement()
         self._result.close()
         call.close()
-        print("ContentResultSet.close()")
 
     def _getPropertySetInfo(self):
         properties = {}

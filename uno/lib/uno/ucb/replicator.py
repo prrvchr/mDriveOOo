@@ -238,8 +238,6 @@ class Replicator(Thread):
                 if metadata.get('IsFolder'):
                     newid = self._provider.createFolder(user, itemid, metadata)
                     self._logger.logprb(INFO, g_basename, '_pushItem()', 311, metadata.get('Title'), created)
-                elif metadata.get('IsLink'):
-                    pass
                 elif metadata.get('IsDocument'):
                     newid, args = self._provider.uploadFile(314, user, itemid, metadata, created, chunk, retry, delay, True)
                     self._logger.logprb(INFO, g_basename, '_pushItem()', *args)
@@ -250,7 +248,7 @@ class Replicator(Thread):
                     timestamp = property.get('TimeStamp')
                     modified = getDateTimeToString(metadata.get('DateModified'))
                     if properties & TITLE:
-                        newid = self._provider.updateTitle(user.Request, itemid, metadata)
+                        newid = self._provider.updateName(user.Request, itemid, metadata)
                         self._logger.logprb(INFO, g_basename, '_pushItem()', 312, metadata.get('Title'), modified)
                     elif properties & CONTENT:
                         newid, args = self._provider.uploadFile(314, user, itemid, metadata, modified, chunk, retry, delay, False)

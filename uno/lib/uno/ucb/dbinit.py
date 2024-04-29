@@ -38,6 +38,8 @@ from com.sun.star.sdbc.DataType import VARCHAR
 
 from com.sun.star.sdbc.KeyRule import CASCADE
 
+from com.sun.star.sdbcx.PrivilegeObject import TABLE
+
 from .dbtool import createStaticTables
 from .dbtool import createStaticIndexes
 from .dbtool import createStaticForeignKeys
@@ -46,6 +48,7 @@ from .dbtool import createTables
 from .dbtool import createIndexes
 from .dbtool import createForeignKeys
 from .dbtool import createRoleAndPrivileges
+from .dbtool import createViews
 from .dbtool import executeQueries
 from .dbtool import getConnectionInfos
 from .dbtool import getDataBaseTables
@@ -55,10 +58,13 @@ from .dbtool import getDataSourceConnection
 from .dbtool import getDriverInfos
 from .dbtool import getTableNames
 from .dbtool import getTables
+from .dbtool import getTablePrivileges
 from .dbtool import getIndexes
 from .dbtool import getForeignKeys
 from .dbtool import getPrivileges
 
+from .dbconfig import g_catalog
+from .dbconfig import g_schema
 from .dbconfig import g_csv
 from .dbconfig import g_role
 from .dbconfig import g_queries
@@ -75,17 +81,22 @@ def getDataBaseConnection(ctx, url, user, pwd, new, infos=None):
 
 def createDataBase(ctx, logger, connection, odb, version):
     logger.logprb(INFO, 'DataBase', '_createDataBase()', 411, version)
+    # XXX Creation order are very important here...
     tables = connection.getTables()
     statement = connection.createStatement()
-    statics = createStaticTables(tables, **_getStaticTables())
-    createStaticIndexes(tables)
-    createStaticForeignKeys(tables, *_getForeignKeys())
+    statics = createStaticTables(g_catalog, g_schema, tables, **_getStaticTables())
+    createStaticIndexes(g_catalog, g_schema, tables)
+    createStaticForeignKeys(g_catalog, g_schema, tables, *_getForeignKeys())
     setStaticTable(statement, statics, g_csv, True)
     _createTables(connection, statement, tables)
     _createIndexes(statement, tables)
     _createForeignKeys(statement, tables)
-    _createRoleAndPrivileges(statement, tables, connection.getGroups())
-    executeQueries(ctx, statement, _getQueries())
+    groups = connection.getGroups()
+    _createRoleAndPrivileges(statement, tables, groups)
+    executeQueries(ctx, statement, _getFunctions(), 'create%s', g_queries)
+    createViews(ctx, connection.getViews(), _getViews(), 'get%sViewCommand', g_queries)
+    createRoleAndPrivileges(tables, groups, _getViews(g_catalog, g_schema, TABLE, g_role, 1))
+    executeQueries(ctx, statement, _getProcedures(), 'create%s', g_queries)
     statement.close()
     connection.getParent().DatabaseDocument.storeAsURL(odb, ())
     logger.logprb(INFO, 'DataBase', '_createDataBase()', 412)
@@ -101,12 +112,13 @@ def _createForeignKeys(statement, tables):
     createForeignKeys(tables, getDataBaseForeignKeys(statement, getForeignKeys()))
 
 def _createRoleAndPrivileges(statement, tables, groups):
-    createRoleAndPrivileges(statement, tables, groups, getPrivileges())
+    privileges = getTablePrivileges(statement, getPrivileges())
+    createRoleAndPrivileges(tables, groups, privileges)
 
 def _getStaticTables():
     tables = OrderedDict()
-    tables['Privileges'] =   {'CatalogName': 'PUBLIC',
-                              'SchemaName':  'PUBLIC',
+    tables['Privileges'] =   {'CatalogName': g_catalog,
+                              'SchemaName':  g_schema,
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Table',
                                            'TypeName': 'INTEGER',
@@ -129,31 +141,20 @@ def _getStaticTables():
     return tables
 
 def _getForeignKeys():
-    return (('PUBLIC.PUBLIC.Privileges', 'Table',  'PUBLIC.PUBLIC.Tables',  'Table',  CASCADE, CASCADE),
-            ('PUBLIC.PUBLIC.Privileges', 'Column', 'PUBLIC.PUBLIC.Columns', 'Column', CASCADE, CASCADE))
+    return ((f'{g_catalog}.{g_schema}.Privileges', 'Table',  f'{g_catalog}.{g_schema}.Tables',  'Table',  CASCADE, CASCADE),
+            (f'{g_catalog}.{g_schema}.Privileges', 'Column', f'{g_catalog}.{g_schema}.Columns', 'Column', CASCADE, CASCADE))
 
-def _getQueries():
-    return (('createGetIsFolder', g_queries),
-            ('createGetContentType', g_queries),
-            ('createGetUniqueName', g_queries),
+def _getFunctions():
+    for name in ('GetIsFolder', 'GetContentType', 'GetUniqueName'):
+        yield name
 
-            ('createChildView', g_queries),
-            ('createTwinView', g_queries),
-            ('createDuplicateView', g_queries),
-            ('createPathView', g_queries),
-            ('createChildrenView', g_queries),
+def _getViews(catalog=g_catalog, schema=g_schema, *options):
+    for name in ('Child', 'Twin', 'Duplicate', 'Path', 'Children'):
+        yield catalog, schema, name, *options
 
-            ('createGetItem', g_queries),
-            ('createGetNewTitle', g_queries),
-            ('createUpdatePushItems', g_queries),
-            ('createGetPushItems', g_queries),
-            ('createGetPushProperties', g_queries),
-            ('createGetItemParentIds', g_queries),
-            ('createInsertUser', g_queries),
-            ('createInsertSharedFolder', g_queries),
-            ('createMergeItem', g_queries),
-            ('createMergeParent', g_queries),
-            ('createInsertItem', g_queries),
-            ('createPullChanges', g_queries),
-            ('createUpdateNewItemId', g_queries))
+def _getProcedures():
+    for name in ('GetItem', 'GetNewTitle', 'UpdatePushItems', 'GetPushItems', 'GetPushProperties',
+                 'GetItemParentIds', 'InsertUser', 'InsertSharedFolder', 'MergeItem', 'MergeParent',
+                 'InsertItem', 'PullChanges', 'UpdateNewItemId'):
+        yield name
 

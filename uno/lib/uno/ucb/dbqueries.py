@@ -87,36 +87,30 @@ CREATE FUNCTION "GetUniqueName"(IN NAME VARCHAR(100),
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetUniqueName_1" TO "%(Role)s";''' % format
 
-# Create Cached View Queries
-    elif name == 'createChildView':
+# Create View Command
+    elif name == 'getChildViewCommand':
         query = '''\
-CREATE VIEW %(Child)s ("UserId", "ParentId", "ItemId", "Name", "DateCreated", "DateModified")
-  AS SELECT I."UserId", P."ParentId", I."ItemId", I."Name", I."DateCreated", I."DateModified"
+SELECT I."UserId", P."ParentId", I."ItemId", I."Name", I."DateCreated", I."DateModified"
   FROM %(Items)s AS I
   INNER JOIN %(Parents)s AS P ON I."ItemId" = P."ItemId"
-  WHERE I."Trashed" = FALSE;
-GRANT SELECT ON %(Child)s TO "%(Role)s";''' % format
+  WHERE I."Trashed" = FALSE;''' % format
 
-    elif name == 'createTwinView':
+    elif name == 'getTwinViewCommand':
         query = '''\
-CREATE VIEW %(Twin)s ("UserId", "ParentId", "Name", "Indexes")
-  AS SELECT "UserId", "ParentId", "Name", ARRAY_AGG("ItemId" ORDER BY "DateCreated", "DateModified")
-  FROM %(Child)s
-  GROUP BY "UserId", "ParentId", "Name"
-  HAVING COUNT(*) > 1;
-GRANT SELECT ON %(Twin)s TO "%(Role)s";''' % format
+SELECT C."UserId", C."ParentId", C."Name", ARRAY_AGG(C."ItemId" ORDER BY C."DateCreated", C."DateModified") AS "Indexes"
+  FROM %(Child)s AS C
+  GROUP BY C."UserId", C."ParentId", C."Name"
+  HAVING COUNT(*) > 1;''' % format
 
-    elif name == 'createDuplicateView':
+    elif name == 'getDuplicateViewCommand':
         query = '''\
-CREATE VIEW %(Duplicate)s ("UserId", "ParentId", "ItemId", "Name")
-  AS SELECT T."UserId", T."ParentId", C."ItemId", "GetUniqueName"(T."Name", POSITION_ARRAY(C."ItemId" IN T."Indexes"))
+SELECT T."UserId", T."ParentId", C."ItemId", "GetUniqueName"(T."Name", POSITION_ARRAY(C."ItemId" IN T."Indexes")) AS "Name"
   FROM %(Twin)s AS T
-  JOIN %(Child)s AS C ON T."Name" = C."Name" AND T."ParentId" = C."ParentId";
-GRANT SELECT ON %(Duplicate)s TO "%(Role)s";''' % format
+  JOIN %(Child)s AS C ON T."Name" = C."Name" AND T."ParentId" = C."ParentId";''' % format
 
-    elif name == 'createPathView':
+    elif name == 'getPathViewCommand':
         query = '''\
-CREATE VIEW %(Path)s AS WITH RECURSIVE TREE ("UserId", "ParentId", "ItemId", "Name", "Path", "Title") AS
+WITH RECURSIVE TREE ("UserId", "ParentId", "ItemId", "Name", "Path", "Title") AS
   (
     SELECT U."UserId", U."RootId", C."ItemId", C."Name", CAST('%(Separator)s' AS VARCHAR(1024)), COALESCE(D."Name", C."Name")
     FROM %(Users)s AS U
@@ -128,21 +122,17 @@ CREATE VIEW %(Path)s AS WITH RECURSIVE TREE ("UserId", "ParentId", "ItemId", "Na
     INNER JOIN TREE AS T ON T."UserId" = C1."UserId" AND T."ItemId" = C1."ParentId"
     LEFT JOIN %(Duplicate)s AS D1 ON C1."UserId" = D1."UserId" AND C1."ParentId" = D1."ParentId" AND C1."ItemId" = D1."ItemId"
   )
-  SELECT "UserId", "ParentId", "ItemId", "Name", "Path", "Title" FROM TREE;
-GRANT SELECT ON %(Path)s TO "%(Role)s";''' % format
+  SELECT "UserId", "ParentId", "ItemId", "Name", "Path", "Title" FROM TREE;''' % format
 
-    elif name == 'createChildrenView':
+    elif name == 'getChildrenViewCommand':
         query = '''\
-CREATE VIEW %(Children)s ("UserId", "ItemId", "ParentId", "Name", "Path", "Title",
-                          "Link", "DateCreated", "DateModified", "IsFolder",
-                          "MediaType", "Size", "ConnectionMode")
-  AS SELECT C."UserId", C."ItemId", C."ParentId", P."Name", P."Path", P."Title",
-            I."Link", I."DateCreated", I."DateModified", "GetIsFolder"(I."MediaType"),
-            I."MediaType", I."Size", I."ConnectionMode"
+SELECT C."UserId", C."ItemId", C."ParentId", P."Name", P."Path",
+       P."Title", I."Link", I."DateCreated", I."DateModified",
+       "GetIsFolder"(I."MediaType") AS "IsFolder", I."MediaType",
+       I."Size", I."ConnectionMode"
   FROM %(Path)s AS P
   INNER JOIN %(Child)s AS C ON P."ItemId" = C."ItemId" AND P."ParentId" = C."ParentId"
-  INNER JOIN %(Items)s AS I ON C."ItemId" = I."ItemId";
-GRANT SELECT ON %(Children)s TO "%(Role)s";''' % format
+  INNER JOIN %(Items)s AS I ON C."ItemId" = I."ItemId";''' % format
 
 # Select Queries
     elif name == 'getUser':
@@ -154,8 +144,8 @@ WHERE "UserName" = ?;'''
     elif name == 'getChildren':
         query = '''\
 SELECT %(Columns)s 
-FROM %(View)s AS C
-WHERE (C."IsFolder" = TRUE OR C."ConnectionMode" >= ?) AND C."Path" = ?;
+FROM %(Children)s AS C
+WHERE C."UserId" = ? AND C."Path" = ? AND (C."IsFolder" = TRUE OR C."ConnectionMode" >= ?);
 ''' % format
 
     elif name == 'getChildId':
@@ -182,7 +172,7 @@ SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Path" = ? AND "Title" 
     elif name == 'updateUserSyncMode':
         query = 'UPDATE "Users" SET "SyncMode"=? WHERE "UserId"=?;'
 
-    elif name == 'updateTitle':
+    elif name == 'updateName':
         query = 'UPDATE "Items" SET "TimeStamp"=?, "Name"=?, "SyncMode"=2 WHERE "ItemId"=?;'
 
     elif name == 'updateSize':
@@ -218,18 +208,17 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "UpdateNewItemId_1" TO "%(Role)s";''' % format
     elif name == 'createGetItem':
         query = '''\
 CREATE PROCEDURE "GetItem"(IN USERID VARCHAR(320),
-                           IN ITEM VARCHAR(512),
+                           IN URI VARCHAR(1024),
                            IN ISPATH BOOLEAN)
   SPECIFIC "GetItem_1"
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE "Result" CURSOR WITH RETURN FOR
-      SELECT C."ItemId" AS "Id", C."Path", C."ParentId", C."Name", C."Title",
-       C."Title" AS "TitleOnServer", C."DateCreated", C."DateModified", C."MediaType",
+      SELECT C."ItemId" AS "Id", C."Path", C."ParentId", C."Name",
+       C."Title", C."DateCreated", C."DateModified", C."MediaType",
        "GetContentType"(C."IsFolder") AS "ContentType", C."Size", C."Link",
-       FALSE AS "Trashed", FALSE AS "IsRoot", C."IsFolder", 
-       CAST(CHAR_LENGTH(C."Link") AS BOOLEAN) AS "IsLink", NOT C."IsFolder"
+       FALSE AS "Trashed", FALSE AS "IsRoot", C."IsFolder", NOT C."IsFolder"
        AS "IsDocument", C."ConnectionMode", C."ItemId" AS "ObjectId",
        C1."CanAddChild", C1."CanRename", C1."IsReadOnly", C1."IsVersionable",
        FALSE AS "IsHidden", FALSE AS "IsVolume", FALSE AS "IsRemote",
@@ -237,8 +226,8 @@ CREATE PROCEDURE "GetItem"(IN USERID VARCHAR(320),
       FROM "Children" AS C
       INNER JOIN "Capabilities" AS C1 ON C."ItemId" = C1."ItemId" 
       WHERE C."UserId" = USERID AND
-            ((ISPATH AND C."Path" || C."Title" = ITEM) OR
-             (NOT ISPATH AND C."ItemId" = ITEM))
+            ((ISPATH AND C."Path" || C."Title" = URI) OR
+             (NOT ISPATH AND C."ItemId" = URI))
       FOR READ ONLY;
     OPEN "Result";
   END;
@@ -473,7 +462,6 @@ CREATE PROCEDURE "PullChanges"(IN UserId VARCHAR(100),
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "PullChanges_1" TO "%(Role)s";''' % format
 
-
     elif name == 'createMergeItem':
         query = '''\
 CREATE PROCEDURE "MergeItem"(IN UserId VARCHAR(100),
@@ -551,7 +539,7 @@ CREATE PROCEDURE "InsertItem"(IN USERID VARCHAR(100),
                               IN CONNECTIONMODE SMALLINT,
                               IN DATETIME TIMESTAMP(6) WITH TIME ZONE,
                               IN ITEMID VARCHAR(256),
-                              IN TITLE VARCHAR(100),
+                              IN NAME VARCHAR(100),
                               IN CREATED TIMESTAMP(6),
                               IN MODIFIED TIMESTAMP(6),
                               IN MEDIATYPE VARCHAR(100),
@@ -568,13 +556,13 @@ CREATE PROCEDURE "InsertItem"(IN USERID VARCHAR(100),
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE "Result" CURSOR WITH RETURN FOR
-      SELECT "Name", "Title", "Title" AS "TitleOnServer", "Path"
+      SELECT "Name", "Title", "Path"
       FROM "Path"
-      WHERE "ParentId" = PARENTID AND "ItemId" = ITEMID
+      WHERE "UserId" = USERID AND "ParentId" = PARENTID AND "ItemId" = ITEMID
     FOR READ ONLY;
     INSERT INTO "Items" ("UserId", "ItemId", "Name", "DateCreated", "DateModified", "MediaType",
                          "Size", "Link", "Trashed", "ConnectionMode", "SyncMode", "TimeStamp")
-                 VALUES (USERID, ITEMID, TITLE, CREATED, MODIFIED, MEDIATYPE,
+                 VALUES (USERID, ITEMID, NAME, CREATED, MODIFIED, MEDIATYPE,
                          SIZE, LINK, TRASHED, CONNECTIONMODE, 1, DATETIME);
     INSERT INTO "Capabilities" ("UserId", "ItemId", "CanAddChild", "CanRename",
                                 "IsReadOnly", "IsVersionable", "TimeStamp")

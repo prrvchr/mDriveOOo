@@ -48,14 +48,16 @@ g_csv = '%s.csv;fs=|;ignore_first=true;encoding=UTF-8;quoted=true'
 g_version = '2.7.2'
 g_role = 'FrontOffice'
 
-g_queries = {'Users':     'PUBLIC.PUBLIC."Users"',
-             'Items':     'PUBLIC.PUBLIC."Items"',
-             'Parents':   'PUBLIC.PUBLIC."Parents"',
-             'Child':     'PUBLIC.PUBLIC."Child"',
-             'Twin':      'PUBLIC.PUBLIC."Twin"',
-             'Duplicate': 'PUBLIC.PUBLIC."Duplicate"',
-             'Path':      'PUBLIC.PUBLIC."Path"',
-             'Children':  'PUBLIC.PUBLIC."Children"',
+g_catalog = 'PUBLIC'
+g_schema  = 'PUBLIC'
+g_queries = {'Users':     f'{g_catalog}.{g_schema}."Users"',
+             'Items':     f'{g_catalog}.{g_schema}."Items"',
+             'Parents':   f'{g_catalog}.{g_schema}."Parents"',
+             'Child':     f'{g_catalog}.{g_schema}."Child"',
+             'Twin':      f'{g_catalog}.{g_schema}."Twin"',
+             'Duplicate': f'{g_catalog}.{g_schema}."Duplicate"',
+             'Path':      f'{g_catalog}.{g_schema}."Path"',
+             'Children':  f'{g_catalog}.{g_schema}."Children"',
              'Role':      g_role,
              'Separator': g_ucbseparator,
              'UcbFolder': g_ucbfolder,

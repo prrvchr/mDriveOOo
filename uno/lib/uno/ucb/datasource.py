@@ -87,7 +87,6 @@ class DataSource(unohelper.Base,
     # FIXME: Get called from ParameterizedProvider.queryContent()
     def queryContent(self, source, authority, url):
         user, uri = self._getUser(source, authority, url)
-        print("DataSource.queryContent() 1")
         if uri is None:
             msg = self._logger.resolveString(311, url)
             raise IllegalIdentifierException(msg, source)
@@ -96,14 +95,12 @@ class DataSource(unohelper.Base,
         if content is None:
             msg = self._logger.resolveString(311, url)
             raise IllegalIdentifierException(msg, source)
-        print("DataSource.queryContent() 2")
         return content
 
     # XCloseListener
     def queryClosing(self, source, ownership):
         if ownership:
             raise CloseVetoException('cant close', self)
-        print("DataSource.queryClosing() ownership: %s" % ownership)
         if self.Replicator.is_alive():
             self.Replicator.cancel()
             self.Replicator.join()

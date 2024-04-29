@@ -34,6 +34,7 @@ from .dbtool import createIndexes
 from .dbtool import createForeignKeys
 from .dbtool import createRoleAndPrivileges
 from .dbtool import createUser
+from .dbtool import createViews
 from .dbtool import currentDateTime
 from .dbtool import currentDateTimeInTZ
 from .dbtool import currentUnoDateTime
@@ -58,6 +59,7 @@ from .dbtool import getDataSourceInfo
 from .dbtool import getDataSourceJavaInfo
 from .dbtool import getDateTimeInTZToString
 from .dbtool import getDateTimeFromString
+from .dbtool import getDateTimeToString
 from .dbtool import getDictFromResult
 from .dbtool import getDriverInfos
 from .dbtool import getDriverPropertyInfo
@@ -69,7 +71,7 @@ from .dbtool import getRowDict
 from .dbtool import getRowValue
 from .dbtool import getSequenceFromResult
 from .dbtool import getSqlException
-from .dbtool import getDateTimeToString
+from .dbtool import getTablePrivileges
 from .dbtool import getUnoType
 from .dbtool import getValueFromResult
 from .dbtool import registerDataSource
