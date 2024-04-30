@@ -56,6 +56,7 @@ from .configuration import g_drivefields
 from .configuration import g_itemfields
 from .configuration import g_chunk
 from .configuration import g_pages
+from .configuration import g_ucpfolder
 from .configuration import g_doc_map
 
 import ijson
@@ -94,7 +95,7 @@ class Provider(ProviderBase):
     def initSharedDocuments(self, user, datetime):
         itemid = generateUuid()
         timestamp = currentUnoDateTime()
-        user.DataBase.createSharedFolder(user, itemid, self.SharedFolderName, g_ucpfolder, datetime, timestamp)
+        user.DataBase.createSharedFolder(user, itemid, self.SharedFolderName, g_ucpfolder, timestamp, datetime)
         parameter = self.getRequestParameter(user.Request, 'getSharedFolderContent')
         iterator = self._parseSharedFolder(user.Request, parameter, itemid, timestamp)
         user.DataBase.pullItems(iterator, user.Id, datetime, 0)
@@ -140,9 +141,9 @@ class Provider(ProviderBase):
             response.close()
 
     def parseRootFolder(self, parameter, content):
-        return self.parseItems(content.User.Request, parameter, content.Link)
+        return self.parseItems(content.User.Request, parameter, content.User.RootId, content.Link)
 
-    def parseItems(self, request, parameter, link=''):
+    def parseItems(self, request, parameter, rootid, link=''):
         readonly = versionable = False
         addchild = rename = True
         while parameter.hasNextPage():
