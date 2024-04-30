@@ -99,8 +99,8 @@ class Provider(ProviderBase):
         iterator = self._parseSharedFolder(user.Request, parameter, itemid, timestamp)
         user.DataBase.pullItems(iterator, user.Id, datetime, 0)
 
-    def _parseSharedFolder(self, request, parameter, parent, timestamp):
-        parents = [parent, ]
+    def _parseSharedFolder(self, request, parameter, parentid, timestamp):
+        parents = [parentid, ]
         trashed = rename = readonly = versionable = False
         addchild = True
         while parameter.hasNextPage():
