@@ -280,33 +280,29 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertUser_1" TO "%(Role)s";''' % format
         query = '''\
 CREATE PROCEDURE "InsertSharedFolder"(IN UserId VARCHAR(100),
                                       IN RootId VARCHAR(256),
-                                      IN ConnectionMode SMALLINT,
-                                      IN DateTime TIMESTAMP(6) WITH TIME ZONE,
                                       IN ItemId VARCHAR(256),
                                       IN Name VARCHAR(100),
-                                      IN DateCreated TIMESTAMP(6),
-                                      IN DateModified TIMESTAMP(6),
                                       IN MediaType VARCHAR(100),
-                                      IN Size BIGINT,
-                                      IN Link VARCHAR(256),
-                                      IN Trashed BOOLEAN,
                                       IN CanAddChild BOOLEAN,
                                       IN CanRename BOOLEAN,
                                       IN IsReadOnly BOOLEAN,
-                                      IN IsVersionable BOOLEAN)
+                                      IN IsVersionable BOOLEAN,
+                                      IN DateCreated TIMESTAMP(6),
+                                      IN DateModified TIMESTAMP(6),
+                                      IN DateTime TIMESTAMP(6) WITH TIME ZONE)
   SPECIFIC "InsertSharedFolder_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    INSERT INTO "Items" ("UserId", "ItemId", "Name", "DateCreated", "DateModified",
-                         "MediaType", "Size", "Link", "Trashed", "ConnectionMode", "TimeStamp") 
-                 VALUES (UserId, ItemId, Name, DateCreated, DateModified,
-                         MediaType, Size, Link, Trashed, ConnectionMode, DateTime);
+    INSERT INTO "Items" ("UserId", "ItemId", "Name", "DateCreated",
+                         "DateModified", "MediaType", "TimeStamp") 
+                 VALUES (UserId, ItemId, Name, DateCreated,
+                         DateModified, MediaType, DateTime);
     INSERT INTO "Capabilities" ("UserId", "ItemId", "CanAddChild", "CanRename", 
                                 "IsReadOnly", "IsVersionable", "TimeStamp")
                         VALUES (UserId, ItemId, CanAddChild, CanRename,
                                 IsReadOnly, IsVersionable, DateTime);
-    INSERT INTO "Parents" ("UserId", "ItemId", "ParentId", "TimeStamp", "SyncMode")
-                   VALUES (UserId, ItemId, RootId, DateTime, ConnectionMode);
+    INSERT INTO "Parents" ("UserId", "ItemId", "ParentId", "TimeStamp")
+                   VALUES (UserId, ItemId, RootId, DateTime);
 
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "InsertSharedFolder_1" TO "%(Role)s";''' % format
@@ -593,7 +589,7 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
     elif name == 'insertUser':
         query = 'CALL "InsertUser"(?,?,?,?,?,?,?)'
     elif name == 'insertSharedFolder':
-        query = 'CALL "InsertSharedFolder"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        query = 'CALL "InsertSharedFolder"(?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'mergeItem':
         query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'mergeParent':
