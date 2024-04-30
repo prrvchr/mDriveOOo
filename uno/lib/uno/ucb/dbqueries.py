@@ -482,10 +482,6 @@ CREATE PROCEDURE "MergeItem"(IN UserId VARCHAR(100),
   SPECIFIC "MergeItem_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    DECLARE Index INTEGER DEFAULT 1;
-    DECLARE TmpItem VARCHAR(256) DEFAULT NULL;
-    DECLARE TmpParent VARCHAR(256) DEFAULT NULL;
-    DECLARE TmpRoots VARCHAR(256) ARRAY;
     MERGE INTO "Items" USING (VALUES(UserId, ItemId, Name, DateCreated, DateModified, 
                                      MediaType, Size, Link, Trashed, ConnectionMode, DateTime)) 
       AS vals(p,k,r,s,t,u,v,w,x,y,z) ON  "Items"."UserId"=vals.p AND "Items"."ItemId"=vals.k 
