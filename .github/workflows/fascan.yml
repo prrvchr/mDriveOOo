@@ -4,9 +4,27 @@ on: [push, pull_request]
 jobs:
   machineStandalone:
     name: machineStandalone job
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
     steps:
-      - uses: actions/checkout@master
-      - uses: docker://ghcr.io/fluidattacks/makes/amd64
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Fluid-Attacks scan
+        uses: docker://ghcr.io/fluidattacks/makes/amd64
         with:
           args: m gitlab:fluidattacks/universe@trunk /skims scan ./_fascan.yml
+
+      - name: Commit and push changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git commit -am "Fluid-Attacks Results.csv commit" || exit 0
+          git push

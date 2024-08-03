@@ -28,7 +28,7 @@
   xmlns="http://openoffice.org/extensions/update/2006"
   xmlns:xlink="http://www.w3.org/1999/xlink">
     <identifier value="io.github.prrvchr.mDriveOOo"/>
-    <version value="1.1.2"/>
+    <version value="1.1.3"/>
     <update-download>
         <src xlink:href="https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt"/>
     </update-download>
@@ -40,7 +40,7 @@
         <name xlink:href="https://prrvchr.github.io/mDriveOOo/README_fr" lang="fr">mDriveOOo</name>
     </publisher>
     <release-notes>
-        <src xlink:href="https://prrvchr.github.io/mDriveOOo/#what-has-been-done-for-version-112" lang="en"/>
-        <src xlink:href="https://prrvchr.github.io/mDriveOOo/README_fr#ce-qui-a-%C3%A9t%C3%A9-fait-pour-la-version-112" lang="fr"/>
+        <src xlink:href="https://prrvchr.github.io/mDriveOOo/#what-has-been-done-for-version-113" lang="en"/>
+        <src xlink:href="https://prrvchr.github.io/mDriveOOo/README_fr#ce-qui-a-%C3%A9t%C3%A9-fait-pour-la-version-113" lang="fr"/>
     </release-notes>
 </description>

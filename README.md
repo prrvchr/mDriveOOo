@@ -29,7 +29,7 @@
 
 **The use of this software subjects you to our [Terms Of Use][4] and [Data Protection Policy][5].**
 
-# version [1.1.2][6]
+# version [1.1.3][6]
 
 ## Introduction:
 
@@ -239,7 +239,15 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 - The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.3.4 and 1.3.2 respectively minimum.
 - Many fixes.
 
-### What remains to be done for version 1.1.2:
+### What has been done for version 1.1.3:
+
+- Updated the [Python python-dateutil][54] package to version 2.9.0.post0.
+- Updated the [Python ijson][55] package to version 3.3.0.
+- Updated the [Python packaging][56] package to version 24.1.
+- Updated the [Python setuptools][57] package to version 72.1.0 in order to respond to the [Dependabot security alert][58].
+- The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.3.6 and 1.4.2 respectively minimum.
+
+### What remains to be done for version 1.1.3:
 
 - Add new language for internationalization...
 
@@ -250,7 +258,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [3]: <https://prrvchr.github.io/mDriveOOo/README_fr>
 [4]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_en>
 [5]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_en>
-[6]: <https://prrvchr.github.io/mDriveOOo#what-has-been-done-for-version-110>
+[6]: <https://prrvchr.github.io/mDriveOOo#what-has-been-done-for-version-113>
 [7]: <https://prrvchr.github.io/>
 [8]: <https://www.libreoffice.org/download/download/>
 [9]: <https://www.openoffice.org/download/index.html>
@@ -271,7 +279,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [24]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
 [25]: <img/mDriveOOo.svg#middle>
 [26]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.1.2#right>
+[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.1.3#right>
 [28]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
 [29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [30]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
@@ -298,3 +306,8 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [51]: <https://bugs.documentfoundation.org/show_bug.cgi?id=159988>
 [52]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/ucb/hsqldb>
 [53]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L111>
+[54]: <https://pypi.org/project/python-dateutil/>
+[55]: <https://pypi.org/project/ijson/>
+[56]: <https://pypi.org/project/packaging/>
+[57]: <https://pypi.org/project/setuptools/>
+[58]: <https://github.com/prrvchr/mDriveOOo/security/dependabot/1>

@@ -1,5 +1,5 @@
-dateutil==2.8.2
-ijson==3.2.3
-packaging==23.2
-setuptools==69.0.3
-six==1.16.0
+python-dateutil>=2.9.0.post0
+ijson>=3.3.0
+packaging>=24.1
+setuptools>=72.1.0
+six>=1.16.0

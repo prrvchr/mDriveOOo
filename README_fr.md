@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][4] et à notre [Politique de protection des données][5].**
 
-# version [1.1.2][6]
+# version [1.1.3][6]
 
 ## Introduction:
 
@@ -239,7 +239,15 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 - L'extension vous demandera d'installer les extensions OAuth2OOo et jdbcDriverOOo en version respectivement 1.3.4 et 1.3.2 minimum.
 - De nombreuses corrections.
 
-### Que reste-t-il à faire pour la version 1.1.2:
+### Ce qui a été fait pour la version 1.1.3:
+
+- Mise à jour du paquet [Python python-dateutil][54] vers la version 2.9.0.post0.
+- Mise à jour du paquet [Python ijson][55] vers la version 3.3.0.
+- Mise à jour du paquet [Python packaging][56] vers la version 24.1.
+- Mise à jour du paquet [Python setuptools][57] vers la version 72.1.0 afin de répondre à l'[alerte de sécurité Dependabot][58].
+- L'extension vous demandera d'installer les extensions OAuth2OOo et jdbcDriverOOo en version respectivement 1.3.6 et 1.4.2 minimum.
+
+### Que reste-t-il à faire pour la version 1.1.3:
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 
@@ -298,3 +306,8 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [51]: <https://bugs.documentfoundation.org/show_bug.cgi?id=159988>
 [52]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/ucb/hsqldb>
 [53]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L111>
+[54]: <https://pypi.org/project/python-dateutil/>
+[55]: <https://pypi.org/project/ijson/>
+[56]: <https://pypi.org/project/packaging/>
+[57]: <https://pypi.org/project/setuptools/>
+[58]: <https://github.com/prrvchr/mDriveOOo/security/dependabot/1>
