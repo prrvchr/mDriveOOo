@@ -51,16 +51,8 @@ def fi_business_id(value: str, /):
             Business ID string to be validated.
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid finnish business id.
-        (ValidationError):
-            If `value` is an invalid finnish business id.
-
-    Note:
-        - *In version 0.5.0*:
-            - Function renamed from `finnish_business_id` to `fi_business_id`
-
-    > *New in version 0.4.0*.
+        (Literal[True]): If `value` is a valid finnish business id.
+        (ValidationError): If `value` is an invalid finnish business id.
     """
     if not value:
         return False
@@ -96,12 +88,8 @@ def fi_ssn(value: str, /, *, allow_temporal_ssn: bool = True):
             SSN numbers are valid.
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid finnish SSN.
-        (ValidationError):
-            If `value` is an invalid finnish SSN.
-
-    > *New in version 0.5.0*.
+        (Literal[True]): If `value` is a valid finnish SSN.
+        (ValidationError): If `value` is an invalid finnish SSN.
     """
     if not value:
         return False

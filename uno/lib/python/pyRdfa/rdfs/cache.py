@@ -18,7 +18,7 @@ from ..utils import create_file_name
 from . import VocabCachingInfo
 
 # Regular expression object for a general XML application media type
-xml_application_media_type = re.compile("application/[a-zA-Z0-9]+\+xml")
+xml_application_media_type = re.compile(r"application/[a-zA-Z0-9]+\+xml")
 
 #===========================================================================================
 

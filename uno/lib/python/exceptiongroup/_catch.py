@@ -11,7 +11,7 @@ if sys.version_info < (3, 11):
     from ._exceptions import BaseExceptionGroup
 
 if TYPE_CHECKING:
-    _Handler = Callable[[BaseException], Any]
+    _Handler = Callable[[BaseExceptionGroup[Any]], Any]
 
 
 class _Catcher:
@@ -94,7 +94,7 @@ class _Catcher:
 
 
 def catch(
-    __handlers: Mapping[type[BaseException] | Iterable[type[BaseException]], _Handler]
+    __handlers: Mapping[type[BaseException] | Iterable[type[BaseException]], _Handler],
 ) -> AbstractContextManager[None]:
     if not isinstance(__handlers, Mapping):
         raise TypeError("the argument must be a mapping")

@@ -1,19 +1,25 @@
 # mypy: disallow_untyped_defs=False
 from __future__ import annotations
 
-# -*- coding: utf-8 -*-
 from copy import copy, deepcopy
 from xml.dom import Node
 from xml.dom.minidom import Attr, NamedNodeMap
 
-from lxml.etree import (
-    ElementBase,
-    XPath,
-    _ElementStringResult,
-    _ElementUnicodeResult,
-    tostring,
-)
+from lxml.etree import ElementBase, XPath, _ElementUnicodeResult, tostring
 from lxml.html import HtmlElementClassLookup, HTMLParser
+
+try:
+    from lxml.etree import _ElementStringResult
+except ImportError:
+
+    class _ElementStringResult(bytes):  # type: ignore[no-redef]
+        """
+        _ElementStringResult is removed in lxml >= 5.1.1,
+        so we define it here for compatibility.
+        """
+
+        def getparent(self):
+            return self._parent  # type: ignore[attr-defined]
 
 
 class DomElementUnicodeResult:
@@ -73,7 +79,7 @@ class DomHtmlMixin:
 
     @property
     def nodeName(self):
-        # FIXME: this is a simpification
+        # FIXME: this is a simplification
         return self.tag  # type: ignore[attr-defined]
 
     @property

@@ -3,9 +3,10 @@ Backend independent higher level interfaces, common exceptions.
 '''
 import decimal
 import inspect
+import io
 import warnings
 
-from ijson import compat, utils
+from ijson import compat, utils, utils35
 
 
 class JSONError(Exception):
@@ -99,9 +100,9 @@ class ObjectBuilder(object):
 
     Example::
 
+        >>> from io import BytesIO
         >>> from ijson import basic_parse
         >>> from ijson.common import ObjectBuilder
-        >>> from ijson.compat import BytesIO
 
         >>> builder = ObjectBuilder()
         >>> f = BytesIO(b'{"key": "value"}')
@@ -299,7 +300,7 @@ def is_awaitablefunction(func):
 def is_async_file(f):
     """True if `f` has an asynchronous `read` method"""
     return (
-        compat.IS_PY35 and hasattr(f, 'read') and
+        hasattr(f, 'read') and
         is_awaitablefunction(f.read)
     )
 
@@ -314,10 +315,10 @@ def is_iterable(x):
 
 
 def _get_source(source):
-    if isinstance(source, compat.bytetype):
-        return compat.BytesIO(source)
-    elif isinstance(source, compat.texttype):
-        return compat.StringIO(source)
+    if isinstance(source, bytes):
+        return io.BytesIO(source)
+    elif isinstance(source, str):
+        return io.StringIO(source)
     return source
 
 
@@ -479,11 +480,9 @@ def enrich_backend(backend):
         if gen_name not in backend:
             factory = globals()['_make_' + gen_name]
             backend[gen_name] = factory(backend)
-        if compat.IS_PY35:
-            from . import utils35
-            async_name = name + '_async'
-            if async_name not in backend:
-                factory = getattr(utils35, '_make_' + async_name)
-                backend[async_name] = factory(backend)
+        async_name = name + '_async'
+        if async_name not in backend:
+            factory = getattr(utils35, '_make_' + async_name)
+            backend[async_name] = factory(backend)
         factory = globals()['_make_' + name]
         backend[name] = factory(backend)

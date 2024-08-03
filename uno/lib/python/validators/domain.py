@@ -1,14 +1,26 @@
 """Domain."""
 
 # standard
+from pathlib import Path
 import re
 
 # local
 from .utils import validator
 
 
+def _iana_tld():
+    """Load IANA TLDs as a Generator."""
+    # source: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
+    with Path(__file__).parent.joinpath("_tld.txt").open() as tld_f:
+        _ = next(tld_f)  # ignore the first line
+        for line in tld_f:
+            yield line.strip()
+
+
 @validator
-def domain(value: str, /, *, rfc_1034: bool = False, rfc_2782: bool = False):
+def domain(
+    value: str, /, *, consider_tld: bool = False, rfc_1034: bool = False, rfc_2782: bool = False
+):
     """Return whether or not given value is a valid domain.
 
     Examples:
@@ -23,40 +35,48 @@ def domain(value: str, /, *, rfc_1034: bool = False, rfc_2782: bool = False):
     Args:
         value:
             Domain string to validate.
+        consider_tld:
+            Restrict domain to TLDs allowed by IANA.
         rfc_1034:
-            Allow trailing dot in domain name.
+            Allows optional trailing dot in the domain name.
             Ref: [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034).
         rfc_2782:
             Domain name is of type service record.
+            Allows optional underscores in the domain name.
             Ref: [RFC 2782](https://www.rfc-editor.org/rfc/rfc2782).
 
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid domain name.
-        (ValidationError):
-            If `value` is an invalid domain name.
+        (Literal[True]): If `value` is a valid domain name.
+        (ValidationError): If `value` is an invalid domain name.
 
-    Note:
-        - *In version 0.10.0*:
-            - Added support for internationalized domain name (IDN) validation.
-
-    > *New in version 0.9.0*.
+    Raises:
+        (UnicodeError): If `value` cannot be encoded into `idna` or decoded into `utf-8`.
     """
     if not value:
         return False
+
+    if consider_tld and value.rstrip(".").rsplit(".", 1)[-1].upper() not in _iana_tld():
+        return False
+
     try:
-        return not re.search(r"\s", value) and re.match(
+
+        service_record = r"_" if rfc_2782 else ""
+        trailing_dot = r"\.?$" if rfc_1034 else r"$"
+
+        return not re.search(r"\s|__+", value) and re.match(
             # First character of the domain
-            rf"^(?:[a-zA-Z0-9{'_'if rfc_2782 else ''}]"
-            # Sub domain + hostname
-            + r"(?:[a-zA-Z0-9-_]{0,61}[A-Za-z0-9])?\.)"
+            rf"^(?:[a-z0-9{service_record}]"
+            # Sub-domain
+            + rf"(?:[a-z0-9-{service_record}]{{0,61}}"
+            # Hostname
+            + rf"[a-z0-9{service_record}])?\.)"
             # First 61 characters of the gTLD
-            + r"+[A-Za-z0-9][A-Za-z0-9-_]{0,61}"
+            + r"+[a-z0-9][a-z0-9-_]{0,61}"
             # Last character of the gTLD
-            + rf"[A-Za-z]{r'.$' if rfc_1034 else r'$'}",
+            + rf"[a-z]{trailing_dot}",
             value.encode("idna").decode("utf-8"),
             re.IGNORECASE,
         )
-    except UnicodeError:
-        return False
+    except UnicodeError as err:
+        raise UnicodeError(f"Unable to encode/decode {value}") from err

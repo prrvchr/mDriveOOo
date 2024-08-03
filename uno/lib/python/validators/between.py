@@ -8,7 +8,7 @@ from typing import TypeVar, Union
 from ._extremes import AbsMax, AbsMin
 from .utils import validator
 
-PossibleValueTypes = TypeVar("PossibleValueTypes", int, float, str, datetime)
+PossibleValueTypes = TypeVar("PossibleValueTypes", int, float, str, datetime, None)
 
 
 @validator
@@ -51,48 +51,29 @@ def between(
             If not provided, maximum value will not be checked.
 
     Returns:
-        (Literal[True]):
-            If `value` is in between the given conditions.
-        (ValidationError):
-            If `value` is not in between the given conditions.
+        (Literal[True]): If `value` is in between the given conditions.
+        (ValidationError): If `value` is not in between the given conditions.
 
     Raises:
-        ValueError: If both `min_val` and `max_val` are `None`,
-            or if `min_val` is greater than `max_val`.
-        TypeError: If there's a type mismatch before comparison.
+        (ValueError): If `min_val` is greater than `max_val`.
+        (TypeError): If there's a type mismatch during comparison.
 
     Note:
         - `PossibleValueTypes` = `TypeVar("PossibleValueTypes", int, float, str, datetime)`
-        - Either one of `min_val` or `max_val` must be provided.
-
-    > *New in version 0.2.0*.
+        - If neither `min_val` nor `max_val` is provided, result will always be `True`.
     """
-    if not value:
+    if value is None:
         return False
-
-    if min_val is max_val is None:
-        raise ValueError("At least one of either `min_val` or `max_val` must be specified")
 
     if max_val is None:
         max_val = AbsMax()
     if min_val is None:
         min_val = AbsMin()
 
-    if isinstance(min_val, AbsMin):
-        if type(value) is type(max_val):
-            return min_val <= value <= max_val
-        raise TypeError("`value` and `max_val` must be of same type")
-
-    if isinstance(max_val, AbsMax):
-        if type(value) is type(min_val):
-            return min_val <= value <= max_val
-        raise TypeError("`value` and `min_val` must be of same type")
-
-    if type(min_val) is type(max_val):
+    try:
         if min_val > max_val:
-            raise ValueError("`min_val` cannot be more than `max_val`")
-        if type(value) is type(min_val):  # or is type(max_val)
-            return min_val <= value <= max_val
-        raise TypeError("`value` and (`min_val` or `max_val`) must be of same type")
+            raise ValueError("`min_val` cannot be greater than `max_val`")
+    except TypeError as err:
+        raise TypeError("Comparison type mismatch") from err
 
-    raise TypeError("`value` and `min_val` and `max_val` must be of same type")
+    return min_val <= value <= max_val

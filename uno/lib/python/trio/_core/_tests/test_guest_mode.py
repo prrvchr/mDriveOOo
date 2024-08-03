@@ -31,7 +31,7 @@ import trio.testing
 from trio.abc import Instrument
 
 from ..._util import signal_raise
-from .tutil import buggy_pypy_asyncgens, gc_collect_harder, restore_unraisablehook
+from .tutil import gc_collect_harder, restore_unraisablehook
 
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias
@@ -111,7 +111,7 @@ def trivial_guest_run(
 
 def test_guest_trivial() -> None:
     async def trio_return(in_host: InHost) -> str:
-        await trio.sleep(0)
+        await trio.lowlevel.checkpoint()
         return "ok"
 
     assert trivial_guest_run(trio_return) == "ok"
@@ -149,7 +149,7 @@ def test_guest_is_initialized_when_start_returns() -> None:
 
     async def trio_main(in_host: InHost) -> str:
         record.append("main task ran")
-        await trio.sleep(0)
+        await trio.lowlevel.checkpoint()
         assert trio.lowlevel.current_trio_token() is trio_token
         return "ok"
 
@@ -164,7 +164,7 @@ def test_guest_is_initialized_when_start_returns() -> None:
         @trio.lowlevel.spawn_system_task
         async def early_task() -> None:
             record.append("system task ran")
-            await trio.sleep(0)
+            await trio.lowlevel.checkpoint()
 
     res = trivial_guest_run(trio_main, in_host_after_start=after_start)
     assert res == "ok"
@@ -396,7 +396,7 @@ def test_guest_warns_if_abandoned() -> None:
         async def abandoned_main(in_host: InHost) -> None:
             in_host(lambda: 1 / 0)
             while True:
-                await trio.sleep(0)
+                await trio.lowlevel.checkpoint()
 
         with pytest.raises(ZeroDivisionError):
             trivial_guest_run(abandoned_main)
@@ -472,7 +472,7 @@ def test_guest_mode_on_asyncio() -> None:
 
         # Make sure we have at least one tick where we don't need to go into
         # the thread
-        await trio.sleep(0)
+        await trio.lowlevel.checkpoint()
 
         from_trio.put_nowait(0)
 
@@ -540,7 +540,7 @@ def test_guest_mode_internal_errors(
 
         async def crash_in_io(in_host: InHost) -> None:
             m.setattr("trio._core._run.TheIOManager.get_events", None)
-            await trio.sleep(0)
+            await trio.lowlevel.checkpoint()
 
         with pytest.raises(trio.TrioInternalError):
             trivial_guest_run(crash_in_io)
@@ -622,7 +622,6 @@ def test_guest_mode_autojump_clock_threshold_changing() -> None:
     assert end - start < DURATION / 2
 
 
-@pytest.mark.skipif(buggy_pypy_asyncgens, reason="PyPy 7.2 is buggy")
 @restore_unraisablehook()
 def test_guest_mode_asyncgens() -> None:
     import sniffio

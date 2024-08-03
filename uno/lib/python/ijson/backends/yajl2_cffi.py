@@ -6,7 +6,6 @@ from cffi import FFI
 import functools
 
 from ijson import common, backends, utils
-from ijson.compat import b2s
 
 
 ffi = FFI()
@@ -112,7 +111,7 @@ def double(val):
 @ffi.callback('int(void *ctx, const char *numberVal, size_t numberLen)')
 @append_event_to_ctx('number')
 def number(val, length):
-    return common.integer_or_decimal(b2s(ffi.string(val, maxlen=length)))
+    return common.integer_or_decimal(ffi.string(val, maxlen=length).decode("utf-8"))
 
 
 @ffi.callback('int(void *ctx, const unsigned char *stringVal, size_t stringLen)')

@@ -1,8 +1,8 @@
 from functools import lru_cache
 from typing import Callable, Iterable, Iterator, TypeVar, Union, overload
 
-import setuptools.extern.jaraco.text as text
-from setuptools.extern.packaging.requirements import Requirement
+import jaraco.text as text
+from packaging.requirements import Requirement
 
 _T = TypeVar("_T")
 _StrOrIter = Union[str, Iterable[str]]
@@ -24,13 +24,11 @@ def parse_strings(strs: _StrOrIter) -> Iterator[str]:
 
 
 @overload
-def parse(strs: _StrOrIter) -> Iterator[Requirement]:
-    ...
+def parse(strs: _StrOrIter) -> Iterator[Requirement]: ...
 
 
 @overload
-def parse(strs: _StrOrIter, parser: Callable[[str], _T]) -> Iterator[_T]:
-    ...
+def parse(strs: _StrOrIter, parser: Callable[[str], _T]) -> Iterator[_T]: ...
 
 
 def parse(strs, parser=parse_req):

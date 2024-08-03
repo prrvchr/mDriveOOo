@@ -4,12 +4,12 @@ Functions for dealing with markup text
 
 import re
 from html.entities import name2codepoint
-from typing import Iterable, Match, AnyStr, Optional, Pattern, Tuple, Union
+from typing import Iterable, Match, Optional, Pattern, Tuple, Union
 from urllib.parse import urljoin
 
-from w3lib.util import to_unicode
-from w3lib.url import safe_url_string
 from w3lib._types import StrOrBytes
+from w3lib.url import safe_url_string
+from w3lib.util import to_unicode
 
 _ent_re = re.compile(
     r"&((?P<named>[a-z\d]+)|#(?P<dec>\d+)|#x(?P<hex>[a-f\d]+))(?P<semicolon>;?)",
@@ -34,7 +34,7 @@ HTML5_WHITESPACE = " \t\n\r\x0c"
 
 
 def replace_entities(
-    text: AnyStr,
+    text: StrOrBytes,
     keep: Iterable[str] = (),
     remove_illegal: bool = True,
     encoding: str = "utf-8",
@@ -99,11 +99,13 @@ def replace_entities(
     return _ent_re.sub(convert_entity, to_unicode(text, encoding))
 
 
-def has_entities(text: AnyStr, encoding: Optional[str] = None) -> bool:
+def has_entities(text: StrOrBytes, encoding: Optional[str] = None) -> bool:
     return bool(_ent_re.search(to_unicode(text, encoding)))
 
 
-def replace_tags(text: AnyStr, token: str = "", encoding: Optional[str] = None) -> str:
+def replace_tags(
+    text: StrOrBytes, token: str = "", encoding: Optional[str] = None
+) -> str:
     """Replace all markup tags found in the given `text` by the given token.
     By default `token` is an empty string so it just removes all tags.
 
@@ -129,7 +131,7 @@ def replace_tags(text: AnyStr, token: str = "", encoding: Optional[str] = None) 
 _REMOVECOMMENTS_RE = re.compile("<!--.*?(?:-->|$)", re.DOTALL)
 
 
-def remove_comments(text: AnyStr, encoding: Optional[str] = None) -> str:
+def remove_comments(text: StrOrBytes, encoding: Optional[str] = None) -> str:
     """Remove HTML Comments.
 
     >>> import w3lib.html
@@ -144,7 +146,7 @@ def remove_comments(text: AnyStr, encoding: Optional[str] = None) -> str:
 
 
 def remove_tags(
-    text: AnyStr,
+    text: StrOrBytes,
     which_ones: Iterable[str] = (),
     keep: Iterable[str] = (),
     encoding: Optional[str] = None,
@@ -216,7 +218,7 @@ def remove_tags(
 
 
 def remove_tags_with_content(
-    text: AnyStr, which_ones: Iterable[str] = (), encoding: Optional[str] = None
+    text: StrOrBytes, which_ones: Iterable[str] = (), encoding: Optional[str] = None
 ) -> str:
     """Remove tags and their content.
 
@@ -240,7 +242,7 @@ def remove_tags_with_content(
 
 
 def replace_escape_chars(
-    text: AnyStr,
+    text: StrOrBytes,
     which_ones: Iterable[str] = ("\n", "\t", "\r"),
     replace_by: StrOrBytes = "",
     encoding: Optional[str] = None,
@@ -262,7 +264,7 @@ def replace_escape_chars(
 
 
 def unquote_markup(
-    text: AnyStr,
+    text: StrOrBytes,
     keep: Iterable[str] = (),
     remove_illegal: bool = True,
     encoding: Optional[str] = None,
@@ -304,7 +306,7 @@ def unquote_markup(
 
 
 def get_base_url(
-    text: AnyStr, baseurl: StrOrBytes = "", encoding: str = "utf-8"
+    text: StrOrBytes, baseurl: StrOrBytes = "", encoding: str = "utf-8"
 ) -> str:
     """Return the base url if declared in the given HTML `text`,
     relative to the given base url.
@@ -324,7 +326,7 @@ def get_base_url(
 
 
 def get_meta_refresh(
-    text: AnyStr,
+    text: StrOrBytes,
     baseurl: str = "",
     encoding: str = "utf-8",
     ignore_tags: Iterable[str] = ("script", "noscript"),

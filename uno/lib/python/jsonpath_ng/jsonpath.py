@@ -1,6 +1,3 @@
-from __future__ import (absolute_import, division, generators, nested_scopes,
-                        print_function, unicode_literals)
-
 import logging
 from itertools import *  # noqa
 from jsonpath_ng.lexer import JsonPathLexer
@@ -16,7 +13,7 @@ NOT_SET = object()
 LIST_KEY = object()
 
 
-class JSONPath(object):
+class JSONPath:
     """
     The base class for JSONPath abstract syntax; those
     methods stubbed here are the interface to supported
@@ -78,7 +75,7 @@ class JSONPath(object):
             return DatumInContext(value, path=Root(), context=None)
 
 
-class DatumInContext(object):
+class DatumInContext:
     """
     Represents a datum along a path from a context.
 
@@ -604,7 +601,7 @@ class Fields(JSONPath):
                     data[field] = {}
                 if field in data:
                     if hasattr(val, '__call__'):
-                        val(data[field], data, field)
+                        data[field] = val(data[field], data, field)
                     else:
                         data[field] = val
         return data
@@ -678,7 +675,7 @@ class Index(JSONPath):
                 data = _create_list_key(data)
             self._pad_value(data)
         if hasattr(val, '__call__'):
-            val.__call__(data[self.index], data, self.index)
+            data[self.index] = val.__call__(data[self.index], data, self.index)
         elif len(data) > self.index:
             data[self.index] = val
         return data
@@ -798,7 +795,7 @@ def _create_list_key(dict_):
     return new_list
 
 
-def _clean_list_keys(dict_):
+def _clean_list_keys(struct_):
     """
     Replace {LIST_KEY: ['foo', 'bar']} with ['foo', 'bar'].
 
@@ -806,12 +803,13 @@ def _clean_list_keys(dict_):
     ['foo', 'bar']
 
     """
-    for key, value in dict_.items():
-        if isinstance(value, dict):
-            dict_[key] = _clean_list_keys(value)
-        elif isinstance(value, list):
-            dict_[key] = [_clean_list_keys(v) if isinstance(v, dict) else v
-                          for v in value]
-    if LIST_KEY in dict_:
-        return dict_[LIST_KEY]
-    return dict_
+    if(isinstance(struct_, list)):
+        for ind, value in enumerate(struct_):
+            struct_[ind] = _clean_list_keys(value)
+    elif(isinstance(struct_, dict)):
+        if(LIST_KEY in struct_):
+            return _clean_list_keys(struct_[LIST_KEY])
+        else:
+            for key, value in struct_.items():
+                struct_[key] = _clean_list_keys(value)
+    return struct_

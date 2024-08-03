@@ -141,10 +141,10 @@ The user of the package may refer add these transformers to L{Options} instance.
 
 
 @summary: RDFa parser (distiller)
-@requires: Python version 2.7 or python 3.8 or up
-@requires: U{RDFLib<http://rdflib.net>}; version 3.X is preferred.
-@requires: U{html5lib<http://code.google.com/p/html5lib/>} for the HTML5 parsing (note that version 1.0b1 and 1.0b2 should be avoided, it may lead to unicode encoding problems)
-@requires: U{httpheader<http://deron.meranda.us/python/httpheader/>}; however, a small modification had to make on the original file, so for this reason and to make distribution easier this module (single file) is added to the package.
+@requires: Python 3.8 or higher.
+@requires: U{requests<https://pypi.org/project/requests/2.32.3/>}; version 2.32.3 or higher.
+@requires: U{rdflib<https://pypi.org/project/rdflib/7.0.0/>}; version 7.0.0 or higher.
+@requires: U{html5lib<https://pypi.org/project/html5lib/1.1/>}; version 1.1 or higher.
 @organization: U{World Wide Web Consortium<http://www.w3.org>}
 @author: U{Ivan Herman<a href="http://www.w3.org/People/Ivan/">}
 @license: This software is available for use under the
@@ -156,7 +156,7 @@ U{W3C® SOFTWARE NOTICE AND LICENSE<href="http://www.w3.org/Consortium/Legal/200
 @var uri_schemes: List of registered (or widely used) URI schemes; used for warnings...
 """
 
-__version__ = "3.6.0"
+__version__ = "3.6.3"
 __author__ =  'Ivan Herman and prrvchr'
 __contact__ = 'prrvchr@gmail.com'
 __license__ = 'W3C® SOFTWARE NOTICE AND LICENSE, http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231'

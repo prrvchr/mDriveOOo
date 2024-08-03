@@ -22,12 +22,8 @@ def md5(value: str, /):
             MD5 string to validate.
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid MD5 hash.
-        (ValidationError):
-            If `value` is an invalid MD5 hash.
-
-    > *New in version 0.12.1*
+        (Literal[True]): If `value` is a valid MD5 hash.
+        (ValidationError): If `value` is an invalid MD5 hash.
     """
     return re.match(r"^[0-9a-f]{32}$", value, re.IGNORECASE) if value else False
 
@@ -47,12 +43,8 @@ def sha1(value: str, /):
             SHA1 string to validate.
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid SHA1 hash.
-        (ValidationError):
-            If `value` is an invalid SHA1 hash.
-
-    > *New in version 0.12.1*
+        (Literal[True]): If `value` is a valid SHA1 hash.
+        (ValidationError): If `value` is an invalid SHA1 hash.
     """
     return re.match(r"^[0-9a-f]{40}$", value, re.IGNORECASE) if value else False
 
@@ -72,12 +64,8 @@ def sha224(value: str, /):
             SHA224 string to validate.
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid SHA224 hash.
-        (ValidationError):
-            If `value` is an invalid SHA224 hash.
-
-    > *New in version 0.12.1*
+        (Literal[True]): If `value` is a valid SHA224 hash.
+        (ValidationError): If `value` is an invalid SHA224 hash.
     """
     return re.match(r"^[0-9a-f]{56}$", value, re.IGNORECASE) if value else False
 
@@ -100,14 +88,34 @@ def sha256(value: str, /):
             SHA256 string to validate.
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid SHA256 hash.
-        (ValidationError):
-            If `value` is an invalid SHA256 hash.
-
-    > *New in version 0.12.1*
+        (Literal[True]): If `value` is a valid SHA256 hash.
+        (ValidationError): If `value` is an invalid SHA256 hash.
     """
     return re.match(r"^[0-9a-f]{64}$", value, re.IGNORECASE) if value else False
+
+
+@validator
+def sha384(value: str, /):
+    """Return whether or not given value is a valid SHA384 hash.
+
+    Examples:
+        >>> sha384(
+        ...     'cb00753f45a35e8bb5a03d699ac65007272c32ab0eded163'
+        ...     '1a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7'
+        ... )
+        # Output: True
+        >>> sha384('900zz11')
+        # Output: ValidationError(func=sha384, args={'value': '900zz11'})
+
+    Args:
+        value:
+            SHA384 string to validate.
+
+    Returns:
+        (Literal[True]): If `value` is a valid SHA384 hash.
+        (ValidationError): If `value` is an invalid SHA384 hash.
+    """
+    return re.match(r"^[0-9a-f]{96}$", value, re.IGNORECASE) if value else False
 
 
 @validator
@@ -129,11 +137,7 @@ def sha512(value: str, /):
             SHA512 string to validate.
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid SHA512 hash.
-        (ValidationError):
-            If `value` is an invalid SHA512 hash.
-
-    > *New in version 0.12.1*
+        (Literal[True]): If `value` is a valid SHA512 hash.
+        (ValidationError): If `value` is an invalid SHA512 hash.
     """
     return re.match(r"^[0-9a-f]{128}$", value, re.IGNORECASE) if value else False

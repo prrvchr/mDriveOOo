@@ -21,15 +21,10 @@ def slug(value: str, /):
         # Output: ValidationError(func=slug, args={'value': 'my.slug'})
 
     Args:
-        value:
-            Slug string to validate.
+        value: Slug string to validate.
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid slug.
-        (ValidationError):
-            If `value` is an invalid slug.
-
-    > *New in version 0.6.0*.
+        (Literal[True]): If `value` is a valid slug.
+        (ValidationError): If `value` is an invalid slug.
     """
     return re.match(r"^[a-z0-9]+(?:-[a-z0-9]+)*$", value) if value else False

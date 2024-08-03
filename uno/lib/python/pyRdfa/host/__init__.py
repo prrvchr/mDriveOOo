@@ -7,8 +7,10 @@ This module may have to be modified if a new host language is added to the syste
 
 
 @summary: RDFa Host package
-@requires: U{RDFLib package<http://rdflib.net>} version 5 or higher
-@requires: Python version 2.7 or 3.8 or higher
+@requires: Python version 3.8 or higher
+@requires: U{requests<https://pypi.org/project/requests/2.32.3/>}; version 2.32.3 or higher.
+@requires: U{rdflib<https://pypi.org/project/rdflib/7.0.0/>}; version 7.0.0 or higher.
+@requires: U{html5lib<https://pypi.org/project/html5lib/1.1/>}; version 1.1 or higher.
 @organization: U{World Wide Web Consortium<http://www.w3.org>}
 @author: U{Ivan Herman<a href="http://www.w3.org/People/Ivan/">}
 @license: This software is available for use under the

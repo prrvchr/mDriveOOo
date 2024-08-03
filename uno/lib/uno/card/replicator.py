@@ -82,7 +82,7 @@ class Replicator(Thread):
                 users, pages, total = self._syncCard(logger)
                 logger.logprb(INFO, cls, '_syncCard()', 103, users, pages, total)
                 if total > 0:
-                    self._provider.parseCard(self._database)
+                    count = self._provider.parseCard(self._database)
                     if self._provider.supportGroup():
                         users, pages, total = self._syncGroup(logger)
                         logger.logprb(INFO, cls, '_syncGroup()', 104, users, pages, total)
@@ -143,9 +143,9 @@ class Replicator(Thread):
                         pages, count, args = self._provider.syncGroups(self._database, user, book, pages, count)
                         if args:
                             logger.logprb(SEVERE, *args)
+                        elif not self._canceled:
+                            self._database.syncGroups(user)
                     logger.logprb(INFO, cls, mtd, 123, user.Name)
-            if not self._canceled:
-                self._database.syncGroups()
         except UnoException as e:
             logger.logprb(SEVERE, cls, mtd, 124, e.Message)
         except Exception as e:

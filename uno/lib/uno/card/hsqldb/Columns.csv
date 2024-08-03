@@ -13,7 +13,10 @@ Column|Name
 11|Data
 12|Column
 13|Value
-14|Created
-15|Modified
-16|RowStart
-17|RowEnd
+14|CardSync
+15|BookSync
+16|GroupSync
+17|Created
+18|Modified
+19|RowStart
+20|RowEnd

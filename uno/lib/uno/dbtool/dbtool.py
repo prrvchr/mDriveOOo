@@ -32,8 +32,6 @@ import uno
 from com.sun.star.sdbc import SQLException
 from com.sun.star.sdbc import SQLWarning
 
-from com.sun.star.sdbcx.CheckOption import CASCADE
-
 from com.sun.star.sdbcx import PrivilegeObject
 
 from com.sun.star.sdbcx.KeyType import PRIMARY
@@ -558,15 +556,14 @@ def getConnectionInfos(connection, *options):
                 infos.append(info.Value)
     return infos
 
-def createViews(ctx, views, items, command='%s', format=None):
-    for catalog, schema, name in items:
+def createViews(views, items):
+    for catalog, schema, name, command, option in items:
         view = views.createDataDescriptor()
-        view.setPropertyValue('Name', name)
         view.setPropertyValue('CatalogName', catalog)
         view.setPropertyValue('SchemaName', schema)
-        query = getSqlQuery(ctx, command % name, format)
-        view.setPropertyValue('Command', query)
-        view.setPropertyValue('CheckOption', CASCADE)
+        view.setPropertyValue('Name', name)
+        view.setPropertyValue('Command', command)
+        view.setPropertyValue('CheckOption', option)
         views.appendByDescriptor(view)
 
 def createTables(tables, items):

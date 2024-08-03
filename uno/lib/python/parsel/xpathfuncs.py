@@ -2,9 +2,7 @@ import re
 from typing import Any, Callable, Optional
 
 from lxml import etree
-
 from w3lib.html import HTML5_WHITESPACE
-
 
 regex = f"[{HTML5_WHITESPACE}]+"
 replace_html5_whitespaces = re.compile(regex).sub
@@ -24,7 +22,7 @@ def set_xpathfunc(fname: str, func: Optional[Callable]) -> None:  # type: ignore
     .. _`in lxml documentation`: https://lxml.de/extensions.html#xpath-extension-functions
 
     """
-    ns_fns = etree.FunctionNamespace(None)  # type: ignore[attr-defined]
+    ns_fns = etree.FunctionNamespace(None)
     if func is not None:
         ns_fns[fname] = func
     else:
@@ -43,14 +41,10 @@ def has_class(context: Any, *classes: str) -> bool:
     """
     if not context.eval_context.get("args_checked"):
         if not classes:
-            raise ValueError(
-                "XPath error: has-class must have at least 1 argument"
-            )
+            raise ValueError("XPath error: has-class must have at least 1 argument")
         for c in classes:
             if not isinstance(c, str):
-                raise ValueError(
-                    "XPath error: has-class arguments must be strings"
-                )
+                raise ValueError("XPath error: has-class arguments must be strings")
         context.eval_context["args_checked"] = True
 
     node_cls = context.context_node.get("class")

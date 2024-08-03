@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, NoReturn
 import pytest
 
 from ... import _core
-from .tutil import buggy_pypy_asyncgens, gc_collect_harder, restore_unraisablehook
+from .tutil import gc_collect_harder, restore_unraisablehook
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -50,11 +50,11 @@ def test_asyncgen_basics() -> None:
         await _core.wait_all_tasks_blocked()
         assert collected.pop() == "abandoned"
 
-        aiter = example("exhausted 1")
+        aiter_ = example("exhausted 1")
         try:
-            assert await aiter.asend(None) == 42
+            assert await aiter_.asend(None) == 42
         finally:
-            await aiter.aclose()
+            await aiter_.aclose()
         assert collected.pop() == "exhausted 1"
 
         # Also fine if you exhaust it at point of use
@@ -65,12 +65,12 @@ def test_asyncgen_basics() -> None:
         gc_collect_harder()
 
         # No problems saving the geniter when using either of these patterns
-        aiter = example("exhausted 3")
+        aiter_ = example("exhausted 3")
         try:
-            saved.append(aiter)
-            assert await aiter.asend(None) == 42
+            saved.append(aiter_)
+            assert await aiter_.asend(None) == 42
         finally:
-            await aiter.aclose()
+            await aiter_.aclose()
         assert collected.pop() == "exhausted 3"
 
         # Also fine if you exhaust it at point of use
@@ -80,12 +80,9 @@ def test_asyncgen_basics() -> None:
         assert collected.pop() == "exhausted 4"
 
         # Leave one referenced-but-unexhausted and make sure it gets cleaned up
-        if buggy_pypy_asyncgens:
-            collected.append("outlived run")
-        else:
-            saved.append(example("outlived run"))
-            assert await saved[-1].asend(None) == 42
-            assert collected == []
+        saved.append(example("outlived run"))
+        assert await saved[-1].asend(None) == 42
+        assert collected == []
 
     _core.run(async_main)
     assert collected.pop() == "outlived run"
@@ -118,7 +115,6 @@ async def test_asyncgen_throws_during_finalization(
     assert "during finalization of async generator" in caplog.records[0].message
 
 
-@pytest.mark.skipif(buggy_pypy_asyncgens, reason="pypy 7.2.0 is buggy")
 def test_firstiter_after_closing() -> None:
     saved = []
     record = []
@@ -136,16 +132,15 @@ def test_firstiter_after_closing() -> None:
             await funky_agen().asend(None)
 
     async def async_main() -> None:
-        aiter = funky_agen()
-        saved.append(aiter)
-        assert await aiter.asend(None) == 1
-        assert await aiter.asend(None) == 2
+        aiter_ = funky_agen()
+        saved.append(aiter_)
+        assert await aiter_.asend(None) == 1
+        assert await aiter_.asend(None) == 2
 
     _core.run(async_main)
     assert record == ["cleanup 2", "cleanup 1"]
 
 
-@pytest.mark.skipif(buggy_pypy_asyncgens, reason="pypy 7.2.0 is buggy")
 def test_interdependent_asyncgen_cleanup_order() -> None:
     saved: list[AsyncGenerator[int, None]] = []
     record: list[int | str] = []
@@ -233,8 +228,7 @@ def test_last_minute_gc_edge_case() -> None:
         del saved[:]
         _core.run(async_main)
         if needs_retry:  # pragma: no cover
-            if not buggy_pypy_asyncgens:
-                assert record == ["cleaned up"]
+            assert record == ["cleaned up"]
         else:
             assert record == ["final collection", "done", "cleaned up"]
             break
@@ -245,7 +239,7 @@ def test_last_minute_gc_edge_case() -> None:
         )
 
 
-async def step_outside_async_context(aiter: AsyncGenerator[int, None]) -> None:
+async def step_outside_async_context(aiter_: AsyncGenerator[int, None]) -> None:
     # abort_fns run outside of task context, at least if they're
     # triggered by a deadline expiry rather than a direct
     # cancellation.  Thus, an asyncgen first iterated inside one
@@ -262,7 +256,7 @@ async def step_outside_async_context(aiter: AsyncGenerator[int, None]) -> None:
         del abort_fn.aiter  # type: ignore[attr-defined]
         return _core.Abort.SUCCEEDED
 
-    abort_fn.aiter = aiter  # type: ignore[attr-defined]
+    abort_fn.aiter = aiter_  # type: ignore[attr-defined]
 
     async with _core.open_nursery() as nursery:
         nursery.start_soon(_core.wait_task_rescheduled, abort_fn)
@@ -270,7 +264,6 @@ async def step_outside_async_context(aiter: AsyncGenerator[int, None]) -> None:
         nursery.cancel_scope.deadline = _core.current_time()
 
 
-@pytest.mark.skipif(buggy_pypy_asyncgens, reason="pypy 7.2.0 is buggy")
 async def test_fallback_when_no_hook_claims_it(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -301,7 +294,6 @@ async def test_fallback_when_no_hook_claims_it(
         assert "awaited something during finalization" in capsys.readouterr().err
 
 
-@pytest.mark.skipif(buggy_pypy_asyncgens, reason="pypy 7.2.0 is buggy")
 def test_delegation_to_existing_hooks() -> None:
     record = []
 

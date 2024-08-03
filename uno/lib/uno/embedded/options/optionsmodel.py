@@ -51,7 +51,7 @@ class OptionsModel(unohelper.Base):
     _level = False
     _reboot = False
 
-    def __init__(self, ctx, url):
+    def __init__(self, ctx, url=None):
         self._ctx = ctx
         self._url = url
         self._services = {'Driver': ('io.github.prrvchr.jdbcdriver.sdbc.Driver',
@@ -118,6 +118,8 @@ class OptionsModel(unohelper.Base):
 
     def _getDriverVersion(self):
         version = 'N/A'
+        if self._url is None:
+            return version
         try:
             service = self._config.getByName('DriverService')
             driver = createService(self._ctx, service)

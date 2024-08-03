@@ -17,7 +17,7 @@ class utf8reader_async(compat.utf8reader):
 
 async def _get_read(f):
     """Returns an awaitable read function that reads the requested type"""
-    if type(await f.read(0)) == compat.bytetype:
+    if type(await f.read(0)) == bytes:
         return f.read
     return compat._warn_and_return(utf8reader_async(f).read)
 

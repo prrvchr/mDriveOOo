@@ -6,7 +6,6 @@ from ctypes import Structure, c_uint, c_char, c_ubyte, c_int, c_long, c_longlong
                    c_void_p, c_char_p, CFUNCTYPE, POINTER, string_at, cast
 
 from ijson import common, backends
-from ijson.compat import b2s
 
 
 C_EMPTY = CFUNCTYPE(c_int, c_void_p)
@@ -26,7 +25,7 @@ def _get_callback_data(yajl_version):
         ('boolean', 'boolean', C_INT, lambda v: bool(v)),
         ('integer', 'number', C_LONG if yajl_version == 1 else C_LONGLONG, lambda v: int(v)),
         ('double', 'number', C_DOUBLE, lambda v: v),
-        ('number', 'number', C_STR, lambda v, l: common.integer_or_decimal(b2s(string_at(v, l)))),
+        ('number', 'number', C_STR, lambda v, l: common.integer_or_decimal(string_at(v, l).decode("utf-8"))),
         ('string', 'string', C_STR, lambda v, l: string_at(v, l).decode('utf-8')),
         ('start_map', 'start_map', C_EMPTY, lambda: None),
         ('map_key', 'map_key', C_STR, lambda v, l: string_at(v, l).decode('utf-8')),

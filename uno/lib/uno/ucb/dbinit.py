@@ -36,9 +36,10 @@ from com.sun.star.sdbc.ColumnValue import NULLABLE
 from com.sun.star.sdbc.DataType import INTEGER
 from com.sun.star.sdbc.DataType import VARCHAR
 
-from com.sun.star.sdbc.KeyRule import CASCADE
+from com.sun.star.sdbc import KeyRule
 
-from com.sun.star.sdbcx.PrivilegeObject import TABLE
+from com.sun.star.sdbcx import CheckOption
+from com.sun.star.sdbcx import PrivilegeObject
 
 from .dbtool import createStaticTables
 from .dbtool import createStaticIndexes
@@ -62,6 +63,8 @@ from .dbtool import getTablePrivileges
 from .dbtool import getIndexes
 from .dbtool import getForeignKeys
 from .dbtool import getPrivileges
+
+from .dbqueries import getSqlQuery
 
 from .dbconfig import g_catalog
 from .dbconfig import g_schema
@@ -94,8 +97,8 @@ def createDataBase(ctx, logger, connection, odb, version):
     groups = connection.getGroups()
     _createRoleAndPrivileges(statement, tables, groups)
     executeQueries(ctx, statement, _getFunctions(), 'create%s', g_queries)
-    createViews(ctx, connection.getViews(), _getViews(), 'get%sViewCommand', g_queries)
-    createRoleAndPrivileges(tables, groups, _getViews(g_catalog, g_schema, TABLE, g_role, 1))
+    createViews(connection.getViews(), _getItemCommands(ctx, _getViews(), 'get%sViewCommand', g_queries, CheckOption.CASCADE))
+    createRoleAndPrivileges(tables, groups, _getItemOptions(_getViews(), PrivilegeObject.TABLE, g_role, 1))
     executeQueries(ctx, statement, _getProcedures(), 'create%s', g_queries)
     statement.close()
     connection.getParent().DatabaseDocument.storeAsURL(odb, ())
@@ -141,16 +144,24 @@ def _getStaticTables():
     return tables
 
 def _getForeignKeys():
-    return ((f'{g_catalog}.{g_schema}.Privileges', 'Table',  f'{g_catalog}.{g_schema}.Tables',  'Table',  CASCADE, CASCADE),
-            (f'{g_catalog}.{g_schema}.Privileges', 'Column', f'{g_catalog}.{g_schema}.Columns', 'Column', CASCADE, CASCADE))
+    return ((f'{g_catalog}.{g_schema}.Privileges', 'Table',  f'{g_catalog}.{g_schema}.Tables',  'Table',  KeyRule.CASCADE, KeyRule.CASCADE),
+            (f'{g_catalog}.{g_schema}.Privileges', 'Column', f'{g_catalog}.{g_schema}.Columns', 'Column', KeyRule.CASCADE, KeyRule.CASCADE))
 
 def _getFunctions():
     for name in ('GetIsFolder', 'GetContentType', 'GetUniqueName'):
         yield name
 
-def _getViews(catalog=g_catalog, schema=g_schema, *options):
-    for name in ('Child', 'Twin', 'Duplicate', 'Path', 'Children'):
+def _getItemCommands(ctx, items, command, format, *option):
+    for catalog, schema, name in items:
+        yield catalog, schema, name, getSqlQuery(ctx, command % name, format), *option
+
+def _getItemOptions(items, *options):
+    for catalog, schema, name in items:
         yield catalog, schema, name, *options
+
+def _getViews(catalog=g_catalog, schema=g_schema):
+    for name in ('Child', 'Twin', 'Duplicate', 'Path', 'Children'):
+        yield catalog, schema, name
 
 def _getProcedures():
     for name in ('GetItem', 'GetNewTitle', 'UpdatePushItems', 'GetPushItems', 'GetPushProperties',

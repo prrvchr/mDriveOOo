@@ -4,6 +4,7 @@
 from functools import wraps
 from inspect import getfullargspec
 from itertools import chain
+from os import environ
 from typing import Any, Callable, Dict
 
 
@@ -65,18 +66,37 @@ def validator(func: Callable[..., Any]):
             A decorator which returns either `ValidationError`
             or `Literal[True]`.
 
-    > *New in version 2013.10.21*.
+    Raises:
+        (ValidationError): If `r_ve` or `RAISE_VALIDATION_ERROR` is `True`
     """
 
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any):
+        raise_validation_error = False
+        if "r_ve" in kwargs:
+            raise_validation_error = True
+            del kwargs["r_ve"]
+        if environ.get("RAISE_VALIDATION_ERROR", "False") == "True":
+            raise_validation_error = True
+
         try:
-            return (
-                True
-                if func(*args, **kwargs)
-                else ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
-            )
-        except Exception as exp:
-            return ValidationError(func, _func_args_as_dict(func, *args, **kwargs), str(exp))
+            if raise_validation_error:
+                if func(*args, **kwargs):
+                    return True
+                else:
+                    raise ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
+            else:
+                return (
+                    True
+                    if func(*args, **kwargs)
+                    else ValidationError(func, _func_args_as_dict(func, *args, **kwargs))
+                )
+        except (ValueError, TypeError, UnicodeError) as exp:
+            if raise_validation_error:
+                raise ValidationError(
+                    func, _func_args_as_dict(func, *args, **kwargs), str(exp)
+                ) from exp
+            else:
+                return ValidationError(func, _func_args_as_dict(func, *args, **kwargs), str(exp))
 
     return wrapper

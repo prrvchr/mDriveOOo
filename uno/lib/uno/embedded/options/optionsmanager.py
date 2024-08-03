@@ -58,7 +58,7 @@ import traceback
 
 
 class OptionsManager(unohelper.Base):
-    def __init__(self, ctx, window, url):
+    def __init__(self, ctx, window, url=None):
         self._ctx = ctx
         self._disposed = False
         self._disabled = False

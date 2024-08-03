@@ -7,9 +7,11 @@ need to be processed before being applied.
 
 **PRIVATE MODULE**: API reserved for setuptools internal usage only.
 """
+
+from __future__ import annotations
+
 import logging
 import os
-from collections.abc import Mapping
 from email.headerregistry import Address
 from functools import partial, reduce
 from inspect import cleandoc
@@ -20,32 +22,27 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
+    Mapping,
     Union,
-    cast,
 )
-
+from .._path import StrPath
 from ..errors import RemovedConfigError
 from ..warnings import SetuptoolsWarning
 
 if TYPE_CHECKING:
-    from setuptools._importlib import metadata  # noqa
-    from setuptools.dist import Distribution  # noqa
+    from distutils.dist import _OptionsList
+    from setuptools._importlib import metadata
+    from setuptools.dist import Distribution
 
 EMPTY: Mapping = MappingProxyType({})  # Immutable dict-like
-_Path = Union[os.PathLike, str]
-_DictOrStr = Union[dict, str]
-_CorrespFn = Callable[["Distribution", Any, _Path], None]
+_ProjectReadmeValue = Union[str, Dict[str, str]]
+_CorrespFn = Callable[["Distribution", Any, StrPath], None]
 _Correspondence = Union[str, _CorrespFn]
 
 _logger = logging.getLogger(__name__)
 
 
-def apply(dist: "Distribution", config: dict, filename: _Path) -> "Distribution":
+def apply(dist: Distribution, config: dict, filename: StrPath) -> Distribution:
     """Apply configuration dict read with :func:`read_configuration`"""
 
     if not config:
@@ -67,7 +64,7 @@ def apply(dist: "Distribution", config: dict, filename: _Path) -> "Distribution"
     return dist
 
 
-def _apply_project_table(dist: "Distribution", config: dict, root_dir: _Path):
+def _apply_project_table(dist: Distribution, config: dict, root_dir: StrPath):
     project_table = config.get("project", {}).copy()
     if not project_table:
         return  # short-circuit
@@ -84,7 +81,7 @@ def _apply_project_table(dist: "Distribution", config: dict, root_dir: _Path):
             _set_config(dist, corresp, value)
 
 
-def _apply_tool_table(dist: "Distribution", config: dict, filename: _Path):
+def _apply_tool_table(dist: Distribution, config: dict, filename: StrPath):
     tool_table = config.get("tool", {}).get("setuptools", {})
     if not tool_table:
         return  # short-circuit
@@ -106,7 +103,7 @@ def _apply_tool_table(dist: "Distribution", config: dict, filename: _Path):
     _copy_command_options(config, dist, filename)
 
 
-def _handle_missing_dynamic(dist: "Distribution", project_table: dict):
+def _handle_missing_dynamic(dist: Distribution, project_table: dict):
     """Be temporarily forgiving with ``dynamic`` fields not listed in ``dynamic``"""
     dynamic = set(project_table.get("dynamic", []))
     for field, getter in _PREVIOUSLY_DEFINED.items():
@@ -122,7 +119,7 @@ def json_compatible_key(key: str) -> str:
     return key.lower().replace("-", "_")
 
 
-def _set_config(dist: "Distribution", field: str, value: Any):
+def _set_config(dist: Distribution, field: str, value: Any):
     setter = getattr(dist.metadata, f"set_{field}", None)
     if setter:
         setter(value)
@@ -139,7 +136,7 @@ _CONTENT_TYPES = {
 }
 
 
-def _guess_content_type(file: str) -> Optional[str]:
+def _guess_content_type(file: str) -> str | None:
     _, ext = os.path.splitext(file.lower())
     if not ext:
         return None
@@ -152,15 +149,16 @@ def _guess_content_type(file: str) -> Optional[str]:
     raise ValueError(f"Undefined content type for {file}, {msg}")
 
 
-def _long_description(dist: "Distribution", val: _DictOrStr, root_dir: _Path):
+def _long_description(dist: Distribution, val: _ProjectReadmeValue, root_dir: StrPath):
     from setuptools.config import expand
 
+    file: str | tuple[()]
     if isinstance(val, str):
-        file: Union[str, list] = val
+        file = val
         text = expand.read_files(file, root_dir)
-        ctype = _guess_content_type(val)
+        ctype = _guess_content_type(file)
     else:
-        file = val.get("file") or []
+        file = val.get("file") or ()
         text = val.get("text") or expand.read_files(file, root_dir)
         ctype = val["content-type"]
 
@@ -170,10 +168,10 @@ def _long_description(dist: "Distribution", val: _DictOrStr, root_dir: _Path):
         _set_config(dist, "long_description_content_type", ctype)
 
     if file:
-        dist._referenced_files.add(cast(str, file))
+        dist._referenced_files.add(file)
 
 
-def _license(dist: "Distribution", val: dict, root_dir: _Path):
+def _license(dist: Distribution, val: dict, root_dir: StrPath):
     from setuptools.config import expand
 
     if "file" in val:
@@ -183,7 +181,7 @@ def _license(dist: "Distribution", val: dict, root_dir: _Path):
         _set_config(dist, "license", val["text"])
 
 
-def _people(dist: "Distribution", val: List[dict], _root_dir: _Path, kind: str):
+def _people(dist: Distribution, val: list[dict], _root_dir: StrPath, kind: str):
     field = []
     email_field = []
     for person in val:
@@ -201,24 +199,24 @@ def _people(dist: "Distribution", val: List[dict], _root_dir: _Path, kind: str):
         _set_config(dist, f"{kind}_email", ", ".join(email_field))
 
 
-def _project_urls(dist: "Distribution", val: dict, _root_dir):
+def _project_urls(dist: Distribution, val: dict, _root_dir):
     _set_config(dist, "project_urls", val)
 
 
-def _python_requires(dist: "Distribution", val: dict, _root_dir):
-    from setuptools.extern.packaging.specifiers import SpecifierSet
+def _python_requires(dist: Distribution, val: str, _root_dir):
+    from packaging.specifiers import SpecifierSet
 
     _set_config(dist, "python_requires", SpecifierSet(val))
 
 
-def _dependencies(dist: "Distribution", val: list, _root_dir):
+def _dependencies(dist: Distribution, val: list, _root_dir):
     if getattr(dist, "install_requires", []):
         msg = "`install_requires` overwritten in `pyproject.toml` (dependencies)"
         SetuptoolsWarning.emit(msg)
     dist.install_requires = val
 
 
-def _optional_dependencies(dist: "Distribution", val: dict, _root_dir):
+def _optional_dependencies(dist: Distribution, val: dict, _root_dir):
     existing = getattr(dist, "extras_require", None) or {}
     dist.extras_require = {**existing, **val}
 
@@ -240,10 +238,10 @@ def _unify_entry_points(project_table: dict):
             if group  # now we can skip empty groups
         }
         # Sometimes this will set `project["entry-points"] = {}`, and that is
-        # intentional (for reseting configurations that are missing `dynamic`).
+        # intentional (for resetting configurations that are missing `dynamic`).
 
 
-def _copy_command_options(pyproject: dict, dist: "Distribution", filename: _Path):
+def _copy_command_options(pyproject: dict, dist: Distribution, filename: StrPath):
     tool_table = pyproject.get("tool", {})
     cmdclass = tool_table.get("setuptools", {}).get("cmdclass", {})
     valid_options = _valid_command_options(cmdclass)
@@ -262,7 +260,7 @@ def _copy_command_options(pyproject: dict, dist: "Distribution", filename: _Path
                 _logger.warning(f"Command option {cmd}.{key} is not defined")
 
 
-def _valid_command_options(cmdclass: Mapping = EMPTY) -> Dict[str, Set[str]]:
+def _valid_command_options(cmdclass: Mapping = EMPTY) -> dict[str, set[str]]:
     from .._importlib import metadata
     from setuptools.dist import Distribution
 
@@ -279,7 +277,7 @@ def _valid_command_options(cmdclass: Mapping = EMPTY) -> Dict[str, Set[str]]:
     return valid_options
 
 
-def _load_ep(ep: "metadata.EntryPoint") -> Optional[Tuple[str, Type]]:
+def _load_ep(ep: metadata.EntryPoint) -> tuple[str, type] | None:
     # Ignore all the errors
     try:
         return (ep.name, ep.load())
@@ -293,22 +291,22 @@ def _normalise_cmd_option_key(name: str) -> str:
     return json_compatible_key(name).strip("_=")
 
 
-def _normalise_cmd_options(desc: List[Tuple[str, Optional[str], str]]) -> Set[str]:
+def _normalise_cmd_options(desc: _OptionsList) -> set[str]:
     return {_normalise_cmd_option_key(fancy_option[0]) for fancy_option in desc}
 
 
-def _get_previous_entrypoints(dist: "Distribution") -> Dict[str, list]:
+def _get_previous_entrypoints(dist: Distribution) -> dict[str, list]:
     ignore = ("console_scripts", "gui_scripts")
     value = getattr(dist, "entry_points", None) or {}
     return {k: v for k, v in value.items() if k not in ignore}
 
 
-def _get_previous_scripts(dist: "Distribution") -> Optional[list]:
+def _get_previous_scripts(dist: Distribution) -> list | None:
     value = getattr(dist, "entry_points", None) or {}
     return value.get("console_scripts")
 
 
-def _get_previous_gui_scripts(dist: "Distribution") -> Optional[list]:
+def _get_previous_gui_scripts(dist: Distribution) -> list | None:
     value = getattr(dist, "entry_points", None) or {}
     return value.get("gui_scripts")
 
@@ -348,7 +346,7 @@ def _some_attrgetter(*items):
     return _acessor
 
 
-PYPROJECT_CORRESPONDENCE: Dict[str, _Correspondence] = {
+PYPROJECT_CORRESPONDENCE: dict[str, _Correspondence] = {
     "readme": _long_description,
     "license": _license,
     "authors": partial(_people, kind="author"),
@@ -408,7 +406,7 @@ _RESET_PREVIOUSLY_DEFINED: dict = {
     "scripts": {},
     "gui-scripts": {},
     "dependencies": [],
-    "optional-dependencies": [],
+    "optional-dependencies": {},
 }
 
 
@@ -423,7 +421,7 @@ class _MissingDynamic(SetuptoolsWarning):
     According to the spec (see the link below), however, setuptools CANNOT
     consider this value unless `{field}` is listed as `dynamic`.
 
-    https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
+    https://packaging.python.org/en/latest/specifications/pyproject-toml/#declaring-project-metadata-the-project-table
 
     To prevent this problem, you can list `{field}` under `dynamic` or alternatively
     remove the `[project]` table from your file and rely entirely on other means of

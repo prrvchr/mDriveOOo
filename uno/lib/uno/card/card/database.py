@@ -37,8 +37,12 @@ from com.sun.star.sdb.CommandType import QUERY
 
 from com.sun.star.sdbc.DataType import VARCHAR
 
+from com.sun.star.sdbcx import CheckOption
+from com.sun.star.sdbcx import PrivilegeObject
+
 from ..dbtool import Array
 from ..dbtool import createUser
+from ..dbtool import createViews
 from ..dbtool import currentDateTimeInTZ
 from ..dbtool import getDataFromResult
 from ..dbtool import getDataSourceCall
@@ -56,8 +60,8 @@ from ..configuration import g_host
 
 from ..dbqueries import getSqlQuery
 
-from ..dbconfig import g_cardview
-from ..dbconfig import g_bookmark
+from ..dbconfig import g_catalog
+from ..dbconfig import g_schema
 from ..dbconfig import g_dotcode
 from ..dbconfig import g_version
 
@@ -75,15 +79,13 @@ class DataBase(object):
         self._statement = None
         self._fieldsMap = {}
         self._batchedCalls = OrderedDict()
-        config = getConfiguration(ctx, g_identifier, False)
-        self._addressbook = config.getByName('AddressBookName')
         self._url = url
         odb = url + '.odb'
         new = not getSimpleFile(ctx).exists(odb)
         connection = getDataBaseConnection(ctx, url, user, pwd, new)
         self._version = connection.getMetaData().getDriverVersion()
         if new and self.isUptoDate():
-            createDataBase(ctx, connection, odb, self._addressbook)
+            createDataBase(ctx, connection, odb)
         connection.close()
 
     @property
@@ -178,21 +180,29 @@ class DataBase(object):
         return metadata, books
 
     def createUser(self, schema, userid, name, password):
-        if createUser(self.Connection, name, password):
-            statement = self.Connection.createStatement()
-            format = {'Public': 'PUBLIC',
-                      'Schema': schema,
-                      'User': userid,
-                      'Name': name,
-                      'CardView': g_cardview,
-                      'View': self._getViewName()}
-            query = getSqlQuery(self._ctx, 'createUserSchema', format)
-            statement.execute(query)
-            query = getSqlQuery(self._ctx, 'setUserSchema', format)
-            statement.execute(query)
-            query = getSqlQuery(self._ctx, 'createUserView', format)
-            statement.execute(query)
-            statement.close()
+        try:
+            if createUser(self.Connection, name, password):
+                statement = self.Connection.createStatement()
+                format = {'Schema': schema, 'Name': name}
+                query = getSqlQuery(self._ctx, 'createUserSchema', format)
+                statement.execute(query)
+                query = getSqlQuery(self._ctx, 'setUserSchema', format)
+                statement.execute(query)
+                statement.close()
+                view = self._getViewName()
+                format = {'Catalog': g_catalog, 'Schema': g_schema, 'User': userid}
+                command = getSqlQuery(self._ctx, 'getUserViewCommand', format)
+                self._createUserView(g_catalog, schema, view, command, CheckOption.CASCADE)
+                self._grantPrivileges(g_catalog, schema, view, name, PrivilegeObject.TABLE, 1)
+        except Exception as e:
+            print("DataBase.createUser() ERROR: %s" % traceback.format_exc())
+
+    def _createUserView(self, catalog, schema, name, command, option):
+        views = self._getItemOptions(catalog, schema, name, command, option)
+        createViews(self.Connection.getViews(), views)
+
+    def _getItemOptions(self, catalog, schema, name, *options):
+        yield catalog, schema, name, *options
 
     def selectUser(self, server, name):
         metadata = None
@@ -225,11 +235,11 @@ class DataBase(object):
         return tuple(fields)
 
     def initAddressbooks(self, user):
-        start = self._getLastAddressbookSync()
+        start = self.getLastSync('BookSync', user)
         stop = currentDateTimeInTZ()
-        for data in self._selectChangedAddressbooks(user.Id, start, stop):
-            self._initUserAddressbookView(user, data)
-        self._updateAddressbook(stop)
+        for args in self._selectChangedItems(user, start, stop, 'Books'):
+            self._initUserView('Book', *args)
+        self._updateBookSync(user, stop)
 
     def initGroups(self, book, iterator):
         uris = []
@@ -260,119 +270,70 @@ class DataBase(object):
             yield {'Query': 'Inserted', 'User': user.Id, 'Group': gid, 'Schema': user.getSchema(), 'Name': name}
         call.close()
 
-    def syncGroups(self):
-        start = self._getLastGroupSync()
+    def syncGroups(self, user):
+        start = self.getLastSync('GroupSync', user)
         stop = currentDateTimeInTZ()
-        for data in self._selectChangedGroups(start, stop):
-            self.initUserGroupView(data)
-        self._updateGroup(stop)
+        for args in self._selectChangedItems(user, start, stop, 'Groups'):
+            self._initUserView('Group', *args)
+        self._updateGroupSync(user, stop)
 
-    def _selectChangedAddressbooks(self, userid, start, stop):
-        addressbooks = []
-        call = self._getCall('selectChangedAddressbooks')
-        call.setInt(1, userid)
+    def _selectChangedItems(self, user, start, stop, method):
+        call = self._getCall('selectChanged%s' % method)
+        call.setInt(1, user.Id)
         call.setObject(2, start)
         call.setObject(3, stop)
         result = call.executeQuery()
         while result.next():
-            addressbooks.append(getDataFromResult(result))
-        call.close()
-        return addressbooks
-
-    def _getLastAddressbookSync(self):
-        call = self._getCall('getLastAddressbookSync')
-        call.execute()
-        start = call.getObject(1, None)
-        call.close()
-        return start
-
-    def _updateAddressbook(self, stop):
-        call = self._getCall('updateAddressbook')
-        call.setObject(1, stop)
-        call.execute()
-        call.close()
-
-    def _getLastGroupSync(self):
-        call = self._getCall('getLastGroupSync')
-        call.execute()
-        start = call.getObject(1, None)
-        call.close()
-        return start
-
-    def _selectChangedGroups(self, start, stop):
-        print("DataBase._selectChangedGroups() 1")
-        groups = []
-        call = self._getCall('selectChangedGroups')
-        call.setObject(1, start)
-        call.setObject(2, stop)
-        call.setInt(3, g_dotcode)
-        result = call.executeQuery()
-        while result.next():
-            groups.append(getDataFromResult(result))
-        print("DataBase._selectChangedGroups() 2 %s" % (groups,))
+            query = result.getString(1)
+            itemid = result.getInt(2)
+            oldname = result.getString(3)
+            newname = result.getString(4)
+            yield query, user.getSchema(), user.Name, itemid, oldname, newname
         result.close()
         call.close()
-        return groups
 
-    def _updateGroup(self, stop):
-        call = self._getCall('updateGroup')
-        call.setObject(1, stop)
+    def getLastSync(self, method, user=None):
+        i = 1
+        call = self._getCall('getLast%s' % method)
+        if user is not None:
+            call.setInt(i, user.Id)
+            i += 1
+        call.execute()
+        start = call.getObject(i, None)
+        call.close()
+        return start
+
+    def _updateBookSync(self, user, stop):
+        call = self._getCall('updateBookSync')
+        call.setInt(1, user.Id)
+        call.setObject(2, stop)
+        call.execute()
+        call.close()
+
+    def _updateGroupSync(self, user, stop):
+        call = self._getCall('updateGroupSync')
+        call.setInt(1, user.Id)
+        call.setObject(2, stop)
         status = call.execute()
         call.close()
 
-    def _initUserAddressbookView(self, user, format):
-        statement = self.Connection.createStatement()
-        query = format.get('Query')
-        format['Schema'] = user.getSchema()
-        format['Public'] = 'PUBLIC'
-        format['View'] = g_cardview
-        if query == 'Deleted':
-            self._deleteUserView(statement, format)
-        elif query == 'Inserted':
-            self._createUserView(statement, 'createBookView', format)
-        elif query == 'Updated':
-            self._deleteUserView(statement, format)
-            self._createUserView(statement, 'createBookView', format)
-        statement.close()
+    def _initUserView(self, view, query, schema, user, item, oldname, newname):
+        if query == 'Deleted' or query == 'Updated':
+            self._deleteUserView(g_catalog, schema, oldname)
+        if query == 'Inserted' or query == 'Updated':
+            format = {'Catalog': g_catalog, 'Schema': g_schema, 'Item': item}
+            command = getSqlQuery(self._ctx, 'get%sViewCommand' % view, format)
+            self._createUserView(g_catalog, schema, newname, command, CheckOption.CASCADE)
+            self._grantPrivileges(g_catalog, schema, newname, user, PrivilegeObject.TABLE, 1)
 
-    def initGroupView(self, user, remove, add):
-        statement = self.Connection.createStatement()
-        format = {'Public': 'PUBLIC',
-                  'View': g_cardview,
-                  'User': user.getName(),
-                  'Schema': user.getSchema()}
-        if remove:
-            for item in remove:
-                format.update(item)
-                self._deleteUserView(statement, format)
-        if add:
-            for item in add:
-                format.update(item)
-                self._createUserView(statement, 'createGroupView', format)
-        statement.close()
+    def _grantPrivileges(self, catalog, schema, name, user, type, privileges):
+        self.Connection.getUsers().getByName(user).grantPrivileges(f'{catalog}.{schema}.{name}', type, privileges)
 
-    def initUserGroupView(self, format):
-        statement = self.Connection.createStatement()
-        query = format.get('Query')
-        format['Public'] = 'PUBLIC'
-        format['View'] = g_cardview
-        format['Bookmark'] = g_bookmark
-        if query == 'Deleted':
-            self._deleteUserView(statement, format)
-        elif query == 'Inserted':
-            self._createUserView(statement, 'createGroupView', format)
-        elif query == 'Updated':
-            self._deleteUserView(statement, format)
-            self._createUserView(statement, 'createGroupView', format)
-        statement.close()
-
-    def _createUserView(self, statement, view, format):
-        query = getSqlQuery(self._ctx, view, format)
-        statement.execute(query)
-
-    def _deleteUserView(self, statement, format):
-        query = getSqlQuery(self._ctx, 'deleteView', format)
-        statement.execute(query)
+    def _deleteUserView(self, catalog, schema, name):
+        views = self.Connection.getViews()
+        view = f'{catalog}.{schema}.{name}'
+        if views.hasByName(view):
+            views.dropByName(view)
 
     def insertBook(self, user, path, name, tag=None, token=None):
         book = None
@@ -386,6 +347,20 @@ class DataBase(object):
         book = call.getInt(6)
         call.close()
         return book
+
+    def initGroupView(self, user, remove, add):
+        schema = user.getSchema()
+        if remove:
+            for item in remove:
+                self._deleteUserView(g_catalog, schema, item.get('OldName'))
+        if add:
+            for item in add:
+                view = item.get('NewName')
+                item['Catalog'] = g_catalog
+                item['Schema'] = g_schema
+                command = getSqlQuery(self._ctx, 'getGroupViewCommand', item)
+                self._createUserView(g_catalog, schema, view, command, CheckOption.CASCADE)
+                self._grantPrivileges(g_catalog, schema, view, user.Name, PrivilegeObject.TABLE, 1)
 
     def updateAddressbookName(self, addressbook, name):
         call = self._getCall('updateAddressbookName')
@@ -421,15 +396,8 @@ class DataBase(object):
         self._setBatchModeOff()
         return count
 
-    def getLastUserSync(self):
-        call = self._getCall('getLastUserSync')
-        call.execute()
-        start = call.getObject(1, None)
-        call.close()
-        return start
-
-    def updateUserSync(self, timestamp):
-        call = self._getCall('updateUser')
+    def updateCardSync(self, timestamp):
+        call = self._getCall('updateCardSync')
         call.setObject(1, timestamp)
         call.execute()
         call.close()
@@ -549,7 +517,8 @@ class DataBase(object):
 
 # Procedures called internaly
     def _getViewName(self):
-        return self._addressbook
+        config = getConfiguration(self._ctx, g_identifier, False)
+        return config.getByName('AddressBookName')
 
     def _getCall(self, name, format=None):
         return getDataSourceCall(self._ctx, self.Connection, name, format)

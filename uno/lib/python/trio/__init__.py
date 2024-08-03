@@ -1,5 +1,6 @@
 """Trio - A friendly Python library for async concurrency and I/O
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -45,10 +46,6 @@ from ._core import (
     open_nursery as open_nursery,
     run as run,
 )
-from ._core._multierror import (
-    MultiError as _MultiError,
-    NonBaseMultiError as _NonBaseMultiError,
-)
 from ._deprecate import TrioDeprecationWarning as TrioDeprecationWarning
 from ._dtls import (
     DTLSChannel as DTLSChannel,
@@ -76,7 +73,7 @@ from ._highlevel_ssl_helpers import (
     open_ssl_over_tcp_stream as open_ssl_over_tcp_stream,
     serve_ssl_over_tcp as serve_ssl_over_tcp,
 )
-from ._path import Path as Path
+from ._path import Path as Path, PosixPath as PosixPath, WindowsPath as WindowsPath
 from ._signals import open_signal_receiver as open_signal_receiver
 from ._ssl import (
     NeedHandshakeError as NeedHandshakeError,
@@ -120,26 +117,7 @@ from . import _deprecate as _deprecate
 
 _deprecate.enable_attribute_deprecations(__name__)
 
-__deprecated_attributes__: dict[str, _deprecate.DeprecatedAttribute] = {
-    "MultiError": _deprecate.DeprecatedAttribute(
-        value=_MultiError,
-        version="0.22.0",
-        issue=2211,
-        instead=(
-            "BaseExceptionGroup (on Python 3.11 and later) or "
-            "exceptiongroup.BaseExceptionGroup (earlier versions)"
-        ),
-    ),
-    "NonBaseMultiError": _deprecate.DeprecatedAttribute(
-        value=_NonBaseMultiError,
-        version="0.22.0",
-        issue=2211,
-        instead=(
-            "ExceptionGroup (on Python 3.11 and later) or "
-            "exceptiongroup.ExceptionGroup (earlier versions)"
-        ),
-    ),
-}
+__deprecated_attributes__: dict[str, _deprecate.DeprecatedAttribute] = {}
 
 # Having the public path in .__module__ attributes is important for:
 # - exception names in printed tracebacks

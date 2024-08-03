@@ -32,7 +32,6 @@ import com.sun.star.logging.LogLevel;
 import com.sun.star.resource.XStringResourceResolver;
 import com.sun.star.sdbc.SQLException;
 import com.sun.star.sdbc.XRow;
-import com.sun.star.uno.Any;
 import com.sun.star.uno.AnyConverter;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.RuntimeException;
@@ -366,19 +365,19 @@ public class UnoHelper
         return exception;
     }
 
-    public static java.sql.SQLException getSQLException(java.lang.Exception e)
+    public static java.sql.SQLException getSQLException(java.lang.Throwable e)
     {
-        return new java.sql.SQLException(e.getMessage(), e);
+        return new java.sql.SQLException(e.getLocalizedMessage(), e);
     }
 
     public static SQLException getSQLException(java.sql.SQLException e)
     {
-        return new SQLException(e.getMessage());
+        return getUnoSQLException(e.getLocalizedMessage());
     }
 
     public static SQLException getSQLException(Exception e, XInterface component)
     {
-        SQLException exception = new SQLException(e.getMessage());
+        SQLException exception = getUnoSQLException(e.getMessage());
         exception.Context = component;
         return exception;
     }
@@ -387,25 +386,36 @@ public class UnoHelper
     {
         SQLException exception = null;
         if (e != null) {
-            exception = new SQLException(e.getMessage());
+            exception = getUnoSQLException(e.getLocalizedMessage());
             exception.Context = component;
-            exception.SQLState = e.getSQLState();
+            String state = e.getSQLState();
+            if (state != null) {
+                exception.SQLState = state;
+            }
             exception.ErrorCode = e.getErrorCode();
             SQLException ex = getNextSQLException(e.getNextException(), component);
-            exception.NextException = (ex == null) ? Any.VOID : ex;
+            if (ex != null) {
+                exception.NextException = ex;
+            }
         }
         return exception;
+    }
+
+    private static SQLException getUnoSQLException(String msg)
+    {
+        return msg != null ? new SQLException(msg) : new SQLException();
     }
 
     public static SQLException getSQLException(java.lang.Exception e,
                                                XInterface component)
     {
-        SQLException exception = new SQLException(e.getMessage());
+        SQLException exception = getUnoSQLException(e.getMessage());
         exception.Context = component;
         return exception;
     }
 
-    private static SQLException getNextSQLException(java.sql.SQLException e, XInterface component)
+    private static SQLException getNextSQLException(java.sql.SQLException e,
+                                                    XInterface component)
     {
         SQLException exception = null;
         if (e != null) {
@@ -929,6 +939,30 @@ public class UnoHelper
             e.printStackTrace();
         }
         return option;
+    }
+
+    public static String getCaller()
+    {
+        StackWalker stackWalker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+        StackWalker.StackFrame frame = stackWalker.walk(stream1 -> stream1.skip(2)
+                                                                          .findFirst()
+                                                                          .orElse(null));
+        if (frame == null) {
+            return "caller: null";
+        }
+        return String.format("caller: %s#%s, %s",
+                             frame.getClassName(),
+                             frame.getMethodName(),
+                             frame.getLineNumber());
+    }
+
+    public static void printStackTrace()
+    {
+        Thread thread = Thread.currentThread();
+        StackTraceElement[] stackTrace = thread.getStackTrace();
+        for (int i = 1; i < stackTrace.length; i++) {
+             System.out.println(stackTrace[i].getClassName() + " " + stackTrace[i].getMethodName() + " " + stackTrace[i].getLineNumber());
+        }
     }
 
 }

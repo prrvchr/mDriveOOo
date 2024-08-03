@@ -28,12 +28,8 @@ def uuid(value: Union[str, UUID], /):
             UUID string or object to validate.
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid UUID.
-        (ValidationError):
-            If `value` is an invalid UUID.
-
-    > *New in version 0.2.0*.
+        (Literal[True]): If `value` is a valid UUID.
+        (ValidationError): If `value` is an invalid UUID.
     """
     if not value:
         return False

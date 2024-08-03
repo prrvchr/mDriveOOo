@@ -3,7 +3,8 @@
 # standard
 from functools import lru_cache
 import re
-from urllib.parse import unquote, urlsplit
+from typing import Optional
+from urllib.parse import parse_qs, unquote, urlsplit
 
 # local
 from .hostname import hostname
@@ -13,10 +14,12 @@ from .utils import validator
 @lru_cache
 def _username_regex():
     return re.compile(
+        # extended latin
+        r"(^[\u0100-\u017F\u0180-\u024F]"
         # dot-atom
-        r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*$"
+        + r"|[-!#$%&'*+/=?^_`{}|~0-9a-z]+(\.[-!#$%&'*+/=?^_`{}|~0-9a-z]+)*$"
         # non-quoted-string
-        + r"|^([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-\011\013\014\016-\177])*$)",
+        + r"|^([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\011.])*$)",
         re.IGNORECASE,
     )
 
@@ -25,7 +28,9 @@ def _username_regex():
 def _path_regex():
     return re.compile(
         # allowed symbols
-        r"^[\/a-zA-Z0-9\-\.\_\~\!\$\&\'\(\)\*\+\,\;\=\:\@\%"
+        r"^[\/a-z0-9\-\.\_\~\!\$\&\'\(\)\*\+\,\;\=\:\@\%"
+        # symbols / pictographs
+        + r"\U0001F300-\U0001F5FF"
         # emoticons / emoji
         + r"\U0001F600-\U0001F64F"
         # multilingual unicode ranges
@@ -34,16 +39,18 @@ def _path_regex():
     )
 
 
-@lru_cache
-def _query_regex():
-    return re.compile(r"&?(\w+=?[^\s&]*)", re.IGNORECASE)
-
-
 def _validate_scheme(value: str):
     """Validate scheme."""
     # More schemes will be considered later.
     return (
-        value in {"ftp", "ftps", "git", "http", "https", "rtsp", "sftp", "ssh", "telnet"}
+        value
+        # fmt: off
+        in {
+            "ftp", "ftps", "git", "http", "https",
+            "irc", "rtmp", "rtmps", "rtsp", "sftp",
+            "ssh", "telnet",
+        }
+        # fmt: on
         if value
         else False
     )
@@ -76,6 +83,8 @@ def _validate_netloc(
     skip_ipv4_addr: bool,
     may_have_port: bool,
     simple_host: bool,
+    consider_tld: bool,
+    private: Optional[bool],
     rfc_1034: bool,
     rfc_2782: bool,
 ):
@@ -84,40 +93,60 @@ def _validate_netloc(
         return False
     if value.count("@") < 1:
         return hostname(
-            value
-            if _confirm_ipv6_skip(value, skip_ipv6_addr) or "]:" in value
-            else value.lstrip("[").replace("]", "", 1),
+            (
+                value
+                if _confirm_ipv6_skip(value, skip_ipv6_addr) or "]:" in value
+                else value.lstrip("[").replace("]", "", 1)
+            ),
             skip_ipv6_addr=_confirm_ipv6_skip(value, skip_ipv6_addr),
             skip_ipv4_addr=skip_ipv4_addr,
             may_have_port=may_have_port,
             maybe_simple=simple_host,
+            consider_tld=consider_tld,
+            private=private,
             rfc_1034=rfc_1034,
             rfc_2782=rfc_2782,
         )
     basic_auth, host = value.rsplit("@", 1)
     return hostname(
-        host
-        if _confirm_ipv6_skip(host, skip_ipv6_addr) or "]:" in value
-        else host.lstrip("[").replace("]", "", 1),
+        (
+            host
+            if _confirm_ipv6_skip(host, skip_ipv6_addr) or "]:" in value
+            else host.lstrip("[").replace("]", "", 1)
+        ),
         skip_ipv6_addr=_confirm_ipv6_skip(host, skip_ipv6_addr),
         skip_ipv4_addr=skip_ipv4_addr,
         may_have_port=may_have_port,
         maybe_simple=simple_host,
+        consider_tld=consider_tld,
+        private=private,
         rfc_1034=rfc_1034,
         rfc_2782=rfc_2782,
     ) and _validate_auth_segment(basic_auth)
 
 
-def _validate_optionals(path: str, query: str, fragment: str):
+def _validate_optionals(path: str, query: str, fragment: str, strict_query: bool):
     """Validate path query and fragments."""
     optional_segments = True
     if path:
         optional_segments &= bool(_path_regex().match(path))
-    if query:
-        optional_segments &= bool(_query_regex().match(query))
+    try:
+        if (
+            query
+            # ref: https://github.com/python/cpython/issues/117109
+            and parse_qs(query, strict_parsing=strict_query, separator="&")
+            and parse_qs(query, strict_parsing=strict_query, separator=";")
+        ):
+            optional_segments &= True
+    except TypeError:
+        # for Python < v3.9.2 (official v3.10)
+        if query and parse_qs(query, strict_parsing=strict_query):
+            optional_segments &= True
     if fragment:
-        fragment = fragment.lstrip("/") if fragment.startswith("/") else fragment
-        optional_segments &= all(char_to_avoid not in fragment for char_to_avoid in ("/", "?"))
+        # See RFC3986 Section 3.5 Fragment for allowed characters
+        optional_segments &= bool(
+            re.fullmatch(r"[0-9a-z?/:@\-._~%!$&'()*+,;=]*", fragment, re.IGNORECASE)
+        )
     return optional_segments
 
 
@@ -130,13 +159,17 @@ def url(
     skip_ipv4_addr: bool = False,
     may_have_port: bool = True,
     simple_host: bool = False,
+    strict_query: bool = True,
+    consider_tld: bool = False,
+    private: Optional[bool] = None,  # only for ip-addresses
     rfc_1034: bool = False,
     rfc_2782: bool = False,
 ):
     r"""Return whether or not given value is a valid URL.
 
-    This validator was inspired from [URL validator of dperini][1].
-    The following diagram is from [urlly][2].
+    This validator was originally inspired from [URL validator of dperini][1].
+    The following diagram is from [urlly][2]::
+
 
             foo://admin:hunter1@example.com:8042/over/there?name=ferret#nose
             \_/   \___/ \_____/ \_________/ \__/\_________/ \_________/ \__/
@@ -167,6 +200,12 @@ def url(
             URL string may contain port number.
         simple_host:
             URL string maybe only hyphens and alpha-numerals.
+        strict_query:
+            Fail validation on query string parsing error.
+        consider_tld:
+            Restrict domain to TLDs allowed by IANA.
+        private:
+            Embedded IP address is public if `False`, private/local if `True`.
         rfc_1034:
             Allow trailing dot in domain/host name.
             Ref: [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034).
@@ -175,23 +214,8 @@ def url(
             Ref: [RFC 2782](https://www.rfc-editor.org/rfc/rfc2782).
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid slug.
-        (ValidationError):
-            If `value` is an invalid slug.
-
-    Note:
-        - *In version 0.11.3*:
-            - Added support for URLs containing localhost.
-        - *In version 0.11.0*:
-            - Made the regular expression case insensitive.
-        - *In version 0.10.3*:
-            - Added a `public` parameter.
-        - *In version 0.10.2*:
-            - Added support for various exotic URLs.
-            - Fixed various false positives.
-
-    > *New in version 0.2.0*.
+        (Literal[True]): If `value` is a valid url.
+        (ValidationError): If `value` is an invalid url.
     """
     if not value or re.search(r"\s", value):
         # url must not contain any white
@@ -211,8 +235,10 @@ def url(
             skip_ipv4_addr,
             may_have_port,
             simple_host,
+            consider_tld,
+            private,
             rfc_1034,
             rfc_2782,
         )
-        and _validate_optionals(path, query, fragment)
+        and _validate_optionals(path, query, fragment, strict_query)
     )

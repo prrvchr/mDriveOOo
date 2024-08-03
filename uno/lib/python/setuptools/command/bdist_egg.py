@@ -54,7 +54,7 @@ def write_stub(resource, pyfile):
         __bootstrap__()
         """
     ).lstrip()
-    with open(pyfile, 'w') as f:
+    with open(pyfile, 'w', encoding="utf-8") as f:
         f.write(_stub_template % resource)
 
 
@@ -74,7 +74,7 @@ class bdist_egg(Command):
             'keep-temp',
             'k',
             "keep the pseudo-installation tree around after "
-            + "creating the distribution archive",
+            "creating the distribution archive",
         ),
         ('dist-dir=', 'd', "directory to put final built distributions in"),
         ('skip-build', None, "skip rebuilding everything (for testing/debugging)"),
@@ -85,9 +85,9 @@ class bdist_egg(Command):
     def initialize_options(self):
         self.bdist_dir = None
         self.plat_name = None
-        self.keep_temp = 0
+        self.keep_temp = False
         self.dist_dir = None
-        self.skip_build = 0
+        self.skip_build = False
         self.egg_output = None
         self.exclude_source_files = None
 
@@ -136,7 +136,7 @@ class bdist_egg(Command):
 
         try:
             log.info("installing package data to %s", self.bdist_dir)
-            self.call_command('install_data', force=0, root=None)
+            self.call_command('install_data', force=False, root=None)
         finally:
             self.distribution.data_files = old
 
@@ -164,7 +164,7 @@ class bdist_egg(Command):
         instcmd.root = None
         if self.distribution.has_c_libraries() and not self.skip_build:
             self.run_command('build_clib')
-        cmd = self.call_command('install_lib', warn_dir=0)
+        cmd = self.call_command('install_lib', warn_dir=False)
         instcmd.root = old_root
 
         all_outputs, ext_outputs = self.get_ext_outputs()
@@ -192,7 +192,7 @@ class bdist_egg(Command):
         if self.distribution.scripts:
             script_dir = os.path.join(egg_info, 'scripts')
             log.info("installing scripts to %s", script_dir)
-            self.call_command('install_scripts', install_dir=script_dir, no_ep=1)
+            self.call_command('install_scripts', install_dir=script_dir, no_ep=True)
 
         self.copy_metadata_to(egg_info)
         native_libs = os.path.join(egg_info, "native_libs.txt")
@@ -200,10 +200,9 @@ class bdist_egg(Command):
             log.info("writing %s", native_libs)
             if not self.dry_run:
                 ensure_directory(native_libs)
-                libs_file = open(native_libs, 'wt')
-                libs_file.write('\n'.join(all_outputs))
-                libs_file.write('\n')
-                libs_file.close()
+                with open(native_libs, 'wt', encoding="utf-8") as libs_file:
+                    libs_file.write('\n'.join(all_outputs))
+                    libs_file.write('\n')
         elif os.path.isfile(native_libs):
             log.info("removing %s", native_libs)
             if not self.dry_run:
@@ -232,9 +231,11 @@ class bdist_egg(Command):
             remove_tree(self.bdist_dir, dry_run=self.dry_run)
 
         # Add to 'Distribution.dist_files' so that the "upload" command works
-        getattr(self.distribution, 'dist_files', []).append(
-            ('bdist_egg', get_python_version(), self.egg_output)
-        )
+        getattr(self.distribution, 'dist_files', []).append((
+            'bdist_egg',
+            get_python_version(),
+            self.egg_output,
+        ))
 
     def zap_pyfiles(self):
         log.info("Removing .py files from temporary directory")
@@ -289,9 +290,11 @@ class bdist_egg(Command):
 
         paths = {self.bdist_dir: ''}
         for base, dirs, files in sorted_walk(self.bdist_dir):
-            for filename in files:
-                if os.path.splitext(filename)[1].lower() in NATIVE_EXTENSIONS:
-                    all_outputs.append(paths[base] + filename)
+            all_outputs.extend(
+                paths[base] + filename
+                for filename in files
+                if os.path.splitext(filename)[1].lower() in NATIVE_EXTENSIONS
+            )
             for filename in dirs:
                 paths[os.path.join(base, filename)] = paths[base] + filename + '/'
 
@@ -319,8 +322,7 @@ def walk_egg(egg_dir):
     if 'EGG-INFO' in dirs:
         dirs.remove('EGG-INFO')
     yield base, dirs, files
-    for bdf in walker:
-        yield bdf
+    yield from walker
 
 
 def analyze_egg(egg_dir, stubs):
@@ -349,9 +351,8 @@ def write_safety_flag(egg_dir, safe):
             if safe is None or bool(safe) != flag:
                 os.unlink(fn)
         elif safe is not None and bool(safe) == flag:
-            f = open(fn, 'wt')
-            f.write('\n')
-            f.close()
+            with open(fn, 'wt', encoding="utf-8") as f:
+                f.write('\n')
 
 
 safety_flags = {
@@ -368,10 +369,7 @@ def scan_module(egg_dir, base, name, stubs):
         return True  # Extension module
     pkg = base[len(egg_dir) + 1 :].replace(os.sep, '.')
     module = pkg + (pkg and '.' or '') + os.path.splitext(name)[0]
-    if sys.version_info < (3, 7):
-        skip = 12  # skip magic & date & file size
-    else:
-        skip = 16  # skip magic & reserved? & date & file size
+    skip = 16  # skip magic & reserved? & date & file size
     f = open(filename, 'rb')
     f.read(skip)
     code = marshal.load(f)
@@ -386,8 +384,9 @@ def scan_module(egg_dir, base, name, stubs):
         for bad in [
             'getsource',
             'getabsfile',
+            'getfile',
             'getsourcefile',
-            'getfile' 'getsourcelines',
+            'getsourcelines',
             'findsource',
             'getcomments',
             'getframeinfo',
@@ -404,14 +403,12 @@ def scan_module(egg_dir, base, name, stubs):
 
 def iter_symbols(code):
     """Yield names and strings used by `code` and its nested code objects"""
-    for name in code.co_names:
-        yield name
+    yield from code.co_names
     for const in code.co_consts:
         if isinstance(const, str):
             yield const
         elif isinstance(const, CodeType):
-            for name in iter_symbols(const):
-                yield name
+            yield from iter_symbols(const)
 
 
 def can_scan():
@@ -423,6 +420,7 @@ def can_scan():
         "Please ask the author to include a 'zip_safe'"
         " setting (either True or False) in the package's setup.py"
     )
+    return False
 
 
 # Attribute names of options for commands that might need to be convinced to
@@ -431,7 +429,9 @@ def can_scan():
 INSTALL_DIRECTORY_ATTRS = ['install_lib', 'install_dir', 'install_data', 'install_base']
 
 
-def make_zipfile(zip_filename, base_dir, verbose=0, dry_run=0, compress=True, mode='w'):
+def make_zipfile(
+    zip_filename, base_dir, verbose=False, dry_run=False, compress=True, mode='w'
+):
     """Create a zip file from all the files under 'base_dir'.  The output
     zip file will be named 'base_dir' + ".zip".  Uses either the "zipfile"
     Python module (if available) or the InfoZIP "zip" utility (if installed

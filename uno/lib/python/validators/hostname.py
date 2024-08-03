@@ -3,6 +3,7 @@
 # standard
 from functools import lru_cache
 import re
+from typing import Optional
 
 from .domain import domain
 
@@ -25,7 +26,7 @@ def _simple_hostname_regex():
     """Simple hostname validation regex."""
     # {0,59} because two characters are already matched at
     # the beginning and at the end, making the range {1, 61}
-    return re.compile(r"^(?!-)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,59}[a-zA-Z0-9])?(?<!-)$")
+    return re.compile(r"^(?!-)[a-z0-9](?:[a-z0-9-]{0,59}[a-z0-9])?(?<!-)$", re.IGNORECASE)
 
 
 def _port_validator(value: str):
@@ -54,6 +55,8 @@ def hostname(
     skip_ipv4_addr: bool = False,
     may_have_port: bool = True,
     maybe_simple: bool = True,
+    consider_tld: bool = False,
+    private: Optional[bool] = None,  # only for ip-addresses
     rfc_1034: bool = False,
     rfc_2782: bool = False,
 ):
@@ -92,6 +95,10 @@ def hostname(
             Hostname string may contain port number.
         maybe_simple:
             Hostname string maybe only hyphens and alpha-numerals.
+        consider_tld:
+            Restrict domain to TLDs allowed by IANA.
+        private:
+            Embedded IP address is public if `False`, private/local if `True`.
         rfc_1034:
             Allow trailing dot in domain/host name.
             Ref: [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034).
@@ -100,12 +107,8 @@ def hostname(
             Ref: [RFC 2782](https://www.rfc-editor.org/rfc/rfc2782).
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid hostname.
-        (ValidationError):
-            If `value` is an invalid hostname.
-
-    > *New in version 0.21.0*.
+        (Literal[True]): If `value` is a valid hostname.
+        (ValidationError): If `value` is an invalid hostname.
     """
     if not value:
         return False
@@ -113,14 +116,14 @@ def hostname(
     if may_have_port and (host_seg := _port_validator(value)):
         return (
             (_simple_hostname_regex().match(host_seg) if maybe_simple else False)
-            or domain(host_seg, rfc_1034=rfc_1034, rfc_2782=rfc_2782)
-            or (False if skip_ipv4_addr else ipv4(host_seg, cidr=False))
+            or domain(host_seg, consider_tld=consider_tld, rfc_1034=rfc_1034, rfc_2782=rfc_2782)
+            or (False if skip_ipv4_addr else ipv4(host_seg, cidr=False, private=private))
             or (False if skip_ipv6_addr else ipv6(host_seg, cidr=False))
         )
 
     return (
         (_simple_hostname_regex().match(value) if maybe_simple else False)
-        or domain(value, rfc_1034=rfc_1034, rfc_2782=rfc_2782)
-        or (False if skip_ipv4_addr else ipv4(value, cidr=False))
+        or domain(value, consider_tld=consider_tld, rfc_1034=rfc_1034, rfc_2782=rfc_2782)
+        or (False if skip_ipv4_addr else ipv4(value, cidr=False, private=private))
         or (False if skip_ipv6_addr else ipv6(value, cidr=False))
     )

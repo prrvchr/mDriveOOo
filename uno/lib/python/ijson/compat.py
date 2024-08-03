@@ -6,22 +6,6 @@ import sys
 import warnings
 
 
-IS_PY2 = sys.version_info[0] < 3
-IS_PY35 = sys.version_info[0:2] >= (3, 5)
-
-
-if IS_PY2:
-    b2s = lambda s: s
-    bytetype = str
-    texttype = unicode
-    from StringIO import StringIO
-    BytesIO = StringIO
-else:
-    b2s = lambda b: b.decode('utf-8')
-    bytetype = bytes
-    texttype = str
-    from io import BytesIO, StringIO
-
 class utf8reader(object):
     """Takes a utf8-encoded string reader and reads bytes out of it"""
 
@@ -50,6 +34,6 @@ def _warn_and_return(o):
 
 def bytes_reader(f):
     """Returns a file-like object that reads bytes"""
-    if type(f.read(0)) == bytetype:
+    if type(f.read(0)) == bytes:
         return f
     return _warn_and_return(utf8reader(f))

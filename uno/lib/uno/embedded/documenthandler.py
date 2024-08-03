@@ -27,6 +27,7 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+import uno
 import unohelper
 
 from com.sun.star.embed.ElementModes import SEEKABLEREAD
@@ -53,6 +54,8 @@ from .configuration import g_catalog
 from .configuration import g_options
 from .configuration import g_create
 from .configuration import g_exist
+from .configuration import g_path
+from .configuration import g_sep
 
 import traceback
 
@@ -60,7 +63,7 @@ import traceback
 class DocumentHandler(unohelper.Base,
                       XCloseListener,
                       XStorageChangeListener):
-    def __init__(self, ctx, lock, logger, url, index):
+    def __init__(self, ctx, lock, logger, url):
         self._ctx = ctx
         self._directory = 'database'
         self._prefix = '.'
@@ -70,7 +73,6 @@ class DocumentHandler(unohelper.Base,
         self._created = False
         self._path, self._folder = self._getDataBaseInfo(url)
         self._url = url
-        self._index = index
 
     @property
     def URL(self):
@@ -79,15 +81,15 @@ class DocumentHandler(unohelper.Base,
     # XCloseListener
     def queryClosing(self, event, owner):
         url = self._url
-        print("DocumentHandler.queryClosing() Url: %s" % url)
-        self._logger.logprb(INFO, 'DocumentHandler', 'queryClosing()', 201, url)
+        cls, method = 'DocumentHandler', 'queryClosing()'
+        self._logger.logprb(INFO, cls, method, 201, url)
         with self._lock:
             document = event.Source
             target = document.getDocumentSubStorage(self._directory, READWRITE)
-            if self._closeDataBase(document, target, 'queryClosing()', 241):
+            if self._closeDataBase(document, target, cls, method, 241):
                 self._removeFolder()
             self._url = None
-        self._logger.logprb(INFO, 'DocumentHandler', 'queryClosing()', 202, url)
+        self._logger.logprb(INFO, cls, method, 202, url)
 
     def notifyClosing(self, event):
         pass
@@ -96,17 +98,17 @@ class DocumentHandler(unohelper.Base,
     def notifyStorageChange(self, document, storage):
         # The document has been save as with a new name
         url = document.getLocation()
-        print("DocumentHandler.notifyStorageChange() Url: %s" % url)
-        self._logger.logprb(INFO, 'DocumentHandler', 'notifyStorageChange()', 211, url)
+        cls, method = 'DocumentHandler', 'notifyStorageChange()'
+        self._logger.logprb(INFO, cls, method, 211, url)
         with self._lock:
-            newpath, newfolder = self._getDataBaseInfo(url)
+            path, folder = self._getDataBaseInfo(url)
             target = storage.openStorageElement(self._directory, READWRITE)
-            if self._closeDataBase(document, target, 'notifyStorageChange()', 251):
+            if self._closeDataBase(document, target, cls, method, 251):
                 self._removeFolder()
-            self._path = newpath
-            self._folder = newfolder
+            self._path = path
+            self._folder = folder
             self._url = url
-        self._logger.logprb(INFO, 'DocumentHandler', 'notifyStorageChange()', 212, url)
+        self._logger.logprb(INFO, cls, method, 212, url)
 
     # XEventListener
     def disposing(self, event):
@@ -127,14 +129,15 @@ class DocumentHandler(unohelper.Base,
     # DocumentHandler getter methods
     def getConnectionUrl(self, storage):
         with self._lock:
-            exist = storage.hasElements()
             sf = getSimpleFile(self._ctx)
-            if not sf.exists(self._path):
+            url = self._getDataBaseUrl()
+            exist = storage.hasElements()
+            if not sf.exists(url):
                 # XXX: The database folder will be deleted only if it was created
                 self._created = True
-                sf.createFolder(self._path)
+                sf.createFolder(url)
                 if exist:
-                    count = self._extractStorage(sf, storage, self._path)
+                    count = self._extractStorage(sf, storage, url)
                     self._logger.logprb(INFO, 'DocumentHandler', 'getConnectionUrl()', 231, count)
             return self._getConnectionUrl(exist)
 
@@ -153,15 +156,14 @@ class DocumentHandler(unohelper.Base,
     def _getDataBaseInfo(self, location):
         transformer = getUrlTransformer(self._ctx)
         url = parseUrl(transformer, location)
+        path = self._getDataBasePath(transformer, url)
         folder = self._getDataBaseFolder(transformer, url)
-        path = self._getDataBasePath(transformer, url, folder)
         return path, folder
 
-    def _getDataBasePath(self, transformer, url, folder):
-        path = self._getDocumentPath(transformer, url)
-        return '%s%s%s%s' % (path, self._prefix, folder, self._suffix)
+    def _getDataBaseUrl(self):
+        return self._path + self._prefix + self._folder + self._suffix
 
-    def _getDocumentPath(self, transformer, url):
+    def _getDataBasePath(self, transformer, url):
         path = parseUrl(transformer, url.Protocol + url.Path)
         return transformer.getPresentation(path, False)
 
@@ -176,21 +178,22 @@ class DocumentHandler(unohelper.Base,
         return name if sep else extension
 
     def _getConnectionUrl(self, exist):
-        path = self._path[self._index:]
-        url = '%s%s/%s%s' % (g_protocol, path, g_catalog, g_options)
+        url = self._getDataBaseUrl()
+        path = uno.fileUrlToSystemPath(url) if g_path else url
+        url = g_protocol + path + g_sep + g_catalog + g_options
         return url + g_exist if exist else url + g_create
 
-    def _closeDataBase(self, document, target, method, resource):
+    def _closeDataBase(self, document, target, cls, method, resource):
         try:
             service = 'com.sun.star.embed.FileSystemStorageFactory'
-            args = (self._path, SEEKABLEREAD)
+            args = (self._getDataBaseUrl(), SEEKABLEREAD)
             source = createService(self._ctx, service).createInstanceWithArguments(args)
             count = self._copyStorage(source, target)
-            self._logger.logprb(INFO, 'DocumentHandler', method, resource, count)
+            self._logger.logprb(INFO, cls, method, resource, count)
             document.store()
             return True
         except Exception as e:
-            self._logger.logprb(SEVERE, 'DocumentHandler', method, resource + 1, self._url, traceback.format_exc())
+            self._logger.logprb(SEVERE, cls, method, resource + 1, self._url, traceback.format_exc())
             return False
 
     # DocumentHandler private setter methods
@@ -228,10 +231,11 @@ class DocumentHandler(unohelper.Base,
         return count
 
     def _getPath(self, path, name):
-        return '%s/%s' % (path, name)
+        return path + g_sep + name
 
     def _removeFolder(self):
+        url = self._getDataBaseUrl()
         sf = getSimpleFile(self._ctx)
-        if sf.isFolder(self._path):
-            sf.kill(self._path)
+        if sf.isFolder(url):
+            sf.kill(url)
 

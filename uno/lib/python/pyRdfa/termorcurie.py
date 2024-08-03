@@ -58,7 +58,7 @@ ncname   = re.compile("^[A-Za-z][A-Za-z0-9._-]*$")
 termname = re.compile("^[A-Za-z]([A-Za-z0-9._-]|/)*$")
 
 # Regular expression object for a general XML application media type
-xml_application_media_type = re.compile("application/[a-zA-Z0-9]+\+xml")
+xml_application_media_type = re.compile(r"application/[a-zA-Z0-9]+\+xml")
 
 XHTML_PREFIX = "xhv"
 XHTML_URI    = "http://www.w3.org/1999/xhtml/vocab#"

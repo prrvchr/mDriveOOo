@@ -2,6 +2,7 @@
 This module contains general purpose URL functions not found in the standard
 library.
 """
+
 import base64
 import codecs
 import os
@@ -9,7 +10,6 @@ import posixpath
 import re
 import string
 from typing import (
-    cast,
     Callable,
     Dict,
     List,
@@ -18,12 +18,16 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    cast,
+    overload,
 )
+from urllib.parse import _coerce_args  # type: ignore
 from urllib.parse import (
+    ParseResult,
     parse_qs,
     parse_qsl,
-    ParseResult,
     quote,
+    unquote,
     unquote_to_bytes,
     urldefrag,
     urlencode,
@@ -31,15 +35,13 @@ from urllib.parse import (
     urlsplit,
     urlunparse,
     urlunsplit,
-    unquote,
 )
-from urllib.parse import _coerce_args  # type: ignore
 from urllib.request import pathname2url, url2pathname
 
-from .util import to_unicode
 from ._infra import _ASCII_TAB_OR_NEWLINE, _C0_CONTROL_OR_SPACE
 from ._types import AnyUnicodeError, StrOrBytes
 from ._url import _SPECIAL_SCHEMES
+from .util import to_unicode
 
 
 # error handling function for bytes-to-Unicode decoding errors with URLs
@@ -218,6 +220,24 @@ def safe_download_url(
 
 def is_url(text: str) -> bool:
     return text.partition("://")[0] in ("file", "http", "https")
+
+
+@overload
+def url_query_parameter(
+    url: StrOrBytes,
+    parameter: str,
+    default: None = None,
+    keep_blank_values: Union[bool, int] = 0,
+) -> Optional[str]: ...
+
+
+@overload
+def url_query_parameter(
+    url: StrOrBytes,
+    parameter: str,
+    default: str,
+    keep_blank_values: Union[bool, int] = 0,
+) -> str: ...
 
 
 def url_query_parameter(
@@ -634,10 +654,13 @@ def canonicalize_url(
 
     fragment = "" if not keep_fragments else fragment
 
+    # Apply lowercase to the domain, but not to the userinfo.
+    netloc_parts = netloc.split("@")
+    netloc_parts[-1] = netloc_parts[-1].lower().rstrip(":")
+    netloc = "@".join(netloc_parts)
+
     # every part should be safe already
-    return urlunparse(
-        (scheme, netloc.lower().rstrip(":"), path, params, query, fragment)
-    )
+    return urlunparse((scheme, netloc, path, params, query, fragment))
 
 
 def _unquotepath(path: str) -> bytes:

@@ -4,7 +4,6 @@ import argparse
 import sys
 
 import ijson
-from . import compat
 
 
 HEADERS = {
@@ -15,10 +14,8 @@ HEADERS = {
 }
 
 def to_string(o):
-    if isinstance(o, compat.texttype) and compat.IS_PY2:
-        o = o.encode('utf8')
-    if isinstance(o, compat.bytetype):
-        return compat.b2s(o)
+    if isinstance(o, bytes):
+        return o.decode("utf-8")
     return str(o)
 
 def dump():

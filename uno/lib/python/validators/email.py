@@ -52,12 +52,8 @@ def email(
             Ref: [RFC 2782](https://www.rfc-editor.org/rfc/rfc2782).
 
     Returns:
-        (Literal[True]):
-            If `value` is a valid eMail.
-        (ValidationError):
-            If `value` is an invalid eMail.
-
-    > *New in version 0.1.0*.
+        (Literal[True]): If `value` is a valid eMail.
+        (ValidationError): If `value` is an invalid eMail.
     """
     if not value or value.count("@") != 1:
         return False
@@ -88,10 +84,12 @@ def email(
             )
         )
         if re.match(
+            # extended latin
+            r"(^[\u0100-\u017F\u0180-\u024F]"
             # dot-atom
-            r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*$"
+            + r"|[-!#$%&'*+/=?^_`{}|~0-9a-z]+(\.[-!#$%&'*+/=?^_`{}|~0-9a-z]+)*$"
             # quoted-string
-            + r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-\011\013\014\016-\177])*"$)',
+            + r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\011.])*"$)',
             username_part,
             re.IGNORECASE,
         )
