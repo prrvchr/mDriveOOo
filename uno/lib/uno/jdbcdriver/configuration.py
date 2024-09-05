@@ -31,7 +31,7 @@
 g_extension = 'jdbcDriverOOo'
 g_identifier = 'io.github.prrvchr.%s' % g_extension
 g_service = '%s.Driver' % g_identifier
-g_version = '1.4.4'
+g_version = '1.4.5'
 
 # jdbcDriverOOo resource strings files and folder
 g_resource = 'resource'
