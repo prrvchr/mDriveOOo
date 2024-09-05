@@ -27,8 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
-
 from com.sun.star.ucb.SynchronizePolicy import SERVER_IS_MASTER
 from com.sun.star.ucb.SynchronizePolicy import CLIENT_IS_MASTER
 from com.sun.star.ucb.SynchronizePolicy import NONE_IS_MASTER
@@ -47,7 +45,7 @@ from ..configuration import g_scheme
 import traceback
 
 
-class OptionsModel(unohelper.Base):
+class OptionsModel():
     def __init__(self, ctx):
         self._ctx = ctx
         self._config = getConfiguration(ctx, g_identifier, True)
@@ -84,16 +82,15 @@ class OptionsModel(unohelper.Base):
         return self._config.getByName('SupportShare')
 
 # OptionsModel getter methods
-    def hasData(self):
-        return getSimpleFile(self._ctx).exists(self._url)
+    def getInitData(self):
+        hasdata = getSimpleFile(self._ctx).exists(self._url)
+        resumable = self._config.getByName('ResumableUpload')
+        return hasdata, resumable
 
-    def isResumable(self):
-        return self._config.getByName('ResumableUpload')
-
-    def getViewData(self):
+    def getViewData(self, restart):
         return (self._SupportShare, self._IsShared, self._ShareName,
                 self._Policy, self._Timeout,
-                self._Download, self._Upload)
+                self._Download, self._Upload, restart)
 
     def getDatasourceUrl(self):
         return self._url

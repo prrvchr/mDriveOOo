@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 from functools import lru_cache
-from typing import Callable, Iterable, Iterator, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Callable, Iterable, Iterator, TypeVar, Union, overload
 
 import jaraco.text as text
 from packaging.requirements import Requirement
 
+if TYPE_CHECKING:
+    from typing_extensions import TypeAlias
+
 _T = TypeVar("_T")
-_StrOrIter = Union[str, Iterable[str]]
+_StrOrIter: TypeAlias = Union[str, Iterable[str]]
 
 
 parse_req: Callable[[str], Requirement] = lru_cache()(Requirement)

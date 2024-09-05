@@ -29,7 +29,6 @@
 
 import unohelper
 
-from com.sun.star.awt import XContainerWindowEventHandler
 from com.sun.star.lang import XEventListener
 
 import traceback
@@ -47,108 +46,4 @@ class OptionsListener(unohelper.Base,
         except Exception as e:
             msg = "OptionsHandler.disposing() Error: %s" % traceback.format_exc()
             print(msg)
-
-
-class Tab1Handler(unohelper.Base,
-                  XContainerWindowEventHandler):
-    def __init__(self, manager):
-        self._manager = manager
-
-    # XContainerWindowEventHandler
-    def callHandlerMethod(self, window, event, method):
-        try:
-            handled = False
-            if method == 'Base':
-                self._manager.setDriverService(0)
-                handled = True
-            elif method == 'Enhanced':
-                self._manager.setDriverService(1)
-                handled = True
-            elif method == 'Level0':
-                self._manager.setConnectionService(0)
-                handled = True
-            elif method == 'Level1':
-                self._manager.setConnectionService(1)
-                handled = True
-            elif method == 'Level2':
-                self._manager.setConnectionService(2)
-                handled = True
-            return handled
-        except Exception as e:
-            msg = "Tab1Handler.callHandlerMethod() Error: %s" % traceback.format_exc()
-            print(msg)
-
-    def getSupportedMethodNames(self):
-        return ('Base',
-                'Enhanced',
-                'Level0',
-                'Level1',
-                'Level2')
-
-
-class Tab2Handler(unohelper.Base,
-                  XContainerWindowEventHandler):
-    def __init__(self, manager):
-        self._manager = manager
-
-    # XContainerWindowEventHandler
-    def callHandlerMethod(self, window, event, method):
-        try:
-            handled = False
-            if method == 'SetDriver':
-                if self._manager.isHandlerEnabled():
-                    driver = event.Source.getSelectedItem()
-                    self._manager.setDriver(driver)
-                handled = True
-            elif method == 'New':
-                self._manager.newDriver()
-                handled = True
-            elif method == 'Remove':
-                self._manager.removeDriver()
-                handled = True
-            elif method == 'Save':
-                self._manager.saveDriver()
-                handled = True
-            elif method == 'Cancel':
-                self._manager.cancelDriver()
-                handled = True
-            elif method == 'Check':
-                self._manager.checkDriver()
-                handled = True
-            elif method == 'Update':
-                self._manager.updateArchive()
-                handled = True
-            elif method == 'Search':
-                self._manager.searchArchive()
-                handled = True
-            elif method == 'ToggleLogger':
-                control = event.Source
-                enabled = control.Model.Enabled
-                state = control.State == 1
-                self._manager.toggleLogger(enabled, state)
-                handled = True
-            elif method == 'SetLogger':
-                control = event.Source
-                enabled = control.Model.Enabled
-                # XXX: There is nothing to do if logging is not supported
-                if enabled:
-                    level = control.getSelectedItemPos()
-                    self._manager.setLogger(level)
-                handled = True
-            return handled
-        except Exception as e:
-            msg = "Tab2Handler.callHandlerMethod() Error: %s" % traceback.format_exc()
-            print(msg)
-
-    def getSupportedMethodNames(self):
-        return ('SetDriver',
-                'New',
-                'Remove',
-                'Save',
-                'Cancel',
-                'Check',
-                'Update',
-                'Search',
-                'ToggleLogger',
-                'SetLogger')
 

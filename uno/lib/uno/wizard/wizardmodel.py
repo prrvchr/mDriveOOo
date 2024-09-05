@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -33,7 +33,6 @@ import unohelper
 from ..unotool import getStringResource
 
 from ..configuration import g_identifier
-from ..configuration import g_extension
 
 import traceback
 
@@ -44,7 +43,7 @@ class WizardModel(unohelper.Base):
         self._currentPageId = -1
         self._disabledPages = []
         self._roadmap = None
-        self._resolver = getStringResource(ctx, g_identifier, g_extension)
+        self._resolver = getStringResource(ctx, g_identifier, 'dialogs', 'Wizard')
         self._resources = {'Roadmap': 'Wizard.Roadmap.Text'}
 
     def setRoadmapModel(self, model):

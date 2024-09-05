@@ -81,6 +81,7 @@ public abstract class PropertySet
     @Override
     protected void postDisposing()
     {
+        super.postDisposing();
         m_adapter.dispose();
     }
 

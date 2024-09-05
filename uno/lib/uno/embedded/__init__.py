@@ -30,20 +30,8 @@
 from . import sdbc
 from . import sdbcx
 
-from .unotool import createService
 from .unotool import getConfiguration
-from .unotool import getDialog
-from .unotool import getDocument
-from .unotool import getFileSequence
-from .unotool import getPropertyValueSet
-from .unotool import getResourceLocation
-from .unotool import getSimpleFile
-from .unotool import getStringResource
 
-from .configuration import g_extension
 from .configuration import g_identifier
 
 from .options import OptionsManager
-
-from .logger import getLogger
-

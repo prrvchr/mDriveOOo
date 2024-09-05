@@ -27,8 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
-
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
@@ -47,21 +45,20 @@ from ..configuration import g_synclog
 import traceback
 
 
-class OptionsManager(unohelper.Base):
+class OptionsManager():
     def __init__(self, ctx, window, logger):
         self._ctx = ctx
-        self._model = OptionsModel(ctx)
-        exist = self._model.hasData()
-        resumable = self._model.isResumable()
-        data = self._model.getViewData()
-        self._view = OptionsView(window, exist, resumable, data)
-        self._logmanager = LogManager(ctx, window.Peer, 'requirements.txt', g_identifier, g_defaultlog, g_synclog)
         self._logger = logger
+        self._model = OptionsModel(ctx)
+        self._view = OptionsView(window, *self._model.getInitData())
+        self._view.setViewData(*self._model.getViewData(OptionsManager._restart))
+        self._logmanager = LogManager(ctx, window.Peer, 'requirements.txt', g_defaultlog, g_synclog)
         self._logger.logprb(INFO, 'OptionsManager', '__init__()', 151)
 
+    _restart = False
+
     def loadSetting(self):
-        data = self._model.getViewData()
-        self._view.setViewData(*data)
+        self._view.setViewData(*self._model.getViewData(OptionsManager._restart))
         self._logmanager.loadSetting()
         self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 161)
 
@@ -69,6 +66,9 @@ class OptionsManager(unohelper.Base):
         share, name, index, timeout, download, upload = self._view.getViewData()
         option = self._model.setViewData(share, name, index, timeout, download, upload)
         log = self._logmanager.saveSetting()
+        if log:
+            OptionsManager._restart = True
+            self._view.setRestart(True)
         self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 171, option, log)
 
     def enableShare(self, enabled):

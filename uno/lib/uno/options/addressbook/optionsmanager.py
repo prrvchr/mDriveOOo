@@ -27,8 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
-
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
@@ -43,25 +41,24 @@ from ..configuration import g_identifier
 from ..configuration import g_defaultlog
 from ..configuration import g_synclog
 
-from collections import OrderedDict
-import os
-import sys
 import traceback
 
 
-class OptionsManager(unohelper.Base):
+class OptionsManager():
     def __init__(self, ctx, window, logger):
         self._ctx = ctx
-        self._model = OptionsModel(ctx)
-        timeout, view, enabled = self._model.getViewData()
-        self._view = OptionsView(window, timeout, view, enabled)
-        self._logmanager = LogManager(self._ctx, window.Peer, 'requirements.txt', g_identifier, g_defaultlog, g_synclog)
         self._logger = logger
+        self._model = OptionsModel(ctx)
+        self._view = OptionsView(window, OptionsManager._restart, *self._model.getViewData())
+        self._logmanager = LogManager(self._ctx, window.Peer, 'requirements.txt', g_defaultlog, g_synclog)
         self._logger.logprb(INFO, 'OptionsManager', '__init__()', 201)
+
+    _restart = False
 
     def loadSetting(self):
         self._view.setTimeout(self._model.getTimeout())
         self._view.setViewName(self._model.getViewName())
+        self._view.setRestart(OptionsManager._restart)
         self._logmanager.loadSetting()
         self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 211)
 
@@ -69,6 +66,9 @@ class OptionsManager(unohelper.Base):
         timeout, view = self._view.getViewData()
         option = self._model.setViewData(timeout, view)
         log = self._logmanager.saveSetting()
+        if log:
+            OptionsManager._restart = True
+            self._view.setRestart(True)
         self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 221, option, log)
 
     def viewData(self):

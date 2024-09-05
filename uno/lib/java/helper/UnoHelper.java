@@ -401,7 +401,7 @@ public class UnoHelper
         return exception;
     }
 
-    private static SQLException getUnoSQLException(String msg)
+    public static SQLException getUnoSQLException(String msg)
     {
         return msg != null ? new SQLException(msg) : new SQLException();
     }

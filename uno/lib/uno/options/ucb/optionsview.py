@@ -27,15 +27,12 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
-
 import traceback
 
 
-class OptionsView(unohelper.Base):
-    def __init__(self, window, exist, resumable, data):
+class OptionsView():
+    def __init__(self, window, exist, resumable):
         self._window = window
-        self.setViewData(*data)
         if exist:
             self._disableShare()
         self._getDatasource().Model.Enabled = exist
@@ -55,7 +52,7 @@ class OptionsView(unohelper.Base):
     def setStep(self, step):
         self._window.Model.Step = step
 
-    def setViewData(self, support, share, name, index, timeout, download, upload):
+    def setViewData(self, support, share, name, index, timeout, download, upload, restart):
         if support:
             self._getShare().State = int(share)
             self._getShareName().Text = name
@@ -70,6 +67,7 @@ class OptionsView(unohelper.Base):
         self._getTimeout().Value = timeout
         self._setSetting(download, 0)
         self._setSetting(upload, 1)
+        self.setRestart(restart)
 
     def enableShare(self, enabled):
         self._getShareName().Model.Enabled = enabled
@@ -77,6 +75,9 @@ class OptionsView(unohelper.Base):
     def enableTimeout(self, enabled):
         self._getTimeoutLabel().Model.Enabled = enabled
         self._getTimeout().Model.Enabled = enabled
+
+    def setRestart(self, enabled):
+        self._getRestart().setVisible(enabled)
 
 # OptionsView private getter methods
     def _getOptionIndex(self):
@@ -131,4 +132,7 @@ class OptionsView(unohelper.Base):
 
     def _getRetry(self, index):
         return self._window.getControl('NumericField%s' % index)
+
+    def _getRestart(self):
+        return self._window.getControl('Label8')
 

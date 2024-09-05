@@ -17,27 +17,24 @@ from functools import partial, reduce
 from inspect import cleandoc
 from itertools import chain
 from types import MappingProxyType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Mapping,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Union
+
 from .._path import StrPath
 from ..errors import RemovedConfigError
 from ..warnings import SetuptoolsWarning
 
 if TYPE_CHECKING:
-    from distutils.dist import _OptionsList
+    from typing_extensions import TypeAlias
+
     from setuptools._importlib import metadata
     from setuptools.dist import Distribution
 
+    from distutils.dist import _OptionsList
+
 EMPTY: Mapping = MappingProxyType({})  # Immutable dict-like
-_ProjectReadmeValue = Union[str, Dict[str, str]]
-_CorrespFn = Callable[["Distribution", Any, StrPath], None]
-_Correspondence = Union[str, _CorrespFn]
+_ProjectReadmeValue: TypeAlias = Union[str, Dict[str, str]]
+_CorrespFn: TypeAlias = Callable[["Distribution", Any, StrPath], None]
+_Correspondence: TypeAlias = Union[str, _CorrespFn]
 
 _logger = logging.getLogger(__name__)
 
@@ -261,8 +258,9 @@ def _copy_command_options(pyproject: dict, dist: Distribution, filename: StrPath
 
 
 def _valid_command_options(cmdclass: Mapping = EMPTY) -> dict[str, set[str]]:
-    from .._importlib import metadata
     from setuptools.dist import Distribution
+
+    from .._importlib import metadata
 
     valid_options = {"global": _normalise_cmd_options(Distribution.global_options)}
 
@@ -278,6 +276,11 @@ def _valid_command_options(cmdclass: Mapping = EMPTY) -> dict[str, set[str]]:
 
 
 def _load_ep(ep: metadata.EntryPoint) -> tuple[str, type] | None:
+    if ep.value.startswith("wheel.bdist_wheel"):
+        # Ignore deprecated entrypoint from wheel and avoid warning pypa/wheel#631
+        # TODO: remove check when `bdist_wheel` has been fully removed from pypa/wheel
+        return None
+
     # Ignore all the errors
     try:
         return (ep.name, ep.load())

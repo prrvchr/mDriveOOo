@@ -37,5 +37,5 @@ from .loggerpool import LoggerPool
 from .loghandler import RollerHandler
 
 from .loghelper import getLogger
-from .loghelper import LogController
 
+from .logcontroller import LogController

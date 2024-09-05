@@ -33,7 +33,7 @@ from com.sun.star.view.SelectionType import MULTI
 
 from ..unotool import getContainerWindow
 
-from ..configuration import g_extension
+from ..configuration import g_identifier
 
 
 class GridView(unohelper.Base):
@@ -41,7 +41,7 @@ class GridView(unohelper.Base):
         self._name = 'GridControl1'
         self._gap = 20
         self._margin = 10
-        self._window = getContainerWindow(ctx, window.getPeer(), handler, g_extension, 'GridWindow')
+        self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'GridWindow')
         self._setWindowSize(window.Model, step)
         self._createGrid(model, selection)
         self._window.setVisible(True)

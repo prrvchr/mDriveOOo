@@ -46,5 +46,6 @@
     <dlg:button dlg:id="CommandButton1" dlg:tab-index="22" dlg:disabled="true" dlg:left="100" dlg:top="180" dlg:width="100" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton1.HelpText" dlg:value="&amp;OptionsDialog.CommandButton1.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ViewData" script:language="UNO"/>
     </dlg:button>
+    <dlg:text dlg:style-id="0" dlg:id="Label8" dlg:tab-index="23" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label8.HelpText" dlg:value="&amp;OptionsDialog.Label8.Label" dlg:align="center" dlg:valign="center"/>
   </dlg:bulletinboard>
 </dlg:window>

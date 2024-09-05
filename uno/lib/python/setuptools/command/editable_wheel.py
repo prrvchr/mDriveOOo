@@ -12,8 +12,8 @@ Create a wheel that, when installed, will make the source package 'editable'
 
 from __future__ import annotations
 
-import logging
 import io
+import logging
 import os
 import shutil
 import traceback
@@ -23,32 +23,14 @@ from inspect import cleandoc
 from itertools import chain, starmap
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import (
-    TYPE_CHECKING,
-    Iterable,
-    Iterator,
-    Mapping,
-    Protocol,
-    TypeVar,
-    cast,
-)
+from typing import TYPE_CHECKING, Iterable, Iterator, Mapping, Protocol, TypeVar, cast
 
-from .. import (
-    Command,
-    _normalization,
-    _path,
-    errors,
-    namespaces,
-)
+from .. import Command, _normalization, _path, errors, namespaces
 from .._path import StrPath
 from ..compat import py39
 from ..discovery import find_package_path
 from ..dist import Distribution
-from ..warnings import (
-    InformationOnly,
-    SetuptoolsDeprecationWarning,
-    SetuptoolsWarning,
-)
+from ..warnings import InformationOnly, SetuptoolsDeprecationWarning, SetuptoolsWarning
 from .build import build as build_cls
 from .build_py import build_py as build_py_cls
 from .dist_info import dist_info as dist_info_cls
@@ -153,6 +135,7 @@ class editable_wheel(Command):
             self._create_wheel_file(bdist_wheel)
         except Exception:
             traceback.print_exc()
+            # TODO: Fix false-positive [attr-defined] in typeshed
             project = self.distribution.name or self.distribution.get_name()
             _DebuggingTips.emit(project=project)
             raise
@@ -466,8 +449,9 @@ class _LinkTree(_StaticPth):
     def _create_links(self, outputs, output_mapping):
         self.auxiliary_dir.mkdir(parents=True, exist_ok=True)
         link_type = "sym" if _can_symlink_files(self.auxiliary_dir) else "hard"
-        mappings = {self._normalize_output(k): v for k, v in output_mapping.items()}
-        mappings.pop(None, None)  # remove files that are not relative to build_lib
+        normalised = ((self._normalize_output(k), v) for k, v in output_mapping.items())
+        # remove files that are not relative to build_lib
+        mappings = {k: v for k, v in normalised if k is not None}
 
         for output in outputs:
             relative = self._normalize_output(output)

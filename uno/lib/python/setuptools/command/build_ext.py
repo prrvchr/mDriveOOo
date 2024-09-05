@@ -1,30 +1,32 @@
 from __future__ import annotations
 
+import itertools
 import os
 import sys
-import itertools
 from importlib.machinery import EXTENSION_SUFFIXES
 from importlib.util import cache_from_source as _compiled_file_name
-from typing import Iterator
 from pathlib import Path
+from typing import Iterator
 
-from distutils.command.build_ext import build_ext as _du_build_ext
-from distutils.ccompiler import new_compiler
-from distutils.sysconfig import customize_compiler, get_config_var
-from distutils import log
-
+from setuptools.dist import Distribution
 from setuptools.errors import BaseError
 from setuptools.extension import Extension, Library
 
+from distutils import log
+from distutils.ccompiler import new_compiler
+from distutils.sysconfig import customize_compiler, get_config_var
+
 try:
     # Attempt to use Cython for building extensions, if available
-    from Cython.Distutils.build_ext import build_ext as _build_ext  # type: ignore[import-not-found] # Cython not installed on CI tests
+    from Cython.Distutils.build_ext import (  # type: ignore[import-not-found] # Cython not installed on CI tests
+        build_ext as _build_ext,
+    )
 
     # Additionally, assert that the compiler module will load
     # also. Ref #1229.
     __import__('Cython.Compiler.Main')
 except ImportError:
-    _build_ext = _du_build_ext
+    from distutils.command.build_ext import build_ext as _build_ext
 
 # make sure _config_vars is initialized
 get_config_var("LDSHARED")
@@ -84,6 +86,7 @@ def get_abi3_suffix():
 
 
 class build_ext(_build_ext):
+    distribution: Distribution  # override distutils.dist.Distribution with setuptools.dist.Distribution
     editable_mode: bool = False
     inplace: bool = False
 

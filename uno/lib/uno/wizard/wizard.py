@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -66,24 +66,19 @@ class Wizard(unohelper.Base,
              XWizard,
              XInitialization):
     def __init__(self, ctx, auto=-1, resize=False, parent=None):
-        try:
-            self._ctx = ctx
-            self._helpUrl = ''
-            self._auto = auto
-            self._resize = resize
-            self._paths = ()
-            self._currentPath = -1
-            self._multiPaths = False
-            self._controller = None
-            self._model = WizardModel(ctx)
-            title = self._model.getRoadmapTitle()
-            self._view = WizardView(ctx, DialogHandler(self), ItemListener(self), parent, title)
-            roadmap = self._view.getRoadmapModel()
-            self._model.setRoadmapModel(roadmap)
-            print("Wizard.__init__()")
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+        self._ctx = ctx
+        self._helpUrl = ''
+        self._auto = auto
+        self._resize = resize
+        self._paths = ()
+        self._currentPath = -1
+        self._multiPaths = False
+        self._controller = None
+        self._model = WizardModel(ctx)
+        title = self._model.getRoadmapTitle()
+        self._view = WizardView(ctx, DialogHandler(self), ItemListener(self), parent, title)
+        roadmap = self._view.getRoadmapModel()
+        self._model.setRoadmapModel(roadmap)
 
 # XWizard
     # XWizard Attributes

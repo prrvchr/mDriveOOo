@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -39,7 +39,7 @@ from com.sun.star.ui.dialogs.WizardButton import HELP
 from ..unotool import createWindow
 from ..unotool import getDialog
 
-from ..configuration import g_extension
+from ..configuration import g_identifier
 
 import traceback
 
@@ -48,8 +48,8 @@ class WizardView(unohelper.Base):
     def __init__(self, ctx, handler, listener, parent, title, modal=True):
         self._name = 'Roadmap1'
         #if not modal and parent is None:
-        #    parent = createWindow(ctx, g_extension, 'Wizard', title).getPeer()
-        self._dialog = getDialog(ctx, g_extension, 'Wizard', handler, parent)
+        #    parent = createWindow(ctx, g_identifier, 'Wizard', title).getPeer()
+        self._dialog = getDialog(ctx, g_identifier, 'Wizard', handler, parent)
         rectangle = uno.createUnoStruct('com.sun.star.awt.Rectangle', 0, 0, 85, 180)
         roadmap = self._getRoadmap(title, rectangle, 0)
         roadmap.addItemListener(listener)

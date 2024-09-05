@@ -47,25 +47,22 @@ class WindowHandler(unohelper.Base,
         try:
             handled = False
             if method == 'SetLogger':
-                logger = event.Source.getSelectedItem()
-                self._manager.setLogger(logger)
+                self._manager.setLogger(event.Source.getSelectedItem())
                 handled = True
             elif method == 'EnableLogger':
-                enabled = event.Source.State == 1
-                self._manager.enableLogger(enabled)
+                self._manager.enableLogger(bool(event.Source.State))
                 handled = True
             elif method == 'ConsoleHandler':
-                self._manager.toggleHandler(False)
+                self._manager.toggleHandler(1)
                 handled = True
             elif method == 'FileHandler':
-                self._manager.toggleHandler(True)
+                self._manager.toggleHandler(2)
                 handled = True
             elif method == 'ViewLog':
                 self._manager.viewLog()
                 handled = True
             elif method == 'SetLevel':
-                if self._manager.isHandlerEnabled():
-                    self._manager.setLevel()
+                self._manager.setLevel(event.Source.getSelectedItemPos())
                 handled = True
             return handled
         except Exception as e:

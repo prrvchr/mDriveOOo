@@ -14,5 +14,6 @@
     </dlg:button>
     <dlg:text dlg:id="Label3" dlg:tab-index="5" dlg:left="10" dlg:top="120" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label3.HelpText" dlg:value="&amp;OptionsDialog.Label3.Label" dlg:valign="center"/>
     <dlg:textfield dlg:id="TextField1" dlg:tab-index="6" dlg:left="100" dlg:top="120" dlg:width="100" dlg:height="15" dlg:help-text="&amp;OptionsDialog.TextField1.HelpText" dlg:value="&amp;OptionsDialog.TextField1.Text"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label4" dlg:tab-index="7" dlg:left="10" dlg:top="145" dlg:width="240" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label4.HelpText" dlg:value="&amp;OptionsDialog.Label4.Label" dlg:align="center" dlg:valign="center"/>
   </dlg:bulletinboard>
 </dlg:window>

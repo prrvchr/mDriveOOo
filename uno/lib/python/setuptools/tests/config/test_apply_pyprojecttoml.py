@@ -15,19 +15,16 @@ from unittest.mock import Mock
 
 import pytest
 from ini2toml.api import LiteTranslator
-
 from packaging.metadata import Metadata
 
 import setuptools  # noqa ensure monkey patch to metadata
-from setuptools.dist import Distribution
-from setuptools.config import setupcfg, pyprojecttoml
-from setuptools.config import expand
-from setuptools.config._apply_pyprojecttoml import _MissingDynamic, _some_attrgetter
 from setuptools.command.egg_info import write_requirements
+from setuptools.config import expand, pyprojecttoml, setupcfg
+from setuptools.config._apply_pyprojecttoml import _MissingDynamic, _some_attrgetter
+from setuptools.dist import Distribution
 from setuptools.errors import RemovedConfigError
 
 from .downloads import retrieve_file, urls_from_file
-
 
 HERE = Path(__file__).parent
 EXAMPLES_FILE = "setupcfg_examples.txt"
@@ -298,6 +295,33 @@ class TestLicenseFiles:
         dist = pyprojecttoml.apply_configuration(makedist(tmp_path), pyproject)
         assert (tmp_path / "LICENSE.txt").exists()  # from base example
         assert set(dist.metadata.license_files) == {*license_files, "LICENSE.txt"}
+
+
+class TestPyModules:
+    # https://github.com/pypa/setuptools/issues/4316
+
+    def dist(self, name):
+        toml_config = f"""
+        [project]
+        name = "test"
+        version = "42.0"
+        [tool.setuptools]
+        py-modules = [{name!r}]
+        """
+        pyproject = Path("pyproject.toml")
+        pyproject.write_text(cleandoc(toml_config), encoding="utf-8")
+        return pyprojecttoml.apply_configuration(Distribution({}), pyproject)
+
+    @pytest.mark.parametrize("module", ["pip-run", "abc-d.λ-xyz-e"])
+    def test_valid_module_name(self, tmp_path, monkeypatch, module):
+        monkeypatch.chdir(tmp_path)
+        assert module in self.dist(module).py_modules
+
+    @pytest.mark.parametrize("module", ["pip run", "-pip-run", "pip-run-stubs"])
+    def test_invalid_module_name(self, tmp_path, monkeypatch, module):
+        monkeypatch.chdir(tmp_path)
+        with pytest.raises(ValueError, match="py-modules"):
+            self.dist(module).py_modules
 
 
 class TestDeprecatedFields:

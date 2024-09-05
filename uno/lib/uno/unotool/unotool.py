@@ -258,10 +258,10 @@ def getStringResourceWithLocation(ctx, url, filename, locale=None):
 def generateUuid():
     return binascii.hexlify(uno.generateUuid().value).decode('utf-8')
 
-def getDialog(ctx, library, xdl, handler=None, window=None):
+def getDialog(ctx, identifier, xdl, handler=None, window=None):
     dialog = None
     provider = createService(ctx, 'com.sun.star.awt.DialogProvider2')
-    url = getDialogUrl(library, xdl)
+    url = getDialogUrl(identifier, xdl)
     if handler is None and window is None:
         dialog = provider.createDialog(url)
         toolkit = createService(ctx, 'com.sun.star.awt.Toolkit')
@@ -275,16 +275,11 @@ def getDialog(ctx, library, xdl, handler=None, window=None):
         dialog = provider.createDialogWithArguments(url, args)
     return dialog
 
-def getContainerWindow(ctx, parent, handler, library, xdl):
-    window = None
+def getContainerWindow(ctx, parent, handler, identifier, xdl):
     service = 'com.sun.star.awt.ContainerWindowProvider'
     provider = createService(ctx, service)
-    url = getDialogUrl(library, xdl)
-    try:
-        window = provider.createContainerWindow(url, '', parent, handler)
-    except WrappedTargetRuntimeException as e:
-        print("unotool.getContainerWindow() ERROR: %s - %s" % (e, traceback.format_exc()))
-    return window
+    url = getDialogUrl(identifier, xdl)
+    return provider.createContainerWindow(url, '', parent, handler)
 
 def getFileUrl(ctx, title, path, filters=(), multi=False):
     url = None
@@ -310,8 +305,8 @@ def getFileUrl(ctx, title, path, filters=(), multi=False):
     filepicker.dispose()
     return url, path
 
-def getDialogUrl(library, xdl):
-    return 'vnd.sun.star.script:%s.%s?location=application' % (library, xdl)
+def getDialogUrl(identifier, xdl):
+    return 'vnd.sun.star.extension://%s/dialogs/%s.xdl' % (identifier, xdl)
 
 def executeShell(ctx, url, option=''):
     shell = createService(ctx, 'com.sun.star.system.SystemShellExecute')
@@ -323,10 +318,8 @@ def executeFrameDispatch(ctx, frame, url, arguments=(), listener=None):
     if dispatcher is not None:
         if listener is not None:
             dispatcher.dispatchWithNotification(url, arguments, listener)
-            print("unotool.executeFrameDispatch() dispatchWithNotification")
         else:
             dispatcher.dispatch(url, arguments)
-            print("unotool.executeFrameDispatch() dispatch")
 
 def executeDispatch(ctx, url, arguments=(), listener=None):
     frame = getDesktop(ctx).getCurrentFrame()

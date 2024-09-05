@@ -21,12 +21,12 @@ from .._path import StrPath
 from ..errors import FileError, InvalidConfigError
 from ..warnings import SetuptoolsWarning
 from . import expand as _expand
-from ._apply_pyprojecttoml import _PREVIOUSLY_DEFINED, _MissingDynamic
-from ._apply_pyprojecttoml import apply as _apply
+from ._apply_pyprojecttoml import _PREVIOUSLY_DEFINED, _MissingDynamic, apply as _apply
 
 if TYPE_CHECKING:
-    from setuptools.dist import Distribution
     from typing_extensions import Self
+
+    from setuptools.dist import Distribution
 
 _logger = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ def read_configuration(
     # the default would be an improvement.
     # `ini2toml` backfills include_package_data=False when nothing is explicitly given,
     # therefore setting a default here is backwards compatible.
-    if dist and getattr(dist, "include_package_data", None) is not None:
+    if dist and dist.include_package_data is not None:
         setuptools_table.setdefault("include-package-data", dist.include_package_data)
     else:
         setuptools_table.setdefault("include-package-data", True)

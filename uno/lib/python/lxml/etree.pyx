@@ -16,9 +16,11 @@ __all__ = [
     'ElementBase', 'ElementClassLookup', 'ElementDefaultClassLookup',
     'ElementNamespaceClassLookup', 'ElementTree', 'Entity', 'EntityBase',
     'Error', 'ErrorDomains', 'ErrorLevels', 'ErrorTypes', 'Extension',
-    'FallbackElementClassLookup', 'FunctionNamespace', 'HTML',
-    'HTMLParser', 'LIBXML_COMPILED_VERSION', 'LIBXML_VERSION',
-    'LIBXSLT_COMPILED_VERSION', 'LIBXSLT_VERSION', 'LXML_VERSION',
+    'FallbackElementClassLookup', 'FunctionNamespace', 'HTML', 'HTMLParser',
+    'ICONV_COMPILED_VERSION',
+    'LIBXML_COMPILED_VERSION', 'LIBXML_VERSION',
+    'LIBXSLT_COMPILED_VERSION', 'LIBXSLT_VERSION',
+    'LXML_VERSION',
     'LxmlError', 'LxmlRegistryError', 'LxmlSyntaxError',
     'NamespaceRegistryError', 'PI', 'PIBase', 'ParseError',
     'ParserBasedElementClassLookup', 'ParserError', 'ProcessingInstruction',
@@ -3164,10 +3166,7 @@ cdef class CDATA:
     """
     cdef bytes _utf8_data
     def __cinit__(self, data):
-        _utf8_data = _utf8(data)
-        if b']]>' in _utf8_data:
-            raise ValueError, "']]>' not allowed inside CDATA"
-        self._utf8_data = _utf8_data
+        self._utf8_data = _utf8(data)
 
 
 def Entity(name):
