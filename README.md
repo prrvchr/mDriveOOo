@@ -252,7 +252,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 ### What has been done for version 1.1.4:
 
 - Updated the [Python setuptools][57] package to version 73.0.1.
-- The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.3.7 and 1.4.4 respectively minimum.
+- The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.3.7 and 1.4.5 respectively minimum.
 - Changes to extension options that require a restart of LibreOffice will result in a message being displayed.
 - Support for LibreOffice version 24.8.x.
 

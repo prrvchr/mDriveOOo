@@ -252,7 +252,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 ### Ce qui a été fait pour la version 1.1.4:
 
 - Mise à jour du paquet [Python setuptools][57] vers la version 73.0.1.
-- L'extension vous demandera d'installer les extensions OAuth2OOo et jdbcDriverOOo en version respectivement 1.3.7 et 1.4.4 minimum.
+- L'extension vous demandera d'installer les extensions OAuth2OOo et jdbcDriverOOo en version respectivement 1.3.7 et 1.4.5 minimum.
 - Les modifications apportées aux options de l'extension, qui nécessitent un redémarrage de LibreOffice, entraîneront l'affichage d'un message.
 - Support de LibreOffice version 24.8.x.
 
