@@ -29,7 +29,7 @@
 
 **The use of this software subjects you to our [Terms Of Use][4] and [Data Protection Policy][5].**
 
-# version [1.1.3][6]
+# version [1.1.4][6]
 
 ## Introduction:
 
@@ -118,6 +118,8 @@ ___
 * LibreOffice 7.5.4.2(x86) - Windows 10 - Python version 3.8.16 (under Lubuntu 22.04 / VirtualBox 6.1.38)
 
 * LibreOffice 7.4.3.2(x64) - Windows 10(x64) - Python version 3.8.15 (under Lubuntu 22.04 / VirtualBox 6.1.38)
+
+* LibreOffice 24.8.0.3 (x86_64) - Windows 10(x64) - Python version 3.9.19 (under Lubuntu 22.04 / VirtualBox 6.1.38)
 
 * **Does not work with OpenOffice** see [bug 128569][28]. Having no solution, I encourage you to install **LibreOffice**.
 
@@ -247,7 +249,14 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 - Updated the [Python setuptools][57] package to version 72.1.0 in order to respond to the [Dependabot security alert][58].
 - The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.3.6 and 1.4.2 respectively minimum.
 
-### What remains to be done for version 1.1.3:
+### What has been done for version 1.1.4:
+
+- Updated the [Python setuptools][57] package to version 73.0.1.
+- The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.3.7 and 1.4.4 respectively minimum.
+- Changes to extension options that require a restart of LibreOffice will result in a message being displayed.
+- Support for LibreOffice version 24.8.x.
+
+### What remains to be done for version 1.1.4:
 
 - Add new language for internationalization...
 
@@ -258,7 +267,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [3]: <https://prrvchr.github.io/mDriveOOo/README_fr>
 [4]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_en>
 [5]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_en>
-[6]: <https://prrvchr.github.io/mDriveOOo#what-has-been-done-for-version-113>
+[6]: <https://prrvchr.github.io/mDriveOOo#what-has-been-done-for-version-114>
 [7]: <https://prrvchr.github.io/>
 [8]: <https://www.libreoffice.org/download/download/>
 [9]: <https://www.openoffice.org/download/index.html>
@@ -279,7 +288,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [24]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
 [25]: <img/mDriveOOo.svg#middle>
 [26]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.1.3#right>
+[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.1.4#right>
 [28]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
 [29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [30]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>

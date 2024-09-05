@@ -8,7 +8,7 @@ Regarding installation, configuration and use, please consult the **[documentati
 
 ## Introduction:
 
-the privacy of our mDriveOOo software users is very important to us, and we are commited to safeguarding it.
+The privacy of our mDriveOOo software users is very important to us, and we are commited to safeguarding it.
 
 This policy explains what we do with your personal information.
 

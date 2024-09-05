@@ -48,7 +48,7 @@
             <value xml:lang="fr-FR">mDriveOOo</value>
           </prop>
           <prop oor:name="OptionsPage">
-            <value>%origin%/mDriveOOo/OptionsDialog.xdl</value>
+            <value>%origin%/dialogs/OptionsDialog.xdl</value>
           </prop>
           <prop oor:name="EventHandlerService">
             <value>io.github.prrvchr.mDriveOOo.OptionsHandler</value>
