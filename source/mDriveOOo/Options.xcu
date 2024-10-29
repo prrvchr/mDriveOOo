@@ -51,7 +51,7 @@
   <node oor:name="Settings">
     <node oor:name="Download" oor:op="fuse">
       <prop oor:name="Chunk">
-        <value>327680</value>
+        <value>262144</value>
       </prop>
       <prop oor:name="Delay">
         <value>30</value>
@@ -62,7 +62,7 @@
     </node>
     <node oor:name="Upload" oor:op="fuse">
       <prop oor:name="Chunk">
-        <value>327680</value>
+        <value>262144</value>
       </prop>
       <prop oor:name="Delay">
         <value>30</value>
