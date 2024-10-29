@@ -55,7 +55,6 @@ class OptionsHandler(unohelper.Base,
     def __init__(self, ctx):
         self._ctx = ctx
         self._manager = None
-        self._logger = getLogger(ctx, g_defaultlog)
 
     # XContainerWindowEventHandler
     def callHandlerMethod(self, window, event, method):
@@ -63,7 +62,7 @@ class OptionsHandler(unohelper.Base,
             handled = False
             if method == 'external_event':
                 if event == 'initialize':
-                    self._manager = OptionsManager(self._ctx, window, self._logger)
+                    self._manager = OptionsManager(self._ctx, window)
                     handled = True
                 elif event == 'ok':
                     self._manager.saveSetting()
@@ -89,9 +88,22 @@ class OptionsHandler(unohelper.Base,
             elif method == 'Upload':
                 self._manager.upload()
                 handled = True
+            elif method == 'SpinUp1':
+                self._manager.spinUp(0)
+                handled = True
+            elif method == 'SpinDown1':
+                self._manager.spinDown(0)
+                handled = True
+            elif method == 'SpinUp2':
+                self._manager.spinUp(1)
+                handled = True
+            elif method == 'SpinDown2':
+                self._manager.spinDown(1)
+                handled = True
             return handled
         except Exception as e:
-            self._logger.logprb(SEVERE, 'OptionsHandler', 'callHandlerMethod()', 141, e, traceback.format_exc())
+            print("OptionsHandler.callHandlerMethod() Error: %s - %s" % (e, traceback.format_exc()))
+            getLogger(ctx, g_defaultlog).logprb(SEVERE, 'OptionsHandler', 'callHandlerMethod()', 141, e, traceback.format_exc())
 
     def getSupportedMethodNames(self):
         return ('external_event',
@@ -100,7 +112,11 @@ class OptionsHandler(unohelper.Base,
                 'DisableSync',
                 'ViewData',
                 'Download',
-                'Upload')
+                'Upload',
+                'SpinUp1',
+                'SpinDown1',
+                'SpinUp2',
+                'SpinDown2')
 
     # XServiceInfo
     def supportsService(self, service):
