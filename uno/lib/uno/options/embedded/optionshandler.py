@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -27,19 +27,22 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .options import OptionsManager
+import unohelper
 
-from .logger import getLogger
+from com.sun.star.lang import XEventListener
 
-from .drvtool import getDataSource
+import traceback
 
-from .cardtool import getLogException
 
-from .dbtool import getDriverPropertyInfos
+class OptionsListener(unohelper.Base,
+                      XEventListener):
+    def __init__(self, manager):
+        self._manager = manager
 
-from .configuration import g_defaultlog
-from .configuration import g_host
-from .configuration import g_identifier
-from .configuration import g_protocol
-from .configuration import g_scheme
+# com.sun.star.lang.XEventListener
+    def disposing(self, source):
+        try:
+            self._manager.dispose()
+        except Exception as e:
+            print("ERROR: %s - %s" % (e, traceback.format_exc()))
 

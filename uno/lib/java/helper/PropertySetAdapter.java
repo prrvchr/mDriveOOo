@@ -45,10 +45,13 @@
 */
 package io.github.prrvchr.uno.helper;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -84,11 +87,11 @@ public class PropertySetAdapter
 
     private final Object lock;
     private final Object eventSource;
-    // after registerListeners(), these are read-only:
+    // XXX: After registerListeners(), these are read-only:
     private final Map<String, PropertyData> propertiesByName = new HashMap<String, PropertyData>();
     private final Map<Integer, PropertyData> propertiesByHandle = new HashMap<Integer, PropertyData>();
     private AtomicInteger nextHandle = new AtomicInteger(1);
-    // interface containers are locked internally:
+    // XXX: Interface containers are locked internally:
     protected final MultiTypeInterfaceContainer boundListeners = new MultiTypeInterfaceContainer();
     protected final MultiTypeInterfaceContainer vetoableListeners = new MultiTypeInterfaceContainer();
     protected final InterfaceContainer propertiesChangeListeners = new InterfaceContainer();
@@ -175,15 +178,27 @@ public class PropertySetAdapter
 
     public void dispose()
     {
-        // Create an event with this as sender
+        // XXX: Create an event with this as sender
         EventObject event = new EventObject(eventSource);
         
-        // inform all listeners to release this object
+        // XXX: Inform all listeners to release this object
         boundListeners.disposeAndClear(event);
         vetoableListeners.disposeAndClear(event);
     }
 
-    public void registerProperty(String name,
+    public void registerProperties(Map<String, PropertyWrapper> properties)
+    {
+        List<String> names = new ArrayList<String>(properties.keySet());
+        Collections.sort(names);
+        for (String name: names) {
+            PropertyWrapper property = properties.get(name);
+            // XXX: registerProperty() should only be called from one thread, but just in case:
+            int handle = nextHandle.getAndIncrement();
+            registerProperty(name, handle, property.getType(), property.getAttribute(), property.getGetter(), property.getSetter());
+        }
+    }
+
+    private void registerProperty(String name,
                                  int handle,
                                  Type type,
                                  short attributes,
@@ -196,18 +211,6 @@ public class PropertySetAdapter
         propertiesByHandle.put(property.Handle, data);
     }
 
-    public void registerProperty(String name,
-                                 Type type,
-                                 short attributes,
-                                 PropertyGetter getter,
-                                 PropertySetter setter)
-    {
-        int handle;
-        // registerProperty() should only be called from one thread, but just in case:
-        handle = nextHandle.getAndIncrement();
-        registerProperty(name, handle, type, attributes, getter, setter);
-    }
-
     @Override
     public void addPropertyChangeListener(String name,
                                           XPropertyChangeListener listener)
@@ -217,7 +220,7 @@ public class PropertySetAdapter
         PropertyData data = getPropertyData(name);
         if ((data.property.Attributes & PropertyAttribute.BOUND) != 0) {
             boundListeners.addInterface(name, listener);
-        } // else ignore silently
+        } // XXX: else ignore silently
     }
 
     @Override
@@ -275,8 +278,8 @@ public class PropertySetAdapter
             value = data.getter.getValue();
         }
         
-        // null must not be returned. Either a void any is returned or an any containing
-        // an interface type and a null reference.
+        // XXX: null must not be returned. Either a void any is returned
+        // XXX: or an any containing an interface type and a null reference.
         if (value == null) {
             if (data.property.Type.getTypeClass() == TypeClass.INTERFACE) {
                 value = new Any(data.property.Type, null);
@@ -330,7 +333,7 @@ public class PropertySetAdapter
         throws UnknownPropertyException,
                WrappedTargetException
     {
-        // check existence:
+        // XXX: Check existence:
         getPropertyData(name);
         boundListeners.removeInterface(name, listener);
     }
@@ -341,7 +344,7 @@ public class PropertySetAdapter
         throws UnknownPropertyException,
                WrappedTargetException
     {
-        // check existence:
+        // XXX: Check existence:
         getPropertyData(name);
         vetoableListeners.removeInterface(name, listener);
     }
@@ -386,7 +389,7 @@ public class PropertySetAdapter
         if ((data.property.Attributes & PropertyAttribute.READONLY) != 0) {
             throw new PropertyVetoException();
         }
-        // The value may be null only if MAYBEVOID attribute is set         
+        // XXX: The value may be null only if MAYBEVOID attribute is set         
         boolean isvoid = false;
         if (value instanceof Any) {
             isvoid = ((Any) value).getObject() == null;
@@ -399,7 +402,7 @@ public class PropertySetAdapter
             throw new IllegalArgumentException("The property must have a value; the MAYBEVOID attribute is not set!");
         }
 
-        // Check if the argument is allowed
+        // XXX: Check if the argument is allowed
         boolean isValueOk = false;
         if (value instanceof Any) {
             isValueOk = checkType(((Any) value).getObject());

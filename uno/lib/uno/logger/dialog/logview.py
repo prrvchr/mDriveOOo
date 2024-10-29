@@ -36,8 +36,8 @@ from ...configuration import g_identifier
 
 
 class LogWindow():
-    def __init__(self, ctx, parent, handler):
-        self._window = getContainerWindow(ctx, parent, handler, g_identifier, 'LogWindow')
+    def __init__(self, ctx, window, handler):
+        self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'LogWindow')
         self._window.setVisible(True)
 
 # LogWindow getter methods
@@ -51,6 +51,9 @@ class LogWindow():
         return self._getLevel().getSelectedItemPos()
 
 # LogWindow setter methods
+    def dispose(self):
+        self._window.dispose()
+
     def initView(self, loggers):
         control = self._getLoggers()
         control.Model.StringItemList = loggers

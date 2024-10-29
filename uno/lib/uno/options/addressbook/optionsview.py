@@ -32,13 +32,14 @@ import unohelper
 import traceback
 
 
-class OptionsView(unohelper.Base):
-    def __init__(self, window, restart, timeout, view, enabled):
+class OptionsView():
+    def __init__(self, window, restart, offset, timeout, view, enabled):
         self._window = window
         self._getTimeout().Value = timeout
         self._getDatasource().Model.Enabled = enabled
         self._setViewName(view, not enabled)
         self.setRestart(restart)
+        self._getRestart().Model.PositionY += offset
 
 # OptionsView getter methods
     def getViewData(self):

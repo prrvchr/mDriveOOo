@@ -122,12 +122,14 @@ class Provider(object):
     def parseCard(self, database):
         raise NotImplementedError
 
-    def raiseForStatus(self, source, response, mtd, code, parameter, user):
+    def raiseForStatus(self, source, cls, mtd, response, user):
+        name = response.Parameter.Name
+        url = response.Parameter.Url
         status = response.StatusCode
         msg = response.Text
         response.close()
-        raise getSqlException(self._ctx, source, code, 1601, 'Provider', mtd,
-                              parameter.Name, status, user, parameter.Url, msg)
+        raise getSqlException(self._ctx, source, 1006, 1601, cls, mtd,
+                              name, status, user, url, msg)
 
     def getLoggerArgs(self, response, mtd, parameter, user):
         status = response.StatusCode

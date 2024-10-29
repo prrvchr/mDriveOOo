@@ -27,46 +27,73 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from ..unotool import getContainerWindow
+
+from ..configuration import g_identifier
+
 import traceback
 
 
-class OptionsView():
-    def __init__(self, window, restart):
-        self._window = window
+class OptionWindow():
+    def __init__(self, ctx, window, handler, restart, offset):
+        self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'OptionDialog')
+        self._window.setVisible(True)
         self.setRestart(restart)
+        self._getRestart().Model.PositionY += offset
 
-# OptionsView setter methods
-    def initView(self, driver, connection, enabled, version, system, bookmark, mode):
-        self._getVersion().Text = version
-        self._getDriverService(driver).State = 1
-        self._getConnectionService(connection).State = 1
-        self._getConnectionService(0).Model.Enabled = enabled
-        self._getSytemTable().State = int(system)
-        self._getBookmark().State = int(bookmark)
-        self.enableSQLMode(bookmark)
-        self._getSQLMode().State = int(mode)
+# OptionWindow getter methods
+    def getApiLevel(self):
+        for level in range(3):
+            if self._getApiLevel(level).State == 1:
+                return level
 
-    def setDriverVersion(self, version):
-        self._getVersion().Text = version
+    def getOptions(self):
+        system = self._getSytemTable().State
+        bookmark = self._getBookmark().State
+        mode = self._getSQLMode().State
+        return system, bookmark, mode
 
-    def setDriverLevel(self, level, updated):
+# OptionWindow setter methods
+    def dispose(self):
+        self._window.dispose()
+
+    def setDriverLevel(self, level):
         self._getDriverService(level).State = 1
 
-    def setConnectionLevel(self, level, enabled):
-        self._getConnectionService(level).State = 1
-        self._getConnectionService(0).Model.Enabled = enabled
+    def setApiLevel(self, level, enabled, bookmark, mode):
+        self._getApiLevel(level).State = 1
+        self._getApiLevel(0).Model.Enabled = enabled
+        self.enableOptions(level, bookmark, mode)
+
+    def setSystemTable(self, driver, state):
+        self._getSytemTable().Model.Enabled = bool(driver)
+        if driver:
+            self._getSytemTable().State = int(state)
+        else:
+            self._getSytemTable().State = 0
 
     def setRestart(self, enabled):
         self._getRestart().setVisible(enabled)
 
-    def enableSQLMode(self, state):
-        self._getSQLMode().Model.Enabled = bool(state)
+    def enableOptions(self, level, bookmark, mode):
+        self._getBookmark().Model.Enabled = bool(level)
+        if level:
+            self._getBookmark().State = int(bookmark)
+            self.enableSQLMode(bookmark, mode)
+        else:
+            self._getBookmark().State = 0
+            self._getSQLMode().Model.Enabled = False
+            self._getSQLMode().State = 0
 
-# OptionsView private control methods
+    def enableSQLMode(self, state, mode):
+        self._getSQLMode().Model.Enabled = bool(state)
+        self._getSQLMode().State = int(mode) if state else 0
+
+# OptionWindow private control methods
     def _getDriverService(self, index):
         return self._window.getControl('OptionButton%s' % (index + 1))
 
-    def _getConnectionService(self, index):
+    def _getApiLevel(self, index):
         return self._window.getControl('OptionButton%s' % (index + 3))
 
     def _getSytemTable(self):
@@ -78,9 +105,6 @@ class OptionsView():
     def _getSQLMode(self):
         return self._window.getControl('CheckBox3')
 
-    def _getVersion(self):
-        return self._window.getControl('Label2')
-
     def _getRestart(self):
-        return self._window.getControl('Label5')
+        return self._window.getControl('Label3')
 

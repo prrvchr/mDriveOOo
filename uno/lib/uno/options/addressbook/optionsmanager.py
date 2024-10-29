@@ -45,12 +45,12 @@ import traceback
 
 
 class OptionsManager():
-    def __init__(self, ctx, window, logger):
+    def __init__(self, ctx, window, logger, offset=0):
         self._ctx = ctx
         self._logger = logger
         self._model = OptionsModel(ctx)
-        self._view = OptionsView(window, OptionsManager._restart, *self._model.getViewData())
-        self._logmanager = LogManager(self._ctx, window.Peer, 'requirements.txt', g_defaultlog, g_synclog)
+        self._view = OptionsView(window, OptionsManager._restart, offset, *self._model.getViewData())
+        self._logmanager = LogManager(self._ctx, window, 'requirements.txt', g_defaultlog, g_synclog)
         self._logger.logprb(INFO, 'OptionsManager', '__init__()', 201)
 
     _restart = False

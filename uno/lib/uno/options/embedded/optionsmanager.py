@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -27,19 +27,39 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .options import OptionsManager
+from .optionsmodel import OptionsModel
+from .optionsview import OptionsView
+from .optionshandler import OptionsListener
 
-from .logger import getLogger
+from ..option import OptionManager
 
-from .drvtool import getDataSource
+from ..configuration import g_defaultlog
 
-from .cardtool import getLogException
+import traceback
 
-from .dbtool import getDriverPropertyInfos
 
-from .configuration import g_defaultlog
-from .configuration import g_host
-from .configuration import g_identifier
-from .configuration import g_protocol
-from .configuration import g_scheme
+class OptionsManager():
+    def __init__(self, ctx, window, url=None):
+        self._model = OptionsModel(ctx, url)
+        window.addEventListener(OptionsListener(self))
+        self._view = OptionsView(window)
+        self._manager = OptionManager(ctx, window, 21, g_defaultlog)
+        version = self._model.getDriverVersion(self._service())
+        self._view.setDriverVersion(version)
+
+    def dispose(self):
+        self._manager.dispose()
+
+# OptionsManager setter methods
+    def saveSetting(self):
+        self._manager.saveSetting() 
+
+    def loadSetting(self):
+        self._manager.loadSetting()
+        version = self._model.getDriverVersion(self._service())
+        self._view.setDriverVersion(version)
+
+# OptionsManager private methods
+    def _service(self):
+        return self._manager.getDriverService()
 

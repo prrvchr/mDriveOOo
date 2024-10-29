@@ -61,16 +61,15 @@ import traceback
 
 
 class LogModel():
-    def __init__(self, ctx, listener, names):
+    def __init__(self, ctx, names):
         self._ctx = ctx
-        self._listener = listener
         self._names = names
+        self._listener = None
         self._setting = '/org.openoffice.Office.Logging/Settings'
         self._url = getResourceLocation(ctx, g_identifier, g_resource)
         self._resolver = getStringResourceWithLocation(ctx, self._url, 'Logger')
         self._config = LogConfig(ctx)
         self._pool = LoggerPool(ctx)
-        self._pool.addModifyListener(listener)
         self._logger = self._pool.getLocalizedLogger(getLoggerName(names[0]), self._url, g_basename)
 
 # Public getter method
@@ -99,6 +98,10 @@ class LogModel():
         return self._config.saveSetting()
 
 # Public setter method
+    def addPoolListener(self, listener):
+        self._listener = listener
+        self._pool.addModifyListener(listener)
+
     def dispose(self):
         self._pool.removeModifyListener(self._listener)
 
@@ -119,10 +122,10 @@ class LogModel():
         config.LogLevel = setting.LogLevel
         config.DefaultHandler = setting.DefaultHandler
 
-    def addModifyListener(self, listener):
+    def addLoggerListener(self, listener):
         self._logger.addModifyListener(listener)
 
-    def removeModifyListener(self, listener):
+    def removeLoggerListener(self, listener):
         self._logger.removeModifyListener(listener)
 
     def logInfos(self, level, clazz, method, requirements):

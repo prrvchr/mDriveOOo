@@ -44,21 +44,23 @@ from ..loghelper import getLoggerName
 
 
 class LogManager():
-    def __init__(self, ctx, parent, requirements, *defaults):
+    def __init__(self, ctx, window, requirements, *loggers):
         self._ctx = ctx
         self._requirements = requirements
         self._dialog = None
-        self._model = LogModel(ctx, PoolListener(self), defaults)
-        self._view = LogWindow(ctx, parent, WindowHandler(self))
+        self._model = LogModel(ctx, loggers)
+        self._view = LogWindow(ctx, window, WindowHandler(self))
         # FIXME: If we want to load data using handlers,
         # FIXME: it is necessary to devalidate all resulting updates
         self._update = False
         self._view.initView(self._model.getLoggerNames())
         self._update = True
+        self._model.addPoolListener(PoolListener(self))
 
 # LogManager setter methods
     def dispose(self):
         self._model.dispose()
+        self._view.dispose()
 
     # LogManager setter methods called by OptionsManager
     def saveSetting(self):
@@ -105,10 +107,10 @@ class LogManager():
         data = self._model.getLoggerData()
         self._dialog = LogDialog(self._ctx, handler, parent, *data)
         listener = LoggerListener(self)
-        self._model.addModifyListener(listener)
+        self._model.addLoggerListener(listener)
         self._dialog.execute()
         self._dialog.dispose()
-        self._model.removeModifyListener(listener)
+        self._model.removeLoggerListener(listener)
         self._dialog = None
 
     # LogManager setter methods called by DialogHandler

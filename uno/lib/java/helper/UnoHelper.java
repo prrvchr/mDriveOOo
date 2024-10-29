@@ -99,6 +99,7 @@ public class UnoHelper
             if (dstPropertySetInfo.hasPropertyByName(srcProperty.Name)) {
                 try {
                     Property dstProperty = dstPropertySetInfo.getPropertyByName(srcProperty.Name);
+                    System.out.println("UnoHelper.copyProperties() Property: " + srcProperty.Name);
                     if ((dstProperty.Attributes & PropertyAttribute.READONLY) == 0) {
                         Object value = src.getPropertyValue(srcProperty.Name);
                         if ((dstProperty.Attributes & PropertyAttribute.MAYBEVOID) == 0 || value != null) {

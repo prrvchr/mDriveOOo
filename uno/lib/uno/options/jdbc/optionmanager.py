@@ -27,23 +27,67 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
+from .optionmodel import OptionModel
+from .optionview import OptionWindow
+from .optionhandler import WindowHandler
 
-from com.sun.star.lang import XEventListener
+from ..logger import LogManager
 
 import traceback
 
 
-class OptionsListener(unohelper.Base,
-                      XEventListener):
-    def __init__(self, manager):
-        self._manager = manager
+class OptionManager():
+    def __init__(self, ctx, window, offset, logger, *loggers):
+        self._logmanager = LogManager(ctx, window, 'requirements.txt', logger, *loggers)
+        self._model = OptionModel(ctx, logger)
+        self._view = OptionWindow(ctx, window, WindowHandler(self), OptionManager._restart, offset)
+        self._initView()
 
-# com.sun.star.lang.XEventListener
-    def disposing(self, source):
-        try:
-            self._manager.dispose()
-        except Exception as e:
-            msg = "OptionsHandler.disposing() Error: %s" % traceback.format_exc()
-            print(msg)
+    _restart = False
+
+    def dispose(self):
+        self._logmanager.dispose()
+        self._view.dispose()
+
+# OptionManager getter methods
+    def getDriverService(self):
+        return self._model.getDriverService()
+
+# OptionManager setter methods
+    def saveSetting(self):
+        saved = self._logmanager.saveSetting()
+        saved |= self._model.saveSetting(*self._view.getOptions())
+        if saved:
+            OptionManager._restart = True
+            self._view.setRestart(True)
+        return saved
+
+    def loadSetting(self):
+        self._logmanager.loadSetting()
+        self._initView()
+
+    def setDriverService(self, driver):
+        level = self._view.getApiLevel()
+        level, enabled, system, bookmark, mode = self._model.setDriverService(driver, level)
+        self._view.setApiLevel(level, enabled, bookmark, mode)
+        self._view.setSystemTable(driver, system)
+
+    def setApiLevel(self, level):
+        self._view.enableOptions(*self._model.setApiLevel(level))
+
+    def setSystemTable(self, state):
+        self._model.setSystemTable(state)
+
+    def setBookmark(self, state):
+        self._view.enableSQLMode(*self._model.setBookmark(state))
+
+    def setSQLMode(self, state):
+        self._model.setSQLMode(state)
+
+# OptionManager private methods
+    def _initView(self):
+        driver, level, enabled, system, bookmark, mode = self._model.getViewData()
+        self._view.setDriverLevel(driver)
+        self._view.setApiLevel(level, enabled, bookmark, mode)
+        self._view.setSystemTable(driver, system)
 

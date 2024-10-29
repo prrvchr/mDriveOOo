@@ -306,7 +306,7 @@ public class EventLogger
                 message = String.format(message, arguments);
             }
             catch (java.lang.Exception e){
-                System.out.println("EventLogger._log ERROR" + message);
+                System.out.println("EventLogger._log ERROR with message: " + message);
                 // pass
             }
         }

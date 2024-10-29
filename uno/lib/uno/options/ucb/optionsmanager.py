@@ -36,6 +36,7 @@ from .optionsview import OptionsView
 from ..unotool import executeDispatch
 from ..unotool import getDesktop
 
+from ..logger import getLogger
 from ..logger import LogManager
 
 from ..configuration import g_identifier
@@ -46,13 +47,13 @@ import traceback
 
 
 class OptionsManager():
-    def __init__(self, ctx, window, logger):
+    def __init__(self, ctx, window):
         self._ctx = ctx
-        self._logger = logger
+        self._logger = getLogger(ctx, g_defaultlog)
         self._model = OptionsModel(ctx)
+        self._logmanager = LogManager(ctx, window, 'requirements.txt', g_defaultlog, g_synclog)
         self._view = OptionsView(window, *self._model.getInitData())
         self._view.setViewData(*self._model.getViewData(OptionsManager._restart))
-        self._logmanager = LogManager(ctx, window.Peer, 'requirements.txt', g_defaultlog, g_synclog)
         self._logger.logprb(INFO, 'OptionsManager', '__init__()', 151)
 
     _restart = False
@@ -65,25 +66,31 @@ class OptionsManager():
     def saveSetting(self):
         share, name, index, timeout, download, upload = self._view.getViewData()
         option = self._model.setViewData(share, name, index, timeout, download, upload)
-        log = self._logmanager.saveSetting()
-        if log:
+        changed = self._logmanager.saveSetting()
+        if changed:
             OptionsManager._restart = True
             self._view.setRestart(True)
-        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 171, option, log)
+        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 171, option, changed)
 
     def enableShare(self, enabled):
         self._view.enableShare(enabled)
 
-    def enableTimeout(self, enabled):
-        self._view.enableTimeout(enabled)
+    def enableSync(self, enabled):
+        self._view.enableSync(enabled, OptionsManager._restart)
 
     def viewData(self):
         url = self._model.getDatasourceUrl()
         getDesktop(self._ctx).loadComponentFromURL(url, '_default', 0, ())
 
     def download(self):
-        self._view.setStep(1)
+        self._view.setStep(1, OptionsManager._restart)
 
     def upload(self):
-        self._view.setStep(2)
+        self._view.setStep(2, OptionsManager._restart)
+
+    def spinUp(self, index):
+        self._view.setChunk(index, self._view.getChunk(index) * 2)
+
+    def spinDown(self, index):
+        self._view.setChunk(index, self._view.getChunk(index) / 2)
 

@@ -45,6 +45,8 @@
 */
 package io.github.prrvchr.uno.helper;
 
+import java.util.Map;
+
 import com.sun.star.beans.PropertyVetoException;
 import com.sun.star.beans.UnknownPropertyException;
 import com.sun.star.beans.XFastPropertySet;
@@ -58,10 +60,6 @@ import com.sun.star.lang.DisposedException;
 import com.sun.star.lang.IllegalArgumentException;
 import com.sun.star.lang.WrappedTargetException;
 import com.sun.star.lib.uno.helper.ComponentBase;
-import com.sun.star.uno.Type;
-
-import io.github.prrvchr.uno.helper.PropertySetAdapter.PropertyGetter;
-import io.github.prrvchr.uno.helper.PropertySetAdapter.PropertySetter;
 
 
 public abstract class PropertySet
@@ -78,6 +76,12 @@ public abstract class PropertySet
         m_adapter = new PropertySetAdapter(this, this);
     }
 
+    protected void registerProperties(Map<String, PropertyWrapper> properties)
+    {
+        m_adapter.registerProperties(properties);
+    }
+
+
     @Override
     protected void postDisposing()
     {
@@ -85,45 +89,12 @@ public abstract class PropertySet
         m_adapter.dispose();
     }
 
-    public void registerProperty(String name,
-                                 Type type,
-                                 PropertyGetter getter,
-                                 PropertySetter setter)
-    {
-        registerProperty(name, type, (short)0, getter, setter);
-    }
-    public void registerProperty(String name,
-                                 int handle,
-                                 Type type,
-                                 PropertyGetter getter,
-                                 PropertySetter setter)
-    {
-        registerProperty(name, handle, type, (short)0, getter, setter);
-    }
-    public void registerProperty(String name,
-                                 int handle,
-                                 Type type,
-                                 short attributes,
-                                 PropertyGetter getter,
-                                 PropertySetter setter)
-    {
-        m_adapter.registerProperty(name, handle, type, attributes, getter, setter);
-    }
-    public void registerProperty(String name,
-                                 Type type,
-                                 short attributes,
-                                 PropertyGetter getter,
-                                 PropertySetter setter)
-    {
-        m_adapter.registerProperty(name, type, attributes, getter, setter);
-    }
-
     public synchronized void addPropertyChangeListener(String name,
                                                        XPropertyChangeListener listener)
         throws UnknownPropertyException,
                WrappedTargetException
     {
-        // only add listeners if you are not disposed
+        // XXX: Only add listeners if you are not disposed
         if (!bDisposed) {
             m_adapter.addPropertyChangeListener(name, listener);
         }
@@ -134,7 +105,7 @@ public abstract class PropertySet
         throws UnknownPropertyException,
                WrappedTargetException
     {
-        // only add listeners if you are not disposed
+        // XXX: Only add listeners if you are not disposed
         if (!bDisposed) {
             m_adapter.addVetoableChangeListener(name, listener);
         }
@@ -143,7 +114,7 @@ public abstract class PropertySet
     public synchronized void addPropertiesChangeListener(String[] names,
                                                          XPropertiesChangeListener listener)
     {
-        // only add listeners if you are not disposed
+        // XXX: Only add listeners if you are not disposed
         if (!bDisposed) {
             m_adapter.addPropertiesChangeListener(names, listener);
         }
@@ -182,7 +153,7 @@ public abstract class PropertySet
         throws UnknownPropertyException,
                WrappedTargetException
     {
-        // all listeners are automatically released in a dispose call
+        // XXX: All listeners are automatically released in a dispose call
         if (!bDisposed) {
             m_adapter.removePropertyChangeListener(name, listener);
         }
@@ -193,7 +164,7 @@ public abstract class PropertySet
         throws UnknownPropertyException,
                WrappedTargetException
     {
-        // all listeners are automatically released in a dispose call
+        // XXX: All listeners are automatically released in a dispose call
         if (!bDisposed) {
             m_adapter.removeVetoableChangeListener(name, listener);
         }
@@ -201,7 +172,7 @@ public abstract class PropertySet
 
     public synchronized void removePropertiesChangeListener(XPropertiesChangeListener listener)
     {
-        // all listeners are automatically released in a dispose call
+        // XXX: All listeners are automatically released in a dispose call
         if (!bDisposed) {
             m_adapter.removePropertiesChangeListener(listener);
         }
@@ -246,7 +217,7 @@ public abstract class PropertySet
         m_adapter.firePropertiesChangeEvent(names, listener);
     }
 
-    /** Checks whether this component (which you should have locked, prior to this call, and until you are done using) is disposed, throwing DisposedException if it is. */
+    // XXX: Checks whether this component (which you should have locked, prior to this call, and until you are done using) is disposed, throwing DisposedException if it is. */
     protected synchronized final void checkDisposed()
     {
         if (bInDispose || bDisposed) {

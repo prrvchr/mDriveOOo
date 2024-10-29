@@ -41,7 +41,7 @@ from ..configuration import g_identifier
 import traceback
 
 
-class OptionsModel(unohelper.Base):
+class OptionsModel():
     def __init__(self, ctx):
         self._ctx = ctx
         self._config = getConfiguration(ctx, g_identifier, True)

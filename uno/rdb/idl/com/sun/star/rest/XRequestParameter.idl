@@ -76,7 +76,6 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     string toJson([in] boolean Stream)
            raises(JSONDecodeException);
 
-    [attribute, readonly] string Name;
     [attribute] string Method;
     [attribute] string Url;
     [attribute] string Headers;
@@ -92,8 +91,9 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     [attribute] boolean Stream;
     [attribute] string NextUrl;
     [attribute] string SyncToken;
-    [attribute, readonly] long PageCount;
     [attribute] char Separator;
+    [attribute, readonly] long PageCount;
+    [attribute, readonly] string Name;
     [attribute, readonly] long RangeStatus;
     [attribute, readonly] string RangeField;
     [attribute, readonly] string RangePattern;

@@ -1,10 +1,7 @@
-#!
-# -*- coding: utf-8 -*-
-
-"""
+/*
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -25,21 +22,59 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
-"""
+*/
+package io.github.prrvchr.uno.helper;
 
-from .options import OptionsManager
+import com.sun.star.uno.Type;
 
-from .logger import getLogger
+import io.github.prrvchr.uno.helper.PropertySetAdapter.PropertyGetter;
+import io.github.prrvchr.uno.helper.PropertySetAdapter.PropertySetter;
 
-from .drvtool import getDataSource
 
-from .cardtool import getLogException
+public class PropertyWrapper
+{
 
-from .dbtool import getDriverPropertyInfos
+    private final Type m_type;
+    private final short m_attributes;
+    private final PropertyGetter m_getter;
+    private final PropertySetter m_setter;
 
-from .configuration import g_defaultlog
-from .configuration import g_host
-from .configuration import g_identifier
-from .configuration import g_protocol
-from .configuration import g_scheme
+    // The constructor method:
+    public PropertyWrapper(Type type,
+                           PropertyGetter getter,
+                           PropertySetter setter)
+    {
+        this(type, (short) 0, getter, setter);
+    }
 
+    public PropertyWrapper(Type type,
+                           short attributes,
+                           PropertyGetter getter,
+                           PropertySetter setter)
+    {
+        m_type = type;
+        m_attributes = attributes;
+        m_getter = getter;
+        m_setter = setter;
+    }
+
+    public Type getType()
+    {
+        return m_type;
+    }
+
+    public short getAttribute()
+    {
+        return m_attributes;
+    }
+
+    public PropertyGetter getGetter()
+    {
+        return m_getter;
+    }
+
+    public PropertySetter getSetter()
+    {
+        return m_setter;
+    }
+}

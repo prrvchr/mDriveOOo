@@ -67,13 +67,14 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     com::sun::star::io::XInputStream getInputStream([in] long Chunk);
 
 
+    [attribute] string Encoding;
     [attribute, readonly] XRequestParameter Parameter;
     [attribute, readonly] string Url;
+    [attribute, readonly] string FullUrl;
     [attribute, readonly] long StatusCode;
     [attribute, readonly] string Reason;
     [attribute, readonly] string Links;
     [attribute, readonly] string ApparentEncoding;
-    [attribute] string Encoding;
     [attribute, readonly] string Text;
     [attribute, readonly] sequence<byte> Content;
     [attribute, readonly] string Headers;

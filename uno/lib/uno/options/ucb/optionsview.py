@@ -48,9 +48,15 @@ class OptionsView():
         upload = self._getSetting(1)
         return share, name, index, timeout, download, upload
 
+    def getChunk(self, index):
+        return int(self._getChunk(index).Value)
+
 # OptionsView setter methods
-    def setStep(self, step):
+    def setStep(self, step, restart):
         self._window.Model.Step = step
+        # XXX: If we change the step, we have to restore the visibility of the controls
+        # XXX: because it was lost (ie: after setting the new step everything is visible).
+        self.setRestart(restart)
 
     def setViewData(self, support, share, name, index, timeout, download, upload, restart):
         if support:
@@ -63,7 +69,7 @@ class OptionsView():
             self._getShareName().Text = name
             self.enableShare(False)
         self._getOption(index).State = 1
-        self.enableTimeout(index != 3)
+        self.enableSync(index != 3, restart)
         self._getTimeout().Value = timeout
         self._setSetting(download, 0)
         self._setSetting(upload, 1)
@@ -72,12 +78,22 @@ class OptionsView():
     def enableShare(self, enabled):
         self._getShareName().Model.Enabled = enabled
 
-    def enableTimeout(self, enabled):
+    def enableSync(self, enabled, restart):
         self._getTimeoutLabel().Model.Enabled = enabled
         self._getTimeout().Model.Enabled = enabled
+        self._enableUpload(enabled, restart)
 
     def setRestart(self, enabled):
         self._getRestart().setVisible(enabled)
+
+    def setChunk(self, index, chunk):
+        control = self._getChunk(index)
+        control.Value = chunk
+        self._getSpinUp(index).Model.Enabled = chunk < control.Max
+        enabled = chunk > control.Min
+        self._getSpinDown(index).Model.Enabled = enabled
+        if not enabled:
+            self._getSpinUp(index).setFocus()
 
 # OptionsView private getter methods
     def _getOptionIndex(self):
@@ -85,22 +101,27 @@ class OptionsView():
             if self._getOption(index).State:
                 return index
 
-    def _getSetting(self, offset):
-        setting = {}
-        setting['Chunk'] = int(self._getChunk(2 + offset).Value)
-        setting['Delay'] = int(self._getDelay(4 + offset).Value)
-        setting['Retry'] = int(self._getRetry(6 + offset).Value)
-        return setting
+    def _getSetting(self, index):
+        return {'Chunk': int(self._getChunk(index).Value),
+                'Delay': int(self._getDelay(index).Value),
+                'Retry': int(self._getRetry(index).Value)}
 
 # OptionsView private setter methods
     def _disableShare(self):
         self._getShare().Model.Enabled = False
         self._getShareName().Model.Enabled = False
 
-    def _setSetting(self, setting, offset):
-        self._getChunk(2 + offset).Value = setting.get('Chunk')
-        self._getDelay(4 + offset).Value = setting.get('Delay')
-        self._getRetry(6 + offset).Value = setting.get('Retry')
+    def _setSetting(self, setting, index):
+        self.setChunk(index, setting.get('Chunk'))
+        self._getDelay(index).Value = setting.get('Delay')
+        self._getRetry(index).Value = setting.get('Retry')
+
+    def _enableUpload(self, enabled, restart):
+        control = self._getUpload()
+        if not enabled and control.State:
+            self._getDownload().State = 1
+            self.setStep(1, restart)
+        control.Model.Enabled = enabled
 
 # OptionsView private control methods
     def _getShare(self):
@@ -113,7 +134,7 @@ class OptionsView():
         return self._window.getControl('OptionButton%s' % index)
 
     def _getTimeoutLabel(self):
-        return self._window.getControl('Label2')
+        return self._window.getControl('Label3')
 
     def _getTimeout(self):
         return self._window.getControl('NumericField1')
@@ -121,16 +142,30 @@ class OptionsView():
     def _getDatasource(self):
         return self._window.getControl('CommandButton1')
 
+    def _getSpinUp(self, index):
+        index += 2
+        return self._window.getControl('CommandButton%s' % index)
+
+    def _getSpinDown(self, index):
+        index += 4
+        return self._window.getControl('CommandButton%s' % index)
+
+    def _getDownload(self):
+        return self._window.getControl('OptionButton4')
+
     def _getUpload(self):
         return self._window.getControl('OptionButton5')
 
     def _getChunk(self, index):
+        index += 2
         return self._window.getControl('NumericField%s' % index)
 
     def _getDelay(self, index):
+        index += 4
         return self._window.getControl('NumericField%s' % index)
 
     def _getRetry(self, index):
+        index += 6
         return self._window.getControl('NumericField%s' % index)
 
     def _getRestart(self):

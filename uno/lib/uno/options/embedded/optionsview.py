@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -27,19 +27,18 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .options import OptionsManager
+import traceback
 
-from .logger import getLogger
 
-from .drvtool import getDataSource
+class OptionsView():
+    def __init__(self, window):
+        self._window = window
 
-from .cardtool import getLogException
+# OptionsView setter methods
+    def setDriverVersion(self, version):
+        self._getVersion().Text = version
 
-from .dbtool import getDriverPropertyInfos
-
-from .configuration import g_defaultlog
-from .configuration import g_host
-from .configuration import g_identifier
-from .configuration import g_protocol
-from .configuration import g_scheme
+# OptionsView private control methods
+    def _getVersion(self):
+        return self._window.getControl('Label2')
 

@@ -173,12 +173,12 @@ class Driver(unohelper.Base,
     def _getConnectionInfo(self, infos):
         document = storage = url = None
         config = getConfiguration(self._ctx, g_identifier)
-        service = config.getByName('ConnectionService')
+        level = config.getByName('ApiLevel')
         system = config.getByName('ShowSystemTable')
         bookmark = config.getByName('UseBookmark')
         mode = config.getByName('SQLMode')
         newinfos = {'Url': g_url,
-                    'ConnectionService': service,
+                    'ApiLevel': level,
                     'ShowSystemTable': system,
                     'UseBookmark': bookmark,
                     'SQLMode': mode}

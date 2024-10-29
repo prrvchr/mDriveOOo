@@ -66,8 +66,7 @@ class WindowHandler(unohelper.Base,
                 handled = True
             return handled
         except Exception as e:
-            msg = f"Error: {traceback.format_exc()}"
-            print(msg)
+            print("ERROR: %s - %s" % (e, traceback.format_exc()))
 
     def getSupportedMethodNames(self):
         return ('SetLogger',
