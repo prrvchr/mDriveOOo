@@ -74,10 +74,10 @@ class OptionsHandler(unohelper.Base,
                 self._manager.enableShare(bool(event.Source.State))
                 handled = True
             elif method == 'EnableSync':
-                self._manager.enableTimeout(True)
+                self._manager.enableSync(True)
                 handled = True
             elif method == 'DisableSync':
-                self._manager.enableTimeout(False)
+                self._manager.enableSync(False)
                 handled = True
             elif method == 'ViewData':
                 self._manager.viewData()
