@@ -110,26 +110,26 @@ class Replicator(Thread):
 
     def _synchronize(self):
         policy = self._getPolicy()
-        if policy == self._getSynchronizePolicy('NONE_IS_MASTER'):
-            return
         self._logger.logprb(INFO, g_basename, '_synchronize()', 121)
-        if self._provider.isOffLine():
+        if policy == self._getSynchronizePolicy('NONE_IS_MASTER'):
             self._logger.logprb(INFO, g_basename, '_synchronize()', 122)
-        elif policy == self._getSynchronizePolicy('SERVER_IS_MASTER'):
-            if not self._canceled:
-                self._pullUsers()
-            if not self._canceled:
-                self._pushUsers()
-        elif policy == self._getSynchronizePolicy('CLIENT_IS_MASTER'):
-            if not self._canceled:
-                self._pushUsers()
-            if not self._canceled:
-                self._pullUsers()
-        self._logger.logprb(INFO, g_basename, '_synchronize()', 123)
+        elif self._provider.isOffLine():
+            self._logger.logprb(INFO, g_basename, '_synchronize()', 123)
+        else:
+            users = self._users.values()
+            if policy == self._getSynchronizePolicy('SERVER_IS_MASTER'):
+                users = self._pullUsers(users)
+                if users:
+                    self._pushUsers(users)
+            elif policy == self._getSynchronizePolicy('CLIENT_IS_MASTER'):
+                users = self._pushUsers(users)
+                if users:
+                    self._pullUsers(users)
+        self._logger.logprb(INFO, g_basename, '_synchronize()', 124)
 
-    def _pullUsers(self):
+    def _pullUsers(self, users):
         try:
-            for user in self._users.values():
+            for user in users:
                 if self._canceled:
                     break
                 self._logger.logprb(INFO, g_basename, '_pullUsers()', 201, user.Name)
@@ -141,6 +141,9 @@ class Replicator(Thread):
                 else:
                     self._pullUser(user)
                 self._logger.logprb(INFO, g_basename, '_pullUsers()', 202, user.Name)
+            else:
+                return users
+            return None
         except Exception as e:
             self._logger.logprb(SEVERE, g_basename, '_pullUsers()', 203, e, traceback.format_exc())
 
@@ -180,30 +183,42 @@ class Replicator(Thread):
             user.setToken(token)
         self._logger.logprb(INFO, g_basename, '_pullUser()', 231, user.Name, count, pages, token)
 
-    def _pushUsers(self):
+    def _pushUsers(self, users):
         # This procedure is launched each time the synchronization is started
         # This procedure corresponds to the push of changes for the entire database 
         # for all users, in chronological order, from 'start' to 'end'...
         try:
+            pusers = []
             end = currentDateTimeInTZ()
-            for user in self._users.values():
+            for user in users:
+                if self._canceled:
+                    break
                 self._logger.logprb(INFO, g_basename, '_pushUsers()', 301, user.Name)
                 if self._isNewUser(user):
                     self._initUser(user)
+                item = None
                 items = []
                 start = user.TimeStamp
                 for item in self.DataBase.getPushItems(user.Id, start, end):
+                    if self._canceled:
+                        break
                     metadata = self.DataBase.getMetaData(user, item)
                     newid = self._pushItem(user, item, metadata, start, end)
-                    if newid is not None:
-                        items.append(newid)
-                    else:
+                    if newid is None:
                         modified = getDateTimeToString(metadata.get('DateModified'))
                         self._logger.logprb(SEVERE, g_basename, '_pushUsers()', 302, metadata.get('Title'), modified, metadata.get('Id'))
                         break
-                if items:
+                    else:
+                        items.append(newid)
+                else:
+                    # XXX: User was pushed, we update user timestamp if needed
                     self.DataBase.updatePushItems(user, items)
-                self._logger.logprb(INFO, g_basename, '_pushUsers()', 303, user.Name)
+                    self._logger.logprb(INFO, g_basename, '_pushUsers()', 303, user.Name)
+                    continue
+                break
+            else:
+                return users
+            return None
         except Exception as e:
             self._logger.logprb(SEVERE, g_basename, '_pushUsers()', 304, e, traceback.format_exc())
 

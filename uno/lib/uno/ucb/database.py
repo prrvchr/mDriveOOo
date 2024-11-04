@@ -468,13 +468,14 @@ class DataBase():
         return properties
 
     def updatePushItems(self, user, itemids):
-        call = self._getCall('updatePushItems')
-        call.setString(1, user.Id)
-        call.setArray(2, Array('VARCHAR', itemids))
-        call.execute()
-        timestamp = call.getObject(3, None)
-        call.close()
-        user.TimeStamp = timestamp
+        # XXX: We push items only if needed (ie: not empty)
+        if itemids:
+            call = self._getCall('updatePushItems')
+            call.setString(1, user.Id)
+            call.setArray(2, Array('VARCHAR', itemids))
+            call.execute()
+            user.TimeStamp = call.getObject(3, None)
+            call.close()
 
     def getItemParentIds(self, itemid, metadata, start, end):
         call = self._getCall('getItemParentIds')
