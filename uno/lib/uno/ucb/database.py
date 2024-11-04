@@ -175,12 +175,14 @@ class DataBase():
         data['AtRoot'] = data.get('ParentId') == rootid
         return data
 
-    def updateNewItemId(self, oldid, newid, created, modified):
+    def updateNewItemId(self, userid, oldid, newid, created, modified):
         call = self._getCall('updateNewItemId')
-        call.setString(1, oldid)
-        call.setString(2, newid)
-        call.setTimestamp(3, created)
-        call.setTimestamp(4, modified)
+        call.setString(1, userid)
+        call.setString(2, oldid)
+        call.setString(3, newid)
+        call.setTimestamp(4, created)
+        call.setTimestamp(5, modified)
+        call.executeUpdate()
         call.close()
         return newid
 

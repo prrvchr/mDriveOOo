@@ -84,6 +84,7 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     [attribute] sequence<byte> Data;
     [attribute] string Text;
     [attribute] com::sun::star::io::XInputStream DataSink;
+    [attribute] string DataUrl;
     [attribute] boolean NoAuth;
     [attribute] sequence<string> Auth;
     [attribute] boolean NoRedirect;

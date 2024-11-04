@@ -49,6 +49,7 @@ class OAuth2OOo(NoOAuth2):
 
     def __call__(self, request):
         request.headers['Authorization'] = self._oauth2.getToken('Bearer %s')
+        print("OAuth2OOo.__call__() Headers: %s" % (request.headers, ))
         return request
 
 

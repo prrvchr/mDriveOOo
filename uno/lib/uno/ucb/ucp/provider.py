@@ -157,7 +157,8 @@ class Provider(object):
         return page, count, parameter.SyncToken
 
     def initSharedDocuments(self, user, datetime):
-        pass # You must implement this method in Provider to be able to handle Shared Documents
+        # You must implement this method in Provider to be able to handle Shared Documents
+        pass
 
     def pullUser(self, user):
         timestamp = currentDateTimeInTZ()
@@ -297,18 +298,18 @@ class Provider(object):
         parameter = self.getRequestParameter(user.Request, method, data)
         response = user.Request.execute(parameter)
         if not response.Ok:
-            args = code, data.get('Name'), response.Text
+            args = code, parameter.Name, data.get('Name'), response.Text
             response.close()
         else:
             location = self.parseUploadLocation(response)
             if location is None:
-                args = code + 1, data.get('Name')
+                args = code + 1, parameter.Name, data.get('Name')
             else:
                 parameter = self.getRequestParameter(user.Request, 'getUploadStream', location)
                 url = self.getTargetUrl(item)
                 response = user.Request.upload(parameter, url, chunk, retry, delay)
                 if not response.Ok:
-                    args = code + 2, data.get('Name'), response.Text
+                    args = code + 2, parameter.Name, data.get('Name'), response.Text
                     response.close()
                 elif new:
                     newid = self.updateItemId(user.DataBase, item, response)

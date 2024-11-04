@@ -194,14 +194,15 @@ SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Path" = ? AND "Title" 
 # Create Procedure Query
     elif name == 'createUpdateNewItemId':
         query = '''\
-CREATE PROCEDURE "UpdateNewItemId"(IN ItemId VARCHAR(256),
-                                   IN NewId VARCHAR(256),
-                                   IN Created TIMESTAMP(6),
-                                   IN Modified TIMESTAMP(6))
+CREATE PROCEDURE "UpdateNewItemId"(IN USERID VARCHAR(320),
+                                   IN OLDID VARCHAR(256),
+                                   IN NEWID VARCHAR(256),
+                                   IN CREATED TIMESTAMP(6),
+                                   IN MODIFIED TIMESTAMP(6))
   SPECIFIC "UpdateNewItemId_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    UPDATE "Items" SET "ItemId"=NewId, "DateCreated"=Created, "DateModified"=Modified WHERE "ItemId"=ItemId;
+    UPDATE "Items" SET "ItemId"=NEWID, "DateCreated"=CREATED, "DateModified"=MODIFIED WHERE "UserId"=USERID AND "ItemId"=OLDID;
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "UpdateNewItemId_1" TO "%(Role)s";''' % format
 
@@ -599,7 +600,7 @@ GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
     elif name == 'insertItem':
         query = 'CALL "InsertItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
     elif name == 'updateNewItemId':
-        query = 'CALL "UpdateNewItemId"(?,?,?,?)'
+        query = 'CALL "UpdateNewItemId"(?,?,?,?,?)'
 
 # ShutDown Queries
     elif name == 'shutdown':
