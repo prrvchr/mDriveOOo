@@ -239,31 +239,29 @@ class Provider(ProviderBase):
 
     def mergeNewFolder(self, user, oldid, response):
         newid = None
-        if response.Ok:
-            items = self._parseNewFolder(response)
-            if all(items):
-                newid = user.DataBase.updateNewItemId(oldid, *items)
-        else:
-            print("Provider.mergeNewFolder() %s" % response.Text)
-        response.close()
+        items = self._parseNewFolder(response)
+        if all(items):
+            newid = user.DataBase.updateNewItemId(user.Id, oldid, *items)
         return newid
 
     def _parseNewFolder(self, response):
         newid = created = modified = None
-        events = ijson.sendable_list()
-        parser = ijson.parse_coro(events)
-        iterator = response.iterContent(g_chunk, False)
-        while iterator.hasMoreElements():
-            parser.send(iterator.nextElement().value)
-            for prefix, event, value in events:
-                if (prefix, event) == ('id', 'string'):
-                    newid = value
-                elif (prefix, event) == ('createdDateTime', 'string'):
-                    created = self.parseDateTime(value)
-                elif (prefix, event) == ('lastModifiedDateTime', 'string'):
-                    modified = self.parseDateTime(value)
-            del events[:]
-        parser.close()
+        if response.Ok:
+            events = ijson.sendable_list()
+            parser = ijson.parse_coro(events)
+            iterator = response.iterContent(g_chunk, False)
+            while iterator.hasMoreElements():
+                parser.send(iterator.nextElement().value)
+                for prefix, event, value in events:
+                    if (prefix, event) == ('id', 'string'):
+                        newid = value
+                    elif (prefix, event) == ('createdDateTime', 'string'):
+                        created = self.parseDateTime(value)
+                    elif (prefix, event) == ('lastModifiedDateTime', 'string'):
+                        modified = self.parseDateTime(value)
+                del events[:]
+            parser.close()
+        response.close()
         return newid, created, modified
 
     def _getUser(self, source, request, name):
