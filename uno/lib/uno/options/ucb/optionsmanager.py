@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -64,8 +64,8 @@ class OptionsManager():
         self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 161)
 
     def saveSetting(self):
-        share, name, index, timeout, download, upload = self._view.getViewData()
-        option = self._model.setViewData(share, name, index, timeout, download, upload)
+        reset, share, name, index, timeout, download, upload = self._view.getViewData()
+        option = self._model.setViewData(reset, share, name, index, timeout, download, upload)
         changed = self._logmanager.saveSetting()
         if changed:
             OptionsManager._restart = True
@@ -76,7 +76,7 @@ class OptionsManager():
         self._view.enableShare(enabled)
 
     def enableSync(self, enabled):
-        self._view.enableSync(enabled, OptionsManager._restart)
+        self._view.enableSync(enabled, OptionsManager._restart, self._model.hasDataBase())
 
     def viewData(self):
         url = self._model.getDatasourceUrl()

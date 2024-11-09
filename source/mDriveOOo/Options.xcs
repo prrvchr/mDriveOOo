@@ -37,6 +37,7 @@
     </group>
   </templates>
   <component>
+    <prop oor:name="ResetSync" oor:type="xs:boolean" />
     <prop oor:name="SupportShare" oor:type="xs:boolean" />
     <prop oor:name="SharedDocuments" oor:type="xs:boolean" />
     <prop oor:name="SharedFolderName" oor:type="xs:string" oor:localized="true"/>

@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -164,8 +164,8 @@ def _getViews(catalog=g_catalog, schema=g_schema):
         yield catalog, schema, name
 
 def _getProcedures():
-    for name in ('GetItem', 'GetNewTitle', 'UpdatePushItems', 'GetPushItems', 'GetPushProperties',
-                 'GetItemParentIds', 'InsertUser', 'InsertSharedFolder', 'MergeItem', 'MergeParent',
-                 'InsertItem', 'PullChanges', 'UpdateNewItemId'):
+    for name in ('GetItem', 'UpdatePushItems', 'GetPushItems', 'GetPushProperties',
+                 'GetItemParentIds', 'InsertUser', 'InsertSharedFolder', 'MergeItem',
+                 'MergeParent', 'InsertItem', 'UpdateNewItemId'):
         yield name
 

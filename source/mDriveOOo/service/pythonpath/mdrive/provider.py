@@ -30,6 +30,8 @@
 import uno
 import unohelper
 
+from com.sun.star.logging.LogLevel import INFO
+
 from com.sun.star.rest.ParameterType import JSON
 from com.sun.star.rest.ParameterType import REDIRECT
 
@@ -66,32 +68,121 @@ import traceback
 class Provider(ProviderBase):
 
     @property
-    def Name(self):
-        return g_provider
+    def BaseUrl(self):
+        return g_url
     @property
     def Host(self):
         return g_host
     @property
-    def BaseUrl(self):
-        return g_url
+    def Name(self):
+        return g_provider
     @property
     def UploadUrl(self):
         return g_upload
 
+    # Must be implemented method
+    def getDocumentLocation(self, user, item):
+        url = None
+        parameter = self.getRequestParameter(user.Request, 'getDocumentLocation', item)
+        response = user.Request.execute(parameter)
+        if response.Ok and response.hasHeader('Location'):
+            url = response.getHeader('Location')
+        response.close()
+        return url
+
     def getFirstPullRoots(self, user):
         return (user.RootId, )
-
-    def initUser(self, database, user, token):
-        # FIXME: Some APIs like Microsoft oneDrive allow to have the token during the firstPull
-        #token = self.getUserToken(user)
-        if database.updateToken(user.Id, token):
-            user.setToken(token)
 
     def getUser(self, source, request, name):
         user = self._getUser(source, request, name)
         root = self._getRoot(source, request, name)
         return user, root
 
+    def mergeNewFolder(self, user, oldid, response):
+        newid = None
+        items = self._parseNewFolder(response)
+        if all(items):
+            newid = user.DataBase.updateNewItemId(user.Id, oldid, *items)
+        return newid
+
+    def parseFolder(self, parameter, content):
+        return self.parseItems(content.User.Request, parameter, content.User.RootId, content.Link)
+
+    def parseItems(self, request, parameter, rootid, link=''):
+        readonly = versionable = False
+        addchild = canrename = True
+        path = None
+        while parameter.hasNextPage():
+            response = request.execute(parameter)
+            if response.Ok:
+                timestamp = currentUnoDateTime()
+                events = ijson.sendable_list()
+                parser = ijson.parse_coro(events)
+                iterator = response.iterContent(g_chunk, False)
+                while iterator.hasMoreElements():
+                    parser.send(iterator.nextElement().value)
+                    for prefix, event, value in events:
+                        if (prefix, event) == ('@odata.deltaLink', 'string'):
+                            parameter.SyncToken = value
+                        elif (prefix, event) == ('@odata.nextLink', 'string'):
+                            parameter.setNextPage('', value, REDIRECT)
+                        elif (prefix, event) == ('value.item', 'start_map'):
+                            itemid = name = None
+                            created = modified = timestamp
+                            mimetype = g_ucpfolder
+                            size = 0
+                            trashed = False
+                            parents = (rootid, )
+                        elif (prefix, event) == ('value.item.id', 'string'):
+                            itemid = value
+                        elif (prefix, event) == ('value.item.name', 'string'):
+                            name = value
+                        elif (prefix, event) == ('value.item.createdDateTime', 'string'):
+                            created = self.parseDateTime(value)
+                        elif (prefix, event) == ('value.item.lastModifiedDateTime', 'string'):
+                            modified = self.parseDateTime(value)
+                        elif (prefix, event) == ('value.item.file.mimeType', 'string'):
+                            mimetype = value
+                        elif (prefix, event) == ('value.item.trashed', 'boolean'):
+                            trashed = value
+                        elif (prefix, event) == ('value.item.size', 'number'):
+                            size = value
+                        elif (prefix, event) == ('value.item.parentReference.id', 'string'):
+                            parents = (value, )
+                        elif (prefix, event) == ('value.item', 'end_map'):
+                            if itemid and name:
+                                yield {'Id': itemid,
+                                       'Name': name,
+                                       'DateCreated': created,
+                                       'DateModified': modified,
+                                       'MediaType': mimetype,
+                                       'Size': size,
+                                       'Link': link,
+                                       'Trashed': trashed,
+                                       'CanAddChild': addchild,
+                                       'CanRename': canrename,
+                                       'IsReadOnly': readonly,
+                                       'IsVersionable': versionable,
+                                       'Parents': parents,
+                                       'Path': path}
+                    del events[:]
+                parser.close()
+            response.close()
+
+    def parseUploadLocation(self, response):
+        url = response.getJson().getString('uploadUrl')
+        response.close()
+        return url
+
+    def updateItemId(self, user, oldid, response):
+        newid = response.getJson().getString('id')
+        response.close()
+        if oldid != newid:
+            user.DataBase.updateItemId(user.Id, newid, oldid)
+            self.updateNewItemId(oldid, newid)
+        return newid
+
+    # Can be rewrited method
     def initSharedDocuments(self, user, datetime):
         itemid = generateUuid()
         timestamp = currentUnoDateTime()
@@ -100,10 +191,71 @@ class Provider(ProviderBase):
         iterator = self._parseSharedFolder(user.Request, parameter, itemid, timestamp)
         user.DataBase.pullItems(iterator, user.Id, datetime, 0)
 
+    # Private method
+    def _getRoot(self, source, request, name):
+        parameter = self.getRequestParameter(request, 'getRoot')
+        response = request.execute(parameter)
+        if not response.Ok:
+            msg = self._logger.resolveString(571, parameter.Name, response.StatusCode, response.Text)
+            self._logger.logp(INFO, 'Provider', '_getRoot()', msg)
+            raise IllegalIdentifierException(msg, source)
+        root = self._parseRoot(response)
+        response.close()
+        return root
+
+    def _getUser(self, source, request, name):
+        parameter = self.getRequestParameter(request, 'getUser')
+        response = request.execute(parameter)
+        if not response.Ok:
+            msg = self._logger.resolveString(561, parameter.Name, response.StatusCode, response.Text)
+            self._logger.logp(INFO, 'Provider', '_getUser()', msg)
+            raise IllegalIdentifierException(msg, source)
+        user = self._parseUser(response)
+        response.close()
+        return user
+
+    def _parseNewFolder(self, response):
+        newid = created = modified = None
+        if response.Ok:
+            events = ijson.sendable_list()
+            parser = ijson.parse_coro(events)
+            iterator = response.iterContent(g_chunk, False)
+            while iterator.hasMoreElements():
+                parser.send(iterator.nextElement().value)
+                for prefix, event, value in events:
+                    if (prefix, event) == ('id', 'string'):
+                        newid = value
+                    elif (prefix, event) == ('createdDateTime', 'string'):
+                        created = self.parseDateTime(value)
+                    elif (prefix, event) == ('lastModifiedDateTime', 'string'):
+                        modified = self.parseDateTime(value)
+                del events[:]
+            parser.close()
+        response.close()
+        return newid, created, modified
+
+    def _parseRoot(self, response):
+        events = ijson.sendable_list()
+        parser = ijson.parse_coro(events)
+        iterator = response.iterContent(g_chunk, False)
+        while iterator.hasMoreElements():
+            parser.send(iterator.nextElement().value)
+            for prefix, event, value in events:
+                if (prefix, event) == ('id', 'string'):
+                    rootid = value
+                elif (prefix, event) == ('createdDateTime', 'string'):
+                    created = self.parseDateTime(value)
+                elif (prefix, event) == ('lastModifiedDateTime', 'string'):
+                    modified = self.parseDateTime(value)
+            del events[:]
+        parser.close()
+        return rootid, created, modified
+
     def _parseSharedFolder(self, request, parameter, parentid, timestamp):
-        parents = [parentid, ]
-        trashed = rename = readonly = versionable = False
+        parents = (parentid, )
+        trashed = canrename = readonly = versionable = False
         addchild = True
+        path = None
         while parameter.hasNextPage():
             response = request.execute(parameter)
             if response.Ok:
@@ -135,154 +287,23 @@ class Provider(ProviderBase):
                             mimetype = value
                         elif (prefix, event) == ('value.item', 'end_map'):
                             if itemid and name:
-                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, parents, None
+                                yield {'Id': itemid,
+                                       'Name': name,
+                                       'DateCreated': created,
+                                       'DateModified': modified,
+                                       'MediaType': mimetype,
+                                       'Size': size,
+                                       'Link': link,
+                                       'Trashed': trashed,
+                                       'CanAddChild': addchild,
+                                       'CanRename': canrename,
+                                       'IsReadOnly': readonly,
+                                       'IsVersionable': versionable,
+                                       'Parents': parents,
+                                       'Path': path}
                     del events[:]
                 parser.close()
             response.close()
-
-    def parseRootFolder(self, parameter, content):
-        return self.parseItems(content.User.Request, parameter, content.User.RootId, content.Link)
-
-    def parseItems(self, request, parameter, rootid, link=''):
-        readonly = versionable = False
-        addchild = rename = True
-        while parameter.hasNextPage():
-            response = request.execute(parameter)
-            if response.Ok:
-                timestamp = currentUnoDateTime()
-                events = ijson.sendable_list()
-                parser = ijson.parse_coro(events)
-                iterator = response.iterContent(g_chunk, False)
-                while iterator.hasMoreElements():
-                    parser.send(iterator.nextElement().value)
-                    for prefix, event, value in events:
-                        if (prefix, event) == ('@odata.deltaLink', 'string'):
-                            parameter.SyncToken = value
-                        elif (prefix, event) == ('@odata.nextLink', 'string'):
-                            parameter.setNextPage('', value, REDIRECT)
-                        elif (prefix, event) == ('value.item', 'start_map'):
-                            itemid = name = None
-                            created = modified = timestamp
-                            mimetype = g_ucpfolder
-                            size = 0
-                            trashed = False
-                            parents = []
-                        elif (prefix, event) == ('value.item.id', 'string'):
-                            itemid = value
-                        elif (prefix, event) == ('value.item.name', 'string'):
-                            name = value
-                        elif (prefix, event) == ('value.item.createdDateTime', 'string'):
-                            created = self.parseDateTime(value)
-                        elif (prefix, event) == ('value.item.lastModifiedDateTime', 'string'):
-                            modified = self.parseDateTime(value)
-                        elif (prefix, event) == ('value.item.file.mimeType', 'string'):
-                            mimetype = value
-                        elif (prefix, event) == ('value.item.trashed', 'boolean'):
-                            trashed = value
-                        elif (prefix, event) == ('value.item.size', 'number'):
-                            size = value
-                        elif (prefix, event) == ('value.item.parentReference.id', 'string'):
-                            parents.append(value)
-                        elif (prefix, event) == ('value.item', 'end_map'):
-                            if itemid and name:
-                                yield itemid, name, created, modified, mimetype, size, link, trashed, addchild, rename, readonly, versionable, parents, None
-                    del events[:]
-                parser.close()
-            response.close()
-
-    def parseChanges(self, request, parameter):
-        while parameter.hasNextPage():
-            response = request.execute(parameter)
-            if response.Ok:
-                events = ijson.sendable_list()
-                parser = ijson.parse_coro(events)
-                iterator = response.iterContent(g_chunk, False)
-                while iterator.hasMoreElements():
-                    parser.send(iterator.nextElement().value)
-                    for prefix, event, value in events:
-                        if (prefix, event) == ('@odata.nextLink', 'string'):
-                            parameter.setNextPage('', value, REDIRECT)
-                        elif (prefix, event) == ('@odata.deltaLink', 'string'):
-                            parameter.SyncToken = value
-                        elif (prefix, event) == ('value.item', 'start_map'):
-                            itemid = name = modified = None
-                            trashed = False
-                        elif (prefix, event) == ('value.item.removed', 'boolean'):
-                            trashed = value
-                        elif (prefix, event) == ('value.item.fileId', 'string'):
-                            itemid = value
-                        elif (prefix, event) == ('value.item.time', 'string'):
-                            modified = self.parseDateTime(value)
-                        elif (prefix, event) == ('value.item.file.name', 'string'):
-                            name = value
-                        elif (prefix, event) == ('value.item', 'end_map'):
-                            pass
-                            #yield itemid, trashed, name, modified
-                    del events[:]
-                parser.close()
-            response.close()
-
-    def getDocumentLocation(self, content):
-        parameter = self.getRequestParameter(content.User.Request, 'getDocumentLocation', content)
-        response = content.User.Request.execute(parameter)
-        print("Provider.getDocumentContent() Status: %s - IsOk: %s - Reason: %s" % (response.StatusCode, response.Ok, response.Reason))
-        url = self._parseDocumentLocation(response)
-        print("Provider.getDocumentContent() Url: %s" % url)
-        return url
-
-    def _parseDocumentLocation(self, response):
-        url = None
-        if response.Ok and response.hasHeader('Location'):
-            url = response.getHeader('Location')
-        response.close()
-        return url
-
-    def mergeNewFolder(self, user, oldid, response):
-        newid = None
-        items = self._parseNewFolder(response)
-        if all(items):
-            newid = user.DataBase.updateNewItemId(user.Id, oldid, *items)
-        return newid
-
-    def _parseNewFolder(self, response):
-        newid = created = modified = None
-        if response.Ok:
-            events = ijson.sendable_list()
-            parser = ijson.parse_coro(events)
-            iterator = response.iterContent(g_chunk, False)
-            while iterator.hasMoreElements():
-                parser.send(iterator.nextElement().value)
-                for prefix, event, value in events:
-                    if (prefix, event) == ('id', 'string'):
-                        newid = value
-                    elif (prefix, event) == ('createdDateTime', 'string'):
-                        created = self.parseDateTime(value)
-                    elif (prefix, event) == ('lastModifiedDateTime', 'string'):
-                        modified = self.parseDateTime(value)
-                del events[:]
-            parser.close()
-        response.close()
-        return newid, created, modified
-
-    def _getUser(self, source, request, name):
-        parameter = self.getRequestParameter(request, 'getUser')
-        response = request.execute(parameter)
-        if not response.Ok:
-            msg = self._logger.resolveString(403, name)
-            raise IllegalIdentifierException(msg, source)
-        user = self._parseUser(response)
-        response.close()
-        return user
-
-    def _getRoot(self, source, request, name):
-        parameter = self.getRequestParameter(request, 'getRoot')
-        response = request.execute(parameter)
-        if not response.Ok:
-            msg = self._logger.resolveString(403, name)
-            raise IllegalIdentifierException(msg, source)
-        root = self._parseRoot(response)
-        response.close()
-        return root
 
     def _parseUser(self, response):
         userid = name = displayname = None
@@ -302,67 +323,11 @@ class Provider(ProviderBase):
         parser.close()
         return userid, name, displayname
 
-    def _parseRoot(self, response):
-        events = ijson.sendable_list()
-        parser = ijson.parse_coro(events)
-        iterator = response.iterContent(g_chunk, False)
-        while iterator.hasMoreElements():
-            parser.send(iterator.nextElement().value)
-            for prefix, event, value in events:
-                if (prefix, event) == ('id', 'string'):
-                    rootid = value
-                elif (prefix, event) == ('createdDateTime', 'string'):
-                    created = self.parseDateTime(value)
-                elif (prefix, event) == ('lastModifiedDateTime', 'string'):
-                    modified = self.parseDateTime(value)
-            del events[:]
-        parser.close()
-        return rootid, created, modified
-
-    def parseUploadLocation(self, response):
-        url =  None
-        events = ijson.sendable_list()
-        parser = ijson.parse_coro(events)
-        iterator = response.iterContent(g_chunk, False)
-        while iterator.hasMoreElements():
-            parser.send(iterator.nextElement().value)
-            for prefix, event, value in events:
-                if (prefix, event) == ('uploadUrl', 'string'):
-                    url = value
-            del events[:]
-        parser.close()
-        response.close()
-        return url
-
-    def updateItemId(self, database, oldid, response):
-        newid = self._parseNewId(response)
-        if newid and oldid != newid:
-            database.updateItemId(newid, oldid)
-            self.updateNewItemId(oldid, newid)
-        return newid
-
-    def _parseNewId(self, response):
-        newid = None
-        events = ijson.sendable_list()
-        parser = ijson.parse_coro(events)
-        iterator = response.iterContent(g_chunk, False)
-        while iterator.hasMoreElements():
-            parser.send(iterator.nextElement().value)
-            for prefix, event, value in events:
-                if (prefix, event) == ('id', 'string'):
-                    newid = value
-            del events[:]
-        parser.close()
-        response.close()
-        return newid
-
-    def updateDrive(self, database, user, token):
-        if database.updateToken(user.get('UserId'), token):
-            user['Token'] = token
-
+    # Requests get Parameter method
     def getRequestParameter(self, request, method, data=None):
         parameter = request.getRequestParameter(method)
         parameter.Url = self.BaseUrl
+
         if method == 'getUser':
             parameter.Url += '/me'
             parameter.setQuery('$select', g_userfields)
@@ -397,15 +362,15 @@ class Provider(ProviderBase):
             parameter.setQuery('$top', g_pages)
 
         elif method == 'getDocumentLocation':
-            if data.Link:
-                url = '/drives/%s/items/%s/content' % (data.Link, data.Id)
+            if data.get('Link'):
+                url = '/drives/%s/items/%s/content' % (data.get('Link'), data.get('Id'))
             else:
-                url = '/me/drive/items/%s/content' % data.Id
+                url = '/me/drive/items/%s/content' % data.get('Id')
             parameter.Url += url
             print("Provider.getRequestParameter() Name: %s - Url: %s" % (parameter.Name, parameter.Url))
             parameter.NoRedirect = True
 
-        elif method == 'getDocumentContent':
+        elif method == 'downloadFile':
             parameter.Url = data
             parameter.NoAuth = True
 
@@ -484,5 +449,6 @@ class Provider(ProviderBase):
             else:
                 url = '/me/drive/items/%s:/%s:/content' % (data.get('ParentId'), data.get('Title'))
             parameter.Url += url
+
         return parameter
 

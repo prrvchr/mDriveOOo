@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -51,6 +51,8 @@ from .datasource import DataSource
 
 from .unotool import checkVersion
 from .unotool import getExtensionVersion
+from .unotool import getUrlTransformer
+from .unotool import parseUrl
 
 from .dbtool import getConnectionUrl
 
@@ -86,6 +88,7 @@ class ContentProvider(unohelper.Base,
         self._authority = authority
         self._cls = f'{arguments}ContentProvider'
         self._services = ('com.sun.star.ucb.ContentProvider', f'{g_identifier}.ContentProvider')
+        self._transformer = getUrlTransformer(ctx)
         self._logger = logger
         self._logger.logprb(INFO, self._cls, '__init__()', 201, arguments)
 
@@ -99,14 +102,14 @@ class ContentProvider(unohelper.Base,
 
     # XContentIdentifierFactory
     def createContentIdentifier(self, url):
-        identifier = Identifier(url)
+        identifier = Identifier(self._getPresentationUrl(url))
         self._logger.logprb(INFO, self._cls, 'createContentIdentifier()', 211, url, identifier.getContentIdentifier())
         return identifier
 
     # XContentProvider
     def queryContent(self, identifier):
         try:
-            url = identifier.getContentIdentifier()
+            url = self._getPresentationUrl(identifier.getContentIdentifier())
             content = self._datasource.queryContent(self, self._authority, url)
             self._logger.logprb(INFO, self._cls, 'queryContent()', 231, url)
             return content
@@ -119,8 +122,8 @@ class ContentProvider(unohelper.Base,
             print(msg)
 
     def compareContentIds(self, id1, id2):
-        uri1 = self._datasource.parseIdentifier(id1)
-        uri2 = self._datasource.parseIdentifier(id2)
+        uri1 = self._datasource.parseUrl(self._getPresentationUrl(id1.getContentIdentifier()))
+        uri2 = self._datasource.parseUrl(self._getPresentationUrl(id2.getContentIdentifier()))
         auth1 = uri1.getAuthority() if uri1.hasAuthority() else self._datasource.getDefaultUser()
         auth2 = uri2.getAuthority() if uri2.hasAuthority() else self._datasource.getDefaultUser()
         if (auth1 != auth2 or uri1.getPath() != uri2.getPath()):
@@ -171,6 +174,14 @@ class ContentProvider(unohelper.Base,
                 else:
                     return DataSource(self._ctx, self._logger, database)
         return None
+
+    def _getPresentationUrl(self, url):
+        # FIXME: Sometimes the url can end with a dot or a slash, it must be deleted
+        url = url.rstrip('/.')
+        uri = parseUrl(self._transformer, url)
+        if uri is not None:
+            url = self._transformer.getPresentation(uri, True)
+        return url
 
     def _getExceptionMessage(self, method, code, extension, *args):
         return getExceptionMessage(self._ctx, self._logger, self._cls, method, code, extension, *args)

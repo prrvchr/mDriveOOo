@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -91,21 +91,20 @@ class DataBase():
         return checkVersion(self._version, g_version)
 
 # Procedures called by the DataSource
-    def getDataSource(self):
-        return self.Connection.getParent().DatabaseDocument.DataSource
-
-    def storeDataBase(self, url):
-        self.Connection.getParent().DatabaseDocument.storeAsURL(url, ())
-
     def addCloseListener(self, listener):
-        self.Connection.Parent.DatabaseDocument.addCloseListener(listener)
+        self.Connection.getParent().DatabaseDocument.addCloseListener(listener)
 
     def shutdownDataBase(self, compact=False):
         if compact:
             query = getSqlQuery(self._ctx, 'shutdownCompact')
-        else:
-            query = getSqlQuery(self._ctx, 'shutdown')
-        self._statement.execute(query)
+            self._statement.execute(query)
+        #else:
+        #    query = getSqlQuery(self._ctx, 'shutdown')
+        #self._statement.execute(query)
+        self.dispose()
+
+    def dispose(self):
+        self._statement.close()
 
     def createUser(self, name, password):
         return createUser(self.Connection, name, password, g_role)
@@ -137,13 +136,6 @@ class DataBase():
         result.close()
         select.close()
         return user
-
-    def getDefaultUserTimeStamp(self):
-        dtz = DateTimeWithTimezone()
-        dtz.DateTimeInTZ.Year = 1970
-        dtz.DateTimeInTZ.Month = 1
-        dtz.DateTimeInTZ.Day = 1
-        return dtz
 
     def insertUser(self, user, root):
         data = None
@@ -241,7 +233,8 @@ class DataBase():
     def updateConnectionMode(self, userid, itemid, value):
         update = self._getCall('updateConnectionMode')
         update.setShort(1, value)
-        update.setString(2, itemid)
+        update.setString(2, userid)
+        update.setString(3, itemid)
         update.executeUpdate()
         update.close()
         return value
@@ -272,7 +265,8 @@ class DataBase():
             update = self._getCall('updateName')
             update.setObject(1, timestamp)
             update.setString(2, value)
-            update.setString(3, itemid)
+            update.setString(3, userid)
+            update.setString(4, itemid)
             updated = update.execute() == 0
             update.close()
             clear = True
@@ -282,26 +276,19 @@ class DataBase():
             update.setObject(1, timestamp)
             update.setLong(2, value)
             update.setTimestamp(3, currentUnoDateTime())
-            update.setString(4, itemid)
+            update.setString(4, userid)
+            update.setString(5, itemid)
             updated = update.execute() == 0
             update.close()
         elif property == 'Trashed':
             update = self._getCall('updateTrashed')
             update.setObject(1, timestamp)
             update.setBoolean(2, value)
-            update.setString(3, itemid)
+            update.setString(3, userid)
+            update.setString(4, itemid)
             updated = update.execute() == 0
             update.close()
         return updated, clear
-
-    def getNewTitle(self, title, parentid):
-        call = self._getCall('getNewTitle')
-        call.setString(1, title)
-        call.setString(2, parentid)
-        call.execute()
-        newtitle = call.getString(3)
-        call.close()
-        return newtitle
 
     def insertNewContent(self, userid, item, timestamp):
         try:
@@ -369,9 +356,8 @@ class DataBase():
         update = self._getCall('updateToken')
         update.setString(1, token)
         update.setString(2, userid)
-        updated = update.executeUpdate() == 1
+        update.executeUpdate()
         update.close()
-        return updated
 
     # Identifier counting procedure
     def countIdentifier(self, userid):
@@ -400,6 +386,20 @@ class DataBase():
         return count
 
     # Pull procedure
+    def pullItem(self, userid, item, timestamp, mode=1):
+        call1 = self._getCall('mergeItem')
+        call2 = self._getCall('mergeParent')
+        call1.setString(1, userid)
+        call2.setString(1, userid)
+        call1.setInt(2, mode)
+        call1.setObject(3, timestamp)
+        if self._mergeItem(call1, call2, item, timestamp):
+            call1.executeBatch()
+            call2.executeBatch()
+        call1.close()
+        call2.close()
+        return 1
+
     def pullItems(self, iterator, userid, timestamp, mode=1):
         count = 0
         call1 = self._getCall('mergeItem')
@@ -416,30 +416,6 @@ class DataBase():
         call1.close()
         call2.close()
         return count
-
-    def pullChanges(self, iterator, userid, timestamp):
-        call = self._getCall('pullChanges')
-        count = 0
-        for item in iterator:
-            call.setString(1, userid)
-            call.setString(2, item[0])
-            call.setBoolean(3, item[1])
-            call.setNull(4, VARCHAR) if item[2] is None else call.setString(4, item[2])
-            call.setTimestamp(5, item[3])
-            call.setObject(6, timestamp)
-            call.addBatch()
-            count += 1
-        if count:
-            call.executeBatch()
-        call.close()
-        return count
-
-    def updateUserSyncMode(self, userid, mode):
-        update = self._getCall('updateUserSyncMode')
-        update.setInt(1, mode)
-        update.setString(2, userid)
-        update.executeUpdate()
-        update.close()
 
     # Procedure to retrieve all the UPDATE AND INSERT in the 'Capabilities' table
     def getPushItems(self, userid, start, end):
@@ -468,14 +444,12 @@ class DataBase():
         return properties
 
     def updatePushItems(self, user, itemids):
-        # XXX: We push items only if needed (ie: not empty)
-        if itemids:
-            call = self._getCall('updatePushItems')
-            call.setString(1, user.Id)
-            call.setArray(2, Array('VARCHAR', itemids))
-            call.execute()
-            user.TimeStamp = call.getObject(3, None)
-            call.close()
+        call = self._getCall('updatePushItems')
+        call.setString(1, user.Id)
+        call.setArray(2, Array('VARCHAR', itemids))
+        call.execute()
+        user.TimeStamp = call.getObject(3, None)
+        call.close()
 
     def getItemParentIds(self, itemid, metadata, start, end):
         call = self._getCall('getItemParentIds')
@@ -489,43 +463,44 @@ class DataBase():
         metadata.insertValue('ParentToAdd', set(new) - set(old))
         metadata.insertValue('ParentToRemove', set(old) - set(new))
 
-    def updateItemId(self, newid, oldid):
+    def updateItemId(self, userid, newid, oldid):
         print("DataBase.updateItemId () NewId: %s - OldId: %s" % (newid, oldid))
         update = self._getCall('updateItemId')
         update.setString(1, newid)
-        update.setString(2, oldid)
+        update.setString(2, userid)
+        update.setString(3, oldid)
         update.executeUpdate()
         update.close()
 
 # Procedures called internally
     def _mergeItem(self, call1, call2, item, timestamp):
-        itemid = item[0]
+        itemid = item.get('Id')
         call1.setString(4, itemid)
-        call1.setString(5, item[1])
-        call1.setTimestamp(6, item[2])
-        call1.setTimestamp(7, item[3])
-        call1.setString(8, item[4])
-        size = item[5]
+        call1.setString(5, item.get('Name'))
+        call1.setTimestamp(6, item.get('DateCreated'))
+        call1.setTimestamp(7, item.get('DateModified'))
+        call1.setString(8, item.get('MediaType'))
+        size = item.get('Size')
         if os.name == 'nt':
             mx = 2 ** 32 / 2 -1
             if size > mx:
                 size = min(size, mx)
-                self._logger.logprb(SEVERE, 'DataBase', '_mergeItem()', 402, size, item[5])
+                self._logger.logprb(SEVERE, 'DataBase', '_mergeItem()', 402, size, item.get('Size'))
         call1.setLong(9, size)
-        call1.setString(10, item[6])
-        call1.setBoolean(11, item[7])
-        call1.setBoolean(12, item[8])
-        call1.setBoolean(13, item[9])
-        call1.setBoolean(14, item[10])
-        call1.setBoolean(15, item[11])
+        call1.setString(10, item.get('Link'))
+        call1.setBoolean(11, item.get('Trashed'))
+        call1.setBoolean(12, item.get('CanAddChild'))
+        call1.setBoolean(13, item.get('CanRename'))
+        call1.setBoolean(14, item.get('IsReadOnly'))
+        call1.setBoolean(15, item.get('IsVersionable'))
         call1.addBatch()
         self._mergeParent(call2, item, itemid, timestamp)
         return 1
 
     def _mergeParent(self, call, item, itemid, timestamp):
         call.setString(2, itemid)
-        call.setArray(3, Array('VARCHAR', item[12]))
-        path = item[13]
+        call.setArray(3, Array('VARCHAR', item.get('Parents')))
+        path = item.get('Path')
         if path is None:
             call.setNull(4, VARCHAR)
         else:

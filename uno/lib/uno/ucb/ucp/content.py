@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -106,7 +106,7 @@ class Content(unohelper.Base,
         self._ctx = ctx
         self._user = user
         self._authority = authority
-        self.MetaData = data
+        self._metadata = data
         self._new = new
         self._url = None
         self._listeners = []
@@ -121,51 +121,51 @@ class Content(unohelper.Base,
 
     @property
     def IsFolder(self):
-        return self.MetaData.get('IsFolder')
+        return self._metadata.get('IsFolder')
     @property
     def IsDocument(self):
-        return self.MetaData.get('IsDocument')
+        return self._metadata.get('IsDocument')
     @property
     def IsRoot(self):
-        return self.MetaData.get('IsRoot')
+        return self._metadata.get('IsRoot')
     @property
     def IsRenamed(self):
-        return self.MetaData.get('Name') != self.Title
+        return self._metadata.get('Name') != self.Title
     @property
     def CanRename(self):
-        return self.MetaData.get('CanRename') and not self.IsRenamed
+        return self._metadata.get('CanRename') and not self.IsRenamed
     @property
     def CanAddChild(self):
-        return self.MetaData.get('CanAddChild')
+        return self._metadata.get('CanAddChild')
     @property
     def Id(self):
-        return self.MetaData.get('Id')
+        return self._metadata.get('Id')
     @property
     def ParentId(self):
-        return self.MetaData.get('ParentId')
+        return self._metadata.get('ParentId')
     @property
     def Path(self):
-        return self.MetaData.get('Path')
+        return self._metadata.get('Path')
     @property
     def Size(self):
-        return self.MetaData.get('Size')
+        return self._metadata.get('Size')
     @property
     def Link(self):
-        return self.MetaData.get('Link')
+        return self._metadata.get('Link')
     @property
     def Name(self):
-        return self.MetaData.get('Name')
+        return self._metadata.get('Name')
     @property
     def Title(self):
-        return self.MetaData.get('Title')
+        return self._metadata.get('Title')
     @property
     def MediaType(self):
-        return self.MetaData.get('MediaType', 'application/octet-stream')
+        return self._metadata.get('MediaType', 'application/octet-stream')
     @property
     def ConnectionMode(self):
-        return self.MetaData.get('ConnectionMode')
+        return self._metadata.get('ConnectionMode')
     def setConnectionMode(self, mode):
-        self.MetaData['ConnectionMode'] = mode
+        self._metadata['ConnectionMode'] = mode
 
     @property
     def User(self):
@@ -234,7 +234,7 @@ class Content(unohelper.Base,
             self._logger.logprb(SEVERE, 'Content', 'getIdentifier()', 642, e, traceback.format_exc())
 
     def getContentType(self):
-        return self.MetaData.get('ContentType')
+        return self._metadata.get('ContentType')
 
     def addContentEventListener(self, listener):
         self._contentListeners.append(listener)
@@ -263,7 +263,7 @@ class Content(unohelper.Base,
             return self._setPropertiesValues(environment, command.Argument)
 
         elif command.Name == 'delete':
-            self.MetaData['Trashed'] = True
+            self._metadata['Trashed'] = True
             self._user.updateContent(self.Id, 'Trashed', True)
 
         elif command.Name == 'open':
@@ -278,7 +278,7 @@ class Content(unohelper.Base,
                     msg = self._logger.resolveString(632, self._identifier)
                     raise CommandAbortedException(msg, self)
                 input = command.Argument.Sink
-                isreadonly = self.MetaData.get('IsReadOnly')
+                isreadonly = self._metadata.get('IsReadOnly')
                 sink = hasInterface(input, 'com.sun.star.io.XActiveDataSink')
                 stream = hasInterface(input, 'com.sun.star.io.XActiveDataStreamer')
                 if not isreadonly and stream:
@@ -307,9 +307,9 @@ class Content(unohelper.Base,
                     # For document type resources, the media type is always unknown...
                     mediatype = mimetype if mimetype else getMimeType(self._ctx, stream)
                     stream.closeInput()
-                    self.MetaData['MediaType'] = mediatype
+                    self._metadata['MediaType'] = mediatype
 
-            if self._user.insertNewContent(self._authority, self.MetaData):
+            if self._user.insertNewContent(self._authority, self._metadata):
                 # Need to consum the new Identifier if needed...
                 self._user.deleteNewIdentifier(self.Id)
 
@@ -397,8 +397,8 @@ class Content(unohelper.Base,
             value = ''
         elif name == 'CreatableContentsInfo':
             value = self._getCreatableContentsInfo()
-        elif name in self.MetaData:
-            value = self.MetaData.get(name)
+        elif name in self._metadata:
+            value = self._metadata.get(name)
             msg = "Name: %s - Value: %s" % (name, value)
         else:
             msg = "ERROR: Requested property: %s is not available" % name
@@ -444,8 +444,8 @@ class Content(unohelper.Base,
             msg = ""
             level = INFO
             result = None
-        elif name in self.MetaData:
-            self.MetaData[name] = value
+        elif name in self._metadata:
+            self._metadata[name] = value
             msg = "Content: %s set property: %s value: %s" % (self._identifier, name, value)
             level = INFO
             result = None
@@ -463,7 +463,7 @@ class Content(unohelper.Base,
             level = SEVERE
             error = IllegalAccessException(msg, self)
             result = uno.Any('com.sun.star.lang.IllegalAccessException', error)
-        elif self.Title != self.MetaData.get('Name'):
+        elif self.Title != self._metadata.get('Name'):
             msg = "ERROR: Requested property: Title can't be changed"
             level = SEVERE
             error = IllegalAccessException(msg, self)
@@ -474,8 +474,8 @@ class Content(unohelper.Base,
             error = IllegalAccessException(msg, self)
             result = uno.Any('com.sun.star.lang.IllegalAccessException', error)
         else:
-            self.MetaData['Name'] = newtitle
-            self.MetaData['Title'] = newtitle
+            self._metadata['Name'] = newtitle
+            self._metadata['Title'] = newtitle
             # If the identifier is new then the content is not yet in the database.
             # It will be inserted by the insert command of the XCommandProcessor2.execute()
             # But we must make this content accessible by an appropriate entry in the user paths cache
@@ -506,7 +506,7 @@ class Content(unohelper.Base,
         url = self._user.Provider.getTargetUrl(self.Id)
         if self.ConnectionMode == OFFLINE and sf.exists(url):
             return url, sf.getSize(url)
-        if self._user.Provider.getDocumentContent(self, url):
+        if self._user.Provider.downloadFile(self._user, self._metadata, url):
             loaded = self._user.updateConnectionMode(self.Id, OFFLINE)
             self.setConnectionMode(loaded)
         else:

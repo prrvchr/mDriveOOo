@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -39,55 +39,83 @@ g_basename = 'dbqueries'
 
 def getSqlQuery(ctx, name, format=None):
 
-# Select queries for creating table, index, foreignkey and privileges from static table
-# Create Function Queries
-    if name == 'createGetIsFolder':
-        query = '''\
-CREATE FUNCTION "GetIsFolder"(IN MIMETYPE VARCHAR(100))
-  RETURNS BOOLEAN
-  SPECIFIC "GetIsFolder_1"
-  CONTAINS SQL
-  BEGIN ATOMIC
-    RETURN MIMETYPE = '%(UcpFolder)s';
-  END;
-GRANT EXECUTE ON SPECIFIC ROUTINE "GetIsFolder_1" TO "%(Role)s";''' % format
+# Select Queries
+    if name == 'getUser':
+        query = 'SELECT "UserId", "UserName", "RootId", "Token", "DateCreated", "DateModified", "TimeStamp" FROM "Users" WHERE "UserName" = ?;'
 
-    elif name == 'createGetContentType':
-        query = '''\
-CREATE FUNCTION "GetContentType"(IN ISFOLDER BOOLEAN)
-  RETURNS VARCHAR(100)
-  SPECIFIC "GetContentType_1"
-  CONTAINS SQL
-  BEGIN ATOMIC
-    IF ISFOLDER THEN
-      RETURN '%(UcbFolder)s';
-    ELSE
-      RETURN '%(UcbFile)s';
-    END IF;
-  END;
-GRANT EXECUTE ON SPECIFIC ROUTINE "GetContentType_1" TO "%(Role)s";''' % format
+    elif name == 'getChildren':
+        query = 'SELECT %(Columns)s FROM %(Children)s AS C WHERE C."UserId" = ? AND C."Path" = ? AND (C."IsFolder" = TRUE OR C."ConnectionMode" >= ?);' % format
 
-    elif name == 'createGetUniqueName':
-        query = '''\
-CREATE FUNCTION "GetUniqueName"(IN NAME VARCHAR(100),
-                                IN NUMBER INTEGER)
-  RETURNS VARCHAR(110)
-  SPECIFIC "GetUniqueName_1"
-  CONTAINS SQL
-  BEGIN ATOMIC
-    DECLARE HINT VARCHAR(10);
-    DECLARE DOT BIGINT DEFAULT 0;
-    SET DOT = POSITION('.' IN REVERSE(NAME));
-    SET HINT = '%(Prefix)s' || NUMBER || '%(Suffix)s';
-    IF DOT != 0 AND DOT < 5 THEN
-      RETURN INSERT(NAME, CHAR_LENGTH(NAME) - DOT + 1, 0, HINT);
-    ELSE
-      RETURN NAME || HINT;
-    END IF;
-  END;
-GRANT EXECUTE ON SPECIFIC ROUTINE "GetUniqueName_1" TO "%(Role)s";''' % format
+    elif name == 'getChildId':
+        query = 'SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Path" = ? AND "Title" = ?;'
 
-# Create View Command
+    elif name == 'getNewIdentifier':
+        query = 'SELECT "ItemId" FROM "Identifiers" WHERE "UserId" = ? ORDER BY "TimeStamp","ItemId" LIMIT 1;'
+
+    elif name == 'countNewIdentifier':
+        query = 'SELECT COUNT("ItemId") "Ids" FROM "Identifiers" WHERE "UserId" = ?;'
+
+    elif name == 'hasTitle':
+        query = 'SELECT COUNT("Name") > 0 FROM "Child" WHERE "UserId" = ? AND "ParentId" = ? AND "Name" = ?;'
+
+# Insert Queries
+    elif name == 'insertNewIdentifier':
+        query = 'INSERT INTO "Identifiers"("UserId", "ItemId") VALUES (?, ?);'
+
+# Update Queries
+    elif name == 'updateToken':
+        query = 'UPDATE "Users" SET "Token"=? WHERE "UserId"=?;'
+
+    elif name == 'updateName':
+        query = 'UPDATE "Items" SET "TimeStamp"=?, "Name"=?, "SyncMode"=2 WHERE "UserId"=? AND "ItemId"=?;'
+
+    elif name == 'updateSize':
+        query = 'UPDATE "Items" SET "TimeStamp"=?, "Size"=?, "DateModified"=?, "SyncMode"=2 WHERE "UserId"=? AND "ItemId"=?;'
+
+    elif name == 'updateTrashed':
+        query = 'UPDATE "Items" SET "TimeStamp"=?, "Trashed"=?, "SyncMode"=2 WHERE "UserId"=? AND "ItemId"=?;'
+
+    elif name == 'updateConnectionMode':
+        query = 'UPDATE "Items" SET "ConnectionMode"=? WHERE "UserId"=? AND "ItemId"=?;'
+
+    elif name == 'updateItemId':
+        query = 'UPDATE "Items" SET "ItemId"=? WHERE "UserId"=? AND "ItemId"=?;'
+
+# Delete Queries
+    elif name == 'deleteNewIdentifier':
+        query = 'DELETE FROM "Identifiers" WHERE "UserId"=? AND "ItemId"=?;'
+
+# Call Procedure Query
+    elif name == 'getItem':
+        query = 'CALL "GetItem"(?,?,?)'
+    elif name == 'updatePushItems':
+        query = 'CALL "UpdatePushItems"(?,?,?)'
+    elif name == 'getPushItems':
+        query = 'CALL "GetPushItems"(?,?,?)'
+    elif name == 'getPushProperties':
+        query = 'CALL "GetPushProperties"(?,?,?,?)'
+    elif name == 'getItemParentIds':
+        query = 'CALL "GetItemParentIds"(?,?,?,?,?)'
+    elif name == 'insertUser':
+        query = 'CALL "InsertUser"(?,?,?,?,?,?,?)'
+    elif name == 'insertSharedFolder':
+        query = 'CALL "InsertSharedFolder"(?,?,?,?,?,?,?,?,?,?,?,?)'
+    elif name == 'mergeItem':
+        query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    elif name == 'mergeParent':
+        query = 'CALL "MergeParent"(?,?,?,?,?)'
+    elif name == 'insertItem':
+        query = 'CALL "InsertItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    elif name == 'updateNewItemId':
+        query = 'CALL "UpdateNewItemId"(?,?,?,?,?)'
+
+# ShutDown Queries
+    elif name == 'shutdown':
+        query = 'SHUTDOWN;'
+    elif name == 'shutdownCompact':
+        query = 'SHUTDOWN COMPACT;'
+
+# Create View Command called by dbinit.py
     elif name == 'getChildViewCommand':
         query = '''\
 SELECT I."UserId", P."ParentId", I."ItemId", I."Name", I."DateCreated", I."DateModified"
@@ -134,64 +162,54 @@ SELECT C."UserId", C."ItemId", C."ParentId", P."Name", P."Path",
   INNER JOIN %(Child)s AS C ON P."ItemId" = C."ItemId" AND P."ParentId" = C."ParentId"
   INNER JOIN %(Items)s AS I ON C."ItemId" = I."ItemId";''' % format
 
-# Select Queries
-    elif name == 'getUser':
+# Create Function Queries called by dbinit.py
+    elif name == 'createGetIsFolder':
         query = '''\
-SELECT "UserId", "UserName", "RootId", "Token", "SyncMode", "DateCreated", "DateModified", "TimeStamp"
-FROM "Users"
-WHERE "UserName" = ?;'''
+CREATE FUNCTION "GetIsFolder"(IN MIMETYPE VARCHAR(100))
+  RETURNS BOOLEAN
+  SPECIFIC "GetIsFolder_1"
+  CONTAINS SQL
+  BEGIN ATOMIC
+    RETURN MIMETYPE = '%(UcpFolder)s';
+  END;
+GRANT EXECUTE ON SPECIFIC ROUTINE "GetIsFolder_1" TO "%(Role)s";''' % format
 
-    elif name == 'getChildren':
+    elif name == 'createGetContentType':
         query = '''\
-SELECT %(Columns)s 
-FROM %(Children)s AS C
-WHERE C."UserId" = ? AND C."Path" = ? AND (C."IsFolder" = TRUE OR C."ConnectionMode" >= ?);
-''' % format
+CREATE FUNCTION "GetContentType"(IN ISFOLDER BOOLEAN)
+  RETURNS VARCHAR(100)
+  SPECIFIC "GetContentType_1"
+  CONTAINS SQL
+  BEGIN ATOMIC
+    IF ISFOLDER THEN
+      RETURN '%(UcbFolder)s';
+    ELSE
+      RETURN '%(UcbFile)s';
+    END IF;
+  END;
+GRANT EXECUTE ON SPECIFIC ROUTINE "GetContentType_1" TO "%(Role)s";''' % format
 
-    elif name == 'getChildId':
+    elif name == 'createGetUniqueName':
         query = '''\
-SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Path" = ? AND "Title" = ?;'''
+CREATE FUNCTION "GetUniqueName"(IN NAME VARCHAR(100),
+                                IN NUMBER INTEGER)
+  RETURNS VARCHAR(110)
+  SPECIFIC "GetUniqueName_1"
+  CONTAINS SQL
+  BEGIN ATOMIC
+    DECLARE HINT VARCHAR(10);
+    DECLARE DOT BIGINT DEFAULT 0;
+    SET DOT = POSITION('.' IN REVERSE(NAME));
+    SET HINT = '%(Prefix)s' || NUMBER || '%(Suffix)s';
+    IF DOT != 0 AND DOT < 5 THEN
+      RETURN INSERT(NAME, CHAR_LENGTH(NAME) - DOT + 1, 0, HINT);
+    ELSE
+      RETURN NAME || HINT;
+    END IF;
+  END;
+GRANT EXECUTE ON SPECIFIC ROUTINE "GetUniqueName_1" TO "%(Role)s";''' % format
 
-    elif name == 'getNewIdentifier':
-        query = 'SELECT "ItemId" FROM "Identifiers" WHERE "UserId" = ? ORDER BY "TimeStamp","ItemId" LIMIT 1;'
-
-    elif name == 'countNewIdentifier':
-        query = 'SELECT COUNT("ItemId") "Ids" FROM "Identifiers" WHERE "UserId" = ?;'
-
-    elif name == 'hasTitle':
-        query = 'SELECT COUNT("Name") > 0 FROM "Child" WHERE "UserId" = ? AND "ParentId" = ? AND "Name" = ?;'
-
-# Insert Queries
-    elif name == 'insertNewIdentifier':
-        query = 'INSERT INTO "Identifiers"("UserId", "ItemId") VALUES (?, ?);'
-
-# Update Queries
-    elif name == 'updateToken':
-        query = 'UPDATE "Users" SET "Token"=? WHERE "UserId"=?;'
-
-    elif name == 'updateUserSyncMode':
-        query = 'UPDATE "Users" SET "SyncMode"=? WHERE "UserId"=?;'
-
-    elif name == 'updateName':
-        query = 'UPDATE "Items" SET "TimeStamp"=?, "Name"=?, "SyncMode"=2 WHERE "ItemId"=?;'
-
-    elif name == 'updateSize':
-        query = 'UPDATE "Items" SET "TimeStamp"=?, "Size"=?, "DateModified"=?, "SyncMode"=2 WHERE "ItemId"=?;'
-
-    elif name == 'updateTrashed':
-        query = 'UPDATE "Items" SET "TimeStamp"=?, "Trashed"=?, "SyncMode"=2 WHERE "ItemId"=?;'
-
-    elif name == 'updateConnectionMode':
-        query = 'UPDATE "Items" SET "ConnectionMode"=? WHERE "ItemId"=?;'
-
-    elif name == 'updateItemId':
-        query = 'UPDATE "Items" SET "ItemId"=? WHERE "ItemId"=?;'
-
-# Delete Queries
-    elif name == 'deleteNewIdentifier':
-        query = 'DELETE FROM "Identifiers" WHERE "UserId"=? AND "ItemId"=?;'
-
-# Create Procedure Query
+# Create Procedure Query called by dbinit.py
     elif name == 'createUpdateNewItemId':
         query = '''\
 CREATE PROCEDURE "UpdateNewItemId"(IN USERID VARCHAR(320),
@@ -234,26 +252,6 @@ CREATE PROCEDURE "GetItem"(IN USERID VARCHAR(320),
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetItem_1" TO "%(Role)s";''' % format
 
-    elif name == 'createGetNewTitle':
-        query = '''\
-CREATE PROCEDURE "GetNewTitle"(IN TITLE VARCHAR(100),
-                               IN PARENTID VARCHAR(256),
-                               OUT NEWTITLE VARCHAR(100))
-  SPECIFIC "GetNewTitle_1"
-  READS SQL DATA
-  BEGIN ATOMIC
-    DECLARE NUMBER INTEGER;
-    DECLARE NEWNAME VARCHAR(100);
-    SELECT COUNT("Name") INTO NUMBER FROM "Child" WHERE "Name" = TITLE AND "ParentId" = PARENTID;
-    IF NUMBER > 0 THEN
-      SET NEWNAME = "GetUniqueName"(TITLE, NUMBER + 1);
-    ELSE
-      SET NEWNAME = TITLE;
-    END IF;
-    SET NEWTITLE = NEWNAME;
-  END;
-GRANT EXECUTE ON SPECIFIC ROUTINE "GetNewTitle_1" TO "%(Role)s";''' % format
-
     elif name == 'createInsertUser':
         query = '''\
 CREATE PROCEDURE "InsertUser"(IN UserId VARCHAR(100),
@@ -268,7 +266,7 @@ CREATE PROCEDURE "InsertUser"(IN UserId VARCHAR(100),
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE RSLT CURSOR WITH RETURN FOR
-      SELECT "UserId", "UserName", "RootId", "Token", "SyncMode", "DateCreated", "DateModified", "TimeStamp"
+      SELECT "UserId", "UserName", "RootId", "Token", "DateCreated", "DateModified", "TimeStamp"
       FROM "Users"
       WHERE "UserName" = UserName FOR READ ONLY;
     INSERT INTO "Users" ("UserId", "UserName", "DisplayName", "RootId", "DateCreated", "DateModified", "TimeStamp") 
@@ -317,9 +315,11 @@ CREATE PROCEDURE "UpdatePushItems"(IN USERID VARCHAR(100),
   MODIFIES SQL DATA
   BEGIN ATOMIC
     DECLARE TS TIMESTAMP(6) WITH TIME ZONE;
-    UPDATE "Items" SET "SyncMode" = 0 WHERE "ItemId" IN (UNNEST(ITEMS));
-    SELECT MAX("RowStart") INTO TS FROM "Items" FOR SYSTEM_TIME AS OF CURRENT_TIMESTAMP(6)
-    WHERE "ItemId"=ITEMS[CARDINALITY(ITEMS)];
+    IF CARDINALITY(ITEMS) > 0 THEN
+        UPDATE "Items" SET "SyncMode" = 0 WHERE "ItemId" IN (UNNEST(ITEMS));
+        SELECT MAX("RowStart") INTO TS FROM "Items" FOR SYSTEM_TIME AS OF CURRENT_TIMESTAMP(6)
+        WHERE "ItemId" IN (UNNEST(ITEMS));
+    END IF;
     IF TS IS NULL THEN
         SELECT "TimeStamp" INTO TS FROM "Users" WHERE "UserId" = USERID;
     ELSE
@@ -436,29 +436,6 @@ CREATE PROCEDURE "GetItemParentIds"(IN ITEMID VARCHAR(256),
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "GetItemParentIds_1" TO "%(Role)s";''' % format
 
-    elif name == 'createPullChanges':
-        query = '''\
-CREATE PROCEDURE "PullChanges"(IN UserId VARCHAR(100),
-                               IN ItemId VARCHAR(256),
-                               IN Trashed BOOLEAN,
-                               IN Name VARCHAR(100),
-                               IN Modified TIMESTAMP(6),
-                               IN DateTime TIMESTAMP(6) WITH TIME ZONE)
-  SPECIFIC "PullChanges_1"
-  MODIFIES SQL DATA
-  BEGIN ATOMIC
-    IF Trashed THEN
-      DELETE FROM "Items" WHERE "UserId"=UserId AND "ItemId"=ItemId;
-    ELSEIF Name IS NULL THEN
-      UPDATE "Items" SET "DateModified"=Modified, "TimeStamp"=DateTime 
-        WHERE "UserId"=UserId AND "ItemId"=ItemId;
-    ELSE
-      UPDATE "Items" SET "Name"=Name, "DateModified"=Modified, "TimeStamp"=DateTime 
-        WHERE "UserId"=UserId AND "ItemId"=ItemId;
-    END IF;
-  END;
-GRANT EXECUTE ON SPECIFIC ROUTINE "PullChanges_1" TO "%(Role)s";''' % format
-
     elif name == 'createMergeItem':
         query = '''\
 CREATE PROCEDURE "MergeItem"(IN UserId VARCHAR(100),
@@ -574,43 +551,11 @@ CREATE PROCEDURE "InsertItem"(IN USERID VARCHAR(100),
   END;
 GRANT EXECUTE ON SPECIFIC ROUTINE "InsertItem_1" TO "%(Role)s";''' % format
 
-# Get Procedure Query
-    elif name == 'getItem':
-        query = 'CALL "GetItem"(?,?,?)'
-    elif name == 'getNewTitle':
-        query = 'CALL "GetNewTitle"(?,?,?)'
-    elif name == 'updatePushItems':
-        query = 'CALL "UpdatePushItems"(?,?,?)'
-    elif name == 'getPushItems':
-        query = 'CALL "GetPushItems"(?,?,?)'
-    elif name == 'getPushProperties':
-        query = 'CALL "GetPushProperties"(?,?,?,?)'
-    elif name == 'getItemParentIds':
-        query = 'CALL "GetItemParentIds"(?,?,?,?,?)'
-    elif name == 'insertUser':
-        query = 'CALL "InsertUser"(?,?,?,?,?,?,?)'
-    elif name == 'insertSharedFolder':
-        query = 'CALL "InsertSharedFolder"(?,?,?,?,?,?,?,?,?,?,?,?)'
-    elif name == 'mergeItem':
-        query = 'CALL "MergeItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
-    elif name == 'mergeParent':
-        query = 'CALL "MergeParent"(?,?,?,?,?)'
-    elif name == 'pullChanges':
-        query = 'CALL "PullChanges"(?,?,?,?,?,?)'
-    elif name == 'insertItem':
-        query = 'CALL "InsertItem"(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
-    elif name == 'updateNewItemId':
-        query = 'CALL "UpdateNewItemId"(?,?,?,?,?)'
-
-# ShutDown Queries
-    elif name == 'shutdown':
-        query = 'SHUTDOWN;'
-    elif name == 'shutdownCompact':
-        query = 'SHUTDOWN COMPACT;'
-
 # Queries don't exist!!!
     else:
         logger = getLogger(ctx, g_defaultlog, g_basename)
         logger.logprb(SEVERE, g_basename, 'getSqlQuery()', 101, name)
         query = None
+
     return query
+

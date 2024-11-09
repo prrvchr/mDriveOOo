@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -47,14 +47,17 @@ import traceback
 
 class OptionsModel():
     def __init__(self, ctx):
-        self._ctx = ctx
         self._config = getConfiguration(ctx, g_identifier, True)
         folder = g_folder + g_ucbseparator + g_scheme
         location = getResourceLocation(ctx, g_identifier, folder)
         self._url = location + '.odb'
+        self._exist = getSimpleFile(ctx).exists(self._url)
         self._policies = {'SERVER_IS_MASTER': 1, 'CLIENT_IS_MASTER': 2, 'NONE_IS_MASTER': 3}
         self._factors = {'Timeout': 60, 'Chunk': 1024}
 
+    @property
+    def _ResetSync(self):
+        return self._config.getByName('ResetSync')
     @property
     def _IsShared(self):
         return self._config.getByName('SharedDocuments')
@@ -83,20 +86,23 @@ class OptionsModel():
 
 # OptionsModel getter methods
     def getInitData(self):
-        hasdata = getSimpleFile(self._ctx).exists(self._url)
         resumable = self._config.getByName('ResumableUpload')
-        return hasdata, resumable
+        return self._exist, resumable
+
+    def hasDataBase(self):
+        return self._exist
 
     def getViewData(self, restart):
-        return (self._SupportShare, self._IsShared, self._ShareName,
-                self._Policy, self._Timeout,
-                self._Download, self._Upload, restart)
+        return (self._exist, self._ResetSync, self._SupportShare,
+                self._IsShared, self._ShareName, self._Policy,
+                self._Timeout, self._Download, self._Upload, restart)
 
     def getDatasourceUrl(self):
         return self._url
 
 # OptionsModel setter methods
-    def setViewData(self, share, name, index, timeout, download, upload):
+    def setViewData(self, reset, share, name, index, timeout, download, upload):
+        self._setReset(reset)
         self._setShared(share)
         self._setShare(name)
         self._setPolicy(index)
@@ -124,6 +130,10 @@ class OptionsModel():
         return setting
 
 # OptionsModel private setter methods
+    def _setReset(self, enabled):
+        if enabled != self._ResetSync:
+            self._config.replaceByName('ResetSync', enabled)
+
     def _setShared(self, enabled):
         if enabled != self._IsShared:
             self._config.replaceByName('SharedDocuments', enabled)
