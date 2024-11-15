@@ -115,7 +115,7 @@ class LogManager():
 
     # LogManager setter methods called by DialogHandler
     def logInfos(self):
-        self._model.logInfos(INFO, 'LogManager', 'logInfos()', self._requirements)
+        self._model.logInfos(INFO, 'LogManager', 'logInfos', self._requirements)
 
     # LogManager setter methods called by LoggerListener
     def updateLogger(self):

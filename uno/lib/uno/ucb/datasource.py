@@ -66,7 +66,7 @@ class DataSource():
         self.Replicator = Replicator(ctx, database.Url, self._provider, self._users, self._sync, self._lock)
         self.DataBase = database
         database.addCloseListener(CloseListener(self))
-        self._logger.logprb(INFO, 'DataSource', '__init__()', 301)
+        self._logger.logprb(INFO, 'DataSource', '__init__', 301)
 
     # called from XCloseListener
     def dispose(self):
@@ -76,9 +76,9 @@ class DataSource():
             for user in self._users.values():
                 user.dispose()
             self.DataBase.shutdownDataBase(self.Replicator.fullPull())
-            self._logger.logprb(INFO, 'DataSource', 'dispose()', 341, self._provider.Scheme)
+            self._logger.logprb(INFO, 'DataSource', 'dispose', 341, self._provider.Scheme)
         except Exception as e:
-            self._logger.logprb(SEVERE, 'DataSource', 'dispose()', 342, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'DataSource', 'dispose', 342, e, traceback.format_exc())
 
     # Get called from ContentProvider.queryContent()
     def queryContent(self, source, authority, url):
@@ -111,7 +111,7 @@ class DataSource():
             if uri.hasAuthority() and uri.getAuthority() != '':
                 name = uri.getAuthority()
             else:
-                msg = self._getExceptionMessage('_getUser()', 322, url)
+                msg = self._getExceptionMessage('_getUser', 322, url)
                 raise IllegalIdentifierException(msg, source)
         elif self._default:
             name = self._default
@@ -124,7 +124,7 @@ class DataSource():
             if not user.Request.isAuthorized():
                 # XXX: The user's OAuth2 configuration has been deleted and
                 # XXX: the OAuth2 configuration wizard has been canceled.
-                msg = self._getExceptionMessage('_getUser()', 324, name)
+                msg = self._getExceptionMessage('_getUser', 324, name)
                 raise IllegalIdentifierException(msg, source)
         else:
             user = User(self._ctx, source, self._logger, self.DataBase,

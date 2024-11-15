@@ -54,14 +54,14 @@ class PropertySetInfo(unohelper.Base,
         return tuple(self.properties.values())
     def getPropertyByName(self, name):
         if self._logger is not None:
-            self._logger.logprb(INFO, 'PropertySetInfo', 'getPropertyByName()', 711, name)
+            self._logger.logprb(INFO, 'PropertySetInfo', 'getPropertyByName', 711, name)
         if name in self.properties:
             return self.properties[name]
         raise UnknownPropertyException("UnknownPropertyException", None)
     def hasPropertyByName(self, name):
         has = name in self.properties
         if self._logger is not None:
-            self._logger.logprb(INFO, 'PropertySetInfo', 'hasPropertyByName()', 721, name, has)
+            self._logger.logprb(INFO, 'PropertySetInfo', 'hasPropertyByName', 721, name, has)
         return has
 
 

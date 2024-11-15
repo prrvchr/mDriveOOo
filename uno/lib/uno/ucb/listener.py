@@ -30,6 +30,7 @@
 import unohelper
 
 from com.sun.star.util import XCloseListener
+from com.sun.star.util import CloseVetoException
 
 import traceback
 
@@ -41,6 +42,9 @@ class CloseListener(unohelper.Base,
 
     # XCloseListener
     def queryClosing(self, source, ownership):
+        # XXX: If it's the ownership we need to throw CloseVetoException
+        if ownership:
+            raise CloseVetoException()
         self._datasource.dispose()
 
     def notifyClosing(self, source):

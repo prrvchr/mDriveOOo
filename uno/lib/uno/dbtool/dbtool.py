@@ -172,7 +172,7 @@ def checkDataBase(ctx, connection):
         logger = getLogger(ctx, g_errorlog, g_basename)
         state = logger.resolveString(101)
         msg = logger.resolveString(102, g_jar, g_version, version)
-        logger.logp(SEVERE, g_basename, 'checkDataBase()', msg)
+        logger.logp(SEVERE, g_basename, 'checkDataBase', msg)
         error = getSqlException(state, 1112, msg)
     return version, error
 

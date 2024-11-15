@@ -117,7 +117,7 @@ class Content(unohelper.Base,
         self._commandInfo = self._getCommandInfo()
         self._propertySetInfo = self._getPropertySetInfo()
         self._services = ('com.sun.star.ucb.Content', )
-        self._logger.logprb(INFO, 'Content', '__init__()', 601)
+        self._logger.logprb(INFO, 'Content', '__init__', 601)
 
     @property
     def IsFolder(self):
@@ -196,7 +196,7 @@ class Content(unohelper.Base,
             if not self.IsRoot:
                 content = self._user.getContentByParent(self._authority, self.ParentId, self.Path)
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Content', 'getParent()', 651, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'Content', 'getParent', 651, e, traceback.format_exc())
         return content
 
     def setParent(self, parent):
@@ -221,17 +221,17 @@ class Content(unohelper.Base,
     def queryCreatableContentsInfo(self):
         return self._getCreatableContentsInfo()
     def createNewContent(self, info):
-        self._logger.logprb(INFO, 'Content', 'createNewContent()', 661, self._identifier)
+        self._logger.logprb(INFO, 'Content', 'createNewContent', 661, self._identifier)
         return self._user.createNewContent(self._authority, self.Id, self.Path, self.Title, info.Type)
 
     # XContent
     def getIdentifier(self):
         try:
             identifier = self._identifier
-            self._logger.logprb(INFO, 'Content', 'getIdentifier()', 641, identifier)
+            self._logger.logprb(INFO, 'Content', 'getIdentifier', 641, identifier)
             return Identifier(identifier)
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Content', 'getIdentifier()', 642, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'Content', 'getIdentifier', 642, e, traceback.format_exc())
 
     def getContentType(self):
         return self._metadata.get('ContentType')
@@ -248,7 +248,7 @@ class Content(unohelper.Base,
         return 1
 
     def execute(self, command, cmdid, environment):
-        self._logger.logprb(INFO, 'Content', 'execute()', 631, command.Name, self._identifier)
+        self._logger.logprb(INFO, 'Content', 'execute', 631, command.Name, self._identifier)
         if command.Name == 'getCommandInfo':
             return CommandInfo(self._getCommandInfo())
 
@@ -349,7 +349,7 @@ class Content(unohelper.Base,
             inputstream.closeInput()
             # We need to update the Size
             size = sf.getSize(target)
-            self._logger.logprb(INFO, 'Content', 'execute()', 635, self._identifier, size)
+            self._logger.logprb(INFO, 'Content', 'execute', 635, self._identifier, size)
             self._user.updateContent(itemid, 'Size', size)
             if move:
                 # TODO: must delete object
@@ -384,7 +384,7 @@ class Content(unohelper.Base,
                 print(msg)
                 level = SEVERE
             if msg:
-                self._logger.logp(level, 'Content', '_getPropertiesValues()', msg)
+                self._logger.logp(level, 'Content', '_getPropertiesValues', msg)
             values.append(getNamedValue(property.Name, value))
         return tuple(values)
 
@@ -418,7 +418,7 @@ class Content(unohelper.Base,
                 error = UnknownPropertyException(msg, self)
                 result = uno.Any('com.sun.star.beans.UnknownPropertyException', error)
             if msg:
-                self._logger.logp(level, 'Content', '_setPropertiesValues()', msg)
+                self._logger.logp(level, 'Content', '_setPropertiesValues', msg)
             results.append(result)
         return tuple(results)
 
@@ -496,8 +496,8 @@ class Content(unohelper.Base,
     def _updateFolderContent(self, properties):
         updated = False
         if ONLINE == self.ConnectionMode == self._user.SessionMode:
-            self._logger.logprb(INFO, 'Content', '_updateFolderContent()', 621, self._identifier)
-            updated = self._user.Provider.updateFolderContent(self)
+            self._logger.logprb(INFO, 'Content', '_updateFolderContent', 621, self._identifier)
+            updated = self._user.Provider.updateFolderContent(self._user, self._metadata)
         select = self._user.getChildren(self._authority, self.Path, self.Title, properties)
         return select, updated
 

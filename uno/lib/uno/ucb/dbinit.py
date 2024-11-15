@@ -83,7 +83,7 @@ def getDataBaseConnection(ctx, url, user, pwd, new, infos=None):
     return getDataSourceConnection(ctx, url, user, pwd, new, infos)
 
 def createDataBase(ctx, logger, connection, odb, version):
-    logger.logprb(INFO, 'DataBase', '_createDataBase()', 411, version)
+    logger.logprb(INFO, 'DataBase', '_createDataBase', 411, version)
     # XXX Creation order are very important here...
     tables = connection.getTables()
     statement = connection.createStatement()
@@ -102,7 +102,7 @@ def createDataBase(ctx, logger, connection, odb, version):
     executeQueries(ctx, statement, _getProcedures(), 'create%s', g_queries)
     statement.close()
     connection.getParent().DatabaseDocument.storeAsURL(odb, ())
-    logger.logprb(INFO, 'DataBase', '_createDataBase()', 412)
+    logger.logprb(INFO, 'DataBase', '_createDataBase', 412)
 
 def _createTables(connection, statement, tables):
     infos = getConnectionInfos(connection, 'AutoIncrementCreation', 'RowVersionCreation')
@@ -148,7 +148,9 @@ def _getForeignKeys():
             (f'{g_catalog}.{g_schema}.Privileges', 'Column', f'{g_catalog}.{g_schema}.Columns', 'Column', KeyRule.CASCADE, KeyRule.CASCADE))
 
 def _getFunctions():
-    for name in ('GetIsFolder', 'GetContentType', 'GetUniqueName'):
+    for name in ('GetIsFolder',
+                 'GetContentType',
+                 'GetUniqueName'):
         yield name
 
 def _getItemCommands(ctx, items, command, format, *option):
@@ -160,12 +162,22 @@ def _getItemOptions(items, *options):
         yield catalog, schema, name, *options
 
 def _getViews(catalog=g_catalog, schema=g_schema):
-    for name in ('Child', 'Twin', 'Duplicate', 'Path', 'Children'):
+    for name in ('Child',
+                 'Twin',
+                 'Duplicate',
+                 'Path',
+                 'Children'):
         yield catalog, schema, name
 
 def _getProcedures():
-    for name in ('GetItem', 'UpdatePushItems', 'GetPushItems', 'GetPushProperties',
-                 'GetItemParentIds', 'InsertUser', 'InsertSharedFolder', 'MergeItem',
-                 'MergeParent', 'InsertItem', 'UpdateNewItemId'):
+    for name in ('GetItem',
+                 'UpdatePushItems',
+                 'GetPushItems',
+                 'GetPushProperties',
+                 'GetItemParentIds',
+                 'InsertUser',
+                 'MergeItem',
+                 'InsertItem',
+                 'UpdateNewItemId'):
         yield name
 

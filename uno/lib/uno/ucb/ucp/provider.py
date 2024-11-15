@@ -74,7 +74,7 @@ class Provider():
         self._url = getResourceLocation(ctx, g_identifier, g_scheme)
         self._folders = []
         self._config = getConfiguration(ctx, g_identifier, False)
-        self._logger.logprb(INFO, 'Provider', '__init__()', 551)
+        self._logger.logprb(INFO, 'Provider', '__init__', 551)
 
     @property
     def Scheme(self):
@@ -110,10 +110,10 @@ class Provider():
     def mergeNewFolder(self, user, itemid, response):
         raise NotImplementedError
 
-    def parseFolder(self, parameter, content):
+    def parseFolder(self, user, parameter):
         raise NotImplementedError
 
-    def parseItems(self, request, parameter, rootid):
+    def parseItems(self, request, parameter, parentid):
         raise NotImplementedError
 
     def parseNewIdentifiers(self, response):
@@ -146,25 +146,28 @@ class Provider():
     def initUser(self, user, token):
         user.Token = token
 
-    def initSharedDocuments(self, user, datetime):
+    def initSharedDocuments(self, user, reset, datetime):
         # You must implement this method in Provider to be able to handle Shared Documents
         pass
 
     def pullUser(self, user):
         count = download = 0
-        timestamp = currentDateTimeInTZ()
+        datetime = currentDateTimeInTZ()
         parameter = self.getRequestParameter(user.Request, 'getPull', user)
         for item in self.parseItems(user.Request, parameter, user.RootId):
-            count += user.DataBase.pullItem(user.Id, item, timestamp)
+            count += user.DataBase.mergeItem(user.Id, user.RootId, datetime, item)
             download += self.pullFileContent(user, item)
         return parameter.PageCount, count, download, parameter.SyncToken
 
     # Method called by Content
-    def updateFolderContent(self, content):
-        timestamp = currentDateTimeInTZ()
-        parameter = self.getRequestParameter(content.User.Request, 'getFolderContent', content)
-        iterator = self.parseFolder(parameter, content)
-        count = content.User.DataBase.pullItems(iterator, content.User.Id, timestamp)
+    def updateFolderContent(self, user, data):
+        print("Provider.updateFolderContent()")
+        count = 0
+        datetime = currentDateTimeInTZ()
+        parameter = self.getRequestParameter(user.Request, 'getFolderContent', data)
+        items = self.parseFolder(user, parameter)
+        for item in user.DataBase.mergeItems(user.Id, user.RootId, datetime, items):
+            count += 1
         return count
 
     def downloadFile(self, user, item, url):
@@ -180,17 +183,18 @@ class Provider():
         response = user.Request.execute(parameter)
         return self.mergeNewFolder(user, itemid, response)
 
-    def firstPull(self, user):
+    def firstPull(self, user, reset):
         datetime = currentDateTimeInTZ()
-        page = count = 0
+        page = page2 = count = count2 = download = 0
         if self.SupportSharedDocuments:
-            self.initSharedDocuments(user, datetime)
+            page, count, download = self.initSharedDocuments(user, reset, datetime)
         for root in self.getFirstPullRoots(user):
             parameter = self.getRequestParameter(user.Request, 'getFirstPull', root)
-            iterator = self.parseItems(user.Request, parameter, user.RootId)
-            count +=  user.DataBase.pullItems(iterator, user.Id, datetime)
-            page += parameter.PageCount
-        return page, count, parameter.SyncToken
+            items = self.parseItems(user.Request, parameter, user.RootId)
+            for item in user.DataBase.mergeItems(user.Id, user.RootId, datetime, items):
+                count2 += 1
+            page2 += parameter.PageCount
+        return page, count, download, page2, count2, parameter.SyncToken
 
     def pullNewIdentifiers(self, user):
         count, msg = 0, ''
@@ -266,6 +270,11 @@ class Provider():
         if self.getSimpleFile().exists(url):
             return self.downloadFile(user, item, url)
         return False
+
+    def raiseIllegalIdentifierException(self, source, code, parameter, reponse):
+        msg = self._logger.resolveString(code, parameter.Name, response.StatusCode, response.Text)
+        response.close()
+        raise IllegalIdentifierException(msg, source)
 
     def updateNewItemId(self, oldid, newid):
         source = self.getTargetUrl(oldid)
