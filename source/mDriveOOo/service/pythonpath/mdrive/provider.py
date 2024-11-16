@@ -94,9 +94,9 @@ class Provider(ProviderBase):
         return (user.RootId, )
 
     def getUser(self, source, request, name):
-        user = self._getUser(source, request, name)
-        root = self._getRoot(source, request, name)
-        return user, root
+        user = self._getUser(source, request)
+        user.update(self._getRoot(source, request))
+        return user
 
     def mergeNewFolder(self, user, oldid, response):
         newid = None
@@ -105,8 +105,8 @@ class Provider(ProviderBase):
             newid = user.DataBase.updateNewItemId(user.Id, oldid, *items)
         return newid
 
-    def parseFolder(self, parameter, content):
-        return self.parseItems(content.User.Request, parameter, content.User.RootId, content.Link)
+    def parseFolder(self, user, data, parameter):
+        return self.parseItems(user.Request, parameter, user.RootId, data.get('Link'))
 
     def parseItems(self, request, parameter, rootid, link=''):
         readonly = versionable = False
@@ -183,33 +183,46 @@ class Provider(ProviderBase):
         return newid
 
     # Can be rewrited method
-    def initSharedDocuments(self, user, datetime):
-        itemid = generateUuid()
-        timestamp = currentUnoDateTime()
-        user.DataBase.createSharedFolder(user, itemid, self.SharedFolderName, g_ucpfolder, timestamp, datetime)
+    def initSharedDocuments(self, user, reset, datetime):
+        pages = count = download = 0
+        folder = {'Id':            user.ShareId,
+                  'Name':          self.SharedFolderName,
+                  'DateCreated':   user.DateCreated,
+                  'DateModified':  user.DateModified,
+                  'MediaType':     g_ucpfolder,
+                  'Size':          0,
+                  'Link':          '',
+                  'Trashed':       False,
+                  'CanAddChild':   False,
+                  'CanRename':     False,
+                  'IsReadOnly':    False,
+                  'IsVersionable': False,
+                  'Parents':       (user.RootId),
+                  'Path':          None}
+        user.DataBase.mergeItem(user.Id, user.RootId, datetime, folder)
         parameter = self.getRequestParameter(user.Request, 'getSharedFolderContent')
-        iterator = self._parseSharedFolder(user.Request, parameter, itemid, timestamp)
-        user.DataBase.pullItems(iterator, user.Id, datetime, 0)
+        items = self._parseSharedFolder(user.Request, parameter, user.ShareId)
+        for item in user.DataBase.mergeItems(user.Id, user.ShareId, datetime, items, 0):
+            count += 1
+            if reset:
+                download += self.pullFileContent(user, item)
+        return parameter.PageCount, count, download
 
     # Private method
-    def _getRoot(self, source, request, name):
+    def _getRoot(self, source, request):
         parameter = self.getRequestParameter(request, 'getRoot')
         response = request.execute(parameter)
         if not response.Ok:
-            msg = self._logger.resolveString(571, parameter.Name, response.StatusCode, response.Text)
-            self._logger.logp(INFO, 'Provider', '_getRoot()', msg)
-            raise IllegalIdentifierException(msg, source)
+            self.raiseIllegalIdentifierException(source, 571, parameter, reponse)
         root = self._parseRoot(response)
         response.close()
         return root
 
-    def _getUser(self, source, request, name):
+    def _getUser(self, source, request):
         parameter = self.getRequestParameter(request, 'getUser')
         response = request.execute(parameter)
         if not response.Ok:
-            msg = self._logger.resolveString(561, parameter.Name, response.StatusCode, response.Text)
-            self._logger.logp(INFO, 'Provider', '_getUser()', msg)
-            raise IllegalIdentifierException(msg, source)
+            self.raiseIllegalIdentifierException(source, 561, parameter, reponse)
         user = self._parseUser(response)
         response.close()
         return user
@@ -249,10 +262,11 @@ class Provider(ProviderBase):
                     modified = self.parseDateTime(value)
             del events[:]
         parser.close()
-        return rootid, created, modified
+        return {'RootId': rootid, 'DateCreated': created, 'DateModified': modified}
 
-    def _parseSharedFolder(self, request, parameter, parentid, timestamp):
+    def _parseSharedFolder(self, request, parameter, parentid):
         parents = (parentid, )
+        timestamp = currentUnoDateTime()
         trashed = canrename = readonly = versionable = False
         addchild = True
         path = None
@@ -321,7 +335,7 @@ class Provider(ProviderBase):
                     displayname = value
             del events[:]
         parser.close()
-        return userid, name, displayname
+        return {'Id': userid, 'Name': name, 'DisplayName': displayname}
 
     # Requests get Parameter method
     def getRequestParameter(self, request, method, data=None):

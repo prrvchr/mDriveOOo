@@ -30,7 +30,7 @@
   xmlns:oor="http://openoffice.org/2001/registry"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <prop oor:name="ResetSync">
-    <value>false</value>
+    <value>0</value>
   </prop>
   <prop oor:name="SupportShare">
     <value>true</value>
