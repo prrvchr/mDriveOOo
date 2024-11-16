@@ -110,7 +110,7 @@ class Provider():
     def mergeNewFolder(self, user, itemid, response):
         raise NotImplementedError
 
-    def parseFolder(self, user, parameter):
+    def parseFolder(self, user, data, parameter):
         raise NotImplementedError
 
     def parseItems(self, request, parameter, parentid):
@@ -165,7 +165,7 @@ class Provider():
         count = 0
         datetime = currentDateTimeInTZ()
         parameter = self.getRequestParameter(user.Request, 'getFolderContent', data)
-        items = self.parseFolder(user, parameter)
+        items = self.parseFolder(user, data, parameter)
         for item in user.DataBase.mergeItems(user.Id, user.RootId, datetime, items):
             count += 1
         return count
