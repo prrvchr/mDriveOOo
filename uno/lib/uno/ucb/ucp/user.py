@@ -157,6 +157,7 @@ class User():
     @TimeStamp.setter
     def TimeStamp(self, timestamp):
         self._metadata['TimeStamp'] = timestamp
+        self.DataBase.updateTimeStamp(self.Id, timestamp)
 
     # method called from DataSource
     def dispose(self):

@@ -165,10 +165,10 @@ class Replicator(Thread):
             # In order to make the creation of files or directories possible quickly,
             # it is necessary to run the verification of the identifiers first.
             self._checkNewIdentifier(user)
-            pages, count, download, pages2, count2, token = self._provider.firstPull(user, full)
+            count, download, pages, count2, download2, pages2, token = self._provider.firstPull(user, full)
             if share:
-                self._logger.logprb(INFO, g_class, mtd, 222, user.Name, count, pages, download)
-            self._logger.logprb(INFO, g_class, mtd, 223, user.Name, count2, pages2, token)
+                self._logger.logprb(INFO, g_class, mtd, 222, user.Name, count, download, pages)
+            self._logger.logprb(INFO, g_class, mtd, 223, user.Name, count2, download2, pages2, token)
             self._provider.initUser(user, token)
             user.releaseLock()
             self._fullPull = True
@@ -209,7 +209,7 @@ class Replicator(Thread):
             for item in self._database.getPushItems(user.Id, start, end):
                 if self._canceled:
                     break
-                metadata = self._database.getMetaData(user, item)
+                metadata = self._database.getMetaData(user.Id, user.RootId, item.get('Id'))
                 pushed = self._pushItem(user, item, metadata, start, end)
                 if pushed is None:
                     modified = getDateTimeToString(metadata.get('DateModified'))
@@ -219,7 +219,9 @@ class Replicator(Thread):
             else:
                 self._logger.logprb(INFO, g_class, mtd, 303, user.Name, len(items))
                 # XXX: User was pushed, we update user timestamp if needed
-                self._database.updatePushItems(user, items)
+                timestamp = self._database.updatePushItems(user.Id, items)
+                if timestamp is not None:
+                    user.TimeStamp = timestamp
                 self._logger.logprb(INFO, g_class, mtd, 304, user.Name)
                 return True
             return False

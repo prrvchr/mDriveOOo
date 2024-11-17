@@ -81,6 +81,9 @@ def getSqlQuery(ctx, name, format=None):
     elif name == 'updateItemId':
         query = 'UPDATE "Items" SET "ItemId" = ? WHERE "UserId" = ? AND "ItemId" = ?;'
 
+    elif name == 'updateTimeStamp':
+        query = 'UPDATE "Users" SET "TimeStamp" = ? WHERE "UserId" = ?;'
+
 # Delete Queries
     elif name == 'deleteNewIdentifier':
         query = 'DELETE FROM "Identifiers" WHERE "UserId" = ? AND "ItemId" = ?;'
@@ -282,14 +285,9 @@ CREATE PROCEDURE "UpdatePushItems"(IN USERID VARCHAR(320),
   BEGIN ATOMIC
     DECLARE TS TIMESTAMP(6) WITH TIME ZONE;
     IF CARDINALITY(ITEMS) > 0 THEN
-        UPDATE "Items" SET "SyncMode" = 0 WHERE "ItemId" IN (UNNEST(ITEMS));
+        UPDATE "Items" SET "SyncMode" = 0 WHERE "UserId" = USERID AND "ItemId" IN (UNNEST(ITEMS));
         SELECT MAX("RowStart") INTO TS FROM "Items" FOR SYSTEM_TIME AS OF CURRENT_TIMESTAMP(6)
-        WHERE "ItemId" IN (UNNEST(ITEMS));
-    END IF;
-    IF TS IS NULL THEN
-        SELECT "TimeStamp" INTO TS FROM "Users" WHERE "UserId" = USERID;
-    ELSE
-        UPDATE "Users" SET "TimeStamp" = TS WHERE "UserId" = USERID;
+        WHERE "UserId" = USERID AND "ItemId" IN (UNNEST(ITEMS));
     END IF;
     SET DATETIME = TS;
   END;

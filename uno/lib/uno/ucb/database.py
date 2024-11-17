@@ -143,13 +143,11 @@ class DataBase():
 
 # Procedures called by the Replicator
     # XXX: Replicator uses its own database connection
-    def getMetaData(self, user, item):
-        rootid = user.RootId
-        itemid = item.get('Id')
-        if item == rootid:
+    def getMetaData(self, userid, rootid, itemid):
+        if itemid == rootid:
             data = user.getRootMetaData()
         else:
-            data = self.getItem(user.Id, itemid, False)
+            data = self.getItem(userid, itemid, False)
         data['AtRoot'] = data.get('ParentId') == rootid
         return data
 
@@ -339,6 +337,13 @@ class DataBase():
         update.executeUpdate()
         update.close()
 
+    def updateTimeStamp(self, userid, timestamp):
+        update = self._getCall('updateTimeStamp')
+        update.setObject(1, timestamp)
+        update.setString(2, userid)
+        update.executeUpdate()
+        update.close()
+
     # Identifier counting procedure
     def countIdentifier(self, userid):
         count = 0
@@ -410,13 +415,16 @@ class DataBase():
         select.close()
         return properties
 
-    def updatePushItems(self, user, itemids):
+    def updatePushItems(self, userid, itemids):
         call = self._getCall('updatePushItems')
-        call.setString(1, user.Id)
+        call.setString(1, userid)
         call.setArray(2, Array('VARCHAR', itemids))
         call.execute()
-        user.TimeStamp = call.getObject(3, None)
+        timestamp = call.getObject(3, None)
+        if call.wasNull():
+            timestamp = None
         call.close()
+        return timestamp
 
     def getItemParentIds(self, itemid, metadata, start, end):
         call = self._getCall('getItemParentIds')

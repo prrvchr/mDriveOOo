@@ -185,16 +185,18 @@ class Provider():
 
     def firstPull(self, user, reset):
         datetime = currentDateTimeInTZ()
-        page = page2 = count = count2 = download = 0
+        count = download = page = count2 = download2 = page2 = 0
         if self.SupportSharedDocuments:
-            page, count, download = self.initSharedDocuments(user, reset, datetime)
+            count, download, page = self.initSharedDocuments(user, reset, datetime)
         for root in self.getFirstPullRoots(user):
             parameter = self.getRequestParameter(user.Request, 'getFirstPull', root)
             items = self.parseItems(user.Request, parameter, user.RootId)
             for item in user.DataBase.mergeItems(user.Id, user.RootId, datetime, items):
                 count2 += 1
+                if reset:
+                    download2 += self.pullFileContent(user, item)
             page2 += parameter.PageCount
-        return page, count, download, page2, count2, parameter.SyncToken
+        return count, download, page, count2, download2, page2, parameter.SyncToken
 
     def pullNewIdentifiers(self, user):
         count, msg = 0, ''
