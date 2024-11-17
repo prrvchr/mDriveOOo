@@ -366,10 +366,10 @@ class Provider(ProviderBase):
             parameter.Url += '/me/drive/sharedWithMe'
 
         elif method == 'getFolderContent':
-            if data.Link:
-                url = '/drives/%s/items/%s/children' % (data.Link, data.Id)
+            if data.get('Link'):
+                url = '/drives/%s/items/%s/children' % (data.get('Link'), data.get('Id'))
             else:
-                url = '/me/drive/items/%s/children' % data.Id
+                url = '/me/drive/items/%s/children' % data.get('Id')
             print("Provider.getFolderContent() Url: %s" % url)
             parameter.Url += url
             parameter.setQuery('$select', g_itemfields)
