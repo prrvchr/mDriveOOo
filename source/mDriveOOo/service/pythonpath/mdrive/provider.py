@@ -184,7 +184,7 @@ class Provider(ProviderBase):
 
     # Can be rewrited method
     def initSharedDocuments(self, user, reset, datetime):
-        pages = count = download = 0
+        count = download = 0
         folder = {'Id':            user.ShareId,
                   'Name':          self.SharedFolderName,
                   'DateCreated':   user.DateCreated,
@@ -206,7 +206,7 @@ class Provider(ProviderBase):
             count += 1
             if reset:
                 download += self.pullFileContent(user, item)
-        return parameter.PageCount, count, download
+        return count, download, parameter.PageCount
 
     # Private method
     def _getRoot(self, source, request):
