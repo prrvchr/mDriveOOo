@@ -79,8 +79,14 @@ class OptionsHandler(unohelper.Base,
             elif method == 'DisableSync':
                 self._manager.enableSync(False)
                 handled = True
+            elif method == 'Reset':
+                self._manager.setReset(bool(event.Source.State))
+                handled = True
             elif method == 'ViewData':
                 self._manager.viewData()
+                handled = True
+            elif method == 'ViewFile':
+                self._manager.viewFile()
                 handled = True
             elif method == 'Download':
                 self._manager.download()
@@ -110,7 +116,9 @@ class OptionsHandler(unohelper.Base,
                 'EnableShare',
                 'EnableSync',
                 'DisableSync',
+                'Reset',
                 'ViewData',
+                'ViewFile',
                 'Download',
                 'Upload',
                 'SpinUp1',

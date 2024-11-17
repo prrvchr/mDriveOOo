@@ -71,7 +71,7 @@ class LogController(LogWrapper):
             msg = resolver.resolveString(111)
             handler = RollerHandler(self._ctx, self.Name)
             self.addRollerHandler(handler)
-            self._logger.logp(SEVERE, 'Logger', 'clearLogger()', msg)
+            self._logger.logp(SEVERE, 'Logger', 'clearLogger', msg)
             self.removeRollerHandler(handler)
 
     def addModifyListener(self, listener):

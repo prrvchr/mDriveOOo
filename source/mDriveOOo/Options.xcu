@@ -43,7 +43,7 @@
     <value xml:lang="fr">Documents partagés</value>
   </prop>
   <prop oor:name="ReplicateTimeout">
-    <value>60</value>
+    <value>600</value>
   </prop>
   <prop oor:name="SynchronizePolicy">
     <value>CLIENT_IS_MASTER</value>
