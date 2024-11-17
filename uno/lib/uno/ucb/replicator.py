@@ -185,7 +185,7 @@ class Replicator(Thread):
                 return False
             self._logger.logprb(INFO, g_class, mtd, 201, user.Name)
             self._checkNewIdentifier(user)
-            pages, count, download, token = self._provider.pullUser(user)
+            count, download, pages, token = self._provider.pullUser(user)
             self._logger.logprb(INFO, g_class, mtd, 202, user.Name, count, download, pages, token)
             if token:
                 user.Token = token

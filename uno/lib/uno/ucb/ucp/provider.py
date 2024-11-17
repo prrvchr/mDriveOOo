@@ -157,7 +157,7 @@ class Provider():
         for item in self.parseItems(user.Request, parameter, user.RootId):
             count += user.DataBase.mergeItem(user.Id, user.RootId, datetime, item)
             download += self.pullFileContent(user, item)
-        return parameter.PageCount, count, download, parameter.SyncToken
+        return count, download, parameter.PageCount, parameter.SyncToken
 
     # Method called by Content
     def updateFolderContent(self, user, data):
