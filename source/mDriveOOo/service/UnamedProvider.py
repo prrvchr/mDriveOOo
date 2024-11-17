@@ -63,7 +63,7 @@ class UnamedProvider(unohelper.Base,
         self._ctx = ctx
         self._provider = None
         self._logger = getLogger(ctx, g_defaultlog, g_basename)
-        self._logger.logprb(INFO, 'UnamedProvider', '__init__()', 101, g_ImplementationName)
+        self._logger.logprb(INFO, 'UnamedProvider', '__init__', 101, g_ImplementationName)
 
     # XContentProvider
     def queryContent(self, identifier):
