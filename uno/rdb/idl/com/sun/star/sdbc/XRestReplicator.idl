@@ -1,0 +1,22 @@
+#ifndef __com_sun_star_sdbc_XRestReplicator_idl__
+#define __com_sun_star_sdbc_XRestReplicator_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/sdbc/XRestDataBase.idl>
+#include <com/sun/star/sdbc/XRestProvider.idl>
+
+module com { module sun { module star { module sdbc {
+
+interface XRestReplicator: com::sun::star::uno::XInterface
+{
+
+    void cancel();
+
+    [attribute, readonly] ::com::sun::star::sdbc::XRestProvider Provider;
+    [attribute, readonly] ::com::sun::star::sdbc::XRestDataBase DataBase;
+
+};
+
+}; }; }; };
+
+#endif

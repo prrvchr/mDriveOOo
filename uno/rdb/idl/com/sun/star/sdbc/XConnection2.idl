@@ -1,0 +1,105 @@
+#ifndef __com_sun_star_sdbc_XConnection2_idl__
+#define __com_sun_star_sdbc_XConnection2_idl__
+
+#include <com/sun/star/sdbc/XConnection.idl>
+#include <com/sun/star/sdbc/SQLException.idl>
+
+module com { module sun { module star { module sdbc {
+
+
+/** extends the XConnection interface to allow retrieval of additional
+    information.
+ */
+interface XConnection2 : com::sun::star::sdbc::XConnection
+{
+    /** Sets the given schema name to access.
+        @param schema
+            the name of a schema in which to work.
+        @throws SQLException
+            if a database access error occurs
+            or this method is called on a closed connection.
+     */
+    void setSchema([in]string schema) raises (SQLException);
+
+    /** Retrieves this Connection object's current schema name.
+        @returns
+            the current schema name or an empty string.
+        @throws SQLException
+            if a database access error occurs
+            or this method is called on a closed connection.
+     */
+    string getSchema() raises (SQLException);
+
+    /** Creates a savepoint with the given name
+        in the current transaction and returns the new
+        Savepoint object that represents it.
+        @param name
+            the name of the Savepoint.
+        @returns
+            the new Savepoint object.
+        @throws SQLException
+            if a database access error occurs,
+            this method is called while participating in a distributed transaction,
+            this method is called on a closed connection 
+            or this Connection object is currently in auto-commit mode
+     */
+    any setSavepoint([in]string name) raises (SQLException);
+
+    /** Undoes all changes made after the given Savepoint object was set. 
+        @param savepoint
+            the Savepoint object to roll back to.
+        @throws SQLException
+            if a database access error occurs,
+            this method is called while participating in a distributed transaction,
+            this method is called on a closed connection,
+            the Savepoint object is no longer valid, 
+            or this Connection object is currently in auto-commit mode
+     */
+    void rollbackToSavepoint([in]any savepoint) raises (SQLException);
+
+    /** Removes the specified Savepoint and subsequent Savepoint objects
+        from the current transaction. Any reference to the savepoint after
+        it have been removed will cause an SQLException to be thrown.
+        @param savepoint
+            the Savepoint object to be removed.
+        @throws SQLException
+            if a database access error occurs,
+            this method is called on a closed connection
+            or the given Savepoint object is not a valid savepoint in the current transaction
+     */
+    void releaseSavepoint([in]any savepoint) raises (SQLException);
+
+    /** Sets the value of the client info property specified
+        by name to the value specified by value. 
+        @param name
+            the name of the client info property to set.
+        @param value
+            the value to set the client info property to.
+            If the value is null, the current value of the specified property is cleared.
+            The base types supported by this parameter depend on the underlying driver and/or implementation.
+        @throws SQLException
+            if the database server returns an error while setting
+            the client info value on the database server
+            or this method is called on a closed connection 
+     */
+    void setClientInfo([in]string name, [in]any value) raises (SQLException);
+
+    /** Returns the value of the client info property specified by name.
+        This method may return null if the specified client info property has not been set.
+        This method will also return null if the specified client info property name is not supported by the driver.
+        @param name
+            the name of the client info property to retrieve
+        @returns
+            the value of the client info property specified
+        @throws SQLException
+            if the database server returns an error while setting
+            the client info value on the database server
+            or this method is called on a closed connection 
+     */
+    any getClientInfo([in]string name) raises (SQLException);
+};
+
+
+}; }; }; };
+
+#endif

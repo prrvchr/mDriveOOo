@@ -1,0 +1,66 @@
+[calmjs.extras_keys]
+node_modules = enabled
+
+[calmjs.registry]
+calmjs.artifacts = calmjs.artifact:ArtifactRegistry
+calmjs.extras_keys = calmjs.module:ExtrasJsonKeysRegistry
+calmjs.module = calmjs.module:ModuleRegistry
+calmjs.module.loader = calmjs.loaderplugin:ModuleLoaderRegistry
+calmjs.module.tests = calmjs.module:ModuleRegistry
+calmjs.module.tests.loader = calmjs.loaderplugin:ModuleLoaderRegistry
+calmjs.py.module = calmjs.module:PythonicModuleRegistry
+calmjs.py.module.tests = calmjs.module:PythonicModuleRegistry
+calmjs.registry = calmjs.registry:Registry
+calmjs.toolchain.advice = calmjs.toolchain:AdviceRegistry
+calmjs.toolchain.advice.apply = calmjs.toolchain:AdviceApplyRegistry
+
+[calmjs.reserved]
+calmjs.artifacts = calmjs
+calmjs.artifacts.tests = calmjs.dev
+calmjs.dev.module = calmjs.dev
+calmjs.dev.module.tests = calmjs.dev
+calmjs.extras_keys = calmjs
+calmjs.module = calmjs
+calmjs.module.loader = calmjs
+calmjs.module.tests = calmjs
+calmjs.module.tests.loader = calmjs
+calmjs.module.tests.webpackloader = calmjs.webpack
+calmjs.module.webpackloader = calmjs.webpack
+calmjs.py.module = calmjs
+calmjs.py.module.tests = calmjs
+calmjs.registry = calmjs
+calmjs.reserved = calmjs
+calmjs.toolchain.advice = calmjs
+calmjs.toolchain.advice.apply = calmjs
+calmjs.webpack.loaderplugins = calmjs.webpack
+calmjs.webpack.static.loaderplugins = calmjs.webpack
+
+[calmjs.runtime]
+artifact = calmjs.runtime:artifact
+npm = calmjs.npm:npm.runtime
+yarn = calmjs.yarn:yarn.runtime
+
+[calmjs.runtime.artifact]
+build = calmjs.runtime:artifact_build
+
+[calmjs.toolchain.advice]
+calmjs.toolchain:Toolchain = calmjs.toolchain:debugger
+
+[console_scripts]
+calmjs = calmjs.runtime:main
+
+[distutils.commands]
+build_calmjs_artifacts = calmjs.artifact:build_calmjs_artifacts
+npm = calmjs.npm:npm
+yarn = calmjs.yarn:yarn
+
+[distutils.setup_keywords]
+build_calmjs_artifacts = calmjs.dist:build_calmjs_artifacts
+calmjs_module_registry = calmjs.dist:validate_line_list
+extras_calmjs = calmjs.dist:validate_json_field
+package_json = calmjs.dist:validate_json_field
+
+[egg_info.writers]
+calmjs_module_registry.txt = calmjs.dist:write_module_registry_names
+extras_calmjs.json = calmjs.dist:write_extras_calmjs
+package.json = calmjs.npm:write_package_json

@@ -1,0 +1,42 @@
+Metadata-Version: 2.1
+Name: js2xml
+Version: 0.5.0
+Summary: Convert Javascript code to XML document
+Home-page: https://github.com/scrapinghub/js2xml
+Download-URL: https://github.com/scrapinghub/js2xml/archive/v0.5.0.tar.gz
+Author: Paul Tremberth
+Author-email: paul.tremberth@gmail.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Text Processing :: Markup :: XML
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Requires: calmjs.parse
+Requires: lxml
+Requires-Python: >=3.5
+License-File: LICENSE
+Requires-Dist: calmjs.parse
+Requires-Dist: lxml
+
+
+======
+js2xml
+======
+
+js2xml is a simple helper to parse Javascript code
+by representing a parse tree in XML.
+
+You can then use XPath for example to find interesting
+bits in Javascript instructions (strings, IDs, function parameters...)
+
+      
+

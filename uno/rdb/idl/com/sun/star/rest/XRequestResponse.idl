@@ -1,0 +1,94 @@
+/*
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+#ifndef __com_sun_star_rest_XRequestResponse_idl__
+#define __com_sun_star_rest_XRequestResponse_idl__
+
+#include <com/sun/star/uno/XInterface.idl>
+#include <com/sun/star/io/XInputStream.idl>
+#include <com/sun/star/container/XEnumeration.idl>
+#include <com/sun/star/rest/HTTPException.idl>
+#include <com/sun/star/rest/XRequestParameter.idl>
+#include <com/sun/star/rest/JSONDecodeException.idl>
+#include <com/sun/star/json/XJsonStructure.idl>
+#include <io/github/prrvchr/css/util/Duration.idl>
+
+
+module com { module sun { module star { module rest {
+
+interface XRequestResponse: com::sun::star::uno::XInterface
+{
+
+    void close();
+
+    boolean hasHeader([in] string Key);
+
+    string getHeader([in] string Key);
+
+    com::sun::star::json::XJsonStructure getJson()
+                                         raises(JSONDecodeException);
+
+    com::sun::star::json::XJsonStructure getForm()
+                                         raises(JSONDecodeException);
+
+    void raiseForStatus()
+         raises(HTTPException);
+
+    com::sun::star::container::XEnumeration iterContent([in] long ChunkSize,
+                                                        [in] boolean DecodeUnicode);
+
+    com::sun::star::container::XEnumeration iterLines([in] long ChunkSize,
+                                                      [in] boolean DecodeUnicode,
+                                                      [in] string Delimiter);
+
+    com::sun::star::io::XInputStream getInputStream([in] long Chunk);
+
+
+    [attribute] string Encoding;
+    [attribute, readonly] XRequestParameter Parameter;
+    [attribute, readonly] string Url;
+    [attribute, readonly] string FullUrl;
+    [attribute, readonly] long StatusCode;
+    [attribute, readonly] string Reason;
+    [attribute, readonly] string Links;
+    [attribute, readonly] string ApparentEncoding;
+    [attribute, readonly] string Text;
+    [attribute, readonly] sequence<byte> Content;
+    [attribute, readonly] string Headers;
+    [attribute, readonly] sequence<XRequestResponse> History;
+    [attribute, readonly] boolean Ok;
+    [attribute, readonly] boolean IsPermanentRedirect;
+    [attribute, readonly] boolean IsRedirect;
+    [attribute, readonly] io::github::prrvchr::css::util::Duration Elapsed;
+    [attribute, readonly] com::sun::star::io::XInputStream DataSink;
+    [attribute, readonly] any Error;
+
+
+};
+
+}; }; }; };
+
+#endif
