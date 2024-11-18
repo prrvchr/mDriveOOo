@@ -495,9 +495,10 @@ class Content(unohelper.Base,
         return select
 
     def _updateFolderContent(self, properties):
-        print("Content._updateFolderContent()")
+        print("Content._updateFolderContent() 1 Mode: %s - Connection: %s - user: %s" % (ONLINE, self.ConnectionMode, self._user.SessionMode))
         count = 0
         if ONLINE == self.ConnectionMode == self._user.SessionMode:
+            print("Content._updateFolderContent() 2")
             self._logger.logprb(INFO, 'Content', '_updateFolderContent', 621, self._identifier)
             count = self._user.Provider.updateFolderContent(self._user, self._metadata)
         select = self._user.getChildren(self._authority, self.Path, self.Title, properties)

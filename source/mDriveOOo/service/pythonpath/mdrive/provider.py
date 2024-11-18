@@ -201,7 +201,7 @@ class Provider(ProviderBase):
         user.DataBase.mergeItem(user.Id, user.RootId, datetime, folder)
         parameter = self.getRequestParameter(user.Request, 'getSharedFolderContent')
         items = self._parseSharedFolder(user.Request, parameter, user.ShareId)
-        for item in user.DataBase.mergeItems(user.Id, user.ShareId, datetime, items, 0):
+        for item in user.DataBase.mergeItems(user.Id, user.ShareId, datetime, items):
             count += 1
             if reset:
                 download += self.pullFileContent(user, item)
