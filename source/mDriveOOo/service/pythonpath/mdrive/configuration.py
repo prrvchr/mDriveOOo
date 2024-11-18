@@ -57,8 +57,6 @@ g_doc_map = {'application/vnd.microsoft-apps.document':     'application/vnd.oas
              'application/vnd.microsoft-apps.presentation': 'application/vnd.oasis.opendocument.presentation',
              'application/vnd.microsoft-apps.drawing':      'application/vnd.oasis.opendocument.graphics'}
 
-g_cache = 20
-
 # Resource strings files folder
 g_resource = 'resource'
 # Logging required global variable
