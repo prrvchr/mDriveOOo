@@ -27,9 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
-import unohelper
-
 from com.sun.star.logging.LogLevel import INFO
 
 from com.sun.star.rest.ParameterType import JSON
@@ -106,7 +103,9 @@ class Provider(ProviderBase):
         return newid
 
     def parseFolder(self, user, data, parameter):
-        return self.parseItems(user.Request, parameter, user.RootId, data.get('Link'))
+        # XXX: Link may not be present and in this case must be an empty string
+        link = data.get('Link', '')
+        return self.parseItems(user.Request, parameter, user.RootId, link)
 
     def parseItems(self, request, parameter, rootid, link=''):
         readonly = versionable = False

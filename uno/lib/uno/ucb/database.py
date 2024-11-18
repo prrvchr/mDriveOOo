@@ -476,7 +476,11 @@ class DataBase():
         call.setBoolean(15, item.get('IsReadOnly'))
         call.setBoolean(16, item.get('IsVersionable'))
         call.setArray(17, Array('VARCHAR', item.get('Parents')))
-        call.setNull(18, VARCHAR) if item.get('Path') is None else call.setString(17, item.get('Path'))
+        path = item.get('Path')
+        if path is None:
+            call.setNull(18, VARCHAR)
+        else:
+            call.setString(17, path)
         return 1
 
     def _getCall(self, name, format=None):

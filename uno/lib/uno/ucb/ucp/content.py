@@ -487,19 +487,21 @@ class Content(unohelper.Base,
         return result, level, msg
 
     def _getFolderContent(self, properties):
-        select, updated = self._updateFolderContent(properties)
-        if updated:
+        print("Content._getFolderContent()")
+        select, count = self._updateFolderContent(properties)
+        if count:
             loaded = self._user.updateConnectionMode(self.Id, OFFLINE)
             self.setConnectionMode(loaded)
         return select
 
     def _updateFolderContent(self, properties):
-        updated = False
+        print("Content._updateFolderContent()")
+        count = 0
         if ONLINE == self.ConnectionMode == self._user.SessionMode:
             self._logger.logprb(INFO, 'Content', '_updateFolderContent', 621, self._identifier)
-            updated = self._user.Provider.updateFolderContent(self._user, self._metadata)
+            count = self._user.Provider.updateFolderContent(self._user, self._metadata)
         select = self._user.getChildren(self._authority, self.Path, self.Title, properties)
-        return select, updated
+        return select, count
 
     def _getDocumentContent(self, sf):
         size = 0
