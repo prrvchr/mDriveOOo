@@ -124,16 +124,15 @@ class Replicator(Thread):
     def _synchronizeUser(self, user, policy, reset, full, share):
         mtd = '_synchronizeUser'
         self._logger.logprb(INFO, g_class, mtd, 131, user.Name)
+        end = currentDateTimeInTZ()
         sync = False
         if self._isNewUser(user) or reset:
             sync = self._initUser(user, full, share)
         elif policy == self._getSynchronizePolicy('SERVER_IS_MASTER'):
-            pass
             if self._pullUser(user):
-                sync = self._pushUser(user)
+                sync = self._pushUser(user, end)
         elif policy == self._getSynchronizePolicy('CLIENT_IS_MASTER'):
-            pass
-            if self._pushUser(user):
+            if self._pushUser(user, end):
                 sync = self._pullUser(user)
         if sync:
             self._logger.logprb(INFO, g_class, mtd, 132, user.Name)
@@ -170,6 +169,7 @@ class Replicator(Thread):
                 self._logger.logprb(INFO, g_class, mtd, 222, user.Name, count, download, pages)
             self._logger.logprb(INFO, g_class, mtd, 223, user.Name, count2, download2, pages2, token)
             self._provider.initUser(user, token)
+            user.TimeStamp = currentDateTimeInTZ()
             user.releaseLock()
             self._fullPull = True
             self._logger.logprb(INFO, g_class, mtd, 224, user.Name)
@@ -195,7 +195,7 @@ class Replicator(Thread):
             self._logger.logprb(SEVERE, g_class, mtd, 204, e, traceback.format_exc())
             return False
 
-    def _pushUser(self, user):
+    def _pushUser(self, user, end):
         mtd = '_pushUser'
         # This procedure corresponds to the push of changes for the entire database 
         # for a user, in chronological order, from 'start' to 'end'...
@@ -205,7 +205,6 @@ class Replicator(Thread):
             self._logger.logprb(INFO, g_class, mtd, 301, user.Name)
             items = []
             start = user.TimeStamp
-            end = currentDateTimeInTZ()
             for item in self._database.getPushItems(user.Id, start, end):
                 if self._canceled:
                     break

@@ -114,7 +114,7 @@ class ContentProvider(unohelper.Base,
             self._logger.logprb(INFO, self._cls, 'queryContent', 231, url)
             return content
         except IllegalIdentifierException as e:
-            self._logger.logprb(INFO, self._cls, 'queryContent', 232, e.Message)
+            self._logger.logprb(SEVERE, self._cls, 'queryContent', 232, e.Message)
             raise e
         except Exception as e:
             msg = self._logger.resolveString(233, traceback.format_exc())

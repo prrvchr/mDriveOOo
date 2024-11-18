@@ -28,7 +28,6 @@
 """
 
 import uno
-import unohelper
 
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
@@ -62,7 +61,6 @@ from ..configuration import g_chunk
 from .configuration import g_ucbseparator
 
 from dateutil import parser, tz
-from collections import OrderedDict
 import traceback
 
 

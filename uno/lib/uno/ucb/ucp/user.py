@@ -27,9 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
-import unohelper
-
 from com.sun.star.beans.PropertyAttribute import BOUND
 
 from com.sun.star.logging.LogLevel import INFO
@@ -49,6 +46,7 @@ from ..oauth2 import g_oauth2
 from ..dbtool import currentDateTimeInTZ
 from ..dbtool import currentUnoDateTime
 
+from ..unotool import generateUuid
 from ..unotool import getProperty
 from ..unotool import getUriFactory
 
@@ -321,7 +319,7 @@ class User():
         if self.Provider.GenerateIds:
             identifier = self.DataBase.getNewIdentifier(self.Id)
         else:
-            identifier = binascii.hexlify(uno.generateUuid().value).decode('utf-8')
+            identifier = generateUuid()
         return identifier
 
     def _getExceptionMessage(self, method, code, *args):
