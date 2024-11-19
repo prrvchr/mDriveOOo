@@ -164,8 +164,10 @@ class Content(unohelper.Base,
     @property
     def ConnectionMode(self):
         return self._metadata.get('ConnectionMode')
-    def setConnectionMode(self, mode):
+    @ConnectionMode.setter
+    def ConnectionMode(self, mode):
         self._metadata['ConnectionMode'] = mode
+        self._user.updateConnectionMode(self.Id, mode)
 
     @property
     def User(self):
@@ -196,7 +198,7 @@ class Content(unohelper.Base,
             if not self.IsRoot:
                 content = self._user.getContentByParent(self._authority, self.ParentId, self.Path)
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Content', 'getParent', 651, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'Content', 'getParent', 661, e, traceback.format_exc())
         return content
 
     def setParent(self, parent):
@@ -221,17 +223,17 @@ class Content(unohelper.Base,
     def queryCreatableContentsInfo(self):
         return self._getCreatableContentsInfo()
     def createNewContent(self, info):
-        self._logger.logprb(INFO, 'Content', 'createNewContent', 661, self._identifier)
+        self._logger.logprb(INFO, 'Content', 'createNewContent', 671, self._identifier)
         return self._user.createNewContent(self._authority, self.Id, self.Path, self.Title, info.Type)
 
     # XContent
     def getIdentifier(self):
         try:
             identifier = self._identifier
-            self._logger.logprb(INFO, 'Content', 'getIdentifier', 641, identifier)
+            self._logger.logprb(INFO, 'Content', 'getIdentifier', 651, identifier)
             return Identifier(identifier)
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Content', 'getIdentifier', 642, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'Content', 'getIdentifier', 652, e, traceback.format_exc())
 
     def getContentType(self):
         return self._metadata.get('ContentType')
@@ -248,7 +250,7 @@ class Content(unohelper.Base,
         return 1
 
     def execute(self, command, cmdid, environment):
-        self._logger.logprb(INFO, 'Content', 'execute', 631, command.Name, self._identifier)
+        self._logger.logprb(INFO, 'Content', 'execute', 621, command.Name, self._identifier)
         if command.Name == 'getCommandInfo':
             return CommandInfo(self._getCommandInfo())
 
@@ -275,7 +277,7 @@ class Content(unohelper.Base,
                 sf = self._user.Provider.getSimpleFile()
                 url, size = self._getDocumentContent(sf)
                 if not size:
-                    msg = self._logger.resolveString(632, self._identifier)
+                    msg = self._logger.resolveString(622, self._identifier)
                     raise CommandAbortedException(msg, self)
                 input = command.Argument.Sink
                 isreadonly = self._metadata.get('IsReadOnly')
@@ -316,7 +318,7 @@ class Content(unohelper.Base,
         elif command.Name == 'transfer':
             # see github/libreoffice/ucb/source/core/ucbcmds.cxx
             if not self.IsFolder:
-                msg = self._logger.resolveString(633, self._identifier)
+                msg = self._logger.resolveString(623, self._identifier)
                 UnsupportedCommandException(msg, self)
             newtitle = command.Argument.NewTitle
             source = command.Argument.SourceURL
@@ -338,7 +340,7 @@ class Content(unohelper.Base,
                 # - createNewContent: for creating an empty new Content
                 # - Insert at new Content for committing change
                 # To execute these commands, we must throw an exception
-                msg = self._logger.resolveString(634, source, self._identifier)
+                msg = self._logger.resolveString(624, source, self._identifier)
                 raise InteractiveBadTransferURLException(msg, self)
             sf = self._user.Provider.getSimpleFile()
             if not sf.exists(source):
@@ -349,7 +351,7 @@ class Content(unohelper.Base,
             inputstream.closeInput()
             # We need to update the Size
             size = sf.getSize(target)
-            self._logger.logprb(INFO, 'Content', 'execute', 635, self._identifier, size)
+            self._logger.logprb(INFO, 'Content', 'execute', 625, self._identifier, size)
             self._user.updateContent(itemid, 'Size', size)
             if move:
                 # TODO: must delete object
@@ -487,35 +489,26 @@ class Content(unohelper.Base,
         return result, level, msg
 
     def _getFolderContent(self, properties):
-        print("Content._getFolderContent()")
-        select, count = self._updateFolderContent(properties)
-        if count:
-            loaded = self._user.updateConnectionMode(self.Id, OFFLINE)
-            self.setConnectionMode(loaded)
-        return select
-
-    def _updateFolderContent(self, properties):
-        print("Content._updateFolderContent() 1 Mode: %s - Connection: %s - user: %s" % (ONLINE, self.ConnectionMode, self._user.SessionMode))
-        count = 0
-        if ONLINE == self.ConnectionMode == self._user.SessionMode:
-            print("Content._updateFolderContent() 2")
-            self._logger.logprb(INFO, 'Content', '_updateFolderContent', 621, self._identifier)
+        if self._user.SessionMode == ONLINE and self.ConnectionMode != 2:
             count = self._user.Provider.updateFolderContent(self._user, self._metadata)
-        select = self._user.getChildren(self._authority, self.Path, self.Title, properties)
-        return select, count
+            self._upgradeConnectionmode()
+            self._logger.logprb(INFO, 'Content', '_getFolderContent', 631, self._identifier, count)
+        return self._user.getChildren(self._authority, self.Path, self.Title, properties)
 
     def _getDocumentContent(self, sf):
         size = 0
         url = self._user.Provider.getTargetUrl(self.Id)
-        if self.ConnectionMode == OFFLINE and sf.exists(url):
-            return url, sf.getSize(url)
-        if self._user.Provider.downloadFile(self._user, self._metadata, url):
-            loaded = self._user.updateConnectionMode(self.Id, OFFLINE)
-            self.setConnectionMode(loaded)
-        else:
-            pass
-            # TODO: raise correct exception
-        return url, sf.getSize(url)
+        if (self.ConnectionMode == 2 or self._user.SessionMode == OFFLINE) and sf.exists(url):
+            size = sf.getSize(url)
+        elif self._user.Provider.downloadFile(self._user, self._metadata, url):
+            size = sf.getSize(url)
+            self._upgradeConnectionmode()
+            self._logger.logprb(INFO, 'Content', '_getDocumentContent', 641, self._identifier, size)
+        return url, size
+
+    def _upgradeConnectionmode(self):
+        if abs(self.ConnectionMode) == 1:
+            self.ConnectionMode = 2 * self.ConnectionMode
 
     def _getCommandInfo(self):
         commands = {}

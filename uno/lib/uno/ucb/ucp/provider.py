@@ -159,12 +159,12 @@ class Provider():
 
     # Method called by Content
     def updateFolderContent(self, user, data):
-        print("Provider.updateFolderContent()")
         count = 0
         datetime = currentDateTimeInTZ()
+        mode = 1 if data.get('ConnectionMode') > 0 else -1
         parameter = self.getRequestParameter(user.Request, 'getFolderContent', data)
         items = self.parseFolder(user, data, parameter)
-        for item in user.DataBase.mergeItems(user.Id, user.RootId, datetime, items):
+        for item in user.DataBase.mergeItems(user.Id, user.RootId, datetime, items, mode):
             count += 1
         return count
 

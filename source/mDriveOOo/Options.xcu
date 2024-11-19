@@ -39,8 +39,8 @@
     <value>true</value>
   </prop>
   <prop oor:name="SharedFolderName">
-    <value xml:lang="en">Shared documents</value>
-    <value xml:lang="fr">Documents partagés</value>
+    <value xml:lang="en">Shared</value>
+    <value xml:lang="fr">Partagé</value>
   </prop>
   <prop oor:name="ReplicateTimeout">
     <value>600</value>

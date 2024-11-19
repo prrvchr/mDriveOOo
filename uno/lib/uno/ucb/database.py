@@ -192,7 +192,7 @@ class DataBase():
             i += 1
         call.setString(i, userid)
         call.setString(i + 1, path)
-        call.setShort(i + 2, mode)
+        call.setShort(i + 2, mode + 1)
         return call
 
     def _getChildrenformat(self, properties):
@@ -208,7 +208,7 @@ class DataBase():
                    'TargetURL':     '? || C."Path" || C."Title"',
                    'IsHidden':      'FALSE',
                    'IsVolume':      'FALSE',
-                   'IsRemote':      'FALSE',
+                   'IsRemote':      'C."ConnectionMode" < 0',
                    'IsRemoveable':  'FALSE',
                    'IsFloppy':      'FALSE',
                    'IsCompactDisc': 'FALSE'}

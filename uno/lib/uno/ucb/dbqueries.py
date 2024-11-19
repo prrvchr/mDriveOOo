@@ -44,7 +44,7 @@ def getSqlQuery(ctx, name, format=None):
         query = 'SELECT "UserId", "UserName", "RootId", "ShareId", "Token", "DateCreated", "DateModified", "TimeStamp" FROM "Users" WHERE "UserName" = ?;'
 
     elif name == 'getChildren':
-        query = 'SELECT %(Columns)s FROM %(Children)s AS C WHERE C."UserId" = ? AND C."Path" = ? AND (C."IsFolder" = TRUE OR C."ConnectionMode" >= ?);' % format
+        query = 'SELECT %(Columns)s FROM %(Children)s AS C WHERE C."UserId" = ? AND C."Path" = ? AND (C."IsFolder" = TRUE OR ABS(C."ConnectionMode") >= ?);' % format
 
     elif name == 'getChildId':
         query = 'SELECT "ItemId" FROM "Children" WHERE "ParentId" = ? AND "Path" = ? AND "Title" = ?;'
@@ -239,7 +239,7 @@ CREATE PROCEDURE "GetItem"(IN USERID VARCHAR(320),
        FALSE AS "Trashed", FALSE AS "IsRoot", C."IsFolder", NOT C."IsFolder"
        AS "IsDocument", C."ConnectionMode", C."ItemId" AS "ObjectId",
        C1."CanAddChild", C1."CanRename", C1."IsReadOnly", C1."IsVersionable",
-       FALSE AS "IsHidden", FALSE AS "IsVolume", FALSE AS "IsRemote",
+       FALSE AS "IsHidden", FALSE AS "IsVolume", C."ConnectionMode" < 0 AS "IsRemote",
        FALSE AS "IsRemoveable", FALSE AS "IsFloppy", FALSE AS "IsCompactDisc"
       FROM "Children" AS C
       INNER JOIN "Capabilities" AS C1 ON C."ItemId" = C1."ItemId" 

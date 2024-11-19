@@ -103,9 +103,7 @@ class Provider(ProviderBase):
         return newid
 
     def parseFolder(self, user, data, parameter):
-        # XXX: Link may not be present and in this case must be an empty string
-        link = data.get('Link', '')
-        return self.parseItems(user.Request, parameter, user.RootId, link)
+        return self.parseItems(user.Request, parameter, user.RootId, data.get('Link'))
 
     def parseItems(self, request, parameter, rootid, link=''):
         readonly = versionable = False
@@ -149,7 +147,8 @@ class Provider(ProviderBase):
                         elif (prefix, event) == ('value.item.parentReference.id', 'string'):
                             parents = (value, )
                         elif (prefix, event) == ('value.item', 'end_map'):
-                            if itemid and name:
+                            # XXX: the root must be removed from the result
+                            if itemid and name and itemid != rootid:
                                 yield {'Id': itemid,
                                        'Name': name,
                                        'DateCreated': created,
@@ -198,10 +197,10 @@ class Provider(ProviderBase):
                   'IsVersionable': False,
                   'Parents':       (user.RootId),
                   'Path':          None}
-        user.DataBase.mergeItem(user.Id, user.RootId, datetime, folder)
+        user.DataBase.mergeItem(user.Id, user.RootId, datetime, folder, -1)
         parameter = self.getRequestParameter(user.Request, 'getSharedFolderContent')
         items = self._parseSharedFolder(user.Request, parameter, user.ShareId)
-        for item in user.DataBase.mergeItems(user.Id, user.ShareId, datetime, items):
+        for item in user.DataBase.mergeItems(user.Id, user.ShareId, datetime, items, -1):
             count += 1
             if reset:
                 download += self.pullFileContent(user, item)
@@ -278,6 +277,7 @@ class Provider(ProviderBase):
                 while iterator.hasMoreElements():
                     parser.send(iterator.nextElement().value)
                     for prefix, event, value in events:
+                        
                         if (prefix, event) == ('value.item', 'start_map'):
                             itemid = name = None
                             created = modified = timestamp
