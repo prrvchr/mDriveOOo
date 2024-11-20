@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -349,10 +349,6 @@ class Provider(ProviderBase):
             parameter.Url += '/me/drive/root'
             parameter.setQuery('$select', g_drivefields)
 
-        elif method == 'getItem':
-            parameter.Url += '/me/drive/items/'+ data.Id
-            parameter.setQuery('$select', g_itemfields)
-
         elif method == 'getFirstPull':
             parameter.Url += '/me/drive/root/delta'
             parameter.setQuery('$select', g_itemfields)
@@ -365,36 +361,24 @@ class Provider(ProviderBase):
             parameter.Url += '/me/drive/sharedWithMe'
 
         elif method == 'getFolderContent':
-            if data.get('Link'):
-                url = '/drives/%s/items/%s/children' % (data.get('Link'), data.get('Id'))
-            else:
-                url = '/me/drive/items/%s/children' % data.get('Id')
-            print("Provider.getFolderContent() Url: %s" % url)
+            url = '%s/items/%s/children' % (self._getPath(data), data.get('Id'))
             parameter.Url += url
             parameter.setQuery('$select', g_itemfields)
             parameter.setQuery('$top', g_pages)
 
         elif method == 'getDocumentLocation':
-            if data.get('Link'):
-                url = '/drives/%s/items/%s/content' % (data.get('Link'), data.get('Id'))
-            else:
-                url = '/me/drive/items/%s/content' % data.get('Id')
+            url = '%s/items/%s/content' % (self._getPath(data), data.get('Id'))
             parameter.Url += url
-            print("Provider.getRequestParameter() Name: %s - Url: %s" % (parameter.Name, parameter.Url))
             parameter.NoRedirect = True
 
         elif method == 'downloadFile':
             parameter.Url = data
             parameter.NoAuth = True
 
-        elif method == 'updateTitle':
+        elif method == 'updateName':
             parameter.Method = 'PATCH'
             parameter.Url += '/me/drive/items/' + data.get('Id')
             parameter.setJson('name', data.get('Title'))
-
-        elif method == 'updateTrashed':
-            parameter.Method = 'DELETE'
-            parameter.Url += '/me/drive/items/' + data.get('Id')
 
         elif method == 'updateParents':
             parameter.Method = 'PATCH'
@@ -406,40 +390,32 @@ class Provider(ProviderBase):
             if len(toremove) > 0:
                 parameter.setJson('removeParents', ','.join(toremove))
 
+        elif method == 'updateTrashed':
+            parameter.Method = 'DELETE'
+            parameter.Url += '/me/drive/items/' + data.get('Id')
+
         elif method == 'createNewFolder':
             parameter.Method = 'POST'
-            if data.get('Link'):
-                url = '/drives/%s/items/%s/children' % (data.get('Link'), data.get('ParentId'))
-            else:
-                url = '/me/drive/items/%s/children' % data.get('ParentId')
+            url = '%s/items/%s/children' % (self._getPath(data), data.get('ParentId'))
             parameter.Url += url
             parameter.setJson('name', data.get('Title'))
             # FIXME: We need to bee able to construct a JSON object like:
             # FIXME: {folder:{}, } then it's done by a trailing slash...
             parameter.setJson('folder/', None)
             parameter.setJson('@microsoft.graph.conflictBehavior', 'replace')
-            print("Provider.createNewFolder() Parameter.Json: '%s'" % parameter.Json)
 
         elif method == 'getUploadLocation':
             parameter.Method = 'POST'
-            if data.get('Link'):
-                url = '/drives/%s/items/%s/createUploadSession' % (data.get('Link'), data.get('Id'))
-            else:
-                url = '/me/drive/items/%s/createUploadSession' % data.get('Id')
+            url = '%s/items/%s/createUploadSession' % (self._getPath(data), data.get('Id'))
             parameter.Url += url
-            print("Provider.getUploadLocation() Parameter.Json: '%s'" % parameter.Json)
 
         elif method == 'getNewUploadLocation':
             parameter.Method = 'POST'
-            if data.get('Link'):
-                url = '/drives/%s/items/%s:/%s:/createUploadSession' % (data.get('Link'), data.get('ParentId'), data.get('Title'))
-            else:
-                url = '/me/drive/items/%s:/%s:/createUploadSession' % (data.get('ParentId'), data.get('Title'))
+            url = '%s/items/%s:/%s:/createUploadSession' % (self._getPath(data), data.get('ParentId'), data.get('Title'))
             parameter.Url += url
             parameter.setJson('item/@odata.type', 'microsoft.graph.driveItemUploadableProperties')
             parameter.setJson('item/@microsoft.graph.conflictBehavior', 'replace')
             parameter.setJson('item/name', data.get('Title'))
-            print("Provider.getNewUploadLocation() Parameter.Json: '%s'" % parameter.Json)
 
         elif method == 'getUploadStream':
             parameter.Method = 'PUT'
@@ -447,21 +423,8 @@ class Provider(ProviderBase):
             parameter.NoAuth = True
             parameter.setUpload(ACCEPTED, 'nextExpectedRanges', '([0-9]+)', 0, JSON)
 
-        elif method == 'uploadFile':
-            parameter.Method = 'PUT'
-            if data.get('Link'):
-                url = '/drives/%s/items/%s/content' % (data.get('Link'), data.get('Id'))
-            else:
-                url = '/me/drive/items/%s/content' % data.get('Id')
-            parameter.Url += url
-
-        elif method == 'uploadNewFile':
-            parameter.Method = 'PUT'
-            if data.get('Link'):
-                url = '/drives/%s/items/%s:/%s:/content' % (data.get('Link'), data.get('ParentId'), data.get('Title'))
-            else:
-                url = '/me/drive/items/%s:/%s:/content' % (data.get('ParentId'), data.get('Title'))
-            parameter.Url += url
-
         return parameter
+
+    def _getPath(self, data):
+        return '/drives/%s' % data.get('Link') if data.get('Link') else '/me/drive'
 
