@@ -268,6 +268,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 - Les modifications à distance du contenu des fichiers sont prises en compte par le réplicateur.
 - Si nécessaire, il est possible de demander, dans les options de l'extension, une synchronisation initiale. Il est également possible de demander le téléchargement de tous les fichiers déjà visualisés qui ont une copie locale.
 - Le réplicateur fournit une journalisation plus complète.
+- Les dossiers partagés sont désormais reconnaissables à leur icône.
 - De nombreuses corrections.
 
 ### Que reste-t-il à faire pour la version 1.1.6:

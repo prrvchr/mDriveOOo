@@ -268,6 +268,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 - Remote modifications of the contents of the files are taken into account by the replicator.
 - If necessary, it is possible to request an initial synchronization in the extension options. It is also possible to request the download of all files already viewed that have a local copy.
 - The replicator provides more comprehensive logging.
+- Shared folders are now recognizable by their icon.
 - Many fixes.
 
 ### What remains to be done for version 1.1.6:
