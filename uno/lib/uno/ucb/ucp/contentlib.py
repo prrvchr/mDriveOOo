@@ -42,8 +42,6 @@ from com.sun.star.ucb import UnsupportedCommandException
 
 from .identifier import Identifier
 
-from ..oauth2 import g_oauth2
-
 from ..unolib import PropertySet
 
 from ..unotool import getProperty

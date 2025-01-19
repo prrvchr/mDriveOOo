@@ -32,7 +32,7 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb import IllegalIdentifierException
 
-from .oauth2 import getOAuth2UserName
+from .oauth20 import getOAuth2UserName
 
 from .unotool import getUriFactory
 

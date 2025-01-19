@@ -58,9 +58,9 @@ from .dbtool import getConnectionUrl
 
 from .logger import getLogger
 
-from .oauth2 import getOAuth2Version
-from .oauth2 import g_extension as g_oauth2ext
-from .oauth2 import g_version as g_oauth2ver
+from .oauth20 import getOAuth2Version
+from .oauth20 import g_extension as g_oauth2ext
+from .oauth20 import g_version as g_oauth2ver
 
 from .jdbcdriver import g_extension as g_jdbcext
 from .jdbcdriver import g_identifier as g_jdbcid
