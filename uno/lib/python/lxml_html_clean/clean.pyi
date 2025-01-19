@@ -8,6 +8,17 @@ _DT = TypeVar("_DT", str, bytes, HtmlElement)
 _ET_DT = TypeVar("_ET_DT", str, bytes, HtmlElement, _ElementTree[HtmlElement])
 
 
+def _get_authority_from_url(url: str) -> str | None: ...
+
+
+class LXMLHTMLCleanWarning(Warning):
+    pass
+
+
+class AmbiguousURLWarning(LXMLHTMLCleanWarning):
+    pass
+
+
 class Cleaner:
     @overload  # allow_tags present, remove_unknown_tags must be False
     def __init__(

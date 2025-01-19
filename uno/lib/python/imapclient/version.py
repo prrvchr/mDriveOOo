@@ -1,13 +1,13 @@
-# Copyright (c) 2018, Menno Smits
+# Copyright (c) 2022, Menno Smits
 # Released subject to the New BSD License
 # Please see http://en.wikipedia.org/wiki/BSD_licenses
 
-from __future__ import unicode_literals
+from typing import Tuple
 
-version_info = (2, 2, 0, "final")
+version_info = (3, 0, 1, "final")
 
 
-def _imapclient_version_string(vinfo):
+def _imapclient_version_string(vinfo: Tuple[int, int, int, str]) -> str:
     major, minor, micro, releaselevel = vinfo
     v = "%d.%d.%d" % (major, minor, micro)
     if releaselevel != "final":

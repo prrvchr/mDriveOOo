@@ -27,9 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
-import unohelper
-
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
@@ -37,44 +34,44 @@ from com.sun.star.sdb.CommandType import QUERY
 
 from com.sun.star.sdbc.DataType import VARCHAR
 
-from com.sun.star.sdbcx import CheckOption
-from com.sun.star.sdbcx import PrivilegeObject
+from com.sun.star.sdbcx.CheckOption import CASCADE
+from com.sun.star.sdbcx.PrivilegeObject import TABLE
 
-from ..dbtool import Array
-from ..dbtool import createUser
-from ..dbtool import createViews
-from ..dbtool import currentDateTimeInTZ
-from ..dbtool import getDataFromResult
-from ..dbtool import getDataSourceCall
-from ..dbtool import getDataSourceConnection
-from ..dbtool import getSequenceFromResult
-from ..dbtool import getValueFromResult
+from .dbtool import Array
+from .dbtool import createUser
+from .dbtool import createViews
+from .dbtool import currentDateTimeInTZ
+from .dbtool import getDataFromResult
+from .dbtool import getDataSourceCall
+from .dbtool import getDataSourceConnection
+from .dbtool import getSequenceFromResult
+from .dbtool import getValueFromResult
 
-from ..unotool import checkVersion
-from ..unotool import getConfiguration
-from ..unotool import getSimpleFile
+from .unotool import checkVersion
+from .unotool import getConfiguration
+from .unotool import getSimpleFile
 
-from ..configuration import g_identifier
-from ..configuration import g_admin
-from ..configuration import g_host
+from .configuration import g_identifier
+from .configuration import g_host
 
-from ..dbqueries import getSqlQuery
+from .dbqueries import getSqlQuery
 
-from ..dbconfig import g_catalog
-from ..dbconfig import g_schema
-from ..dbconfig import g_dotcode
-from ..dbconfig import g_version
+from .dbconfig import g_catalog
+from .dbconfig import g_schema
+from .dbconfig import g_version
 
-from ..dbinit import getDataBaseConnection
-from ..dbinit import createDataBase
+from .dbinit import getDataBaseConnection
+from .dbinit import createDataBase
 
 from collections import OrderedDict
 import json
 import traceback
 
 
-class DataBase(object):
-    def __init__(self, ctx, url, user='', pwd=''):
+class DataBase():
+    def __init__(self, ctx, logger, url, user='', pwd=''):
+        self._cls = 'DataBase'
+        mtd = '__init__'
         self._ctx = ctx
         self._statement = None
         self._fieldsMap = {}
@@ -85,7 +82,9 @@ class DataBase(object):
         connection = getDataBaseConnection(ctx, url, user, pwd, new)
         self._version = connection.getMetaData().getDriverVersion()
         if new and self.isUptoDate():
+            logger.logprb(INFO, self._cls, mtd, 1251)
             createDataBase(ctx, connection, odb)
+            logger.logprb(INFO, self._cls, mtd, 1252)
         connection.close()
 
     @property
@@ -157,14 +156,13 @@ class DataBase(object):
 
     def insertUser(self, uri, scheme, server, path, name):
         metadata = None
-        books = []
         call = self._getCall('insertUser')
         call.setString(1, uri)
         call.setString(2, scheme)
         call.setString(3, server)
         call.setString(4, path)
         call.setString(5, name)
-        result = call.executeQuery()
+        call.execute()
         user = call.getInt(6)
         if not call.wasNull():
             metadata = {'User': user,
@@ -173,28 +171,25 @@ class DataBase(object):
                         'Server': server,
                         'Path': path,
                         'Name': name}
-            while result.next():
-                books.append(getDataFromResult(result))
-        result.close()
         call.close()
-        return metadata, books
+        return metadata, ()
 
     def createUser(self, schema, userid, name, password):
         try:
             if createUser(self.Connection, name, password):
                 statement = self.Connection.createStatement()
-                format = {'Schema': schema, 'Name': name}
-                query = getSqlQuery(self._ctx, 'createUserSchema', format)
+                template = {'Schema': schema, 'Name': name}
+                query = getSqlQuery(self._ctx, 'createUserSchema', template)
                 statement.execute(query)
-                query = getSqlQuery(self._ctx, 'setUserSchema', format)
+                query = getSqlQuery(self._ctx, 'setUserSchema', template)
                 statement.execute(query)
                 statement.close()
                 view = self._getViewName()
-                format = {'Catalog': g_catalog, 'Schema': g_schema, 'User': userid}
-                command = getSqlQuery(self._ctx, 'getUserViewCommand', format)
-                self._createUserView(g_catalog, schema, view, command, CheckOption.CASCADE)
-                self._grantPrivileges(g_catalog, schema, view, name, PrivilegeObject.TABLE, 1)
-        except Exception as e:
+                template = {'Catalog': g_catalog, 'Schema': g_schema, 'User': userid}
+                command = getSqlQuery(self._ctx, 'getUserViewCommand', template)
+                self._createUserView(g_catalog, schema, view, command, CASCADE)
+                self._grantPrivileges(g_catalog, schema, view, name, TABLE, 1)
+        except Exception:
             print("DataBase.createUser() ERROR: %s" % traceback.format_exc())
 
     def _createUserView(self, catalog, schema, name, command, option):
@@ -206,7 +201,7 @@ class DataBase(object):
 
     def selectUser(self, server, name):
         metadata = None
-        books = []
+        args = []
         call = self._getCall('selectUser')
         call.setString(1, server)
         call.setString(2, name)
@@ -220,14 +215,13 @@ class DataBase(object):
                         'Path': call.getString(6),
                         'Name': name}
             while result.next():
-                books.append(getDataFromResult(result))
+                args.append(getDataFromResult(result))
         result.close()
         call.close()
-        return metadata, books
+        return metadata, args
 
 # Procedures called by the User
     def getUserFields(self):
-        fields = []
         call = self._getCall('getFieldNames')
         result = call.executeQuery()
         fields = getSequenceFromResult(result)
@@ -241,11 +235,11 @@ class DataBase(object):
             self._initUserView('Book', *args)
         self._updateBookSync(user, stop)
 
-    def initGroups(self, book, iterator):
+    def initGroups(self, user, book, iterator):
         uris = []
         names = []
         call = self._getCall('initGroups')
-        call.setInt(1, book.Id)
+        call.setInt(1, user.getBook(book).Id)
         for uri, name in iterator:
             uris.append(uri)
             names.append(name)
@@ -259,16 +253,18 @@ class DataBase(object):
         call.close()
         return remove, add
 
-    def insertGroups(self, user, iterator):
+    def insertGroup(self, bookid, uri, name):
+        args = None
         call = self._getCall('insertGroup')
-        call.setInt(1, user.Id)
-        for uri, name in iterator:
-            call.setString(2, uri)
-            call.setString(3, name)
-            call.execute()
-            gid = call.getInt(4)
-            yield {'Query': 'Inserted', 'User': user.Id, 'Group': gid, 'Schema': user.getSchema(), 'Name': name}
+        call.setInt(1, bookid)
+        call.setString(2, uri)
+        call.setString(3, name)
+        call.execute()
+        group = call.getInt(4)
+        if not call.wasNull():
+            args = (group, uri, name)
         call.close()
+        return args
 
     def syncGroups(self, user):
         start = self.getLastSync('GroupSync', user)
@@ -314,20 +310,20 @@ class DataBase(object):
         call = self._getCall('updateGroupSync')
         call.setInt(1, user.Id)
         call.setObject(2, stop)
-        status = call.execute()
+        call.execute()
         call.close()
 
     def _initUserView(self, view, query, schema, user, item, oldname, newname):
         if query == 'Deleted' or query == 'Updated':
             self._deleteUserView(g_catalog, schema, oldname)
         if query == 'Inserted' or query == 'Updated':
-            format = {'Catalog': g_catalog, 'Schema': g_schema, 'Item': item}
-            command = getSqlQuery(self._ctx, 'get%sViewCommand' % view, format)
-            self._createUserView(g_catalog, schema, newname, command, CheckOption.CASCADE)
-            self._grantPrivileges(g_catalog, schema, newname, user, PrivilegeObject.TABLE, 1)
+            template = {'Catalog': g_catalog, 'Schema': g_schema, 'ItemId': item}
+            command = getSqlQuery(self._ctx, 'get%sViewCommand' % view, template)
+            self._createUserView(g_catalog, schema, newname, command, CASCADE)
+            self._grantPrivileges(g_catalog, schema, newname, user, TABLE, 1)
 
-    def _grantPrivileges(self, catalog, schema, name, user, type, privileges):
-        self.Connection.getUsers().getByName(user).grantPrivileges(f'{catalog}.{schema}.{name}', type, privileges)
+    def _grantPrivileges(self, catalog, schema, name, user, ptype, privileges):
+        self.Connection.getUsers().getByName(user).grantPrivileges(f'{catalog}.{schema}.{name}', ptype, privileges)
 
     def _deleteUserView(self, catalog, schema, name):
         views = self.Connection.getViews()
@@ -335,32 +331,46 @@ class DataBase(object):
         if views.hasByName(view):
             views.dropByName(view)
 
-    def insertBook(self, user, path, name, tag=None, token=None):
+    def _renameUserView(self, catalog, schema, newname, oldname):
+        views = self.Connection.getViews()
+        newview = f'{catalog}.{schema}.{newname}'
+        oldview = f'{catalog}.{schema}.{oldname}'
+        if views.hasByName(oldview) and not views.hasByName(newview):
+            views.rename(oldview, newview)
+
+    def insertBook(self, userid, uri, name, tag=None, token=None):
         book = None
         call = self._getCall('insertBook')
-        call.setInt(1, user)
-        call.setString(2, path)
+        call.setInt(1, userid)
+        call.setString(2, uri)
         call.setString(3, name)
-        call.setString(4, tag) if tag is not None else call.setNull(4, VARCHAR)
-        call.setString(5, token) if token is not None else call.setNull(5, VARCHAR)
+        if tag is None:
+            call.setNull(4, VARCHAR)
+        else:
+            call.setString(4, tag)
+        if token is None:
+            call.setNull(5, VARCHAR)
+        else:
+            call.setString(5, token)
         call.executeUpdate()
-        book = call.getInt(6)
+        bookid = call.getInt(6)
+        if not call.wasNull():
+            book = {'Book': bookid, 'Uri': uri, 'Name': name, 'Tag': tag, 'Token': token}
         call.close()
         return book
 
-    def initGroupView(self, user, remove, add):
+    def createGroupView(self, user, group):
         schema = user.getSchema()
-        if remove:
-            for item in remove:
-                self._deleteUserView(g_catalog, schema, item.get('OldName'))
-        if add:
-            for item in add:
-                view = item.get('NewName')
-                item['Catalog'] = g_catalog
-                item['Schema'] = g_schema
-                command = getSqlQuery(self._ctx, 'getGroupViewCommand', item)
-                self._createUserView(g_catalog, schema, view, command, CheckOption.CASCADE)
-                self._grantPrivileges(g_catalog, schema, view, user.Name, PrivilegeObject.TABLE, 1)
+        template = {'Catalog': g_catalog, 'Schema':  g_schema, 'ItemId': group.Id}
+        command = getSqlQuery(self._ctx, 'getGroupViewCommand', template)
+        self._createUserView(g_catalog, schema, group.Name, command, CASCADE)
+        self._grantPrivileges(g_catalog, schema, group.Name, user.Name, TABLE, 1)
+
+    def removeGroupView(self, user, group):
+        self._deleteUserView(g_catalog, user.getSchema(), group.Name)
+
+    def renameGroupView(self, user, group, name):
+        self._renameUserView(g_catalog, user.getSchema(), group.Name, name)
 
     def updateAddressbookName(self, addressbook, name):
         call = self._getCall('updateAddressbookName')
@@ -481,7 +491,7 @@ class DataBase(object):
     def deleteCard(self, urls):
         call = self._getCall('deleteCard')
         call.setArray(1, Array('VARCHAR', urls))
-        status = call.executeUpdate()
+        call.executeUpdate()
         call.close()
         return len(urls)
 
@@ -520,13 +530,13 @@ class DataBase(object):
         config = getConfiguration(self._ctx, g_identifier, False)
         return config.getByName('AddressBookName')
 
-    def _getCall(self, name, format=None):
-        return getDataSourceCall(self._ctx, self.Connection, name, format)
+    def _getCall(self, name, template=None):
+        return getDataSourceCall(self._ctx, self.Connection, name, template)
 
-    def _getBatchedCall(self, key, name=None, format=None):
+    def _getBatchedCall(self, key, name=None, template=None):
         if key not in self._batchedCalls:
             name = key if name is None else name
-            self._batchedCalls[key] = getDataSourceCall(self._ctx, self.Connection, name, format)
+            self._batchedCalls[key] = getDataSourceCall(self._ctx, self.Connection, name, template)
         return self._batchedCalls[key]
 
     def _getPreparedCall(self, name):

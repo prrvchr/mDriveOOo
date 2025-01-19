@@ -37,11 +37,8 @@ from ..unotool import getDesktop
 
 from ..logger import LogManager
 
-from ..configuration import g_identifier
 from ..configuration import g_defaultlog
 from ..configuration import g_synclog
-
-import traceback
 
 
 class OptionsManager():

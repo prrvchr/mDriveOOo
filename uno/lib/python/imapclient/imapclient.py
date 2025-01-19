@@ -2,43 +2,33 @@
 # Released subject to the New BSD License
 # Please see http://en.wikipedia.org/wiki/BSD_licenses
 
-from __future__ import unicode_literals
-
+import dataclasses
 import functools
 import imaplib
 import itertools
+import re
 import select
 import socket
+import ssl as ssl_lib
 import sys
-import re
-from collections import namedtuple
-from datetime import datetime, date
+import warnings
+from datetime import date, datetime
+from logging import getLogger, LoggerAdapter
 from operator import itemgetter
-from logging import LoggerAdapter, getLogger
+from typing import List, Optional
 
-from six import moves, iteritems, text_type, integer_types, PY3, binary_type, iterbytes
-
-from . import exceptions
-from . import imap4
-from . import response_lexer
-from . import tls
+from . import exceptions, imap4, response_lexer, tls
 from .datetime_util import datetime_to_INTERNALDATE, format_criteria_date
-from .imap_utf7 import encode as encode_utf7, decode as decode_utf7
-from .response_parser import parse_response, parse_message_list, parse_fetch_response
-from .util import to_bytes, to_unicode, assert_imap_protocol, chunk
+from .imap_utf7 import decode as decode_utf7
+from .imap_utf7 import encode as encode_utf7
+from .response_parser import parse_fetch_response, parse_message_list, parse_response
+from .util import assert_imap_protocol, chunk, to_bytes, to_unicode
 
-xrange = moves.xrange
-
-try:
-    from select import poll
-
+if hasattr(select, "poll"):
     POLL_SUPPORT = True
-except:
+else:
     # Fallback to select() on systems that don't support poll()
     POLL_SUPPORT = False
-
-if PY3:
-    long = int  # long is just int in python3
 
 
 logger = getLogger(__name__)
@@ -87,21 +77,21 @@ if "MOVE" not in imaplib.Commands:
     imaplib.Commands["MOVE"] = ("AUTH", "SELECTED")
 
 # System flags
-DELETED = br"\Deleted"
-SEEN = br"\Seen"
-ANSWERED = br"\Answered"
-FLAGGED = br"\Flagged"
-DRAFT = br"\Draft"
-RECENT = br"\Recent"  # This flag is read-only
+DELETED = rb"\Deleted"
+SEEN = rb"\Seen"
+ANSWERED = rb"\Answered"
+FLAGGED = rb"\Flagged"
+DRAFT = rb"\Draft"
+RECENT = rb"\Recent"  # This flag is read-only
 
 # Special folders, see RFC6154
 # \Flagged is omitted because it is the same as the flag defined above
-ALL = br"\All"
-ARCHIVE = br"\Archive"
-DRAFTS = br"\Drafts"
-JUNK = br"\Junk"
-SENT = br"\Sent"
-TRASH = br"\Trash"
+ALL = rb"\All"
+ARCHIVE = rb"\Archive"
+DRAFTS = rb"\Drafts"
+JUNK = rb"\Junk"
+SENT = rb"\Sent"
+TRASH = rb"\Trash"
 
 # Personal namespaces that are common among providers
 # used as a fallback when the server does not support the NAMESPACE capability
@@ -116,7 +106,7 @@ _POPULAR_SPECIAL_FOLDERS = {
     JUNK: ("Junk", "Spam"),
 }
 
-_RE_SELECT_RESPONSE = re.compile(br"\[(?P<key>[A-Z-]+)( \((?P<data>.*)\))?\]")
+_RE_SELECT_RESPONSE = re.compile(rb"\[(?P<key>[A-Z-]+)( \((?P<data>.*)\))?\]")
 
 
 class Namespace(tuple):
@@ -128,7 +118,8 @@ class Namespace(tuple):
     shared = property(itemgetter(2))
 
 
-class SocketTimeout(namedtuple("SocketTimeout", "connect read")):
+@dataclasses.dataclass
+class SocketTimeout:
     """Represents timeout configuration for an IMAP connection.
 
     :ivar connect: maximum time to wait for a connection attempt to remote server
@@ -139,8 +130,12 @@ class SocketTimeout(namedtuple("SocketTimeout", "connect read")):
     read/write operations can take up to 60 seconds once the connection is done.
     """
 
+    connect: float
+    read: float
 
-class MailboxQuotaRoots(namedtuple("MailboxQuotaRoots", "mailbox quota_roots")):
+
+@dataclasses.dataclass
+class MailboxQuotaRoots:
     """Quota roots associated with a mailbox.
 
     Represents the response of a GETQUOTAROOT command.
@@ -149,8 +144,12 @@ class MailboxQuotaRoots(namedtuple("MailboxQuotaRoots", "mailbox quota_roots")):
     :ivar quota_roots: list of quota roots associated with the mailbox
     """
 
+    mailbox: str
+    quota_roots: List[str]
 
-class Quota(namedtuple("Quota", "quota_root resource usage limit")):
+
+@dataclasses.dataclass
+class Quota:
     """Resource quota.
 
     Represents the response of a GETQUOTA command.
@@ -160,6 +159,11 @@ class Quota(namedtuple("Quota", "quota_root resource usage limit")):
     :ivar usage: the current usage of the resource
     :ivar limit: the maximum allowed usage of the resource
     """
+
+    quota_root: str
+    resource: str
+    usage: bytes
+    limit: bytes
 
 
 def require_capability(capability):
@@ -179,7 +183,7 @@ def require_capability(capability):
     return actual_decorator
 
 
-class IMAPClient(object):
+class IMAPClient:
     """A connection to the IMAP server specified by *host* is made when
     this class is instantiated.
 
@@ -239,13 +243,13 @@ class IMAPClient(object):
 
     def __init__(
         self,
-        host,
-        port=None,
-        use_uid=True,
-        ssl=True,
-        stream=False,
-        ssl_context=None,
-        timeout=None,
+        host: str,
+        port: int = None,
+        use_uid: bool = True,
+        ssl: bool = True,
+        stream: bool = False,
+        ssl_context: Optional[ssl_lib.SSLContext] = None,
+        timeout: Optional[float] = None,
     ):
         if stream:
             if port is not None:
@@ -290,7 +294,7 @@ class IMAPClient(object):
 
         self._set_read_timeout()
         # Small hack to make imaplib log everything to its own logger
-        imaplib_logger = IMAPlibLoggerAdapter(getLogger("imapclient.imaplib"), dict())
+        imaplib_logger = IMAPlibLoggerAdapter(getLogger("imapclient.imaplib"), {})
         self._imap.debug = 5
         self._imap._mesg = imaplib_logger.debug
 
@@ -329,10 +333,26 @@ class IMAPClient(object):
 
     def _set_read_timeout(self):
         if self._timeout is not None:
-            self._sock.settimeout(self._timeout.read)
+            self.socket().settimeout(self._timeout.read)
 
     @property
     def _sock(self):
+        warnings.warn("_sock is deprecated. Use socket().", DeprecationWarning)
+        return self.socket()
+
+    def socket(self):
+        """Returns socket used to connect to server.
+
+        The socket is provided for polling purposes only.
+        It can be used in,
+        for example, :py:meth:`selectors.BaseSelector.register`
+        and :py:meth:`asyncio.loop.add_reader` to wait for data.
+
+        .. WARNING::
+           All other uses of the returned socket are unsupported.
+           This includes reading from and writing to the socket,
+           as they are likely to break internal bookkeeping of messages.
+        """
         # In py2, imaplib has sslobj (for SSL connections), and sock for non-SSL.
         # In the py3 version it's just sock.
         return getattr(self._imap, "sslobj", self._imap.sock)
@@ -367,7 +387,7 @@ class IMAPClient(object):
         self._imap.file = self._imap.sock.makefile("rb")
         return data[0]
 
-    def login(self, username, password):
+    def login(self, username: str, password: str):
         """Login using *username* and *password*, returning the
         server response.
         """
@@ -384,7 +404,13 @@ class IMAPClient(object):
         logger.debug("Logged in as %s", username)
         return rv
 
-    def oauth2_login(self, user, access_token, mech="XOAUTH2", vendor=None):
+    def oauth2_login(
+        self,
+        user: str,
+        access_token: str,
+        mech: str = "XOAUTH2",
+        vendor: Optional[str] = None,
+    ):
         """Authenticate using the OAUTH2 or XOAUTH2 methods.
 
         Gmail and Yahoo both support the 'XOAUTH2' mechanism, but Yahoo requires
@@ -448,13 +474,13 @@ class IMAPClient(object):
         zero-length challenge.)
 
         For example, PLAIN has just one step with empty challenge, so a handler
-        might look like this:
+        might look like this::
 
             plain_mech = lambda _: "\\0%s\\0%s" % (username, password)
 
             imap.sasl_login("PLAIN", plain_mech)
 
-        A more complex but still stateless handler might look like this:
+        A more complex but still stateless handler might look like this::
 
             def example_mech(challenge):
                 if challenge == b"Username:"
@@ -466,7 +492,7 @@ class IMAPClient(object):
 
             imap.sasl_login("EXAMPLE", example_mech)
 
-        A stateful handler might look like this:
+        A stateful handler might look like this::
 
             class ScramSha256SaslMechanism():
                 def __init__(self, username, password):
@@ -498,7 +524,7 @@ class IMAPClient(object):
         logger.debug("Logged out, connection closed")
         return data[0]
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Close the connection to the IMAP server (without logging out)
 
         In most cases, :py:meth:`.logout` should be used instead of
@@ -727,11 +753,11 @@ class IMAPClient(object):
         ret = []
         parsed = parse_response(folder_data)
         for flags, delim, name in chunk(parsed, size=3):
-            if isinstance(name, (int, long)):
+            if isinstance(name, int):
                 # Some IMAP implementations return integer folder names
                 # with quotes. These get parsed to ints so convert them
                 # back to strings.
-                name = text_type(name)
+                name = str(name)
             elif self.folder_encode:
                 name = decode_utf7(name)
 
@@ -752,10 +778,9 @@ class IMAPClient(object):
         """
         # Detect folder by looking for known attributes
         # TODO: avoid listing all folders by using extended LIST (RFC6154)
-        if self.has_capability("SPECIAL-USE"):
-            for folder in self.list_folders():
-                if folder and len(folder[0]) > 0 and folder_flag in folder[0]:
-                    return folder[2]
+        for folder in self.list_folders():
+            if folder and len(folder[0]) > 0 and folder_flag in folder[0]:
+                return folder[2]
 
         # Detect folder by looking for common names
         # We only look for folders in the "personal" namespace of the user
@@ -821,11 +846,11 @@ class IMAPClient(object):
                 if key == b"PERMANENTFLAGS":
                     out[key] = tuple(match.group("data").split())
 
-        for key, value in iteritems(untagged):
+        for key, value in untagged.items():
             key = key.upper()
             if key in (b"OK", b"PERMANENTFLAGS"):
                 continue  # already handled above
-            elif key in (
+            if key in (
                 b"EXISTS",
                 b"RECENT",
                 b"UIDNEXT",
@@ -919,7 +944,7 @@ class IMAPClient(object):
              (1, b'EXISTS'),
              (1, b'FETCH', (b'FLAGS', (b'\\NotJunk',)))]
         """
-        sock = self._sock
+        sock = self.socket()
 
         # make the socket non-blocking so the timeout can be
         # implemented for this call
@@ -946,8 +971,7 @@ class IMAPClient(object):
                         err = sys.exc_info()[1]
                         if "EOF" in err.args[0]:
                             break
-                        else:
-                            raise
+                        raise
                     else:
                         resps.append(_parse_untagged_response(line))
             return resps
@@ -1066,7 +1090,7 @@ class IMAPClient(object):
         To support complex search expressions, criteria lists can be
         nested. IMAPClient will insert parentheses in the right
         places. The following will match messages that are both not
-        flagged and do not have "foo" in the subject:
+        flagged and do not have "foo" in the subject::
 
             ['NOT', ['SUBJECT', 'foo', 'FLAGGED']]
 
@@ -1173,7 +1197,7 @@ class IMAPClient(object):
         ]
         args.extend(_normalise_search_criteria(criteria, charset))
         ids = self._raw_command_untagged(b"SORT", args, unpack=True)
-        return [long(i) for i in ids.split()]
+        return [int(i) for i in ids.split()]
 
     def thread(self, algorithm="REFERENCES", criteria="ALL", charset="UTF-8"):
         """Return a list of messages threads from the currently
@@ -1258,9 +1282,7 @@ class IMAPClient(object):
         """
         response = self.fetch(messages, [b"X-GM-LABELS"])
         response = self._filter_fetch_dict(response, b"X-GM-LABELS")
-        return {
-            msg: utf7_decode_sequence(labels) for msg, labels in iteritems(response)
-        }
+        return {msg: utf7_decode_sequence(labels) for msg, labels in response.items()}
 
     def add_gmail_labels(self, messages, labels, silent=False):
         """Add *labels* to *messages* in the currently selected folder.
@@ -1388,10 +1410,7 @@ class IMAPClient(object):
         """
         if msg_time:
             time_val = '"%s"' % datetime_to_INTERNALDATE(msg_time)
-            if PY3:
-                time_val = to_unicode(time_val)
-            else:
-                time_val = to_bytes(time_val)
+            time_val = to_unicode(time_val)
         else:
             time_val = None
         return self._command_and_check(
@@ -1407,12 +1426,27 @@ class IMAPClient(object):
     def multiappend(self, folder, msgs):
         """Append messages to *folder* using the MULTIAPPEND feature from :rfc:`3502`.
 
-        *msgs* should be a list of strings containing the full message including
-        headers.
+        *msgs* must be an iterable. Each item must be either a string containing the
+        full message including headers, or a dict containing the keys "msg" with the
+        full message as before, "flags" with a sequence of message flags to set, and
+        "date" with a datetime instance specifying the internal date to set.
+        The keys "flags" and "date" are optional.
 
         Returns the APPEND response from the server.
         """
-        msgs = [_literal(to_bytes(m)) for m in msgs]
+
+        def chunks():
+            for m in msgs:
+                if isinstance(m, dict):
+                    if "flags" in m:
+                        yield to_bytes(seq_to_parenstr(m["flags"]))
+                    if "date" in m:
+                        yield to_bytes('"%s"' % datetime_to_INTERNALDATE(m["date"]))
+                    yield _literal(to_bytes(m["msg"]))
+                else:
+                    yield _literal(to_bytes(m))
+
+        msgs = list(chunks())
 
         return self._raw_command(
             b"APPEND",
@@ -1451,7 +1485,10 @@ class IMAPClient(object):
         )
 
     def expunge(self, messages=None):
-        """When, no *messages* are specified, remove all messages
+        """Use of the *messages* argument is discouraged.
+        Please see the ``uid_expunge`` method instead.
+
+        When, no *messages* are specified, remove all messages
         from the currently selected folder that have the
         ``\\Deleted`` flag set.
 
@@ -1489,6 +1526,17 @@ class IMAPClient(object):
         tag = self._imap._command("EXPUNGE")
         return self._consume_until_tagged_response(tag, "EXPUNGE")
 
+    @require_capability("UIDPLUS")
+    def uid_expunge(self, messages):
+        """Expunge deleted messages with the specified message ids from the
+        folder.
+
+        This requires the UIDPLUS capability.
+
+        See :rfc:`4315#section-2.1` section 2.1 for more details.
+        """
+        return self._command_and_check("EXPUNGE", join_message_ids(messages), uid=True)
+
     @require_capability("ACL")
     def getacl(self, folder):
         """Returns a list of ``(who, acl)`` tuples describing the
@@ -1497,7 +1545,7 @@ class IMAPClient(object):
         data = self._command_and_check("getacl", self._normalise_folder(folder))
         parts = list(response_lexer.TokenSource(data))
         parts = parts[1:]  # First item is folder name
-        return [(parts[i], parts[i + 1]) for i in xrange(0, len(parts), 2)]
+        return [(parts[i], parts[i + 1]) for i in range(0, len(parts), 2)]
 
     @require_capability("ACL")
     def setacl(self, folder, who, what):
@@ -1544,7 +1592,7 @@ class IMAPClient(object):
         quota_root_rep = self._raw_command_untagged(
             b"GETQUOTAROOT", to_bytes(mailbox), uid=False, response_name="QUOTAROOT"
         )
-        quota_rep = pop_with_default(self._imap.untagged_responses, "QUOTA", [])
+        quota_rep = self._imap.untagged_responses.pop("QUOTA", [])
         quota_root_rep = parse_response(quota_root_rep)
         quota_root = MailboxQuotaRoots(
             to_unicode(quota_root_rep[0]), [to_unicode(q) for q in quota_root_rep[1:]]
@@ -1561,7 +1609,7 @@ class IMAPClient(object):
             return
 
         quota_root = None
-        set_quota_args = list()
+        set_quota_args = []
 
         for quota in quotas:
             if quota_root is None:
@@ -1693,14 +1741,11 @@ class IMAPClient(object):
         logger.debug("   (literal) > %s", debug_trunc(item, 256))
         self._imap.send(item)
 
-    def _command_and_check(self, command, *args, **kwargs):
-        unpack = pop_with_default(kwargs, "unpack", False)
-        uid = pop_with_default(kwargs, "uid", False)
-        assert not kwargs, "unexpected keyword args: " + ", ".join(kwargs)
-
+    def _command_and_check(
+        self, command, *args, unpack: bool = False, uid: bool = False
+    ):
         if uid and self.use_uid:
-            if PY3:
-                command = to_unicode(command)  # imaplib must die
+            command = to_unicode(command)  # imaplib must die
             typ, data = self._imap.uid(command, *args)
         else:
             meth = getattr(self._imap, to_unicode(command))
@@ -1718,7 +1763,7 @@ class IMAPClient(object):
             cmd, messages, self._normalise_labels(labels), b"X-GM-LABELS", silent=silent
         )
         return (
-            {msg: utf7_decode_sequence(labels) for msg, labels in iteritems(response)}
+            {msg: utf7_decode_sequence(labels) for msg, labels in response.items()}
             if response
             else None
         )
@@ -1741,19 +1786,19 @@ class IMAPClient(object):
         return self._filter_fetch_dict(parse_fetch_response(data), fetch_key)
 
     def _filter_fetch_dict(self, fetch_dict, key):
-        return dict((msgid, data[key]) for msgid, data in iteritems(fetch_dict))
+        return dict((msgid, data[key]) for msgid, data in fetch_dict.items())
 
     def _normalise_folder(self, folder_name):
-        if isinstance(folder_name, binary_type):
+        if isinstance(folder_name, bytes):
             folder_name = folder_name.decode("ascii")
         if self.folder_encode:
             folder_name = encode_utf7(folder_name)
         return _quote(folder_name)
 
     def _normalise_labels(self, labels):
-        if isinstance(labels, (text_type, binary_type)):
+        if isinstance(labels, (str, bytes)):
             labels = (labels,)
-        return [_quote(encode_utf7(l)) for l in labels]
+        return [_quote(encode_utf7(label)) for label in labels]
 
     @property
     def welcome(self):
@@ -1765,7 +1810,7 @@ class IMAPClient(object):
 
 
 def _quote(arg):
-    if isinstance(arg, text_type):
+    if isinstance(arg, str):
         arg = arg.replace("\\", "\\\\")
         arg = arg.replace('"', '\\"')
         q = '"'
@@ -1782,7 +1827,7 @@ def _normalise_search_criteria(criteria, charset=None):
     if not charset:
         charset = "us-ascii"
 
-    if isinstance(criteria, (text_type, binary_type)):
+    if isinstance(criteria, (str, bytes)):
         return [to_bytes(criteria, charset)]
 
     out = []
@@ -1803,7 +1848,7 @@ def _normalise_search_criteria(criteria, charset=None):
 
 
 def _normalise_sort_criteria(criteria, charset=None):
-    if isinstance(criteria, (text_type, binary_type)):
+    if isinstance(criteria, (str, bytes)):
         criteria = [criteria]
     return b"(" + b" ".join(to_bytes(item).upper() for item in criteria) + b")"
 
@@ -1811,10 +1856,8 @@ def _normalise_sort_criteria(criteria, charset=None):
 class _literal(bytes):
     """Hold message data that should always be sent as a literal."""
 
-    pass
 
-
-class _quoted(binary_type):
+class _quoted(bytes):
     """
     This class holds a quoted bytes value which provides access to the
     unquoted value via the *original* attribute.
@@ -1861,7 +1904,7 @@ def _join_and_paren(items):
 
 
 def _normalise_text_list(items):
-    if isinstance(items, (text_type, binary_type)):
+    if isinstance(items, (str, bytes)):
         items = (items,)
     return (to_unicode(c) for c in items)
 
@@ -1870,14 +1913,14 @@ def join_message_ids(messages):
     """Convert a sequence of messages ids or a single integer message id
     into an id byte string for use with IMAP commands
     """
-    if isinstance(messages, (text_type, binary_type, integer_types)):
+    if isinstance(messages, (str, bytes, int)):
         messages = (to_bytes(messages),)
     return b",".join(_maybe_int_to_bytes(m) for m in messages)
 
 
 def _maybe_int_to_bytes(val):
-    if isinstance(val, integer_types):
-        return str(val).encode("us-ascii") if PY3 else str(val)
+    if isinstance(val, int):
+        return str(val).encode("us-ascii")
     return to_bytes(val)
 
 
@@ -1887,12 +1930,6 @@ def _parse_untagged_response(text):
     if text.startswith((b"OK ", b"NO ")):
         return tuple(text.split(b" ", 1))
     return parse_response([text])
-
-
-def pop_with_default(dct, key, default):
-    if key in dct:
-        return dct.pop(key)
-    return default
 
 
 def as_pairs(items):
@@ -1912,7 +1949,7 @@ def as_triplets(items):
 
 
 def _is8bit(data):
-    return isinstance(data, _literal) or any(b > 127 for b in iterbytes(data))
+    return isinstance(data, _literal) or any(b > 127 for b in data)
 
 
 def _iter_with_last(items):
@@ -1924,7 +1961,7 @@ def _iter_with_last(items):
 _not_present = object()
 
 
-class _dict_bytes_normaliser(object):
+class _dict_bytes_normaliser:
     """Wrap a dict with unicode/bytes keys and normalise the keys to
     bytes.
     """
@@ -1933,7 +1970,7 @@ class _dict_bytes_normaliser(object):
         self._d = d
 
     def iteritems(self):
-        for key, value in iteritems(self._d):
+        for key, value in self._d.items():
             yield to_bytes(key), value
 
     # For Python 3 compatibility.
@@ -1967,7 +2004,7 @@ class _dict_bytes_normaliser(object):
 
     def _gen_keys(self, k):
         yield k
-        if isinstance(k, binary_type):
+        if isinstance(k, bytes):
             yield to_unicode(k)
         else:
             yield to_bytes(k)
@@ -1986,7 +2023,7 @@ def utf7_decode_sequence(seq):
 
 def _parse_quota(quota_rep):
     quota_rep = parse_response(quota_rep)
-    rv = list()
+    rv = []
     for quota_root, quota_resource_infos in as_pairs(quota_rep):
         for quota_resource_info in as_triplets(quota_resource_infos):
             rv.append(
@@ -2006,7 +2043,7 @@ class IMAPlibLoggerAdapter(LoggerAdapter):
     def process(self, msg, kwargs):
         # msg is usually unicode but see #367. Convert bytes to
         # unicode if required.
-        if isinstance(msg, binary_type):
+        if isinstance(msg, bytes):
             msg = msg.decode("ascii", "ignore")
 
         for command in ("LOGIN", "AUTHENTICATE"):
@@ -2014,4 +2051,4 @@ class IMAPlibLoggerAdapter(LoggerAdapter):
                 msg_start = msg.split(command)[0]
                 msg = "{}{} **REDACTED**".format(msg_start, command)
                 break
-        return super(IMAPlibLoggerAdapter, self).process(msg, kwargs)
+        return super().process(msg, kwargs)

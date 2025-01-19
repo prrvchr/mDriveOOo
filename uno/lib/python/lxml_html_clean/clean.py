@@ -8,7 +8,9 @@ details.
 
 import copy
 import re
+from collections import deque
 from urllib.parse import urlsplit, unquote_plus
+import warnings
 
 from lxml import etree
 from lxml.html import defs
@@ -17,7 +19,7 @@ from lxml.html import xhtml_to_html, _transform_result
 
 
 __all__ = ['clean_html', 'clean', 'Cleaner', 'autolink', 'autolink_html',
-           'word_break', 'word_break_html']
+           'word_break', 'word_break_html', 'LXMLHTMLCleanWarning', 'AmbiguousURLWarning']
 
 # Look at http://code.sixapart.com/trac/livejournal/browser/trunk/cgi-bin/cleanhtml.pl
 #   Particularly the CSS cleaning; most of the tag cleaning is integrated now
@@ -97,6 +99,33 @@ def fromstring(string):
     before passing the input to the original lxml.html.fromstring.
     """
     return lxml_fromstring(_ascii_control_characters.sub("", string))
+
+
+# This regular expression is inspired by the one in urllib3.
+_URI_RE = re.compile(
+    r"^(?:(?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*[a-zA-Z0-9]):)?"
+    r"(?://(?P<authority>[^\\/?#]*))?"
+    r"(?P<path>[^?#]*)"
+    r"(?:\?(?P<query_string>[^#]*))?"
+    r"(?:#(?P<fragment>.*))?$",
+    re.UNICODE,
+)
+
+
+def _get_authority_from_url(url):
+    match = _URI_RE.match(url)
+    if match:
+        return match.group("authority")
+    else:
+        return None
+
+
+class LXMLHTMLCleanWarning(Warning):
+    pass
+
+
+class AmbiguousURLWarning(LXMLHTMLCleanWarning):
+    pass
 
 
 class Cleaner:
@@ -183,6 +212,9 @@ class Cleaner:
         make the links absolute before doing the cleaning.
 
         Note that you may also need to set ``whitelist_tags``.
+
+        Note that URLs are parsed via functions from ``urllib.parse`` and
+        no input validation is performed.
 
     ``whitelist_tags``:
         A set of tags that can be included with ``host_whitelist``.
@@ -334,8 +366,11 @@ class Cleaner:
                     new = _replace_css_import('', new)
                     if self._has_sneaky_javascript(new):
                         # Something tricky is going on...
-                        el.text = '/* deleted */'
-                    elif new != old:
+                        new = '/* deleted */'
+                    else:
+                        new = self._remove_sneaky_css_comments(new)
+
+                    if new != old:
                         el.text = new
         if self.comments:
             kill_tags.add(etree.Comment)
@@ -383,8 +418,8 @@ class Cleaner:
         if self.annoying_tags:
             remove_tags.update(('blink', 'marquee'))
 
-        _remove = []
-        _kill = []
+        _remove = deque()
+        _kill = deque()
         for el in doc.iter():
             if el.tag in kill_tags:
                 if self.allow_element(el):
@@ -398,22 +433,22 @@ class Cleaner:
         if _remove and _remove[0] == doc:
             # We have to drop the parent-most tag, which we can't
             # do.  Instead we'll rewrite it:
-            el = _remove.pop(0)
+            el = _remove.popleft()
             el.tag = 'div'
             el.attrib.clear()
         elif _kill and _kill[0] == doc:
             # We have to drop the parent-most element, which we can't
             # do.  Instead we'll clear it:
-            el = _kill.pop(0)
+            el = _kill.popleft()
             if el.tag != 'html':
                 el.tag = 'div'
             el.clear()
 
-        _kill.reverse() # start with innermost tags
-        for el in _kill:
-            el.drop_tree()
-        for el in _remove:
-            el.drop_tag()
+        while _kill:
+            _kill.popleft().drop_tree()  # popleft to start with innermost elements
+
+        while _remove:
+            _remove.pop().drop_tag()
 
         if self.remove_unknown_tags:
             if allow_tags:
@@ -492,9 +527,19 @@ class Cleaner:
         """
         if self.whitelist_tags is not None and el.tag not in self.whitelist_tags:
             return False
+        if not self.host_whitelist:
+            return False
         parts = urlsplit(url)
         if parts.scheme not in ('http', 'https'):
             return False
+
+        authority = _get_authority_from_url(url)
+        if (parts.netloc or authority) and parts.netloc != authority:
+            warnings.warn(f"It's impossible to parse the hostname from URL: '{url}'! "
+                          "URL is not allowed because parsers returned ambiguous results.",
+                          AmbiguousURLWarning)
+            return False
+
         if parts.hostname in self.host_whitelist:
             return True
         return False
@@ -526,7 +571,9 @@ class Cleaner:
             return ''
         return link
 
-    _substitute_comments = re.compile(r'/\*.*?\*/', re.S).sub
+    _comments_re = re.compile(r'/\*.*?\*/', re.S)
+    _find_comments = _comments_re.finditer
+    _substitute_comments = _comments_re.sub
 
     def _has_sneaky_javascript(self, style):
         """
@@ -556,6 +603,22 @@ class Cleaner:
             # e.g. '<math><style><img src=x onerror=alert(1)></style></math>'
             return True
         return False
+
+    def _remove_sneaky_css_comments(self, style):
+        """
+        Look for suspicious code in CSS comment and if found,
+        remove the entire comment from the given style.
+
+        Browsers might parse <style> as an ordinary HTML tag
+        in some specific context and that might cause code in CSS
+        comments to run.
+        """
+        for match in self._find_comments(style):
+            comment = match.group(0)
+            if _has_javascript_scheme(comment) or _looks_like_tag_content(comment):
+                style = style.replace(comment, "/* deleted */")
+
+        return style
 
     def clean_html(self, html):
         result_type = type(html)

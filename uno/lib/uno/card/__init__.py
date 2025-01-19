@@ -29,17 +29,21 @@
 
 from .options import OptionsManager
 
-from .logger import getLogger
+from .datasource import DataSource
 
-from .drvtool import getDataSource
-
+from .cardtool import getDataSourceUrl
 from .cardtool import getLogException
 
 from .dbtool import getDriverPropertyInfos
 
+from .logger import getLogger
+
+from .dbconfig import g_version
+
 from .configuration import g_defaultlog
-from .configuration import g_host
 from .configuration import g_identifier
 from .configuration import g_protocol
 from .configuration import g_scheme
+from .configuration import g_scope
+from .configuration import g_host
 

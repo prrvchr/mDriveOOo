@@ -27,52 +27,21 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
-import unohelper
+from .group import Group
 
-from collections import OrderedDict
-import traceback
+import json
 
 
-class Books(object):
-    def __init__(self, ctx, metadata, new):
-        self._ctx = ctx
-        print("Books.__init__() 1")
-        self._books = self._getBooks(metadata, new)
-        print("Books.__init__() 2")
-
-    def getBooks(self):
-        return self._books.values()
-
-    def hasBook(self, uri):
-        return uri in self._books
-
-    def getBook(self, uri):
-        return self._books[uri]
-
-    def setBook(self, uri, book):
-        self._books[uri] = book
-
-    # Private methods
-    def _getBooks(self, metadata, new):
-        books = OrderedDict()
-        for kwargs in metadata:
-            book = Book(self._ctx, new, **kwargs)
-            print("AddressBook._getBooks() Url: %s" % book.Uri)
-            books[book.Uri] = book
-        return books
-
-
-class Book(object):
-    def __init__(self, ctx, new, **kwargs):
-        self._ctx = ctx
+class Book():
+    def __init__(self, new, **kwargs):
         self._new = new
-        self._changed = False
         self._id = kwargs.get('Book')
         self._uri = kwargs.get('Uri')
         self._name = kwargs.get('Name')
         self._tag = kwargs.get('Tag')
         self._token = kwargs.get('Token')
+        groups = (Group(new, *group) for group in json.loads(kwargs.get('Groups', '[]')))
+        self._groups = {group.Uri: group for group in groups}
 
     @property
     def Id(self):
@@ -91,11 +60,26 @@ class Book(object):
         return self._token
 
     def isNew(self):
-        new = self._new
-        self._new = False
-        return new
+        return self._new
 
-    def hasNameChanged(self, name):
+    def resetNew(self):
+        self._new = False
+
+    def hasGroup(self, uri):
+        return uri in self._groups
+
+    def getGroups(self):
+        return self._groups.values()
+
+    def getGroup(self, uri):
+        return self._groups[uri]
+
+    def setNewGroup(self, uri, *args):
+        group = Group(True, *args)
+        self._groups[uri] = group
+        return group
+
+    def isRenamed(self, name):
         return self._name != name
 
     def setName(self, name):

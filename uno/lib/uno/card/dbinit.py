@@ -68,7 +68,6 @@ from .dbconfig import g_drvinfos
 from .dbconfig import g_csv
 
 from collections import OrderedDict
-import traceback
 
 
 def getDataBaseConnection(ctx, url, user, pwd, new, infos=None):
@@ -77,6 +76,7 @@ def getDataBaseConnection(ctx, url, user, pwd, new, infos=None):
     return getDataSourceConnection(ctx, url, user, pwd, new, infos)
 
 def createDataBase(ctx, connection, odb):
+    # TODO: Log all database creation
     # XXX Creation order are very important here...
     tables = connection.getTables()
     statement = connection.createStatement()
@@ -166,7 +166,7 @@ def _getAddressbookColumns(ctx, connection):
     call.close()
 
 def _getProcedures():
-    for name in ('SelectUser', 'InsertUser', 'InsertBook', 'UpdateAddressbookName',
+    for name in ('SelectUser', 'InsertUser', 'InsertBook', 'UpdateBookName',
                  'MergeCard', 'MergeGroup', 'MergeGroupMembers', 'DeleteCard',
                  'UpdateCardSync', 'GetLastCardSync', 'GetLastBookSync',
                  'GetLastGroupSync', 'SelectChangedCards', 'SelectColumns', 'SelectColumnIds',

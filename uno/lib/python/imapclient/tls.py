@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Menno Smits
+# Copyright (c) 2023, Menno Smits
 # Released subject to the New BSD License
 # Please see http://en.wikipedia.org/wiki/BSD_licenses
 
@@ -8,26 +8,20 @@ Layer Security (TLS a.k.a. SSL).
 """
 
 import imaplib
+import io
 import socket
 import ssl
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing_extensions import Buffer
 
 
-def wrap_socket(sock, ssl_context, host):
-
-    if not hasattr(ssl, "create_default_context"):
-        # Python 2.7.0 - 2.7.8 do not have the concept of ssl contexts.
-        # Thus we have to use the less flexible and legacy way of wrapping the
-        # socket
-        if ssl_context is not None:
-            raise RuntimeError(
-                "Cannot precisely configure the SSL connection, upgrade to "
-                "Python >= 2.7.9 to fine tune the settings."
-            )
-
-        return ssl.wrap_socket(sock)
-
+def wrap_socket(
+    sock: socket.socket, ssl_context: Optional[ssl.SSLContext], host: str
+) -> socket.socket:
     if ssl_context is None:
-        ssl_context = ssl.create_default_context()
+        ssl_context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
 
     return ssl_context.wrap_socket(sock, server_hostname=host)
 
@@ -38,12 +32,21 @@ class IMAP4_TLS(imaplib.IMAP4):
     Adapted from imaplib.IMAP4_SSL.
     """
 
-    def __init__(self, host, port, ssl_context, timeout=None):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        ssl_context: Optional[ssl.SSLContext],
+        timeout: Optional[float] = None,
+    ):
         self.ssl_context = ssl_context
         self._timeout = timeout
         imaplib.IMAP4.__init__(self, host, port)
+        self.file: io.BufferedReader
 
-    def open(self, host, port=993, timeout=None):
+    def open(
+        self, host: str = "", port: int = 993, timeout: Optional[float] = None
+    ) -> None:
         self.host = host
         self.port = port
         sock = socket.create_connection(
@@ -52,14 +55,14 @@ class IMAP4_TLS(imaplib.IMAP4):
         self.sock = wrap_socket(sock, self.ssl_context, host)
         self.file = self.sock.makefile("rb")
 
-    def read(self, size):
+    def read(self, size: int) -> bytes:
         return self.file.read(size)
 
-    def readline(self):
+    def readline(self) -> bytes:
         return self.file.readline()
 
-    def send(self, data):
+    def send(self, data: "Buffer") -> None:
         self.sock.sendall(data)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         imaplib.IMAP4.shutdown(self)

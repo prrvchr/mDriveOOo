@@ -30,9 +30,6 @@
 import uno
 import unohelper
 
-from com.sun.star.uno import XWeak
-from com.sun.star.uno import XAdapter
-
 from com.sun.star.awt.grid import XMutableGridDataModel
 
 from ..unotool import hasInterface
@@ -41,53 +38,36 @@ import traceback
 
 
 class GridModel(unohelper.Base,
-                XWeak,
-                XAdapter,
                 XMutableGridDataModel):
-    def __init__(self, ctx):
-        self._ctx = ctx
-        self._sortable = None
+    def __init__(self):
         self._events = []
         self._listeners = []
-        self._row = 0
-        self._column = 0
 
     @property
     def RowCount(self):
-        return self._row
+        raise NotImplementedError('Need to be implemented!')
     @property
     def ColumnCount(self):
-        return self._column
-
-# FIXME: We can't use XMutableGridDataModel without this interface XWeak
-# XWeak
-    def queryAdapter(self):
-        return self
-
-# FIXME: We can't use XMutableGridDataModel without this interface XAdapter
-# XAdapter
-    def queryAdapted(self):
-        return self
-    def addReference(self, reference):
-        pass
-    def removeReference(self, reference):
-        pass
+        raise NotImplementedError('Need to be implemented!')
 
 # XCloneable
     def createClone(self):
-         raise NotImplementedError('Need to be implemented!')
+        raise NotImplementedError('Need to be implemented!')
 
 # XGridDataModel
     def getCellData(self, column, row):
         raise NotImplementedError('Need to be implemented!')
+
     def getCellToolTip(self, column, row):
         raise NotImplementedError('Need to be implemented!')
+
+    def getRowData(self, row):
+        raise NotImplementedError('Need to be implemented!')
+
     # FIXME: This method must not be overloaded: It is necessary to find the RowSet's
     # FIXME: row number from the Grid's selection even if the sort is activated!!!
     def getRowHeading(self, row):
         return row
-    def getRowData(self, row):
-        raise NotImplementedError('Need to be implemented!')
 
 # FIXME: We need this interface to be able to broadcast the data change to all listener
 # XMutableGridDataModel
@@ -118,13 +98,14 @@ class GridModel(unohelper.Base,
         pass
 
     def addGridDataListener(self, listener):
-        # FIXME: The service 'com.sun.star.awt.grid.SortableGridDataModel' packaging
-        # FIXME: this interface seems to want to register as an XGridDataListener when
-        # FIXME: initialized, so it is necessary to filter the listener's interfaces
-        if hasInterface(listener, 'com.sun.star.awt.grid.XGridDataListener'):
+        # FIXME: The service 'com.sun.star.awt.grid.SortableGridDataModel' using this
+        # FIXME: interface as delegator seems to want to register as an XGridDataListener when
+        # FIXME: initialized without the needed interface (ie: XGridDataListener).
+        # FIXME: So it is necessary to filter the listener's interfaces. See bug#164040.
+        # FIXME: https://bugs.documentfoundation.org/show_bug.cgi?id=164040
+        interface = 'com.sun.star.awt.grid.XGridDataListener'
+        if hasInterface(listener, interface) and listener not in self._listeners:
             self._listeners.append(listener)
-        #elif hasInterface(listener, 'com.sun.star.awt.grid.XSortableMutableGridDataModel'):
-        #    self._sortable = listener
 
     def removeGridDataListener(self, listener):
         if listener in self._listeners:
@@ -137,46 +118,41 @@ class GridModel(unohelper.Base,
         for listener in self._events:
             listener.disposing(event)
     def addEventListener(self, listener):
-        self._events.append(listener)
+        if listener not in self._events:
+            self._events.append(listener)
     def removeEventListener(self, listener):
         if listener in self._events:
             self._events.remove(listener)
 
 # GridModel getter methods
-    def getCurrentSortOrder(self):
-        return self._sortable.getCurrentSortOrder()
+    def hasGridDataListener(self):
+        # FIXME: To work around bug#164040 it is necessary to know if there are any registered listeners
+        # FIXME: https://bugs.documentfoundation.org/show_bug.cgi?id=164040
+        return len(self._listeners) > 0
 
 # GridModel setter methods
-    def setSortableModel(self, sortable):
-        self._sortable = sortable
-
-    def sortByColumn(self, index, ascending):
-        if index != -1:
-            self._sortable.sortByColumn(index, ascending)
-        else:
-            self._sortable.removeColumnSort()
-
-# GridModel private methods
-    def _removeRow(self, first, last):
+    def rowsRemoved(self, first, last):
         event = self._getGridDataEvent(first, last)
         for listener in self._listeners:
             listener.rowsRemoved(event)
 
-    def _insertRow(self, first, last):
+    def rowsInserted(self, first, last):
         event = self._getGridDataEvent(first, last)
         for listener in self._listeners:
             listener.rowsInserted(event)
 
-    def _changeData(self, first, last):
+    def dataChanged(self, first, last):
         event = self._getGridDataEvent(first, last)
         for listener in self._listeners:
             listener.dataChanged(event)
 
+# GridModel private methods
     def _getGridDataEvent(self, first, last):
         event = uno.createUnoStruct('com.sun.star.awt.grid.GridDataEvent')
         event.Source = self
-        event.FirstColumn = 0
-        event.LastColumn = self._column -1
+        event.FirstColumn = -1
+        event.LastColumn = -1
         event.FirstRow = first
         event.LastRow = last
         return event
+

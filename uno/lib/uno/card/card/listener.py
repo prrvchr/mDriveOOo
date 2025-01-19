@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -27,21 +27,47 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .configuration import g_extension
-from .configuration import g_identifier
-from .configuration import g_service
-from .configuration import g_version
+import unohelper
 
-from .configuration import g_oauth2
+from com.sun.star.frame import XTerminateListener
 
-from .oauth2lib import InteractionRequest
-from .oauth2lib import NoOAuth2
-from .oauth2lib import OAuth2OOo
+from com.sun.star.lang import XEventListener
 
-from .oauth2tools import getRequest
-from .oauth2tools import getOAuth2
-from .oauth2tools import getOAuth2Version
 
-from .oauth2core import getOAuth2UserName
-from .oauth2core import getOAuth2Token
+import traceback
+
+
+class EventListener(unohelper.Base,
+                    XEventListener):
+    def __init__(self, datasource):
+        self._datasource = datasource
+
+# XEventListener
+    def disposing(self, event):
+        try:
+            print("EventListener.disposing() ******************")
+            self._datasource.closeConnection(event.Source)
+        except Exception as e:
+            msg = "EventListener Error: %s" % traceback.format_exc()
+            print(msg)
+
+
+class TerminateListener(unohelper.Base,
+                        XTerminateListener):
+    def __init__(self, replicator):
+        self._replicator = replicator
+
+# XTerminateListener
+    def queryTermination(self, event):
+        try:
+            self._replicator.dispose()
+        except Exception as e:
+            msg = "TerminateListener Error: %s" % traceback.format_exc()
+            print(msg)
+
+    def notifyTermination(self, event):
+        pass
+
+    def disposing(self, source):
+        pass
 

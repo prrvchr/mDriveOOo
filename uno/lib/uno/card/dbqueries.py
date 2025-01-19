@@ -37,14 +37,14 @@ from .logger import getLogger
 g_basename = 'dbqueries'
 
 
-def getSqlQuery(ctx, name, format=None):
+def getSqlQuery(ctx, name, template=None):
 
 # Create User and Schema Query
     if name == 'createUserSchema':
-        query = 'CREATE SCHEMA "%(Schema)s" AUTHORIZATION "%(Name)s";' % format
+        query = 'CREATE SCHEMA "%(Schema)s" AUTHORIZATION "%(Name)s";' % template
 
     elif name == 'setUserSchema':
-        query = 'ALTER USER "%(Name)s" SET INITIAL SCHEMA "%(Schema)s";' % format
+        query = 'ALTER USER "%(Name)s" SET INITIAL SCHEMA "%(Schema)s";' % template
 
 # Create Dynamic View Queries
     elif name == 'getUserViewCommand':
@@ -56,7 +56,7 @@ SELECT V.*
   WHERE B."User" = %(User)s
   ORDER BY V."Created";
 '''
-        query = command % format
+        query = command % template
 
     elif name == 'getBookViewCommand':
         command = '''\
@@ -64,10 +64,10 @@ SELECT V.*
   FROM %(Catalog)s.%(Schema)s."CardView" AS V
   INNER JOIN %(Catalog)s.%(Schema)s."BookCards" AS C ON V."Card" = C."Card"
   INNER JOIN %(Catalog)s.%(Schema)s."Books" AS B ON C."Book" = B."Book"
-  WHERE B."Book" = %(Item)s
+  WHERE B."Book" = %(ItemId)s
   ORDER BY V."Created";
 '''
-        query = command % format
+        query = command % template
 
     elif name == 'getGroupViewCommand':
         command = '''\
@@ -75,10 +75,10 @@ SELECT V.*
   FROM %(Catalog)s.%(Schema)s."CardView" AS V
   INNER JOIN %(Catalog)s.%(Schema)s."GroupCards" AS C ON V."Card" = C."Card"
   INNER JOIN %(Catalog)s.%(Schema)s."Groups" AS G ON C."Group" = G."Group"
-  WHERE G."Group" = %(Item)s
+  WHERE G."Group" = %(ItemId)s
   ORDER BY V."Created";
 '''
-        query = command % format
+        query = command % template
 
 # Select Queries
     elif name == 'getViews':
@@ -118,48 +118,43 @@ SELECT "Name" FROM "Fields" WHERE "Table"='Loop' AND "Column"=1;'''
 # Create Procedure Query
     elif name == 'createSelectUser':
         query = """\
-CREATE PROCEDURE "SelectUser"(IN Server VARCHAR(128),
-                              IN Name VARCHAR(128),
-                              OUT Id INTEGER,
-                              OUT Uri VARCHAR(256),
-                              OUT Scheme VARCHAR(128),
-                              OUT Path VARCHAR(128))
+CREATE PROCEDURE "SelectUser"(IN SERVER VARCHAR(128),
+                              IN NAME VARCHAR(128),
+                              OUT ID INTEGER,
+                              OUT URI VARCHAR(256),
+                              OUT SCHEME VARCHAR(128),
+                              OUT PATH VARCHAR(128))
   SPECIFIC "SelectUser_1"
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE RSLT CURSOR WITH RETURN FOR
-      SELECT B."Book",B."Uri",B."Name",B."Tag",B."Token"
-      FROM "Books" AS B
-      INNER JOIN "Users" AS U ON B."User"=U."User"
-      WHERE U."Server"=Server AND U."Name"=Name
+      SELECT B."Book", B."Uri", B."Name", B."Tag", B."Token",
+        JSON_ARRAYAGG(JSON_ARRAY(G."Group", G."Uri", G."Name", G."Token")) AS "Groups"
+      FROM "Users" AS U
+      INNER JOIN "Books" AS B ON U."User" = B."User"
+      LEFT JOIN "Groups" AS G ON B."Book" = G."Book"
+      WHERE U."Server" = SERVER AND U."Name" = NAME
+      GROUP BY B."Book", B."Uri", B."Name", B."Tag", B."Token"
     FOR READ ONLY;
-      SELECT "User","Uri","Scheme","Path" INTO Id,Uri,Scheme,Path FROM "Users"
-      WHERE "Server"=Server AND "Name"=Name;
+      SELECT "User", "Uri", "Scheme", "Path" INTO ID, URI, SCHEME, PATH FROM "Users"
+      WHERE "Server" = SERVER AND "Name" = NAME;
     OPEN RSLT;
   END"""
 
     elif name == 'createInsertUser':
         query = """\
-CREATE PROCEDURE "InsertUser"(IN Uri VARCHAR(256),
-                              IN Scheme VARCHAR(128),
-                              IN Server VARCHAR(128),
-                              IN Path VARCHAR(128),
-                              IN Name VARCHAR(128),
-                              OUT Id INTEGER)
+CREATE PROCEDURE "InsertUser"(IN URI VARCHAR(256),
+                              IN SCHEME VARCHAR(128),
+                              IN SERVER VARCHAR(128),
+                              IN PATH VARCHAR(128),
+                              IN NAME VARCHAR(128),
+                              OUT USERID INTEGER)
   SPECIFIC "InsertUser_1"
   MODIFIES SQL DATA
-  DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE RSLT CURSOR WITH RETURN FOR
-      SELECT B."Book",B."Uri",B."Name",B."Tag",B."Token"
-      FROM "Books" AS B
-      INNER JOIN "Users" AS U ON B."User"=U."User"
-      WHERE U."Server"=Server AND U."Name"=Name
-    FOR READ ONLY;
-    INSERT INTO "Users" ("Uri","Scheme","Server","Path","Name") VALUES (Uri,Scheme,Server,Path,Name);
-    SET Id = IDENTITY();
-    OPEN RSLT;
+    INSERT INTO "Users" ("Uri", "Scheme", "Server", "Path", "Name") VALUES (URI, SCHEME, SERVER, PATH, NAME);
+    SET USERID = IDENTITY();
   END"""
 
     elif name == 'createInsertBook':
@@ -169,22 +164,22 @@ CREATE PROCEDURE "InsertBook"(IN UID INTEGER,
                               IN NAME VARCHAR(128),
                               IN TAG VARCHAR(128),
                               IN TOKEN VARCHAR(128),
-                              OUT AID INTEGER)
+                              OUT BOOKID INTEGER)
   SPECIFIC "InsertBook_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    INSERT INTO "Books" ("User","Uri","Name","Tag","Token") VALUES (UID,URI,NAME,TAG,TOKEN);
-    SET AID = IDENTITY();
+    INSERT INTO "Books" ("User", "Uri", "Name", "Tag", "Token") VALUES (UID, URI, NAME, TAG, TOKEN);
+    SET BOOKID = IDENTITY();
   END"""
 
-    elif name == 'createUpdateAddressbookName':
+    elif name == 'createUpdateBookName':
         query = """\
-CREATE PROCEDURE "UpdateAddressbookName"(IN AID INTEGER,
-                                         IN NAME VARCHAR(128))
-  SPECIFIC "UpdateAddressbookName_1"
+CREATE PROCEDURE "UpdateBookName"(IN BOOKID INTEGER,
+                                  IN NAME VARCHAR(128))
+  SPECIFIC "UpdateBookName_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    UPDATE "Books" SET "Name"=NAME WHERE "Book"=AID;
+    UPDATE "Books" SET "Name" = NAME WHERE "Book" = BOOKID;
   END"""
 
     elif name == 'createMergeCardData':
@@ -400,7 +395,7 @@ CREATE PROCEDURE "SelectChangedCards"(IN FIRST TIMESTAMP(6) WITH TIME ZONE,
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE RSLT CURSOR WITH RETURN FOR
-      (SELECT U."User",C1."Card",'Deleted' AS "Query",NULL AS "Data",C1."RowEnd" AS "Order"
+      (SELECT U."User", C1."Card", 'Deleted' AS "Query", NULL AS "Data", C1."RowEnd" AS "Order"
       FROM "Cards" FOR SYSTEM_TIME AS OF FIRST AS C1
       JOIN "BookCards" AS BC ON C1."Card" = BC."Card"
       JOIN "Books" AS B ON BC."Book" = B."Book"
@@ -409,7 +404,7 @@ CREATE PROCEDURE "SelectChangedCards"(IN FIRST TIMESTAMP(6) WITH TIME ZONE,
         ON C1."Card" = C2."Card"
       WHERE C2."Card" IS NULL)
       UNION
-      (SELECT U."User",C2."Card",'Inserted' AS "Query",C2."Data",C2."RowStart" AS "Order"
+      (SELECT U."User", C2."Card", 'Inserted' AS "Query", C2."Data", C2."RowStart" AS "Order"
       FROM "Cards" FOR SYSTEM_TIME AS OF LAST AS C2
       JOIN "BookCards" AS BC ON C2."Card" = BC."Card"
       JOIN "Books" AS B ON BC."Book" = B."Book"
@@ -418,7 +413,7 @@ CREATE PROCEDURE "SelectChangedCards"(IN FIRST TIMESTAMP(6) WITH TIME ZONE,
         ON C2."Card" = C1."Card"
       WHERE C1."Card" IS NULL)
       UNION
-      (SELECT U."User",C2."Card",'Updated' AS "Query",C2."Data",C1."RowEnd" AS "Order"
+      (SELECT U."User", C2."Card", 'Updated' AS "Query", C2."Data", C1."RowEnd" AS "Order"
       FROM "Cards" FOR SYSTEM_TIME AS OF LAST AS C2
       JOIN "BookCards" AS BC ON C2."Card" = BC."Card"
       JOIN "Books" AS B ON BC."Book" = B."Book"
@@ -618,20 +613,20 @@ CREATE PROCEDURE "SelectFields"()
 
     elif name == 'createSelectGroups':
         query = """\
-CREATE PROCEDURE "SelectGroups"(IN Aid INTEGER)
+CREATE PROCEDURE "SelectGroups"(IN BOOKID INTEGER)
   SPECIFIC "SelectGroups_1"
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT "Group", "Uri" FROM "Groups" WHERE "Book" = Aid ORDER BY "Group" 
+      SELECT "Group", "Uri" FROM "Groups" WHERE "Book" = BOOKID ORDER BY "Group" 
       FOR READ ONLY;
     OPEN Rslt;
   END"""
 
     elif name == 'createMergeGroup':
         query = """\
-CREATE PROCEDURE "MergeGroup"(IN AID VARCHAR(100),
+CREATE PROCEDURE "MergeGroup"(IN BOOKID VARCHAR(100),
                               IN URI VARCHAR(100),
                               IN DELETED BOOLEAN,
                               IN NAME VARCHAR(100),
@@ -640,32 +635,32 @@ CREATE PROCEDURE "MergeGroup"(IN AID VARCHAR(100),
   MODIFIES SQL DATA
   BEGIN ATOMIC
     IF DELETED THEN
-      DELETE FROM "Groups" WHERE "Book" = AID AND "Uri" = URI;
+      DELETE FROM "Groups" WHERE "Book" = BOOKID AND "Uri" = URI;
     ELSE
-      MERGE INTO "Groups" USING (VALUES(AID,URI,NAME,DATETIME))
-        AS vals(w,x,y,z) ON "Book" = vals.w AND "Uri" = vals.x
+      MERGE INTO "Groups" USING (VALUES(BOOKID, URI, NAME, DATETIME))
+        AS vals(w, x, y, z) ON "Book" = vals.w AND "Uri" = vals.x
           WHEN MATCHED THEN UPDATE
             SET "Name" = vals.y, "Modified" = vals.z
-          WHEN NOT MATCHED THEN INSERT ("Book","Uri","Name","Created","Modified")
+          WHEN NOT MATCHED THEN INSERT ("Book", "Uri", "Name", "Created", "Modified")
             VALUES vals.w, vals.x, vals.y, vals.z, vals.z;
     END IF;
   END"""
 
     elif name == 'createMergeGroupMembers':
         query = """\
-CREATE PROCEDURE "MergeGroupMembers"(IN GID INTEGER,
+CREATE PROCEDURE "MergeGroupMembers"(IN GROUPID INTEGER,
                                      IN DATETIME TIMESTAMP(6),
-                                     IN MEMBERS VARCHAR(100) ARRAY)
+                                     IN MEMBERS VARCHAR(256) ARRAY)
   SPECIFIC "MergeGroupMembers_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
     DECLARE INDEX INTEGER DEFAULT 1;
-    DECLARE CID INTEGER DEFAULT NULL;
-    DELETE FROM "GroupCards" WHERE "Group" = GID; 
+    DECLARE CARDID INTEGER DEFAULT NULL;
+    DELETE FROM "GroupCards" WHERE "Group" = GROUPID; 
     WHILE INDEX <= CARDINALITY(MEMBERS) DO 
-      SELECT "Card" INTO CID FROM "Cards" WHERE "Uri" = MEMBERS[INDEX];
-      IF CID IS NOT NULL THEN
-        MERGE INTO "GroupCards" USING (VALUES(GID, CID, DATETIME))
+      SELECT "Card" INTO CARDID FROM "Cards" WHERE "Uri" = MEMBERS[INDEX];
+      IF CARDID IS NOT NULL THEN
+        MERGE INTO "GroupCards" USING (VALUES(GROUPID, CARDID, DATETIME))
           AS vals(x, y, z) ON "Group" = vals.x AND "Card" = vals.y
             WHEN MATCHED THEN UPDATE SET "Modified" = vals.z
             WHEN NOT MATCHED THEN INSERT ("Group", "Card", "Modified")
@@ -677,17 +672,17 @@ CREATE PROCEDURE "MergeGroupMembers"(IN GID INTEGER,
 
     elif name == 'createMergeCardValue':
         query = """\
-CREATE PROCEDURE "MergeCardValue"(IN AID INTEGER,
-                                  IN CID INTEGER,
-                                  IN DATA VARCHAR(128))
+CREATE PROCEDURE "MergeCardValue"(IN CARDID INTEGER,
+                                  IN NAME INTEGER,
+                                  IN VAL VARCHAR(256))
   SPECIFIC "MergeCardValue_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    MERGE INTO "CardValues" USING (VALUES(AID,CID,DATA))
-      AS vals(x,y,z) ON "Card" = vals.x AND "Column" = vals.y
+    MERGE INTO "CardValues" USING (VALUES(CARDID, NAME, VAL))
+      AS vals(x, y, z) ON "Card" = vals.x AND "Column" = vals.y
         WHEN MATCHED THEN UPDATE SET "Value" = vals.z
-        WHEN NOT MATCHED THEN INSERT ("Card","Column","Value")
-          VALUES vals.x,vals.y,vals.z;
+        WHEN NOT MATCHED THEN INSERT ("Card", "Column", "Value")
+          VALUES vals.x, vals.y, vals.z;
   END"""
 
     elif name == 'createSelectCardGroup':
@@ -738,45 +733,45 @@ CREATE PROCEDURE "InitGroups"(IN Book INTEGER,
 
     elif name == 'createInsertGroup':
         query = """\
-CREATE PROCEDURE "InsertGroup"(IN AID INTEGER,
+CREATE PROCEDURE "InsertGroup"(IN BOOKID INTEGER,
                                IN URI VARCHAR(128),
                                IN NAME VARCHAR(128),
-                               OUT GID INTEGER)
+                               OUT GROUPID INTEGER)
   SPECIFIC "InsertGroup_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    INSERT INTO "Groups" ("Book","Uri","Name") VALUES (AID,URI,NAME);
-    SET GID = IDENTITY();
+    INSERT INTO "Groups" ("Book", "Uri", "Name") VALUES (BOOKID, URI, NAME);
+    SET GROUPID = IDENTITY();
   END"""
 
     elif name == 'createMergeCardGroup':
         query = """\
-CREATE PROCEDURE "MergeCardGroup"(IN CID INTEGER,
-                                  IN GID INTEGER)
+CREATE PROCEDURE "MergeCardGroup"(IN CARDID INTEGER,
+                                  IN GROUPID INTEGER)
   SPECIFIC "MergeCardGroup_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    DELETE FROM "GroupCards" WHERE "Card" = CID;
-    INSERT INTO "GroupCards" ("Group","Card") VALUES (GID, CID);
+    DELETE FROM "GroupCards" WHERE "Card" = CARDID;
+    INSERT INTO "GroupCards" ("Group","Card") VALUES (GROUPID, CARDID);
   END"""
 
     elif name == 'createMergeCardGroups':
         query = """\
-CREATE PROCEDURE "MergeCardGroups"(IN Book INTEGER,
-                                   IN Card INTEGER,
-                                   IN Names VARCHAR(100) ARRAY)
+CREATE PROCEDURE "MergeCardGroups"(IN BOOKID INTEGER,
+                                   IN CARDID INTEGER,
+                                   IN NAMES VARCHAR(128) ARRAY)
   SPECIFIC "MergeCardGroups_1"
   MODIFIES SQL DATA
   BEGIN ATOMIC
-    DECLARE Index INTEGER DEFAULT 1;
-    DECLARE GroupId INTEGER DEFAULT NULL;
-    DELETE FROM "GroupCards" WHERE "Card" = Card;
-    WHILE Index <= CARDINALITY(Names) DO
-      SELECT "Group" INTO GroupId FROM "Groups" WHERE "Book" = Book AND "Name" = Names[Index];
-      IF GroupId IS NOT NULL THEN
-        INSERT INTO "GroupCards" ("Group","Card") VALUES (GroupId,Card);
+    DECLARE INDEX INTEGER DEFAULT 1;
+    DECLARE GROUPID INTEGER DEFAULT NULL;
+    DELETE FROM "GroupCards" WHERE "Card" = CARDID;
+    WHILE INDEX <= CARDINALITY(NAMES) DO
+      SELECT "Group" INTO GROUPID FROM "Groups" WHERE "Book" = BOOKID AND "Name" = NAMES[INDEX];
+      IF GROUPID IS NOT NULL THEN
+        INSERT INTO "GroupCards" ("Group", "Card") VALUES (GROUPID, CARDID);
       END IF;
-      SET Index = Index + 1;
+      SET INDEX = INDEX + 1;
     END WHILE;
   END"""
 
@@ -787,8 +782,8 @@ CREATE PROCEDURE "MergeCardGroups"(IN Book INTEGER,
         query = 'CALL "InsertUser"(?,?,?,?,?,?)'
     elif name == 'insertBook':
         query = 'CALL "InsertBook"(?,?,?,?,?,?)'
-    elif name == 'updateAddressbookName':
-        query = 'CALL "UpdateAddressbookName"(?,?)'
+    elif name == 'updateBookName':
+        query = 'CALL "UpdateBookName"(?,?)'
     elif name == 'mergeCard':
         query = 'CALL "MergeCard"(?,?,?,?,?)'
     elif name == 'mergeCardValue':
@@ -850,21 +845,21 @@ CREATE PROCEDURE "MergeCardGroups"(IN Book INTEGER,
 
 # Logging Changes Queries
     elif name == 'loggingChanges':
-        if format:
+        if template:
             query = 'SET FILES LOG TRUE'
         else:
             query = 'SET FILES LOG FALSE'
 
 # Saves Changes Queries
     elif name == 'saveChanges':
-        if format:
+        if template:
             query = 'CHECKPOINT DEFRAG'
         else:
             query = 'CHECKPOINT'
 
 # ShutDown Queries
     elif name == 'shutdown':
-        if format:
+        if template:
             query = 'SHUTDOWN COMPACT;'
         else:
             query = 'SHUTDOWN;'

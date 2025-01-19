@@ -2,52 +2,49 @@
 # Released subject to the New BSD License
 # Please see http://en.wikipedia.org/wiki/BSD_licenses
 
-from __future__ import unicode_literals
-
+import argparse
+import configparser
 import json
-from os import environ, path
+import os
 import ssl
-
-from six import iteritems
-from six.moves.configparser import SafeConfigParser, NoOptionError
-from six.moves.urllib.request import urlopen
-from six.moves.urllib.parse import urlencode
+import urllib.parse
+import urllib.request
+from typing import Any, Callable, Dict, Optional, Tuple, TYPE_CHECKING, TypeVar
 
 import imapclient
 
 
-def getenv(name, default):
-    return environ.get("imapclient_" + name, default)
+def getenv(name: str, default: Optional[str]) -> Optional[str]:
+    return os.environ.get("imapclient_" + name, default)
 
 
-def get_config_defaults():
-    return dict(
-        username=getenv("username", None),
-        password=getenv("password", None),
-        ssl=True,
-        ssl_check_hostname=True,
-        ssl_verify_cert=True,
-        ssl_ca_file=None,
-        timeout=None,
-        starttls=False,
-        stream=False,
-        oauth2=False,
-        oauth2_client_id=getenv("oauth2_client_id", None),
-        oauth2_client_secret=getenv("oauth2_client_secret", None),
-        oauth2_refresh_token=getenv("oauth2_refresh_token", None),
-        expect_failure=None,
-    )
+def get_config_defaults() -> Dict[str, Any]:
+    return {
+        "username": getenv("username", None),
+        "password": getenv("password", None),
+        "ssl": True,
+        "ssl_check_hostname": True,
+        "ssl_verify_cert": True,
+        "ssl_ca_file": None,
+        "timeout": None,
+        "starttls": False,
+        "stream": False,
+        "oauth2": False,
+        "oauth2_client_id": getenv("oauth2_client_id", None),
+        "oauth2_client_secret": getenv("oauth2_client_secret", None),
+        "oauth2_refresh_token": getenv("oauth2_refresh_token", None),
+        "expect_failure": None,
+    }
 
 
-def parse_config_file(filename):
+def parse_config_file(filename: str) -> argparse.Namespace:
     """Parse INI files containing IMAP connection details.
 
     Used by livetest.py and interact.py
     """
 
-    parser = SafeConfigParser(get_string_config_defaults())
-    with open(filename, "r") as fh:
-        parser.readfp(fh)
+    parser = configparser.ConfigParser(get_string_config_defaults())
+    parser.read(filename)
 
     conf = _read_config_section(parser, "DEFAULT")
     if conf.expect_failure:
@@ -55,14 +52,15 @@ def parse_config_file(filename):
 
     conf.alternates = {}
     for section in parser.sections():
+        # pylint: disable=no-member
         conf.alternates[section] = _read_config_section(parser, section)
 
     return conf
 
 
-def get_string_config_defaults():
+def get_string_config_defaults() -> Dict[str, str]:
     out = {}
-    for k, v in iteritems(get_config_defaults()):
+    for k, v in get_config_defaults().items():
         if v is True:
             v = "true"
         elif v is False:
@@ -73,30 +71,38 @@ def get_string_config_defaults():
     return out
 
 
-def _read_config_section(parser, section):
-    get = lambda name: parser.get(section, name)
-    getboolean = lambda name: parser.getboolean(section, name)
+T = TypeVar("T")
 
-    def get_allowing_none(name, typefunc):
+
+def _read_config_section(
+    parser: configparser.ConfigParser, section: str
+) -> argparse.Namespace:
+    def get(name: str) -> str:
+        return parser.get(section, name)
+
+    def getboolean(name: str) -> bool:
+        return parser.getboolean(section, name)
+
+    def get_allowing_none(name: str, typefunc: Callable[[str], T]) -> Optional[T]:
         try:
             v = parser.get(section, name)
-        except NoOptionError:
+        except configparser.NoOptionError:
             return None
         if not v:
             return None
         return typefunc(v)
 
-    def getint(name):
+    def getint(name: str) -> Optional[int]:
         return get_allowing_none(name, int)
 
-    def getfloat(name):
+    def getfloat(name: str) -> Optional[float]:
         return get_allowing_none(name, float)
 
     ssl_ca_file = get("ssl_ca_file")
     if ssl_ca_file:
-        ssl_ca_file = path.expanduser(ssl_ca_file)
+        ssl_ca_file = os.path.expanduser(ssl_ca_file)
 
-    return Bunch(
+    return argparse.Namespace(
         host=get("host"),
         port=getint("port"),
         ssl=getboolean("ssl"),
@@ -122,26 +128,36 @@ OAUTH2_REFRESH_URLS = {
 }
 
 
-def refresh_oauth2_token(hostname, client_id, client_secret, refresh_token):
+def refresh_oauth2_token(
+    hostname: str, client_id: str, client_secret: str, refresh_token: str
+) -> str:
     url = OAUTH2_REFRESH_URLS.get(hostname)
     if not url:
         raise ValueError("don't know where to refresh OAUTH2 token for %r" % hostname)
 
-    post = dict(
-        client_id=client_id.encode("ascii"),
-        client_secret=client_secret.encode("ascii"),
-        refresh_token=refresh_token.encode("ascii"),
-        grant_type=b"refresh_token",
-    )
-    response = urlopen(url, urlencode(post).encode("ascii")).read()
-    return json.loads(response.decode("ascii"))["access_token"]
+    post = {
+        "client_id": client_id.encode("ascii"),
+        "client_secret": client_secret.encode("ascii"),
+        "refresh_token": refresh_token.encode("ascii"),
+        "grant_type": b"refresh_token",
+    }
+    with urllib.request.urlopen(
+        url, urllib.parse.urlencode(post).encode("ascii")
+    ) as request:
+        response = request.read()
+    result = json.loads(response.decode("ascii"))["access_token"]
+    if TYPE_CHECKING:
+        assert isinstance(result, str)
+    return result
 
 
 # Tokens are expensive to refresh so use the same one for the duration of the process.
-_oauth2_cache = {}
+_oauth2_cache: Dict[Tuple[str, str, str, str], str] = {}
 
 
-def get_oauth2_token(hostname, client_id, client_secret, refresh_token):
+def get_oauth2_token(
+    hostname: str, client_id: str, client_secret: str, refresh_token: str
+) -> str:
     cache_key = (hostname, client_id, client_secret, refresh_token)
     token = _oauth2_cache.get(cache_key)
     if token:
@@ -152,16 +168,17 @@ def get_oauth2_token(hostname, client_id, client_secret, refresh_token):
     return token
 
 
-def create_client_from_config(conf, login=True):
+def create_client_from_config(
+    conf: argparse.Namespace, login: bool = True
+) -> imapclient.IMAPClient:
     assert conf.host, "missing host"
 
     ssl_context = None
     if conf.ssl:
         ssl_context = ssl.create_default_context()
         ssl_context.check_hostname = conf.ssl_check_hostname
-        # These next two lines have been removed in order to pass the Fluid Attacks scan...
-        #if not conf.ssl_verify_cert:
-        #    ssl_context.verify_mode = ssl.CERT_NONE
+        if not conf.ssl_verify_cert:
+            ssl_context.verify_mode = ssl.CERT_NONE
         if conf.ssl_ca_file:
             ssl_context.load_verify_locations(cafile=conf.ssl_ca_file)
 
@@ -197,17 +214,6 @@ def create_client_from_config(conf, login=True):
             assert conf.password, "missing password"
             client.login(conf.username, conf.password)
         return client
-    except:
+    except:  # noqa: E722
         client.shutdown()
         raise
-
-
-class Bunch(dict):
-    def __getattr__(self, k):
-        try:
-            return self[k]
-        except KeyError:
-            raise AttributeError
-
-    def __setattr__(self, k, v):
-        self[k] = v

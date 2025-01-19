@@ -27,8 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import unohelper
-
 from ..unotool import getConfiguration
 from ..unotool import getResourceLocation
 from ..unotool import getSimpleFile
@@ -37,8 +35,6 @@ from ..dbconfig  import g_folder
 
 from ..configuration import g_host
 from ..configuration import g_identifier
-
-import traceback
 
 
 class OptionsModel():

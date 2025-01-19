@@ -47,7 +47,6 @@ from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
 import binascii
 import datetime
 from packaging import version
-from six import binary_type, string_types
 import traceback
 
 
@@ -125,7 +124,7 @@ def getDocument(ctx, url):
 def getExceptionMessage(exception):
     messages = []
     if hasattr(exception, 'args'):
-        messages = [arg for arg in exception.args if isinstance(arg, string_types)]
+        messages = [arg for arg in exception.args if isinstance(arg, str)]
     count = len(messages)
     if count == 0:
         try:
@@ -136,7 +135,7 @@ def getExceptionMessage(exception):
         message = messages[0]
     else:
         message = max(messages, key=len)
-    if isinstance(message, binary_type):
+    if isinstance(message, bytes):
         message = message.decode('utf-8')
     message = ' '.join(message.split())
     return message
@@ -179,10 +178,9 @@ def hasService(ctx, name):
 
 def getComponentTypes(component):
     try:
-        types = component.getTypes()
+        return component.getTypes()
     except:
-        types = ()
-    return types
+        return ()
 
 def getInterfaceTypes(component):
     return getComponentTypes(component)

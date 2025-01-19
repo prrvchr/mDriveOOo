@@ -29,6 +29,8 @@
 
 #include <com/sun/star/uno/XInterface.idl>
 #include <com/sun/star/auth/RefreshTokenException.idl>
+#include <com/sun/star/beans/NamedValue.idl>
+#include <com/sun/star/container/XNameAccess.idl>
 #include <com/sun/star/rest/RequestException.idl>
 #include <com/sun/star/rest/XRequestResponse.idl>
 #include <com/sun/star/rest/XRequestParameter.idl>
@@ -44,8 +46,14 @@ interface XOAuth2Service : com::sun::star::uno::XInterface
 
     boolean isAuthorized();
 
-    string getToken([in] string Format)
+    boolean isRegisteredUrl([in] string Url);
+
+    string getToken([in] string Template)
                     raises(com::sun::star::auth::RefreshTokenException);
+
+    string getTokenWithParameters([in] com::sun::star::container::XNameAccess Parameters,
+                                  [in] sequence<com::sun::star::beans::NamedValue> Arguments)
+                                  raises(com::sun::star::auth::RefreshTokenException);
 
     string unquoteUrl([in] string Url);
 

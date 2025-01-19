@@ -2,19 +2,16 @@
 # Released subject to the New BSD License
 # Please see http://en.wikipedia.org/wiki/BSD_licenses
 
-from __future__ import unicode_literals
-
-import six
 import logging
-from six import binary_type, text_type
+from typing import Iterator, Optional, Tuple, Union
 
 from . import exceptions
 
 logger = logging.getLogger(__name__)
 
 
-def to_unicode(s):
-    if isinstance(s, binary_type):
+def to_unicode(s: Union[bytes, str]) -> str:
+    if isinstance(s, bytes):
         try:
             return s.decode("ascii")
         except UnicodeDecodeError:
@@ -27,20 +24,27 @@ def to_unicode(s):
     return s
 
 
-def to_bytes(s, charset="ascii"):
-    if isinstance(s, text_type):
+def to_bytes(s: Union[bytes, str], charset: str = "ascii") -> bytes:
+    if isinstance(s, str):
         return s.encode(charset)
     return s
 
 
-def assert_imap_protocol(condition, message=None):
+def assert_imap_protocol(condition: bool, message: Optional[bytes] = None) -> None:
     if not condition:
         msg = "Server replied with a response that violates the IMAP protocol"
         if message:
-            msg += "{}: {}".format(msg, message)
+            # FIXME(jlvillal): This looks wrong as it repeats `msg` twice
+            msg += "{}: {}".format(
+                msg, message.decode(encoding="ascii", errors="ignore")
+            )
         raise exceptions.ProtocolError(msg)
 
 
-def chunk(lst, size):
-    for i in six.moves.range(0, len(lst), size):
+_TupleAtomPart = Union[None, int, bytes]
+_TupleAtom = Tuple[Union[_TupleAtomPart, "_TupleAtom"], ...]
+
+
+def chunk(lst: _TupleAtom, size: int) -> Iterator[_TupleAtom]:
+    for i in range(0, len(lst), size):
         yield lst[i : i + size]

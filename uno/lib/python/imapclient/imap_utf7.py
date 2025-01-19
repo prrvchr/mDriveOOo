@@ -6,26 +6,25 @@
 # base64 encoding context), which is & in this modified UTF-7 convention,
 # since + is considered as mainly used in mailbox names.
 # Other variations and examples can be found in the RFC 3501, section 5.1.3.
-from __future__ import unicode_literals
 
 import binascii
-from six import binary_type, text_type, byte2int, iterbytes, unichr
+from typing import List, Union
 
 
-def encode(s):
+def encode(s: Union[str, bytes]) -> bytes:
     """Encode a folder name using IMAP modified UTF-7 encoding.
 
     Input is unicode; output is bytes (Python 3) or str (Python 2). If
     non-unicode input is provided, the input is returned unchanged.
     """
-    if not isinstance(s, text_type):
+    if not isinstance(s, str):
         return s
 
     res = bytearray()
 
-    b64_buffer = []
+    b64_buffer: List[str] = []
 
-    def consume_b64_buffer(buf):
+    def consume_b64_buffer(buf: List[str]) -> None:
         """
         Consume the buffer by encoding it into a modified base 64 representation
         and surround it with shift characters & and -
@@ -56,24 +55,24 @@ def encode(s):
     return bytes(res)
 
 
-AMPERSAND_ORD = byte2int(b"&")
-DASH_ORD = byte2int(b"-")
+AMPERSAND_ORD = ord("&")
+DASH_ORD = ord("-")
 
 
-def decode(s):
+def decode(s: Union[bytes, str]) -> str:
     """Decode a folder name from IMAP modified UTF-7 encoding to unicode.
 
     Input is bytes (Python 3) or str (Python 2); output is always
     unicode. If non-bytes/str input is provided, the input is returned
     unchanged.
     """
-    if not isinstance(s, binary_type):
+    if not isinstance(s, bytes):
         return s
 
     res = []
     # Store base64 substring that will be decoded once stepping on end shift character
     b64_buffer = bytearray()
-    for c in iterbytes(s):
+    for c in s:
         # Shift character without anything in buffer -> starts storing base64 substring
         if c == AMPERSAND_ORD and not b64_buffer:
             b64_buffer.append(c)
@@ -90,7 +89,7 @@ def decode(s):
             b64_buffer.append(c)
         # No buffer initialized yet, should be an ASCII printable char
         else:
-            res.append(unichr(c))
+            res.append(chr(c))
 
     # Decode the remaining buffer if any
     if b64_buffer:
@@ -99,11 +98,11 @@ def decode(s):
     return "".join(res)
 
 
-def base64_utf7_encode(buffer):
+def base64_utf7_encode(buffer: List[str]) -> bytes:
     s = "".join(buffer).encode("utf-16be")
     return binascii.b2a_base64(s).rstrip(b"\n=").replace(b"/", b",")
 
 
-def base64_utf7_decode(s):
+def base64_utf7_decode(s: bytearray) -> str:
     s_utf7 = b"+" + s.replace(b",", b"/") + b"-"
     return s_utf7.decode("utf-7")

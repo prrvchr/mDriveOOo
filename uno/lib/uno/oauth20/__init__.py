@@ -27,11 +27,26 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-# OAuth2 configuration
-g_extension = 'OAuth2OOo'
-g_identifier = 'io.github.prrvchr.%s' % g_extension
-g_service = '%s.OAuth2Service' % g_identifier
-g_version = '1.3.8'
+from .oauth2lib import CustomParser
+from .oauth2lib import InteractionRequest
+from .oauth2lib import NoOAuth2
+from .oauth2lib import OAuth2OOo
 
-g_oauth2 = g_service
+from .oauth2tool import getOAuth2
+from .oauth2tool import getOAuth2Version
+from .oauth2tool import getParserItems
+from .oauth2tool import getRequest
+from .oauth2tool import getResponseResults
+from .oauth2tool import setItemsIdentifier
+from .oauth2tool import setParametersArguments
+from .oauth2tool import setResquestParameter
+
+from .oauth2core import getOAuth2UserName
+from .oauth2core import getOAuth2Token
+
+from .configuration import g_extension
+from .configuration import g_identifier
+from .configuration import g_service
+from .configuration import g_token
+from .configuration import g_version
 

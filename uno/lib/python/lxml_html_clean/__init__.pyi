@@ -5,5 +5,7 @@ from .clean import (
     autolink as autolink,
     autolink_html as autolink_html,
     word_break as word_break,
-    word_break_html as word_break_html
+    word_break_html as word_break_html,
+    LXMLHTMLCleanWarning as LXMLHTMLCleanWarning,
+    AmbiguousURLWarning as AmbiguousURLWarning,
 )

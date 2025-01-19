@@ -118,13 +118,14 @@ class Wizard(unohelper.Base,
         return False
 
     def enablePage(self, pageid, enabled):
+        mtd = 'enablePage'
         if not self._isPathInitialized():
-            raise self._getInvalidStateException(111, 'enablePage()')
+            raise self._getInvalidStateException(111, mtd)
         path = self._getCurrentPath()
         if pageid not in path:
-            raise self._getNoSuchElementException(112, 'enablePage()')
+            raise self._getNoSuchElementException(112, mtd)
         if pageid == self._model.getCurrentPageId():
-            raise self._getInvalidStateException(113, 'enablePage()')
+            raise self._getInvalidStateException(113, mtd)
         if self._model.enablePage(pageid, enabled):
             self._model.updateRoadmap(self._getFirstPageId())
 
@@ -143,14 +144,15 @@ class Wizard(unohelper.Base,
         return False
 
     def activatePath(self, index, final):
+        mtd = 'activatePath'
         if not self._isMultiPaths():
-            raise self._getInvalidStateException(121, 'activatePath()')
+            raise self._getInvalidStateException(121, mtd)
         if index not in self._getMultiPathsIndex():
-            raise self._getNoSuchElementException(122, 'activatePath()')
+            raise self._getNoSuchElementException(122, mtd)
         path = self._paths[index]
         pageid = self._model.getCurrentPageId()
         if pageid != -1 and pageid not in path:
-            raise self._getInvalidStateException(123, 'activatePath()')
+            raise self._getInvalidStateException(123, mtd)
         if self._currentPath != index or self._isComplete() != final:
             self._initPath(index, final)
             self._model.updateRoadmap(self._getFirstPageId())
@@ -167,14 +169,15 @@ class Wizard(unohelper.Base,
 
 # XInitialization
     def initialize(self, arguments):
+        mtd = 'initialize'
         if not isinstance(arguments, tuple) or len(arguments) != 2:
-            raise self._getIllegalArgumentException(0, 101, 'initialize()')
+            raise self._getIllegalArgumentException(0, 101, mtd)
         paths, controller = arguments
         if not isinstance(paths, tuple) or len(paths) < 1:
-            raise self._getIllegalArgumentException(0, 102, 'initialize()')
+            raise self._getIllegalArgumentException(0, 102, mtd)
         interface = 'com.sun.star.ui.dialogs.XWizardController'
         if not hasInterface(controller, interface):
-            raise self._getIllegalArgumentException(0, 103, 'initialize()')
+            raise self._getIllegalArgumentException(0, 103, mtd)
         self._paths = paths
         self._multiPaths = isinstance(paths[0], tuple)
         self._controller = controller

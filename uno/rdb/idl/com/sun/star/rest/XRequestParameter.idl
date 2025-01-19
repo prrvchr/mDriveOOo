@@ -73,6 +73,9 @@ interface XRequestParameter: com::sun::star::uno::XInterface
 
     void setJsonStructure([in] com::sun::star::json::XJsonStructure Json);
 
+    void fromJson([in] string json)
+           raises(JSONDecodeException);
+
     string toJson([in] boolean Stream)
            raises(JSONDecodeException);
 
@@ -80,6 +83,7 @@ interface XRequestParameter: com::sun::star::uno::XInterface
     [attribute] string Url;
     [attribute] string Headers;
     [attribute] string Query;
+    [attribute] string Form;
     [attribute] string Json;
     [attribute] sequence<byte> Data;
     [attribute] string Text;
