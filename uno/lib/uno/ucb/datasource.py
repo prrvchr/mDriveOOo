@@ -105,7 +105,7 @@ class DataSource():
             msg = self._logger.resolveString(311, url)
             raise IllegalIdentifierException(msg, source)
         user.setLock()
-        content = user.getContent(authority, uri)
+        content = user.getContentByUri(authority, uri)
         if content is None:
             msg = self._logger.resolveString(311, url)
             raise IllegalIdentifierException(msg, source)
@@ -155,7 +155,10 @@ class DataSource():
         return user, uri
 
     def _getUserName(self, source, url):
-        name = getOAuth2UserName(self._ctx, self, self._provider.Scheme)
+        try:
+            name = getOAuth2UserName(self._ctx, source, self._provider.Scheme)
+        except Exception as e:
+            print("DataSource._getUserName() ERROR: %s - %s" % (e, traceback.format_exc()))
         if not name:
             msg = self._getExceptionMessage('_getUserName', 331, url)
             raise IllegalIdentifierException(msg, source)

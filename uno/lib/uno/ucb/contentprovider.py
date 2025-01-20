@@ -94,8 +94,11 @@ class ContentProvider(unohelper.Base,
     # XContentProvider
     def queryContent(self, identifier):
         try:
+            print("ContentProvider.queryContent() 1")
             url = self._getPresentationUrl(identifier.getContentIdentifier())
+            print("ContentProvider.queryContent() 2")
             content = self._datasource.queryContent(self, self._authority, url)
+            print("ContentProvider.queryContent() 3")
             self._logger.logprb(INFO, self._cls, 'queryContent', 231, url)
             return content
         except IllegalIdentifierException as e:
@@ -142,11 +145,12 @@ class ContentProvider(unohelper.Base,
         return datasource
 
     def _getPresentationUrl(self, url):
-        # FIXME: Sometimes the url can end with a dot or a slash, it must be deleted
-        url = url.rstrip('/.')
+        # FIXME: Sometimes the url can end with a dot, it must be removed
+        url = url.rstrip('.')
         uri = parseUrl(self._transformer, url)
         if uri is not None:
             url = self._transformer.getPresentation(uri, True)
+        print("ContentProvider._getPresentationUrl() url: %s" % url)
         return url
 
     def _getExceptionMessage(self, mtd, code, extension, *args):
