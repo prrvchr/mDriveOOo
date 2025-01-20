@@ -35,7 +35,7 @@
     <high-contrast xlink:href="img/mDriveOOo.svg"/>
   </icon>
   <extension-description>
-    <src xlink:href="description/desc_en.txt" lang="en-US"/>
-    <src xlink:href="description/desc_fr.txt" lang="fr-FR"/>
+    <src xlink:href="description/description_en.txt" lang="en-US"/>
+    <src xlink:href="description/description_fr.txt" lang="fr-FR"/>
   </extension-description>
 </description>
