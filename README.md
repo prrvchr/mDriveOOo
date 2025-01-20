@@ -277,7 +277,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 - It is possible to build the extension archive (ie: the oxt file) with the [Apache Ant][59] utility and the [build.xml][60] script file.
 - The extension will refuse to install under OpenOffice regardless of version or LibreOffice other than 7.x or higher.
 - Added binaries needed for Python libraries to work on Linux and LibreOffice 24.8 (ie: Python 3.9).
-- In order to use an arbitrary port for returning the OAuth2 authorization code, the redirect URL via Github (ie: `https://prrvchr.github.io/OAuth2OOo/source/OAuth2OOo/registration/OAuth2Redirect`) is now used.
+- The ability to not specify the user's account name in the URL is working again.
 
 ### What remains to be done for version 1.2.0:
 
