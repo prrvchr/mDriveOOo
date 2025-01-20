@@ -82,8 +82,7 @@ def getDataBaseConnection(ctx, url, user, pwd, new, infos=None):
         infos = getDriverInfos(ctx, url, g_drvinfos)
     return getDataSourceConnection(ctx, url, user, pwd, new, infos)
 
-def createDataBase(ctx, logger, connection, odb, version):
-    logger.logprb(INFO, 'DataBase', '_createDataBase', 411, version)
+def createDataBase(ctx, connection, odb):
     # XXX Creation order are very important here...
     tables = connection.getTables()
     statement = connection.createStatement()
@@ -102,7 +101,6 @@ def createDataBase(ctx, logger, connection, odb, version):
     executeQueries(ctx, statement, _getProcedures(), 'create%s', g_queries)
     statement.close()
     connection.getParent().DatabaseDocument.storeAsURL(odb, ())
-    logger.logprb(INFO, 'DataBase', '_createDataBase', 412)
 
 def _createTables(connection, statement, tables):
     infos = getConnectionInfos(connection, 'AutoIncrementCreation', 'RowVersionCreation')

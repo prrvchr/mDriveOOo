@@ -40,5 +40,6 @@ from .provider import Provider
 
 from .user import User
 
+from .contenthelper import getDataSourceUrl
 from .contenthelper import getExceptionMessage
 

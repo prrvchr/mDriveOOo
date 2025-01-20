@@ -65,17 +65,24 @@ import traceback
 class DataBase():
     def __init__(self, ctx, logger, url, user='', pwd=''):
         self._ctx = ctx
-        self._logger = logger
+        cls, mtd = 'DataBase', '__init__'
+        logger.logprb(INFO, cls, mtd, 401)
         self._url = url
         odb = url + '.odb'
         new = not getSimpleFile(ctx).exists(odb)
         connection = getDataBaseConnection(ctx, url, user, pwd, new)
         version = connection.getMetaData().getDriverVersion()
-        if new and checkVersion(version, g_version):
-            createDataBase(ctx, logger, connection, odb, version)
+        if new:
+            if checkVersion(version, g_version):
+                logger.logprb(INFO, cls, mtd, 402, version)
+                createDataBase(ctx, connection, odb)
+                logger.logprb(INFO, cls, mtd, 403)
+            else:
+                logger.logprb(SEVERE, cls, mtd, 404, version, g_version)
         self._statement = connection.createStatement()
         self._version = version
-        self._logger.logprb(INFO, 'DataBase', '__init__', 401)
+        self._logger = logger
+        logger.logprb(INFO, cls, mtd, 405)
 
     @property
     def Url(self):
@@ -467,7 +474,7 @@ class DataBase():
             mx = 2 ** 32 / 2 -1
             if size > mx:
                 size = min(size, mx)
-                self._logger.logprb(SEVERE, 'DataBase', '_mergeItem', 402, size, item.get('Size'))
+                self._logger.logprb(SEVERE, 'DataBase', '_mergeItem', 451, size, item.get('Size'))
         call.setLong(10, size)
         call.setString(11, item.get('Link'))
         call.setBoolean(12, item.get('Trashed'))

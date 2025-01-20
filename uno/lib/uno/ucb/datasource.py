@@ -32,6 +32,8 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb import IllegalIdentifierException
 
+from .database import DataBase
+
 from .oauth20 import getOAuth2UserName
 
 from .unotool import getUriFactory
@@ -53,20 +55,36 @@ import traceback
 
 
 class DataSource():
-    def __init__(self, ctx, logger, database):
+    def __init__(self, ctx, logger, url):
+        cls, mtd = 'DataSource', '__init__'
+        logger.logprb(INFO, cls, mtd, 301)
         self._ctx = ctx
         self._default = ''
         self._users = {}
-        self._logger = logger
-        self.Error = None
         self._sync = Event()
         self._lock = Lock()
         self._urifactory = getUriFactory(ctx)
-        self._provider = Provider(ctx, logger)
-        self.Replicator = Replicator(ctx, database.Url, self._provider, self._users, self._sync, self._lock)
-        self.DataBase = database
+        database = DataBase(ctx, logger, url)
+        provider = Provider(ctx, logger)
+        self._replicator = Replicator(ctx, url, provider, self._users, self._sync, self._lock)
+        self._database = database
+        self._provider = provider
+        self._logger = logger
         database.addCloseListener(CloseListener(self))
-        self._logger.logprb(INFO, 'DataSource', '__init__', 301)
+        logger.logprb(INFO, cls, mtd, 302)
+
+    @property
+    def DataBase(self):
+        return self._database
+    @property
+    def Replicator(self):
+        return self._replicator
+
+    def isUptoDate(self):
+        return self.DataBase.isUptoDate()
+
+    def getDataBaseVersion(self):
+        return self.DataBase.Version
 
     # called from XCloseListener
     def dispose(self):

@@ -43,38 +43,23 @@ from com.sun.star.ucb import XParameterizedContentProvider
 from com.sun.star.ucb import IllegalIdentifierException
 
 from .ucp import Identifier
+from .ucp import getDataSourceUrl
 from .ucp import getExceptionMessage
-
-from .database import DataBase
 
 from .datasource import DataSource
 
-from .unotool import checkVersion
-from .unotool import getExtensionVersion
 from .unotool import getUrlTransformer
 from .unotool import parseUrl
 
-from .dbtool import getConnectionUrl
-
 from .logger import getLogger
 
-from .oauth20 import getOAuth2Version
-from .oauth20 import g_extension as g_oauth2ext
-from .oauth20 import g_version as g_oauth2ver
-
 from .jdbcdriver import g_extension as g_jdbcext
-from .jdbcdriver import g_identifier as g_jdbcid
-from .jdbcdriver import g_version as g_jdbcver
 
-from .dbconfig import g_folder
 from .dbconfig import g_version
 
 from .configuration import g_extension
 from .configuration import g_identifier
 from .configuration import g_defaultlog
-from .configuration import g_scheme
-
-from .ucp import g_ucbseparator
 
 import traceback
 
@@ -145,35 +130,16 @@ class ContentProvider(unohelper.Base,
     # Private methods
     def _getDataSource(self):
         mtd = '_getDataSource'
-        oauth2 = getOAuth2Version(self._ctx)
-        driver = getExtensionVersion(self._ctx, g_jdbcid)
-        if oauth2 is None:
-            msg = self._getExceptionMessage(mtd, 221, g_oauth2ext, g_oauth2ext, g_extension)
+        url = getDataSourceUrl(self._ctx, self, self._logger, self._cls, mtd)
+        try:
+            datasource = DataSource(self._ctx, self._logger, url)
+        except SQLException as e:
+            msg = self._getExceptionMessage(mtd, 225, g_extension, url, e.Message)
             raise IllegalIdentifierException(msg, self)
-        elif not checkVersion(oauth2, g_oauth2ver):
-            msg = self._getExceptionMessage(mtd, 223, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
+        if not datasource.isUptoDate():
+            msg = self._getExceptionMessage(mtd, 227, g_jdbcext, datasource.getDataBaseVersion(), g_version)
             raise IllegalIdentifierException(msg, self)
-        elif driver is None:
-            msg = self._getExceptionMessage(mtd, 221, g_jdbcext, g_jdbcext, g_extension)
-            raise IllegalIdentifierException(msg, self)
-        elif not checkVersion(driver, g_jdbcver):
-            msg = self._getExceptionMessage(mtd, 223, g_jdbcext, driver, g_jdbcext, g_jdbcver)
-            raise IllegalIdentifierException(msg, self)
-        else:
-            path = g_folder + g_ucbseparator + g_scheme
-            url = getConnectionUrl(self._ctx, path)
-            try:
-                database = DataBase(self._ctx, self._logger, url)
-            except SQLException as e:
-                msg = self._getExceptionMessage(mtd, 225, g_extension, url, e.Message)
-                raise IllegalIdentifierException(msg, self)
-            else:
-                if not database.isUptoDate():
-                    msg = self._getExceptionMessage(mtd, 227, g_jdbcext, database.Version, g_version)
-                    raise IllegalIdentifierException(msg, self)
-                else:
-                    return DataSource(self._ctx, self._logger, database)
-        return None
+        return datasource
 
     def _getPresentationUrl(self, url):
         # FIXME: Sometimes the url can end with a dot or a slash, it must be deleted

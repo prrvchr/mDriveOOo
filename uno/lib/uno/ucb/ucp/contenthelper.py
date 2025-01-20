@@ -39,6 +39,7 @@ from com.sun.star.ucb.ContentAction import REMOVED
 from com.sun.star.ucb.ContentAction import DELETED
 from com.sun.star.ucb.ContentAction import EXCHANGED
 
+from com.sun.star.ucb import IllegalIdentifierException
 from com.sun.star.ucb import InteractiveAugmentedIOException
 
 from com.sun.star.ucb.ConnectionMode import ONLINE
@@ -46,13 +47,49 @@ from com.sun.star.ucb.ConnectionMode import OFFLINE
 
 from com.sun.star.sdb import ParametersRequest
 
+from ..dbtool import getConnectionUrl
+
+from ..unotool import checkVersion
 from ..unotool import createMessageBox
 from ..unotool import createService
+from ..unotool import getExtensionVersion
 from ..unotool import getParentWindow
 from ..unotool import getProperty
 from ..unotool import getPropertyValue
 from ..unotool import getNamedValueSet
 
+from ..oauth20 import getOAuth2Version
+from ..oauth20 import g_extension as g_oauth2ext
+from ..oauth20 import g_version as g_oauth2ver
+
+from ..jdbcdriver import g_extension as g_jdbcext
+from ..jdbcdriver import g_identifier as g_jdbcid
+from ..jdbcdriver import g_version as g_jdbcver
+
+from ..dbconfig import g_folder
+
+from ..configuration import g_extension
+from ..configuration import g_scheme
+
+from .configuration import g_ucbseparator
+
+
+def getDataSourceUrl(ctx, source, logger, cls, mtd):
+    oauth2 = getOAuth2Version(ctx)
+    driver = getExtensionVersion(ctx, g_jdbcid)
+    if oauth2 is None:
+        msg = getExceptionMessage(ctx, logger, cls, mtd, 221, g_oauth2ext, g_oauth2ext, g_extension)
+        raise IllegalIdentifierException(msg, source)
+    if not checkVersion(oauth2, g_oauth2ver):
+        msg = getExceptionMessage(ctx, logger, cls, mtd, 223, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
+        raise IllegalIdentifierException(msg, source)
+    if driver is None:
+        msg = getExceptionMessage(ctx, logger, cls, mtd, 221, g_jdbcext, g_jdbcext, g_extension)
+        raise IllegalIdentifierException(msg, source)
+    if not checkVersion(driver, g_jdbcver):
+        msg = getExceptionMessage(ctx, logger, cls, mtd, 223, g_jdbcext, driver, g_jdbcext, g_jdbcver)
+        raise IllegalIdentifierException(msg, source)
+    return getConnectionUrl(ctx, g_folder + g_ucbseparator + g_scheme)
 
 def propertyChange(source, name, oldvalue, newvalue):
     if name in source.propertiesListener:
@@ -177,7 +214,7 @@ def executeContentCommand(content, name, argument, environment):
 
 def getExceptionMessage(ctx, logger, cls, method, code, extension, *args):
     title = logger.resolveString(code, extension)
-    message = logger.resolveString(code +1, *args)
+    message = logger.resolveString(code + 1, *args)
     logger.logp(SEVERE, cls, method, message)
     msgbox = createMessageBox(getParentWindow(ctx), message, title, 'error', 1)
     msgbox.execute()
