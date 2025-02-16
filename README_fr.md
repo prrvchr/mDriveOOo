@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][4] et à notre [Politique de protection des données][5].**
 
-# version [1.2.0][6]
+# version [1.2.1][6]
 
 ## Introduction:
 
@@ -279,7 +279,14 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 - Ajout des fichiers binaires nécessaires aux bibliothèques Python pour fonctionner sous Linux et LibreOffice 24.8 (ie: Python 3.9).
 - La possibilité de ne pas spécifier le nom du compte de l'utilisateur dans l'URL est à nouveau fonctionnelle.
 
-### Que reste-t-il à faire pour la version 1.2.0:
+### Ce qui a été fait pour la version 1.2.1:
+
+- Mise à jour du paquet [Python packaging][56] vers la version 24.2.
+- Mise à jour du paquet [Python setuptools][57] vers la version 75.8.0.
+- Mise à jour du paquet [Python six][61] vers la version 1.17.0.
+- Support de Python version 3.13.
+
+### Que reste-t-il à faire pour la version 1.2.1:
 
 - Ajouter de nouvelles langue pour l'internationalisation...
 
@@ -290,7 +297,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [3]: <https://prrvchr.github.io/mDriveOOo>
 [4]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_fr>
 [5]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_fr>
-[6]: <https://prrvchr.github.io/mDriveOOo/README_fr#ce-qui-a-%C3%A9t%C3%A9-fait-pour-la-version-120>
+[6]: <https://prrvchr.github.io/mDriveOOo/README_fr#ce-qui-a-%C3%A9t%C3%A9-fait-pour-la-version-121>
 [7]: <https://prrvchr.github.io/README_fr>
 [8]: <https://fr.libreoffice.org/download/telecharger-libreoffice/>
 [9]: <https://www.openoffice.org/fr/Telecharger/>
@@ -311,7 +318,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [24]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
 [25]: <img/mDriveOOo.svg#middle>
 [26]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.2.0#right>
+[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.2.1#right>
 [28]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
 [29]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
 [30]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
@@ -345,3 +352,4 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [58]: <https://github.com/prrvchr/mDriveOOo/security/dependabot/1>
 [59]: <https://ant.apache.org/>
 [60]: <https://github.com/prrvchr/mDriveOOo/blob/master/source/mDriveOOo/build.xml>
+[61]: <https://pypi.org/project/six/>
