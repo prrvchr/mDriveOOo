@@ -15,28 +15,30 @@ from bs4.element import (
 
 from . import SoupTest
 
-class TestNavigableString(SoupTest):
 
+class TestNavigableString(SoupTest):
     def test_text_acquisition_methods(self):
         # These methods are intended for use against Tag, but they
         # work on NavigableString as well,
-        
+
         s = NavigableString("fee ")
         cdata = CData("fie ")
         comment = Comment("foe ")
 
         assert "fee " == s.get_text()
+        assert "fee " == s.string
         assert "fee" == s.get_text(strip=True)
         assert ["fee "] == list(s.strings)
         assert ["fee"] == list(s.stripped_strings)
         assert ["fee "] == list(s._all_strings())
 
         assert "fie " == cdata.get_text()
+        assert "fie " == cdata.string
         assert "fie" == cdata.get_text(strip=True)
         assert ["fie "] == list(cdata.strings)
         assert ["fie"] == list(cdata.stripped_strings)
         assert ["fie "] == list(cdata._all_strings())
-        
+
         # Since a Comment isn't normally considered 'text',
         # these methods generally do nothing.
         assert "" == comment.get_text()
@@ -51,12 +53,12 @@ class TestNavigableString(SoupTest):
     def test_string_has_immutable_name_property(self):
         # string.name is defined as None and can't be modified
         string = self.soup("s").string
-        assert None == string.name
+        assert None is string.name
         with pytest.raises(AttributeError):
-            string.name = 'foo'
+            string.name = "foo"
+
 
 class TestNavigableStringSubclasses(SoupTest):
-
     def test_cdata(self):
         # None of the current builders turn CDATA sections into CData
         # objects, but you can create them manually.
@@ -74,6 +76,7 @@ class TestNavigableStringSubclasses(SoupTest):
         """
 
         self.count = 0
+
         def increment(*args):
             self.count += 1
             return "BITTER FAILURE"
@@ -99,9 +102,7 @@ class TestNavigableStringSubclasses(SoupTest):
     def test_default_string_containers(self):
         # In some cases, we use different NavigableString subclasses for
         # the same text in different tags.
-        soup = self.soup(
-            "<div>text</div><script>text</script><style>text</style>"
-        )
+        soup = self.soup("<div>text</div><script>text</script><style>text</style>")
         assert [NavigableString, Script, Stylesheet] == [
             x.__class__ for x in soup.find_all(string=True)
         ]
@@ -116,7 +117,7 @@ class TestNavigableStringSubclasses(SoupTest):
             isinstance(x, TemplateString)
             for x in soup.template._all_strings(types=None)
         )
-        
+
         # Once the <template> tag closed, we went back to using
         # NavigableString.
         outside = soup.template.next_sibling
@@ -139,6 +140,5 @@ class TestNavigableStringSubclasses(SoupTest):
         # Just as a demo, here's what this means for get_text usage.
         assert "漢字" == soup.get_text(strip=True)
         assert "漢(kan)字(ji)" == soup.get_text(
-            strip=True,
-            types=(NavigableString, RubyTextString, RubyParenthesisString)
+            strip=True, types=(NavigableString, RubyTextString, RubyParenthesisString)
         )

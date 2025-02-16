@@ -1,20 +1,58 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 
 import lxml
 import lxml.etree
 from lxml.html.clean import Cleaner
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
-NEWLINE_TAGS = frozenset([
-    'article', 'aside', 'br', 'dd', 'details', 'div', 'dt', 'fieldset',
-    'figcaption', 'footer', 'form', 'header', 'hr', 'legend', 'li', 'main',
-    'nav', 'table', 'tr'
-])
-DOUBLE_NEWLINE_TAGS = frozenset([
-    'blockquote', 'dl', 'figure', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol',
-    'p', 'pre', 'title', 'ul'
-])
+    import parsel
+
+NEWLINE_TAGS: frozenset[str] = frozenset(
+    [
+        "article",
+        "aside",
+        "br",
+        "dd",
+        "details",
+        "div",
+        "dt",
+        "fieldset",
+        "figcaption",
+        "footer",
+        "form",
+        "header",
+        "hr",
+        "legend",
+        "li",
+        "main",
+        "nav",
+        "table",
+        "tr",
+    ]
+)
+DOUBLE_NEWLINE_TAGS: frozenset[str] = frozenset(
+    [
+        "blockquote",
+        "dl",
+        "figure",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "ol",
+        "p",
+        "pre",
+        "title",
+        "ul",
+    ]
+)
 
 cleaner = Cleaner(
     scripts=True,
@@ -34,11 +72,8 @@ cleaner = Cleaner(
 )
 
 
-def _cleaned_html_tree(html):
-    if isinstance(html, lxml.html.HtmlElement):
-        tree = html
-    else:
-        tree = parse_html(html)
+def _cleaned_html_tree(html: lxml.html.HtmlElement | str) -> lxml.html.HtmlElement:
+    tree = html if isinstance(html, lxml.html.HtmlElement) else parse_html(html)
 
     # we need this as https://bugs.launchpad.net/lxml/+bug/1838497
     try:
@@ -49,33 +84,35 @@ def _cleaned_html_tree(html):
     return cleaned
 
 
-def parse_html(html):
-    """ Create an lxml.html.HtmlElement from a string with html.
+def parse_html(html: str) -> lxml.html.HtmlElement:
+    """Create an lxml.html.HtmlElement from a string with html.
     XXX: mostly copy-pasted from parsel.selector.create_root_node
     """
-    body = html.strip().replace('\x00', '').encode('utf8') or b'<html/>'
-    parser = lxml.html.HTMLParser(recover=True, encoding='utf8')
+    body = html.strip().replace("\x00", "").encode("utf-8") or b"<html/>"
+    parser = lxml.html.HTMLParser(recover=True, encoding="utf-8")
     root = lxml.etree.fromstring(body, parser=parser)
     if root is None:
-        root = lxml.etree.fromstring(b'<html/>', parser=parser)
+        root = lxml.etree.fromstring(b"<html/>", parser=parser)
     return root
 
 
-_whitespace = re.compile(r'\s+')
-_has_trailing_whitespace = re.compile(r'\s$').search
+_whitespace = re.compile(r"\s+")
+_has_trailing_whitespace = re.compile(r"\s$").search
 _has_punct_after = re.compile(r'^[,:;.!?")]').search
-_has_open_bracket_before = re.compile(r'\($').search
+_has_open_bracket_before = re.compile(r"\($").search
 
 
-def _normalize_whitespace(text):
-    return _whitespace.sub(' ', text.strip())
+def _normalize_whitespace(text: str) -> str:
+    return _whitespace.sub(" ", text.strip())
 
 
-def etree_to_text(tree,
-                  guess_punct_space=True,
-                  guess_layout=True,
-                  newline_tags=NEWLINE_TAGS,
-                  double_newline_tags=DOUBLE_NEWLINE_TAGS):
+def etree_to_text(
+    tree: lxml.html.HtmlElement,
+    guess_punct_space: bool = True,
+    guess_layout: bool = True,
+    newline_tags: Iterable[str] = NEWLINE_TAGS,
+    double_newline_tags: Iterable[str] = DOUBLE_NEWLINE_TAGS,
+) -> str:
     """
     Convert a html tree to text. Tree should be cleaned with
     ``html_text.html_text.cleaner.clean_html`` before passing to this
@@ -90,39 +127,40 @@ def etree_to_text(tree,
     _DOUBLE_NEWLINE = object()
     prev = _DOUBLE_NEWLINE  # _NEWLINE, _DOUBLE_NEWLINE or content of the previous chunk (str)
 
-    def should_add_space(text):
-        """ Return True if extra whitespace should be added before text """
+    def should_add_space(text: str) -> bool:
+        """Return True if extra whitespace should be added before text"""
         if prev in {_NEWLINE, _DOUBLE_NEWLINE}:
             return False
         if not guess_punct_space:
             return True
-        if not _has_trailing_whitespace(prev):
-            if _has_punct_after(text) or _has_open_bracket_before(prev):
-                return False
-        return True
+        assert isinstance(prev, str)
+        return bool(
+            _has_trailing_whitespace(prev)
+            or (not _has_punct_after(text) and not _has_open_bracket_before(prev))
+        )
 
-    def get_space_between(text):
+    def get_space_between(text: str) -> str:
         if not text:
-            return ' '
-        return ' ' if should_add_space(text) else ''
+            return " "
+        return " " if should_add_space(text) else ""
 
-    def add_newlines(tag):
+    def add_newlines(tag: str) -> None:
         nonlocal prev
         if not guess_layout:
             return
         if prev is _DOUBLE_NEWLINE:  # don't output more than 1 blank line
             return
         if tag in double_newline_tags:
-            chunks.append('\n' if prev is _NEWLINE else '\n\n')
+            chunks.append("\n" if prev is _NEWLINE else "\n\n")
             prev = _DOUBLE_NEWLINE
         elif tag in newline_tags:
             if prev is not _NEWLINE:
-                chunks.append('\n')
+                chunks.append("\n")
             prev = _NEWLINE
 
-    def add_text(text_content):
+    def add_text(text_content: str | None) -> None:
         nonlocal prev
-        text = _normalize_whitespace(text_content) if text_content else ''
+        text = _normalize_whitespace(text_content) if text_content else ""
         if not text:
             return
         space = get_space_between(text)
@@ -130,63 +168,72 @@ def etree_to_text(tree,
         prev = text_content
 
     # Extract text from the ``tree``: fill ``chunks`` variable
-    for event, el in lxml.etree.iterwalk(tree, events=('start', 'end')):
-        if event == 'start':
+    for event, el in lxml.etree.iterwalk(tree, events=("start", "end")):
+        if event == "start":
+            assert isinstance(el.tag, str)
             add_newlines(el.tag)
             add_text(el.text)
-        elif event == 'end':
+        elif event == "end":
+            assert isinstance(el.tag, str)
             add_newlines(el.tag)
             if el is not tree:
                 add_text(el.tail)
 
-    return ''.join(chunks).strip()
+    return "".join(chunks).strip()
 
 
-def selector_to_text(sel, guess_punct_space=True, guess_layout=True):
-    """ Convert a cleaned parsel.Selector to text.
+def selector_to_text(
+    sel: parsel.Selector | parsel.SelectorList[parsel.Selector],
+    guess_punct_space: bool = True,
+    guess_layout: bool = True,
+) -> str:
+    """Convert a cleaned parsel.Selector to text.
     See html_text.extract_text docstring for description of the approach
     and options.
     """
     import parsel
+
     if isinstance(sel, parsel.SelectorList):
         # if selecting a specific xpath
         text = []
         for s in sel:
             extracted = etree_to_text(
-                s.root,
-                guess_punct_space=guess_punct_space,
-                guess_layout=guess_layout)
+                s.root, guess_punct_space=guess_punct_space, guess_layout=guess_layout
+            )
             if extracted:
                 text.append(extracted)
-        return ' '.join(text)
-    else:
-        return etree_to_text(
-            sel.root,
-            guess_punct_space=guess_punct_space,
-            guess_layout=guess_layout)
+        return " ".join(text)
+    return etree_to_text(
+        sel.root, guess_punct_space=guess_punct_space, guess_layout=guess_layout
+    )
 
 
-def cleaned_selector(html):
-    """ Clean parsel.selector.
-    """
+def cleaned_selector(html: lxml.html.HtmlElement | str) -> parsel.Selector:
+    """Clean parsel.selector."""
     import parsel
+
     try:
         tree = _cleaned_html_tree(html)
-        sel = parsel.Selector(root=tree, type='html')
-    except (lxml.etree.XMLSyntaxError,
-            lxml.etree.ParseError,
-            lxml.etree.ParserError,
-            UnicodeEncodeError):
+        sel = parsel.Selector(root=tree, type="html")
+    except (
+        lxml.etree.XMLSyntaxError,
+        lxml.etree.ParseError,
+        lxml.etree.ParserError,
+        UnicodeEncodeError,
+    ):
         # likely plain text
+        assert isinstance(html, str)
         sel = parsel.Selector(html)
     return sel
 
 
-def extract_text(html,
-                 guess_punct_space=True,
-                 guess_layout=True,
-                 newline_tags=NEWLINE_TAGS,
-                 double_newline_tags=DOUBLE_NEWLINE_TAGS):
+def extract_text(
+    html: lxml.html.HtmlElement | str | None,
+    guess_punct_space: bool = True,
+    guess_layout: bool = True,
+    newline_tags: Iterable[str] = NEWLINE_TAGS,
+    double_newline_tags: Iterable[str] = DOUBLE_NEWLINE_TAGS,
+) -> str:
     """
     Convert html to text, cleaning invisible content such as styles.
 
@@ -213,13 +260,10 @@ def extract_text(html,
     `html_text.NEWLINE_TAGS` and `html_text.DOUBLE_NEWLINE_TAGS`.
     """
     if html is None:
-        return ''
-    no_content_nodes = (
-        lxml.html.HtmlComment,
-        lxml.html.HtmlProcessingInstruction
-    )
+        return ""
+    no_content_nodes = (lxml.html.HtmlComment, lxml.html.HtmlProcessingInstruction)
     if isinstance(html, no_content_nodes):
-        return ''
+        return ""
     cleaned = _cleaned_html_tree(html)
     return etree_to_text(
         cleaned,

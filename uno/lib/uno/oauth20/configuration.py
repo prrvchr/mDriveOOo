@@ -33,7 +33,7 @@ g_identifier = 'io.github.prrvchr.%s' % g_extension
 g_service = '%s.OAuth2Service' % g_identifier
 g_resource = 'resource'
 
-g_version = '1.4.0'
+g_version = '1.4.1'
 g_chunk = g_chunk = 320 * 1024
 
 g_token = 'Bearer ${AccessToken}'

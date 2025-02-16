@@ -52,7 +52,7 @@ struct LxmlElement {
   PyObject *_tag;
 };
 
-/* "lxml/etree.pyx":1894
+/* "lxml/etree.pyx":1895
  * 
  * 
  * cdef public class _ElementTree [ type LxmlElementTreeType,             # <<<<<<<<<<<<<<
@@ -66,7 +66,7 @@ struct LxmlElementTree {
   struct LxmlElement *_context_node;
 };
 
-/* "lxml/etree.pyx":2668
+/* "lxml/etree.pyx":2669
  * 
  * 
  * cdef public class _ElementTagMatcher [ object LxmlElementTagMatcher,             # <<<<<<<<<<<<<<
@@ -82,7 +82,7 @@ struct LxmlElementTagMatcher {
   char *_name;
 };
 
-/* "lxml/etree.pyx":2699
+/* "lxml/etree.pyx":2700
  *                 self._name = NULL
  * 
  * cdef public class _ElementIterator(_ElementTagMatcher) [             # <<<<<<<<<<<<<<

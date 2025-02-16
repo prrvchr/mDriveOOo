@@ -57,9 +57,9 @@ def win_launcher_exe(prefix):
     """A simple routine to select launcher script based on platform."""
     assert prefix in ('cli', 'gui')
     if platform.machine() == "ARM64":
-        return "{}-arm64.exe".format(prefix)
+        return f"{prefix}-arm64.exe"
     else:
-        return "{}-32.exe".format(prefix)
+        return f"{prefix}-32.exe"
 
 
 class TestCLI(WrapperTester):
@@ -116,7 +116,7 @@ class TestCLI(WrapperTester):
             text=True,
             encoding="utf-8",
         )
-        stdout, stderr = proc.communicate('hello\nworld\n')
+        stdout, _stderr = proc.communicate('hello\nworld\n')
         actual = stdout.replace('\r\n', '\n')
         expected = textwrap.dedent(
             r"""
@@ -153,7 +153,7 @@ class TestCLI(WrapperTester):
             text=True,
             encoding="utf-8",
         )
-        stdout, stderr = proc.communicate('hello\nworld\n')
+        stdout, _stderr = proc.communicate('hello\nworld\n')
         actual = stdout.replace('\r\n', '\n')
         expected = textwrap.dedent(
             r"""
@@ -201,7 +201,7 @@ class TestCLI(WrapperTester):
             text=True,
             encoding="utf-8",
         )
-        stdout, stderr = proc.communicate()
+        stdout, _stderr = proc.communicate()
         actual = stdout.replace('\r\n', '\n')
         expected = textwrap.dedent(
             r"""

@@ -104,26 +104,25 @@ def venv_python(tmp_path):
 
 
 @pytest.fixture(autouse=True)
-def _prepare(tmp_path, venv_python, monkeypatch, request):
+def _prepare(tmp_path, venv_python, monkeypatch):
     download_path = os.getenv("DOWNLOAD_PATH", str(tmp_path))
     os.makedirs(download_path, exist_ok=True)
 
     # Environment vars used for building some of the packages
     monkeypatch.setenv("USE_MYPYC", "1")
 
-    def _debug_info():
-        # Let's provide the maximum amount of information possible in the case
-        # it is necessary to debug the tests directly from the CI logs.
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print("Temporary directory:")
-        map(print, tmp_path.glob("*"))
-        print("Virtual environment:")
-        run([venv_python, "-m", "pip", "freeze"])
+    yield
 
-    request.addfinalizer(_debug_info)
+    # Let's provide the maximum amount of information possible in the case
+    # it is necessary to debug the tests directly from the CI logs.
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print("Temporary directory:")
+    map(print, tmp_path.glob("*"))
+    print("Virtual environment:")
+    run([venv_python, "-m", "pip", "freeze"])
 
 
-@pytest.mark.parametrize('package, version', EXAMPLES)
+@pytest.mark.parametrize(("package", "version"), EXAMPLES)
 @pytest.mark.uses_network
 def test_install_sdist(package, version, tmp_path, venv_python, setuptools_wheel):
     venv_pip = (venv_python, "-m", "pip")
@@ -202,13 +201,12 @@ def build_deps(package, sdist_file):
     "Manually" install them, since pip will not install build
     deps with `--no-build-isolation`.
     """
-    import tomli as toml
-
     # delay importing, since pytest discovery phase may hit this file from a
     # testenv without tomli
+    from setuptools.compat.py310 import tomllib
 
     archive = Archive(sdist_file)
-    info = toml.loads(_read_pyproject(archive))
+    info = tomllib.loads(_read_pyproject(archive))
     deps = info.get("build-system", {}).get("requires", [])
     deps += EXTRA_BUILD_DEPS.get(package, [])
     # Remove setuptools from requirements (and deduplicate)

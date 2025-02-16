@@ -16,7 +16,8 @@ import re
 import sys
 import sysconfig
 
-from ._functools import pass_none
+from jaraco.functools import pass_none
+
 from .compat import py39
 from .errors import DistutilsPlatformError
 from .util import is_mingw
@@ -106,7 +107,7 @@ def get_python_version():
     leaving off the patchlevel.  Sample return values could be '1.5'
     or '2.2'.
     """
-    return '%d.%d' % sys.version_info[:2]
+    return f'{sys.version_info.major}.{sys.version_info.minor}'
 
 
 def get_python_inc(plat_specific=False, prefix=None):
@@ -236,7 +237,7 @@ def get_python_lib(plat_specific=False, standard_lib=False, prefix=None):
         if prefix is None:
             prefix = PREFIX
         if standard_lib:
-            return os.path.join(prefix, "lib-python", sys.version[0])
+            return os.path.join(prefix, "lib-python", sys.version_info.major)
         return os.path.join(prefix, 'site-packages')
 
     early_prefix = prefix
@@ -339,7 +340,7 @@ def customize_compiler(compiler):
 
         ldshared = _add_flags(ldshared, 'LD')
         ldcxxshared = _add_flags(ldcxxshared, 'LD')
-        cflags = _add_flags(cflags, 'C')
+        cflags = os.environ.get('CFLAGS', cflags)
         ldshared = _add_flags(ldshared, 'C')
         cxxflags = os.environ.get('CXXFLAGS', cxxflags)
         ldcxxshared = _add_flags(ldcxxshared, 'CXX')

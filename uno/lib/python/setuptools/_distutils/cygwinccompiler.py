@@ -21,6 +21,7 @@ from .errors import (
     DistutilsPlatformError,
 )
 from .file_util import write_file
+from .sysconfig import get_config_vars
 from .unixccompiler import UnixCCompiler
 from .version import LooseVersion, suppress_known_deprecation
 
@@ -61,8 +62,12 @@ class CygwinCCompiler(UnixCCompiler):
                 "Compiling may fail because of undefined preprocessor macros."
             )
 
-        self.cc = os.environ.get('CC', 'gcc')
-        self.cxx = os.environ.get('CXX', 'g++')
+        self.cc, self.cxx = get_config_vars('CC', 'CXX')
+
+        # Override 'CC' and 'CXX' environment variables for
+        # building using MINGW compiler for MSVC python.
+        self.cc = os.environ.get('CC', self.cc or 'gcc')
+        self.cxx = os.environ.get('CXX', self.cxx or 'g++')
 
         self.linker_dll = self.cc
         self.linker_dll_cxx = self.cxx
@@ -172,8 +177,7 @@ class CygwinCCompiler(UnixCCompiler):
 
             # Generate .def file
             contents = [f"LIBRARY {os.path.basename(output_filename)}", "EXPORTS"]
-            for sym in export_symbols:
-                contents.append(sym)
+            contents.extend(export_symbols)
             self.execute(write_file, (def_file, contents), f"writing {def_file}")
 
             # next add options for def-file
@@ -309,6 +313,9 @@ def check_config_h():
     fn = sysconfig.get_config_h_filename()
     try:
         config_h = pathlib.Path(fn).read_text(encoding='utf-8')
+    except OSError as exc:
+        return (CONFIG_H_UNCERTAIN, f"couldn't read '{fn}': {exc.strerror}")
+    else:
         substring = '__GNUC__'
         if substring in config_h:
             code = CONFIG_H_OK
@@ -317,8 +324,6 @@ def check_config_h():
             code = CONFIG_H_NOTOK
             mention_inflected = 'does not mention'
         return code, f"{fn!r} {mention_inflected} {substring!r}"
-    except OSError as exc:
-        return (CONFIG_H_UNCERTAIN, f"couldn't read '{fn}': {exc.strerror}")
 
 
 def is_cygwincc(cc):
