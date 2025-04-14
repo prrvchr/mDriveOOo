@@ -90,15 +90,19 @@ _find_external_links = etree.XPath(
 # - 0A - Line Feed
 # - 0B - Vertical tab
 # - 0D - Carriage Return
-_ascii_control_characters = re.compile(r"[\x00-\x08\x0C\x0E-\x1F\x7F]")
+_ascii_control_characters_str = re.compile("[\x00-\x08\x0C\x0E-\x1F\x7F]")
+_ascii_control_characters_bytes = re.compile(b"[\x00-\x08\x0C\x0E-\x1F\x7F]")
 
 
-def fromstring(string):
+def fromstring(data):
     """
     Enhanced fromstring function that removes ASCII control chars
     before passing the input to the original lxml.html.fromstring.
     """
-    return lxml_fromstring(_ascii_control_characters.sub("", string))
+    if isinstance(data, bytes):
+        return lxml_fromstring(_ascii_control_characters_bytes.sub(b"", data))
+    else:
+        return lxml_fromstring(_ascii_control_characters_str.sub("", data))
 
 
 # This regular expression is inspired by the one in urllib3.
