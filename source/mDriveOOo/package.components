@@ -17,4 +17,9 @@
       <service name="com.sun.star.ucb.ContentProviderProxy"/>
     </implementation>
   </component>
+  <component loader="com.sun.star.loader.Python" uri="service/Dispatcher.py">
+    <implementation name="io.github.prrvchr.mDriveOOo.Dispatcher">
+      <service name="io.github.prrvchr.mDriveOOo.Dispatcher"/>
+    </implementation>
+  </component>
 </components>

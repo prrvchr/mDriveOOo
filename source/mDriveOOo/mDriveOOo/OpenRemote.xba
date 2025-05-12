@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="OpenRemote" script:language="StarBasic">
+
+Rem ╔════════════════════════════════════════════════════════════════════════════════════╗
+Rem ║                                                                                    ║
+Rem ║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
+Rem ║                                                                                    ║
+Rem ║   Permission is hereby granted, free of charge, to any person obtaining            ║
+Rem ║   a copy of this software and associated documentation files (the &quot;Software&quot;),     ║
+Rem ║   to deal in the Software without restriction, including without limitation        ║
+Rem ║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+Rem ║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+Rem ║   is furnished to do so, subject to the following conditions:                      ║
+Rem ║                                                                                    ║
+Rem ║   The above copyright notice and this permission notice shall be included in       ║
+Rem ║   all copies or substantial portions of the Software.                              ║
+Rem ║                                                                                    ║
+Rem ║   THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,                  ║
+Rem ║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+Rem ║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+Rem ║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+Rem ║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+Rem ║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+Rem ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+Rem ║                                                                                    ║
+Rem ╚════════════════════════════════════════════════════════════════════════════════════╝
+
+
+Sub OpenRemote
+    Set oDispatch = CreateUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
+    Dim args(0) As New com.sun.star.beans.PropertyValue
+    oDispatch.executeDispatch(StarDesktop.ActiveFrame, &quot;gdrive:Open&quot;, &quot;&quot;, 0, args)
+End Sub
+
+</script:module>

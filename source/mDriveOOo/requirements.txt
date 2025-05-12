@@ -1,5 +1,5 @@
 python-dateutil>=2.9.0.post0
 ijson>=3.3.0
-packaging>=24.2
-setuptools>=75.8.0
+packaging>=25.0
+setuptools>=75.3.2
 six>=1.17.0
