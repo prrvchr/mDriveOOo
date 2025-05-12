@@ -36,11 +36,6 @@ from com.sun.star.sdb.CommandType import QUERY
 
 from com.sun.star.sdbc.DataType import VARCHAR
 
-<<<<<<< HEAD
-=======
-from com.sun.star.util import DateTimeWithTimezone
-
->>>>>>> refs/subrepo/uno/fetch
 from .dbtool import Array
 
 from .unotool import checkVersion
