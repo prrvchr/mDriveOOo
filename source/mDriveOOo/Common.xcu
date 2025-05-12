@@ -2,7 +2,7 @@
 <!--
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -30,7 +30,7 @@
   xmlns:oor="http://openoffice.org/2001/registry"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <node oor:name="Misc">
-    <prop oor:name="UseSystemFileDialog" oor:finalized="true">
+    <prop oor:name="UseSystemFileDialog" oor:finalized="false">
       <value>false</value>
     </prop>
   </node>

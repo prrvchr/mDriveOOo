@@ -29,7 +29,7 @@ Rem ╚════════════════════════�
 Sub OpenRemote
     Set oDispatch = CreateUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
     Dim args(0) As New com.sun.star.beans.PropertyValue
-    oDispatch.executeDispatch(StarDesktop.ActiveFrame, &quot;gdrive:Open&quot;, &quot;&quot;, 0, args)
+    oDispatch.executeDispatch(StarDesktop.ActiveFrame, &quot;mdrive:Open&quot;, &quot;&quot;, 0, args)
 End Sub
 
 </script:module>

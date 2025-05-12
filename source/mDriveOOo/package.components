@@ -6,15 +6,15 @@
       <service name="com.sun.star.ucb.ContentProviderProxy"/>
     </implementation>
   </component>
-  <component loader="com.sun.star.loader.Python" uri="service/OptionsHandler.py">
-    <implementation name="io.github.prrvchr.mDriveOOo.OptionsHandler">
-      <service name="io.github.prrvchr.mDriveOOo.OptionsHandler"/>
-    </implementation>
-  </component>
   <component loader="com.sun.star.loader.Python" uri="service/UnamedProvider.py">
     <implementation name="io.github.prrvchr.mDriveOOo.UnamedProvider">
       <service name="io.github.prrvchr.mDriveOOo.UnamedProvider"/>
       <service name="com.sun.star.ucb.ContentProviderProxy"/>
+    </implementation>
+  </component>
+  <component loader="com.sun.star.loader.Python" uri="service/OptionsHandler.py">
+    <implementation name="io.github.prrvchr.mDriveOOo.OptionsHandler">
+      <service name="io.github.prrvchr.mDriveOOo.OptionsHandler"/>
     </implementation>
   </component>
   <component loader="com.sun.star.loader.Python" uri="service/Dispatcher.py">

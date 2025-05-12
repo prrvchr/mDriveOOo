@@ -24,7 +24,7 @@
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 -->
-<library:library xmlns:library="http://openoffice.org/2000/library" library:name="gDriveOOo" library:readonly="false" library:passwordprotected="false">
+<library:library xmlns:library="http://openoffice.org/2000/library" library:name="mDriveOOo" library:readonly="false" library:passwordprotected="false">
   <library:element library:name="OpenRemote"/>
   <library:element library:name="SaveRemote"/>
 </library:library>

@@ -31,9 +31,9 @@
   oor:package="org.openoffice.Office"
   oor:name="ProtocolHandler">
     <node oor:name="HandlerSet">
-        <node oor:name="io.github.prrvchr.gDriveOOo.Dispatcher" oor:op="replace">
+        <node oor:name="io.github.prrvchr.mDriveOOo.Dispatcher" oor:op="replace">
             <prop oor:name="Protocols">
-                <value>gdrive:*</value>
+                <value>mdrive:*</value>
             </prop>
         </node>
     </node>

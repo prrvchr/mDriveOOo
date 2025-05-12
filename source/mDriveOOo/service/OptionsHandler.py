@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -107,6 +107,12 @@ class OptionsHandler(unohelper.Base,
             elif method == 'SpinDown2':
                 self._manager.spinDown(1)
                 handled = True
+            elif method == 'EnableMacro':
+                self._manager.enableMacro(bool(event.Source.State))
+                handled = True
+            elif method == 'Customize':
+                self._manager.customizeMenu()
+                handled = True
             return handled
         except Exception as e:
             print("OptionsHandler.callHandlerMethod() Error: %s - %s" % (e, traceback.format_exc()))
@@ -125,7 +131,9 @@ class OptionsHandler(unohelper.Base,
                 'SpinUp1',
                 'SpinDown1',
                 'SpinUp2',
-                'SpinDown2')
+                'SpinDown2',
+                'EnableMacro',
+                'Customize')
 
     # XServiceInfo
     def supportsService(self, service):

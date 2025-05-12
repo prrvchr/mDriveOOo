@@ -1,10 +1,10 @@
 #UNO project configuration file
-#Mon Dec 05 17:05:21 CET 2022
-project.prefix=io.github.prrvchr
-project.language=Python
-project.ooo=LibreOffice 7.3
+#Mon May 12 19:14:29 CEST 2025
+project.build=build
 project.idl=/idl
 project.implementation=mDriveOOo
-project.build=build
-project.sdk=7.3.2.2
+project.language=Python
+project.ooo=LibreOffice 7.6
+project.prefix=io.github.prrvchr
+project.sdk=7.6.7.2
 project.srcdir=/service
