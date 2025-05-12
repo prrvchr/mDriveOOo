@@ -466,7 +466,7 @@ def getSqlException(state, code, message, context=None, exception=None):
     return error
 
 def currentDateTimeInTZ(utc=True):
-    dtz = uno.createUnoStruct('io.github.prrvchr.css.util.DateTimeWithTimezone')
+    dtz = uno.createUnoStruct('com.sun.star.util.DateTimeWithTimezone')
     dtz.DateTimeInTZ = currentDateTime(utc)
     dtz.Timezone = 0 if utc else _getTimeZone()
     return dtz
@@ -529,7 +529,7 @@ def _getUnoDateTime(now, utc):
     return dt
 
 def _currentDateTime(now, utc=True):
-    dt = uno.createUnoStruct('io.github.prrvchr.css.util.DateTime')
+    dt = uno.createUnoStruct('com.sun.star.util.DateTime')
     dt.Year = now.year
     dt.Month = now.month
     dt.Day = now.day

@@ -36,8 +36,6 @@ from com.sun.star.sdb.CommandType import QUERY
 
 from com.sun.star.sdbc.DataType import VARCHAR
 
-from io.github.prrvchr.css.util import DateTimeWithTimezone
-
 from .dbtool import Array
 
 from .unotool import checkVersion

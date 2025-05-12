@@ -51,7 +51,8 @@ import traceback
 
 # pythonloader looks for a static g_ImplementationHelper variable
 g_ImplementationHelper = unohelper.ImplementationHelper()
-g_ImplementationName = f'{g_identifier}.UnamedProvider'
+g_ImplementationName = 'io.github.prrvchr.mDriveOOo.UnamedProvider'
+g_ServiceNames = ('io.github.prrvchr.mDriveOOo.UnamedProvider', 'com.sun.star.ucb.ContentProviderProxy')
 
 
 class UnamedProvider(unohelper.Base,
@@ -96,8 +97,7 @@ class UnamedProvider(unohelper.Base,
         return g_ImplementationHelper.getSupportedServiceNames(g_ImplementationName)
 
 
-g_ImplementationHelper.addImplementation(UnamedProvider,
-                                         g_ImplementationName,
-                                         (g_ImplementationName,
-                                         'com.sun.star.ucb.ContentProviderProxy'))
+g_ImplementationHelper.addImplementation(UnamedProvider,                  # UNO object class
+                                         g_ImplementationName,            # Implementation name
+                                         g_ServiceNames)                  # List of implemented services
 
