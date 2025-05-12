@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -33,7 +33,7 @@ g_identifier = 'io.github.prrvchr.%s' % g_extension
 g_service = '%s.OAuth2Service' % g_identifier
 g_resource = 'resource'
 
-g_version = '1.4.1'
+g_version = '1.5.0'
 g_chunk = g_chunk = 320 * 1024
 
 g_token = 'Bearer ${AccessToken}'

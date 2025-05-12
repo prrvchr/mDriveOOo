@@ -37,9 +37,8 @@ import sys
 import tempfile
 import tokenize
 import warnings
-from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Iterable, Iterator, List, Mapping, Union
 
 import setuptools
 
@@ -72,7 +71,7 @@ LEGACY_EDITABLE = "legacy-editable" in SETUPTOOLS_ENABLE_FEATURES.replace("_", "
 
 
 class SetupRequirementsError(BaseException):
-    def __init__(self, specifiers) -> None:
+    def __init__(self, specifiers):
         self.specifiers = specifiers
 
 
@@ -91,11 +90,11 @@ class Distribution(setuptools.dist.Distribution):
         for the duration of this context.
         """
         orig = distutils.core.Distribution
-        distutils.core.Distribution = cls  # type: ignore[misc] # monkeypatching
+        distutils.core.Distribution = cls
         try:
             yield
         finally:
-            distutils.core.Distribution = orig  # type: ignore[misc] # monkeypatching
+            distutils.core.Distribution = orig
 
 
 @contextlib.contextmanager
@@ -147,7 +146,7 @@ def suppress_known_deprecation():
         yield
 
 
-_ConfigSettings: TypeAlias = Union[Mapping[str, Union[str, list[str], None]], None]
+_ConfigSettings: TypeAlias = Union[Mapping[str, Union[str, List[str], None]], None]
 """
 Currently the user can run::
 

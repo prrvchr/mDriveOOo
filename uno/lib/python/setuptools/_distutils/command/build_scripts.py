@@ -8,7 +8,6 @@ import tokenize
 from distutils import sysconfig
 from distutils._log import log
 from stat import ST_MODE
-from typing import ClassVar
 
 from .._modified import newer
 from ..core import Command
@@ -26,7 +25,7 @@ first_line_re = shebang_pattern
 class build_scripts(Command):
     description = "\"build\" scripts (copy and fixup #! line)"
 
-    user_options: ClassVar[list[tuple[str, str, str]]] = [
+    user_options = [
         ('build-dir=', 'd', "directory to \"build\" (copy) to"),
         ('force', 'f', "forcibly build everything (ignore file timestamps"),
         ('executable=', 'e', "specify final destination interpreter path"),

@@ -12,16 +12,14 @@ import sys
 import tempfile
 import textwrap
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING
 
 import pkg_resources
 from pkg_resources import working_set
 
 from distutils.errors import DistutilsError
 
-if TYPE_CHECKING:
-    import os as _os
-elif sys.platform.startswith('java'):
+if sys.platform.startswith('java'):
     import org.python.modules.posix.PosixModule as _os  # pyright: ignore[reportMissingImports]
 else:
     _os = sys.modules[os.name]
@@ -150,7 +148,7 @@ class ExceptionSaver:
         if '_saved' not in vars(self):
             return
 
-        _type, exc = map(pickle.loads, self._saved)
+        type, exc = map(pickle.loads, self._saved)
         raise exc.with_traceback(self._tb)
 
 
@@ -279,7 +277,7 @@ class AbstractSandbox:
 
     _active = False
 
-    def __init__(self) -> None:
+    def __init__(self):
         self._attrs = [
             name
             for name in dir(_os)
@@ -408,11 +406,6 @@ class AbstractSandbox:
             self._remap_input(operation + '-to', dst, *args, **kw),
         )
 
-    if TYPE_CHECKING:
-        # This is a catch-all for all the dynamically created attributes.
-        # This isn't public API anyway
-        def __getattribute__(self, name: str) -> Any: ...
-
 
 if hasattr(os, 'devnull'):
     _EXCEPTIONS = [os.devnull]
@@ -423,7 +416,7 @@ else:
 class DirectorySandbox(AbstractSandbox):
     """Restrict operations to a single subdirectory - pseudo-chroot"""
 
-    write_ops: ClassVar[dict[str, None]] = dict.fromkeys([
+    write_ops: dict[str, None] = dict.fromkeys([
         "open",
         "chmod",
         "chown",
@@ -442,7 +435,7 @@ class DirectorySandbox(AbstractSandbox):
     _exception_patterns: list[str | re.Pattern] = []
     "exempt writing to paths that match the pattern"
 
-    def __init__(self, sandbox, exceptions=_EXCEPTIONS) -> None:
+    def __init__(self, sandbox, exceptions=_EXCEPTIONS):
         self._sandbox = os.path.normcase(os.path.realpath(sandbox))
         self._prefix = os.path.join(self._sandbox, '')
         self._exceptions = [
@@ -460,7 +453,7 @@ class DirectorySandbox(AbstractSandbox):
             self._violation("open", path, mode, *args, **kw)
         return _open(path, mode, *args, **kw)
 
-    def tmpnam(self) -> None:
+    def tmpnam(self):
         self._violation("tmpnam")
 
     def _ok(self, path):
@@ -498,7 +491,7 @@ class DirectorySandbox(AbstractSandbox):
             self._violation(operation, src, dst, *args, **kw)
         return (src, dst)
 
-    def open(self, file, flags, mode: int = 0o777, *args, **kw) -> int:
+    def open(self, file, flags, mode: int = 0o777, *args, **kw):
         """Called for low-level os.open()"""
         if flags & WRITE_FLAGS and not self._ok(file):
             self._violation("os.open", file, flags, mode, *args, **kw)

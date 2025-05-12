@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import os
-from typing import ClassVar
+import shutil
 
-from .. import Command, _shutil
+from setuptools import Command
 
 from distutils import log
 from distutils.errors import DistutilsOptionError
@@ -20,14 +20,14 @@ class rotate(Command):
         ('keep=', 'k', "number of matching distributions to keep"),
     ]
 
-    boolean_options: ClassVar[list[str]] = []
+    boolean_options: list[str] = []
 
     def initialize_options(self):
         self.match = None
         self.dist_dir = None
         self.keep = None
 
-    def finalize_options(self) -> None:
+    def finalize_options(self):
         if self.match is None:
             raise DistutilsOptionError(
                 "Must specify one or more (comma-separated) match patterns "
@@ -43,7 +43,7 @@ class rotate(Command):
             self.match = [convert_path(p.strip()) for p in self.match.split(',')]
         self.set_undefined_options('bdist', ('dist_dir', 'dist_dir'))
 
-    def run(self) -> None:
+    def run(self):
         self.run_command("egg_info")
         from glob import glob
 
@@ -60,6 +60,6 @@ class rotate(Command):
                 log.info("Deleting %s", f)
                 if not self.dry_run:
                     if os.path.isdir(f):
-                        _shutil.rmtree(f)
+                        shutil.rmtree(f)
                     else:
                         os.unlink(f)

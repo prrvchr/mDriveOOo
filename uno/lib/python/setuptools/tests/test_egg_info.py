@@ -38,8 +38,9 @@ def env():
                 '.pydistutils.cfg': DALS(
                     """
                 [egg_info]
-                egg-base = {egg-base}
-                """.format(**env.paths)
+                egg-base = %(egg-base)s
+                """
+                    % env.paths
                 )
             }
         })
@@ -259,9 +260,13 @@ class TestEggInfo:
             'setup.cfg': setup_config,
         })
 
-    mismatch_marker = f"python_version<'{sys.version_info[0]}'"
+    mismatch_marker = "python_version<'{this_ver}'".format(
+        this_ver=sys.version_info[0],
+    )
     # Alternate equivalent syntax.
-    mismatch_marker_alternate = f'python_version < "{sys.version_info[0]}"'
+    mismatch_marker_alternate = 'python_version < "{this_ver}"'.format(
+        this_ver=sys.version_info[0],
+    )
     invalid_marker = "<=>++"
 
     class RequiresTestHelper:
@@ -507,7 +512,7 @@ class TestEggInfo:
         environ = os.environ.copy().update(
             HOME=env.paths['home'],
         )
-        environment.run_setup_py(
+        code, data = environment.run_setup_py(
             cmd=['egg_info'],
             pypath=os.pathsep.join([env.paths['lib'], str(tmpdir_cwd)]),
             data_stream=1,
@@ -517,7 +522,7 @@ class TestEggInfo:
         with open(os.path.join(egg_info_dir, 'PKG-INFO'), encoding="utf-8") as fp:
             pkg_info_lines = fp.read().split('\n')
         assert 'Provides-Extra: foobar' in pkg_info_lines
-        assert 'Metadata-Version: 2.2' in pkg_info_lines
+        assert 'Metadata-Version: 2.1' in pkg_info_lines
 
     def test_doesnt_provides_extra(self, tmpdir_cwd, env):
         self._setup_script_with_requires(
@@ -538,7 +543,7 @@ class TestEggInfo:
         assert 'Provides-Extra:' not in pkg_info_text
 
     @pytest.mark.parametrize(
-        ('files', 'license_in_sources'),
+        "files, license_in_sources",
         [
             (
                 {
@@ -622,7 +627,7 @@ class TestEggInfo:
             assert 'INVALID_LICENSE' not in sources_text
 
     @pytest.mark.parametrize(
-        ('files', 'incl_licenses', 'excl_licenses'),
+        "files, incl_licenses, excl_licenses",
         [
             (
                 {
@@ -834,7 +839,7 @@ class TestEggInfo:
             assert sources_lines.count(lf) == 0
 
     @pytest.mark.parametrize(
-        ('files', 'incl_licenses', 'excl_licenses'),
+        "files, incl_licenses, excl_licenses",
         [
             (
                 {
@@ -1055,7 +1060,7 @@ class TestEggInfo:
     def test_metadata_version(self, tmpdir_cwd, env):
         """Make sure latest metadata version is used by default."""
         self._setup_script_with_requires("")
-        environment.run_setup_py(
+        code, data = environment.run_setup_py(
             cmd=['egg_info'],
             pypath=os.pathsep.join([env.paths['lib'], str(tmpdir_cwd)]),
             data_stream=1,
@@ -1064,7 +1069,7 @@ class TestEggInfo:
         with open(os.path.join(egg_info_dir, 'PKG-INFO'), encoding="utf-8") as fp:
             pkg_info_lines = fp.read().split('\n')
         # Update metadata version if changed
-        assert self._extract_mv_version(pkg_info_lines) == (2, 2)
+        assert self._extract_mv_version(pkg_info_lines) == (2, 1)
 
     def test_long_description_content_type(self, tmpdir_cwd, env):
         # Test that specifying a `long_description_content_type` keyword arg to
@@ -1080,7 +1085,7 @@ class TestEggInfo:
         environ = os.environ.copy().update(
             HOME=env.paths['home'],
         )
-        environment.run_setup_py(
+        code, data = environment.run_setup_py(
             cmd=['egg_info'],
             pypath=os.pathsep.join([env.paths['lib'], str(tmpdir_cwd)]),
             data_stream=1,
@@ -1091,7 +1096,7 @@ class TestEggInfo:
             pkg_info_lines = fp.read().split('\n')
         expected_line = 'Description-Content-Type: text/markdown'
         assert expected_line in pkg_info_lines
-        assert 'Metadata-Version: 2.2' in pkg_info_lines
+        assert 'Metadata-Version: 2.1' in pkg_info_lines
 
     def test_long_description(self, tmpdir_cwd, env):
         # Test that specifying `long_description` and `long_description_content_type`
@@ -1102,7 +1107,7 @@ class TestEggInfo:
             "long_description='This is a long description\\nover multiple lines',"
             "long_description_content_type='text/markdown',"
         )
-        environment.run_setup_py(
+        code, data = environment.run_setup_py(
             cmd=['egg_info'],
             pypath=os.pathsep.join([env.paths['lib'], str(tmpdir_cwd)]),
             data_stream=1,
@@ -1110,7 +1115,7 @@ class TestEggInfo:
         egg_info_dir = os.path.join('.', 'foo.egg-info')
         with open(os.path.join(egg_info_dir, 'PKG-INFO'), encoding="utf-8") as fp:
             pkg_info_lines = fp.read().split('\n')
-        assert 'Metadata-Version: 2.2' in pkg_info_lines
+        assert 'Metadata-Version: 2.1' in pkg_info_lines
         assert '' == pkg_info_lines[-1]  # last line should be empty
         long_desc_lines = pkg_info_lines[pkg_info_lines.index('') :]
         assert 'This is a long description' in long_desc_lines
@@ -1133,7 +1138,7 @@ class TestEggInfo:
         environ = os.environ.copy().update(
             HOME=env.paths['home'],
         )
-        environment.run_setup_py(
+        code, data = environment.run_setup_py(
             cmd=['egg_info'],
             pypath=os.pathsep.join([env.paths['lib'], str(tmpdir_cwd)]),
             data_stream=1,
@@ -1151,7 +1156,7 @@ class TestEggInfo:
     def test_license(self, tmpdir_cwd, env):
         """Test single line license."""
         self._setup_script_with_requires("license='MIT',")
-        environment.run_setup_py(
+        code, data = environment.run_setup_py(
             cmd=['egg_info'],
             pypath=os.pathsep.join([env.paths['lib'], str(tmpdir_cwd)]),
             data_stream=1,
@@ -1166,7 +1171,7 @@ class TestEggInfo:
         self._setup_script_with_requires(
             "license='This is a long license text \\nover multiple lines',"
         )
-        environment.run_setup_py(
+        code, data = environment.run_setup_py(
             cmd=['egg_info'],
             pypath=os.pathsep.join([env.paths['lib'], str(tmpdir_cwd)]),
             data_stream=1,
@@ -1184,7 +1189,7 @@ class TestEggInfo:
         environ = os.environ.copy().update(
             HOME=env.paths['home'],
         )
-        environment.run_setup_py(
+        code, data = environment.run_setup_py(
             cmd=['egg_info'],
             pypath=os.pathsep.join([env.paths['lib'], str(tmpdir_cwd)]),
             data_stream=1,

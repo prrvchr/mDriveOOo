@@ -56,7 +56,7 @@ def parse_distributions(s):
 
 
 class FakeInstaller:
-    def __init__(self, installable_dists) -> None:
+    def __init__(self, installable_dists):
         self._installable_dists = installable_dists
 
     def __call__(self, req):

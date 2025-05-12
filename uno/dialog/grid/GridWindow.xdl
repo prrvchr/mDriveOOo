@@ -2,7 +2,7 @@
 <!--
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -30,8 +30,8 @@
     <dlg:button dlg:id="CommandButton1" dlg:tab-index="0" dlg:left="0" dlg:top="0" dlg:width="8" dlg:height="10" dlg:help-text="&amp;GridWindow.CommandButton1.HelpText" dlg:value="&amp;GridWindow.CommandButton1.Label" dlg:toggled="1">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ShowColumns" script:language="UNO"/>
     </dlg:button>
-    <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:page="2" dlg:left="30" dlg:top="0" dlg:width="60" dlg:height="14" dlg:help-text="&amp;GridWindow.Label1.HelpText" dlg:value="&amp;GridWindow.Label1.Label" dlg:valign="center"/>
-    <dlg:menulist dlg:id="ListBox1" dlg:tab-index="2" dlg:page="2" dlg:left="145" dlg:top="0" dlg:width="100" dlg:height="14" dlg:help-text="&amp;GridWindow.ListBox1.HelpText" dlg:value="&amp;GridWindow.ListBox1.Text" dlg:spin="true">
+    <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:page="2" dlg:left="30" dlg:top="0" dlg:width="60" dlg:height="15" dlg:help-text="&amp;GridWindow.Label1.HelpText" dlg:value="&amp;GridWindow.Label1.Label" dlg:valign="center"/>
+    <dlg:menulist dlg:id="ListBox1" dlg:tab-index="2" dlg:page="2" dlg:left="145" dlg:top="0" dlg:width="100" dlg:height="15" dlg:help-text="&amp;GridWindow.ListBox1.HelpText" dlg:value="&amp;GridWindow.ListBox1.Text" dlg:spin="true">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:SetColumn" script:language="UNO"/>
     </dlg:menulist>
   </dlg:bulletinboard>

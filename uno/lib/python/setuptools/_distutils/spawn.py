@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 import warnings
-from collections.abc import Mapping
+from typing import Mapping
 
 from ._log import log
 from .debug import DEBUG

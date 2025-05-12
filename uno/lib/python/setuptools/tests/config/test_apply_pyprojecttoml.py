@@ -17,8 +17,7 @@ import pytest
 from ini2toml.api import LiteTranslator
 from packaging.metadata import Metadata
 
-import setuptools  # noqa: F401 # ensure monkey patch to metadata
-from setuptools._static import is_static
+import setuptools  # noqa ensure monkey patch to metadata
 from setuptools.command.egg_info import write_requirements
 from setuptools.config import expand, pyprojecttoml, setupcfg
 from setuptools.config._apply_pyprojecttoml import _MissingDynamic, _some_attrgetter
@@ -184,7 +183,7 @@ def test_pep621_example(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("readme", "ctype"),
+    "readme, ctype",
     [
         ("Readme.txt", "text/plain"),
         ("readme.md", "text/markdown"),
@@ -210,7 +209,7 @@ def test_no_explicit_content_type_for_missing_extension(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("pyproject_text", "expected_maintainers_meta_value"),
+    ('pyproject_text', 'expected_maintainers_meta_value'),
     (
         pytest.param(
             PEP621_EXAMPLE,
@@ -371,7 +370,7 @@ class TestPresetField:
         return file
 
     @pytest.mark.parametrize(
-        ("attr", "field", "value"),
+        "attr, field, value",
         [
             ("classifiers", "classifiers", ["Private :: Classifier"]),
             ("entry_points", "scripts", {"console_scripts": ["foobar=foobar:main"]}),
@@ -396,7 +395,7 @@ class TestPresetField:
         assert not dist_value
 
     @pytest.mark.parametrize(
-        ("attr", "field", "value"),
+        "attr, field, value",
         [
             ("install_requires", "dependencies", []),
             ("extras_require", "optional-dependencies", {}),
@@ -443,8 +442,7 @@ class TestPresetField:
         assert ':python_version < "3.7"' in reqs
 
     @pytest.mark.parametrize(
-        ("field", "group"),
-        [("scripts", "console_scripts"), ("gui-scripts", "gui_scripts")],
+        "field,group", [("scripts", "console_scripts"), ("gui-scripts", "gui_scripts")]
     )
     @pytest.mark.filterwarnings("error")
     def test_scripts_dont_require_dynamic_entry_points(self, tmp_path, field, group):
@@ -479,32 +477,6 @@ class TestInteropCommandLineParsing:
         dist.parse_command_line()  # <-- there should be no exception here.
         captured = capsys.readouterr()
         assert "42.0" in captured.out
-
-
-class TestStaticConfig:
-    def test_mark_static_fields(self, tmp_path, monkeypatch):
-        monkeypatch.chdir(tmp_path)
-        toml_config = """
-        [project]
-        name = "test"
-        version = "42.0"
-        dependencies = ["hello"]
-        keywords = ["world"]
-        classifiers = ["private :: hello world"]
-        [tool.setuptools]
-        obsoletes = ["abcd"]
-        provides = ["abcd"]
-        platforms = ["abcd"]
-        """
-        pyproject = Path(tmp_path, "pyproject.toml")
-        pyproject.write_text(cleandoc(toml_config), encoding="utf-8")
-        dist = pyprojecttoml.apply_configuration(Distribution({}), pyproject)
-        assert is_static(dist.install_requires)
-        assert is_static(dist.metadata.keywords)
-        assert is_static(dist.metadata.classifiers)
-        assert is_static(dist.metadata.obsoletes)
-        assert is_static(dist.metadata.provides)
-        assert is_static(dist.metadata.platforms)
 
 
 # --- Auxiliary Functions ---

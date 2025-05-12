@@ -8,7 +8,7 @@ import pytest
 from setuptools import Distribution
 from setuptools.dist import check_package_data, check_specifier
 
-from .test_easy_install import make_nspkg_sdist
+from .test_easy_install import make_trivial_sdist
 from .test_find_packages import ensure_files
 from .textwrap import DALS
 
@@ -24,8 +24,8 @@ def test_dist_fetch_build_egg(tmpdir):
 
     def sdist_with_index(distname, version):
         dist_dir = index.mkdir(distname)
-        dist_sdist = f'{distname}-{version}.tar.gz'
-        make_nspkg_sdist(str(dist_dir.join(dist_sdist)), distname, version)
+        dist_sdist = '%s-%s.tar.gz' % (distname, version)
+        make_trivial_sdist(str(dist_dir.join(dist_sdist)), distname, version)
         with dist_dir.join('index.html').open('w') as fp:
             fp.write(
                 DALS(
@@ -129,7 +129,7 @@ CHECK_PACKAGE_DATA_TESTS = (
 )
 
 
-@pytest.mark.parametrize(('package_data', 'expected_message'), CHECK_PACKAGE_DATA_TESTS)
+@pytest.mark.parametrize('package_data, expected_message', CHECK_PACKAGE_DATA_TESTS)
 def test_check_package_data(package_data, expected_message):
     if expected_message is None:
         assert check_package_data(None, 'package_data', package_data) is None
@@ -138,18 +138,15 @@ def test_check_package_data(package_data, expected_message):
             check_package_data(None, 'package_data', package_data)
 
 
+@pytest.mark.xfail(reason="#4745")
 def test_check_specifier():
     # valid specifier value
     attrs = {'name': 'foo', 'python_requires': '>=3.0, !=3.1'}
     dist = Distribution(attrs)
     check_specifier(dist, attrs, attrs['python_requires'])
 
-    attrs = {'name': 'foo', 'python_requires': ['>=3.0', '!=3.1']}
-    dist = Distribution(attrs)
-    check_specifier(dist, attrs, attrs['python_requires'])
-
     # invalid specifier value
-    attrs = {'name': 'foo', 'python_requires': '>=invalid-version'}
+    attrs = {'name': 'foo', 'python_requires': ['>=3.0', '!=3.1']}
     with pytest.raises(DistutilsSetupError):
         dist = Distribution(attrs)
 
@@ -160,7 +157,7 @@ def test_metadata_name():
 
 
 @pytest.mark.parametrize(
-    ('dist_name', 'py_module'),
+    "dist_name, py_module",
     [
         ("my.pkg", "my_pkg"),
         ("my-pkg", "my_pkg"),
@@ -191,7 +188,7 @@ def test_dist_default_py_modules(tmp_path, dist_name, py_module):
 
 
 @pytest.mark.parametrize(
-    ('dist_name', 'package_dir', 'package_files', 'packages'),
+    "dist_name, package_dir, package_files, packages",
     [
         ("my.pkg", None, ["my_pkg/__init__.py", "my_pkg/mod.py"], ["my_pkg"]),
         ("my-pkg", None, ["my_pkg/__init__.py", "my_pkg/mod.py"], ["my_pkg"]),
@@ -245,7 +242,7 @@ def test_dist_default_packages(
 
 
 @pytest.mark.parametrize(
-    ('dist_name', 'package_dir', 'package_files'),
+    "dist_name, package_dir, package_files",
     [
         ("my.pkg.nested", None, ["my/pkg/nested/__init__.py"]),
         ("my.pkg", None, ["my/pkg/__init__.py", "my/pkg/file.py"]),

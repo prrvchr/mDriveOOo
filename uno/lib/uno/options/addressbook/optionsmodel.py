@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -27,23 +27,21 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from ..unotool import createService
 from ..unotool import getConfiguration
-from ..unotool import getResourceLocation
 from ..unotool import getSimpleFile
 
-from ..dbconfig  import g_folder
+from ..helper import getDataBaseUrl
 
-from ..configuration import g_host
 from ..configuration import g_identifier
+from ..configuration import g_implementation
 
 
 class OptionsModel():
     def __init__(self, ctx):
         self._ctx = ctx
         self._config = getConfiguration(ctx, g_identifier, True)
-        folder = g_folder + '/' + g_host
-        location = getResourceLocation(ctx, g_identifier, folder)
-        self._url = location + '.odb'
+        self._url = getDataBaseUrl(ctx)
         self._factor = 60
 
     @property
@@ -67,16 +65,26 @@ class OptionsModel():
     def getDatasourceUrl(self):
         return self._url
 
+
 # OptionsModel setter methods
+    def loadDriver(self):
+        try:
+            driver = createService(self._ctx, g_implementation)
+        except:
+            # Nothing to do the error is already logged
+            pass
+
+# OptionsModel getter methods
     def setViewData(self, timeout, view):
+        changed = False
         if timeout != self._Timeout:
             self._config.replaceByName('ReplicateTimeout', timeout * self._factor)
         if view != self._ViewName:
             self._config.replaceByName('AddressBookName', view)
         if self._config.hasPendingChanges():
             self._config.commitChanges()
-            return True
-        return False
+            changed = True
+        return changed
 
 # OptionsModel private getter methods
     def _hasDatasource(self):

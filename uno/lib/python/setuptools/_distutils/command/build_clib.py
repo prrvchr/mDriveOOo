@@ -16,7 +16,6 @@ module."""
 
 import os
 from distutils._log import log
-from typing import ClassVar
 
 from ..core import Command
 from ..errors import DistutilsSetupError
@@ -32,7 +31,7 @@ def show_compilers():
 class build_clib(Command):
     description = "build C/C++ libraries used by Python extensions"
 
-    user_options: ClassVar[list[tuple[str, str, str]]] = [
+    user_options = [
         ('build-clib=', 'b', "directory to build C/C++ libraries to"),
         ('build-temp=', 't', "directory to put temporary build by-products"),
         ('debug', 'g', "compile with debugging information"),
@@ -139,7 +138,8 @@ class build_clib(Command):
 
             if '/' in name or (os.sep != '/' and os.sep in name):
                 raise DistutilsSetupError(
-                    f"bad library name '{lib[0]}': may not contain directory separators"
+                    f"bad library name '{lib[0]}': "
+                    "may not contain directory separators"
                 )
 
             if not isinstance(build_info, dict):

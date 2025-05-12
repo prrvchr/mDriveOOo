@@ -26,6 +26,7 @@ import pkg_resources
 import setuptools.command.easy_install as ei
 from pkg_resources import Distribution as PRDistribution, normalize_path, working_set
 from setuptools import sandbox
+from setuptools._normalization import safer_name
 from setuptools.command.easy_install import PthDistributions
 from setuptools.dist import Distribution
 from setuptools.sandbox import run_setup
@@ -72,7 +73,7 @@ class TestEasyInstallTest:
         header = ei.CommandSpec.best().from_environment().as_header()
         dist = FakeDist()
         args = next(ei.ScriptWriter.get_args(dist))
-        _name, script = itertools.islice(args, 2)
+        name, script = itertools.islice(args, 2)
         assert script.startswith(header)
         assert "'spec'" in script
         assert "'console_scripts'" in script
@@ -407,14 +408,14 @@ class TestUserInstallTest:
         logging.basicConfig(level=logging.INFO, stream=sys.stderr)
         log.info('this should not break')
 
-    @pytest.fixture
+    @pytest.fixture()
     def foo_package(self, tmpdir):
         egg_file = tmpdir / 'foo-1.0.egg-info'
         with egg_file.open('w') as f:
             f.write('Name: foo\n')
         return str(tmpdir)
 
-    @pytest.fixture
+    @pytest.fixture()
     def install_target(self, tmpdir):
         target = str(tmpdir)
         with mock.patch('sys.path', sys.path + [target]):
@@ -472,12 +473,6 @@ def distutils_package():
         yield
 
 
-@pytest.mark.usefixtures("distutils_package")
-class TestDistutilsPackage:
-    def test_bdist_egg_available_on_distutils_pkg(self):
-        run_setup('setup.py', ['bdist_egg'])
-
-
 @pytest.fixture
 def mock_index():
     # set up a server which will simulate an alternate package index.
@@ -488,6 +483,11 @@ def mock_index():
         pytest.skip("could not find a valid port")
     p_index.start()
     return p_index
+
+
+class TestDistutilsPackage:
+    def test_bdist_egg_available_on_distutils_pkg(self, distutils_package):
+        run_setup('setup.py', ['bdist_egg'])
 
 
 class TestInstallRequires:
@@ -651,7 +651,7 @@ class TestSetupRequires:
                     temp_dir, use_setup_cfg=use_setup_cfg
                 )
                 test_setup_py = os.path.join(test_pkg, 'setup.py')
-                with contexts.quiet() as (stdout, _stderr):
+                with contexts.quiet() as (stdout, stderr):
                     # Don't even need to install the package, just
                     # running the setup.py at all is sufficient
                     run_setup(test_setup_py, ['--name'])
@@ -670,11 +670,11 @@ class TestSetupRequires:
 
         with contexts.save_pkg_resources_state():
             with contexts.tempdir() as temp_dir:
-                foobar_1_archive = os.path.join(temp_dir, 'foo.bar-0.1.tar.gz')
+                foobar_1_archive = os.path.join(temp_dir, 'foo_bar-0.1.tar.gz')
                 make_nspkg_sdist(foobar_1_archive, 'foo.bar', '0.1')
                 # Now actually go ahead an extract to the temp dir and add the
                 # extracted path to sys.path so foo.bar v0.1 is importable
-                foobar_1_dir = os.path.join(temp_dir, 'foo.bar-0.1')
+                foobar_1_dir = os.path.join(temp_dir, 'foo_bar-0.1')
                 os.mkdir(foobar_1_dir)
                 with tarfile.open(foobar_1_archive) as tf:
                     tf.extraction_filter = lambda member, path: member
@@ -697,7 +697,7 @@ class TestSetupRequires:
                             len(foo.__path__) == 2):
                         print('FAIL')
 
-                    if 'foo.bar-0.2' not in foo.__path__[0]:
+                    if 'foo_bar-0.2' not in foo.__path__[0]:
                         print('FAIL')
                 """
                 )
@@ -713,13 +713,13 @@ class TestSetupRequires:
 
                 test_setup_py = os.path.join(test_pkg, 'setup.py')
 
-                with contexts.quiet() as (stdout, _stderr):
+                with contexts.quiet() as (stdout, stderr):
                     try:
                         # Don't even need to install the package, just
                         # running the setup.py at all is sufficient
                         run_setup(test_setup_py, ['--name'])
-                    except pkg_resources.VersionConflict:
-                        self.fail(
+                    except pkg_resources.VersionConflict:  # pragma: nocover
+                        pytest.fail(
                             'Installing setup.py requirements caused a VersionConflict'
                         )
 
@@ -735,14 +735,14 @@ class TestSetupRequires:
                 (
                     'setup.py',
                     DALS(
-                        f"""
+                        """
                     import setuptools
                     setuptools.setup(
-                        name={distname!r},
+                        name={name!r},
                         version={version!r},
-                        py_modules=[{distname!r}],
+                        py_modules=[{name!r}],
                     )
-                    """
+                    """.format(name=distname, version=version)
                     ),
                 ),
                 (
@@ -765,7 +765,7 @@ class TestSetupRequires:
                     use_setup_cfg=use_setup_cfg + ('version',),
                 )
                 test_setup_py = os.path.join(test_pkg, 'setup.py')
-                with contexts.quiet() as (stdout, _stderr):
+                with contexts.quiet() as (stdout, stderr):
                     run_setup(test_setup_py, ['--version'])
                 lines = stdout.readlines()
                 assert len(lines) > 0
@@ -814,7 +814,7 @@ class TestSetupRequires:
                     # Ignored (overridden by setup_attrs)
                     'python-xlib',
                     '0.19',
-                    setup_attrs=dict(setup_requires=f'dependency @ {dep_url}'),
+                    setup_attrs=dict(setup_requires='dependency @ %s' % dep_url),
                 )
                 test_setup_py = os.path.join(test_pkg, 'setup.py')
                 run_setup(test_setup_py, ['--version'])
@@ -860,9 +860,7 @@ class TestSetupRequires:
         )
         dep_2_0_sdist = 'dep-2.0.tar.gz'
         dep_2_0_url = path_to_url(str(tmpdir / dep_2_0_sdist))
-        dep_2_0_python_requires = (
-            f'!={sys.version_info.major}.{sys.version_info.minor}.*'
-        )
+        dep_2_0_python_requires = '!=' + '.'.join(map(str, sys.version_info[:2])) + '.*'
         make_python_requires_sdist(
             str(tmpdir / dep_2_0_sdist), 'dep', '2.0', dep_2_0_python_requires
         )
@@ -1100,13 +1098,14 @@ def make_trivial_sdist(dist_path, distname, version):
             (
                 'setup.py',
                 DALS(
-                    f"""\
+                    """\
              import setuptools
              setuptools.setup(
-                 name={distname!r},
-                 version={version!r}
+                 name=%r,
+                 version=%r
              )
          """
+                    % (distname, version)
                 ),
             ),
             ('setup.cfg', ''),
@@ -1120,6 +1119,8 @@ def make_nspkg_sdist(dist_path, distname, version):
     package with the same name as distname.  The top-level package is
     designated a namespace package).
     """
+    # Assert that the distname contains at least one period
+    assert '.' in distname
 
     parts = distname.split('.')
     nspackage = parts[0]
@@ -1127,15 +1128,16 @@ def make_nspkg_sdist(dist_path, distname, version):
     packages = ['.'.join(parts[:idx]) for idx in range(1, len(parts) + 1)]
 
     setup_py = DALS(
-        f"""\
+        """\
         import setuptools
         setuptools.setup(
-            name={distname!r},
-            version={version!r},
-            packages={packages!r},
-            namespace_packages=[{nspackage!r}]
+            name=%r,
+            version=%r,
+            packages=%r,
+            namespace_packages=[%r]
         )
     """
+        % (distname, version, packages, nspackage)
     )
 
     init = "__import__('pkg_resources').declare_namespace(__name__)"
@@ -1207,10 +1209,11 @@ def create_setup_requires_package(
     package itself is just 'test_pkg'.
     """
 
+    normalized_distname = safer_name(distname)
     test_setup_attrs = {
         'name': 'test_pkg',
         'version': '0.0',
-        'setup_requires': [f'{distname}=={version}'],
+        'setup_requires': [f'{normalized_distname}=={version}'],
         'dependency_links': [os.path.abspath(path)],
     }
     if setup_attrs:
@@ -1231,7 +1234,7 @@ def create_setup_requires_package(
                 section = options
             if isinstance(value, (tuple, list)):
                 value = ';'.join(value)
-            section.append(f'{name}: {value}')
+            section.append('%s: %s' % (name, value))
         test_setup_cfg_contents = DALS(
             """
             [metadata]
@@ -1259,7 +1262,7 @@ def create_setup_requires_package(
     with open(os.path.join(test_pkg, 'setup.py'), 'w', encoding="utf-8") as f:
         f.write(setup_py_template % test_setup_attrs)
 
-    foobar_path = os.path.join(path, f'{distname}-{version}.tar.gz')
+    foobar_path = os.path.join(path, f'{normalized_distname}-{version}.tar.gz')
     make_package(foobar_path, distname, version)
 
     return test_pkg
@@ -1274,12 +1277,12 @@ class TestScriptHeader:
     exe_with_spaces = r'C:\Program Files\Python36\python.exe'
 
     def test_get_script_header(self):
-        expected = f'#!{ei.nt_quote_arg(os.path.normpath(sys.executable))}\n'
+        expected = '#!%s\n' % ei.nt_quote_arg(os.path.normpath(sys.executable))
         actual = ei.ScriptWriter.get_header('#!/usr/local/bin/python')
         assert actual == expected
 
     def test_get_script_header_args(self):
-        expected = f'#!{ei.nt_quote_arg(os.path.normpath(sys.executable))} -x\n'
+        expected = '#!%s -x\n' % ei.nt_quote_arg(os.path.normpath(sys.executable))
         actual = ei.ScriptWriter.get_header('#!/usr/bin/python -x')
         assert actual == expected
 
@@ -1287,14 +1290,14 @@ class TestScriptHeader:
         actual = ei.ScriptWriter.get_header(
             '#!/usr/bin/python', executable=self.non_ascii_exe
         )
-        expected = f'#!{self.non_ascii_exe} -x\n'
+        expected = '#!%s -x\n' % self.non_ascii_exe
         assert actual == expected
 
     def test_get_script_header_exe_with_spaces(self):
         actual = ei.ScriptWriter.get_header(
             '#!/usr/bin/python', executable='"' + self.exe_with_spaces + '"'
         )
-        expected = f'#!"{self.exe_with_spaces}"\n'
+        expected = '#!"%s"\n' % self.exe_with_spaces
         assert actual == expected
 
 
@@ -1408,10 +1411,6 @@ def test_use_correct_python_version_string(tmpdir, tmpdir_cwd, monkeypatch):
     assert cmd.config_vars['py_version_nodot'] == '310'
 
 
-@pytest.mark.xfail(
-    sys.platform == "darwin",
-    reason="https://github.com/pypa/setuptools/pull/4716#issuecomment-2447624418",
-)
 def test_editable_user_and_build_isolation(setup_context, monkeypatch, tmp_path):
     """`setup.py develop` should honor `--user` even under build isolation"""
 

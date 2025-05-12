@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -35,7 +35,9 @@ from .optionsview import OptionsView
 
 from ..unotool import executeDispatch
 from ..unotool import getDesktop
+from ..unotool import getDispatcher
 from ..unotool import getFilePicker
+from ..unotool import createService
 
 from ..logger import getLogger
 from ..logger import LogManager
@@ -52,8 +54,9 @@ class OptionsManager():
         self._ctx = ctx
         self._logger = getLogger(ctx, g_defaultlog)
         self._model = OptionsModel(ctx)
-        self._logmanager = LogManager(ctx, window, 'requirements.txt', g_defaultlog, g_synclog)
         self._view = OptionsView(window, *self._model.getInitData())
+        self._logmanager = LogManager(ctx, window, 'requirements.txt', g_defaultlog, g_synclog)
+        self._logmanager.initView()
         self._view.setViewData(*self._model.getViewData(OptionsManager._restart))
         self._logger.logprb(INFO, 'OptionsManager', '__init__', 151)
 
@@ -65,8 +68,7 @@ class OptionsManager():
         self._logger.logprb(INFO, 'OptionsManager', 'loadSetting', 161)
 
     def saveSetting(self):
-        reset, share, name, index, timeout, download, upload = self._view.getViewData()
-        option = self._model.setViewData(reset, share, name, index, timeout, download, upload)
+        option = self._model.setViewData(*self._view.getViewData())
         changed = self._logmanager.saveSetting()
         if changed:
             OptionsManager._restart = True
@@ -103,4 +105,11 @@ class OptionsManager():
 
     def spinDown(self, index):
         self._view.setChunk(index, self._view.getChunk(index) / 2)
+
+    def enableMacro(self, enabled):
+        self._view.enableCustomize(enabled)
+
+    def customizeMenu(self):
+        frame = getDesktop(self._ctx).getCurrentFrame()
+        getDispatcher(self._ctx).executeDispatch(frame, '.uno:ConfigureDialog', '', 0, ())
 

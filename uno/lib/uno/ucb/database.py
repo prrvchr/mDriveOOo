@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -36,6 +36,11 @@ from com.sun.star.sdb.CommandType import QUERY
 
 from com.sun.star.sdbc.DataType import VARCHAR
 
+<<<<<<< HEAD
+=======
+from com.sun.star.util import DateTimeWithTimezone
+
+>>>>>>> refs/subrepo/uno/fetch
 from .dbtool import Array
 
 from .unotool import checkVersion
@@ -62,6 +67,7 @@ import traceback
 
 class DataBase():
     def __init__(self, ctx, logger, url, user='', pwd=''):
+        print("DataBase.__init__() 1")
         self._ctx = ctx
         cls, mtd = 'DataBase', '__init__'
         logger.logprb(INFO, cls, mtd, 401)
@@ -70,6 +76,7 @@ class DataBase():
         new = not getSimpleFile(ctx).exists(odb)
         connection = getDataBaseConnection(ctx, url, user, pwd, new)
         version = connection.getMetaData().getDriverVersion()
+        print("DataBase.__init__() 2 version: %s - new: %s" % (version, new))
         if new:
             if checkVersion(version, g_version):
                 logger.logprb(INFO, cls, mtd, 402, version)
@@ -81,6 +88,7 @@ class DataBase():
         self._version = version
         self._logger = logger
         logger.logprb(INFO, cls, mtd, 405)
+        print("DataBase.__init__() 3")
 
     @property
     def Url(self):

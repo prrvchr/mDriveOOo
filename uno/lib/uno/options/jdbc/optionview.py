@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -57,44 +57,37 @@ class OptionWindow():
     def dispose(self):
         self._window.dispose()
 
-    def setDriverLevel(self, level):
-        self._getDriverService(level).State = 1
-
-    def setApiLevel(self, level, enabled, bookmark, mode):
+    def setApiLevel(self, level, system, bookmark, mode):
         self._getApiLevel(level).State = 1
-        self._getApiLevel(0).Model.Enabled = enabled
-        self.enableOptions(level, bookmark, mode)
-
-    def setSystemTable(self, driver, state):
-        self._getSytemTable().Model.Enabled = bool(driver)
-        if driver:
-            self._getSytemTable().State = int(state)
-        else:
-            self._getSytemTable().State = 0
+        self.enableOptions(level, system, bookmark, mode)
 
     def setRestart(self, enabled):
         self._getRestart().setVisible(enabled)
 
-    def enableOptions(self, level, bookmark, mode):
-        self._getBookmark().Model.Enabled = bool(level)
-        if level:
-            self._getBookmark().State = int(bookmark)
-            self.enableSQLMode(bookmark, mode)
-        else:
-            self._getBookmark().State = 0
-            self._getSQLMode().Model.Enabled = False
-            self._getSQLMode().State = 0
+    def enableOptions(self, level, system, bookmark, mode):
+        if level == 0:
+            self._enableSytemTable(False)
+            self._enableBookmark(False)
+        elif level == 1:
+            self._enableSytemTable(True, system)
+            self._enableBookmark(True, bookmark, mode)
 
-    def enableSQLMode(self, state, mode):
-        self._getSQLMode().Model.Enabled = bool(state)
-        self._getSQLMode().State = int(mode) if state else 0
+    def enableSQLMode(self, enable, state=0):
+        self._getSQLMode().Model.Enabled = enable
+        self._getSQLMode().State = int(enable and state)
 
 # OptionWindow private control methods
-    def _getDriverService(self, index):
-        return self._window.getControl('OptionButton%s' % (index + 1))
+    def _enableBookmark(self, enable, state=0, mode=0):
+        self._getBookmark().Model.Enabled = enable
+        self._getBookmark().State = int(enable and state)
+        self.enableSQLMode(enable, mode)
+
+    def _enableSytemTable(self, enable, state=0):
+        self._getSytemTable().Model.Enabled = enable
+        self._getSytemTable().State = int(enable and state)
 
     def _getApiLevel(self, index):
-        return self._window.getControl('OptionButton%s' % (index + 3))
+        return self._window.getControl('OptionButton%s' % (index + 1))
 
     def _getSytemTable(self):
         return self._window.getControl('CheckBox1')
@@ -106,5 +99,5 @@ class OptionWindow():
         return self._window.getControl('CheckBox3')
 
     def _getRestart(self):
-        return self._window.getControl('Label3')
+        return self._window.getControl('Label2')
 

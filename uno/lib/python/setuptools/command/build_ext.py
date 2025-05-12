@@ -3,11 +3,10 @@ from __future__ import annotations
 import itertools
 import os
 import sys
-from collections.abc import Iterator
 from importlib.machinery import EXTENSION_SUFFIXES
 from importlib.util import cache_from_source as _compiled_file_name
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
 
 from setuptools.dist import Distribution
 from setuptools.errors import BaseError
@@ -95,7 +94,7 @@ class build_ext(_build_ext):
 
     def run(self):
         """Build extensions in build directory, then copy if --inplace"""
-        old_inplace, self.inplace = self.inplace, False
+        old_inplace, self.inplace = self.inplace, 0
         _build_ext.run(self)
         self.inplace = old_inplace
         if old_inplace:
@@ -111,7 +110,7 @@ class build_ext(_build_ext):
         regular_file = os.path.join(self.build_lib, filename)
         return (inplace_file, regular_file)
 
-    def copy_extensions_to_source(self) -> None:
+    def copy_extensions_to_source(self):
         build_py = self.get_finalized_command('build_py')
         for ext in self.extensions:
             inplace_file, regular_file = self._get_inplace_equivalent(build_py, ext)
@@ -168,7 +167,7 @@ class build_ext(_build_ext):
             if not isinstance(ext_suffix, str):
                 raise OSError(
                     "Configuration variable EXT_SUFFIX not found for this platform "
-                    "and environment variable SETUPTOOLS_EXT_SUFFIX is missing"
+                    + "and environment variable SETUPTOOLS_EXT_SUFFIX is missing"
                 )
             so_ext = ext_suffix
 
@@ -192,7 +191,7 @@ class build_ext(_build_ext):
         self.ext_map = {}
         self.editable_mode = False
 
-    def finalize_options(self) -> None:
+    def finalize_options(self):
         _build_ext.finalize_options(self)
         self.extensions = self.extensions or []
         self.check_extensions_list(self.extensions)
@@ -248,14 +247,14 @@ class build_ext(_build_ext):
             compiler.set_link_objects(self.link_objects)
 
         # hack so distutils' build_extension() builds a library instead
-        compiler.link_shared_object = link_shared_object.__get__(compiler)  # type: ignore[method-assign]
+        compiler.link_shared_object = link_shared_object.__get__(compiler)
 
     def get_export_symbols(self, ext):
         if isinstance(ext, Library):
             return ext.export_symbols
         return _build_ext.get_export_symbols(self, ext)
 
-    def build_extension(self, ext) -> None:
+    def build_extension(self, ext):
         ext._convert_pyx_sources_to_lang()
         _compiler = self.compiler
         try:
@@ -345,7 +344,7 @@ class build_ext(_build_ext):
         if self.get_finalized_command('build_py').optimize:
             yield '.pyo'
 
-    def write_stub(self, output_dir, ext, compile=False) -> None:
+    def write_stub(self, output_dir, ext, compile=False):
         stub_file = os.path.join(output_dir, *ext._full_name.split('.')) + '.py'
         self._write_stub_file(stub_file, ext, compile)
 
@@ -360,7 +359,7 @@ class build_ext(_build_ext):
                     "   global __bootstrap__, __file__, __loader__",
                     "   import sys, os, pkg_resources, importlib.util" + if_dl(", dl"),
                     "   __file__ = pkg_resources.resource_filename"
-                    f"(__name__,{os.path.basename(ext._file_name)!r})",
+                    "(__name__,%r)" % os.path.basename(ext._file_name),
                     "   del __bootstrap__",
                     "   if '__loader__' in globals():",
                     "       del __loader__",
@@ -416,7 +415,7 @@ if use_stubs or os.name == 'nt':
         extra_postargs=None,
         build_temp=None,
         target_lang=None,
-    ) -> None:
+    ):
         self.link(
             self.SHARED_LIBRARY,
             objects,
@@ -451,7 +450,7 @@ else:
         extra_postargs=None,
         build_temp=None,
         target_lang=None,
-    ) -> None:
+    ):
         # XXX we need to either disallow these attrs on Library instances,
         # or warn/abort here if set, or something...
         # libraries=None, library_dirs=None, runtime_library_dirs=None,
@@ -460,7 +459,7 @@ else:
 
         assert output_dir is None  # distutils build_ext doesn't pass this
         output_dir, filename = os.path.split(output_libname)
-        basename, _ext = os.path.splitext(filename)
+        basename, ext = os.path.splitext(filename)
         if self.library_filename("x").startswith('lib'):
             # strip 'lib' prefix; this is kludgy if some platform uses
             # a different prefix

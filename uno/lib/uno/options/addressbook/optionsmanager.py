@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -48,7 +48,9 @@ class OptionsManager():
         self._model = OptionsModel(ctx)
         self._view = OptionsView(window, OptionsManager._restart, offset, *self._model.getViewData())
         self._logmanager = LogManager(self._ctx, window, 'requirements.txt', g_defaultlog, g_synclog)
-        self._logger.logprb(INFO, 'OptionsManager', '__init__()', 201)
+        self._logmanager.initView()
+        self._logger.logprb(INFO, 'OptionsManager', '__init__()', 301)
+        self._model.loadDriver()
 
     _restart = False
 
@@ -57,7 +59,7 @@ class OptionsManager():
         self._view.setViewName(self._model.getViewName())
         self._view.setRestart(OptionsManager._restart)
         self._logmanager.loadSetting()
-        self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 211)
+        self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 311)
 
     def saveSetting(self):
         timeout, view = self._view.getViewData()
@@ -66,7 +68,7 @@ class OptionsManager():
         if log:
             OptionsManager._restart = True
             self._view.setRestart(True)
-        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 221, option, log)
+        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 321, option, log)
 
     def viewData(self):
         url = self._model.getDatasourceUrl()

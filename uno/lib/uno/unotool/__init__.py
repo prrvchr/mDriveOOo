@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -35,6 +35,7 @@ from .unotool import executeDispatch
 from .unotool import executeFrameDispatch
 from .unotool import executeShell
 from .unotool import generateUuid
+from .unotool import getArgumentSet
 from .unotool import getConfiguration
 from .unotool import getConnectionMode
 from .unotool import getContainerWindow
@@ -42,6 +43,7 @@ from .unotool import getCurrentLocale
 from .unotool import getDateTime
 from .unotool import getDefaultPropertyValueSet
 from .unotool import getDesktop
+from .unotool import getDispatcher
 from .unotool import getDialog
 from .unotool import getDialogUrl
 from .unotool import getDocument
@@ -52,11 +54,15 @@ from .unotool import getFileSequence
 from .unotool import getFileUrl
 from .unotool import getInteractionHandler
 from .unotool import getInterfaceTypes
+from .unotool import getLibreOfficeInfo
+from .unotool import getLibreOfficeVersion
+from .unotool import getMessageBox
 from .unotool import getMimeTypeFactory
 from .unotool import getNamedValue
 from .unotool import getNamedValueSet
 from .unotool import getParentWindow
 from .unotool import getPathSettings
+from .unotool import getPathSubstitution
 from .unotool import getProperty
 from .unotool import getPropertyValue
 from .unotool import getPropertyValueSet

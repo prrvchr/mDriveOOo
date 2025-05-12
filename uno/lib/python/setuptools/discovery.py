@@ -41,11 +41,11 @@ from __future__ import annotations
 
 import itertools
 import os
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterator
 from fnmatch import fnmatchcase
 from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Iterable, Mapping
 
 import _distutils_hack.override  # noqa: F401
 
@@ -71,7 +71,7 @@ class _Filter:
     the input matches at least one of the patterns.
     """
 
-    def __init__(self, *patterns: str) -> None:
+    def __init__(self, *patterns: str):
         self._patterns = dict.fromkeys(patterns)
 
     def __call__(self, item: str) -> bool:
@@ -84,8 +84,8 @@ class _Filter:
 class _Finder:
     """Base class that exposes functionality for module/package finders"""
 
-    ALWAYS_EXCLUDE: ClassVar[tuple[str, ...]] = ()
-    DEFAULT_EXCLUDE: ClassVar[tuple[str, ...]] = ()
+    ALWAYS_EXCLUDE: tuple[str, ...] = ()
+    DEFAULT_EXCLUDE: tuple[str, ...] = ()
 
     @classmethod
     def find(
@@ -300,7 +300,7 @@ class ConfigDiscovery:
     (from other metadata/options, the file system or conventions)
     """
 
-    def __init__(self, distribution: Distribution) -> None:
+    def __init__(self, distribution: Distribution):
         self.dist = distribution
         self._called = False
         self._disabled = False
@@ -479,7 +479,7 @@ class ConfigDiscovery:
             """
             raise PackageDiscoveryError(cleandoc(msg))
 
-    def analyse_name(self) -> None:
+    def analyse_name(self):
         """The packages/modules are the essential contribution of the author.
         Therefore the name of the distribution can be derived from them.
         """

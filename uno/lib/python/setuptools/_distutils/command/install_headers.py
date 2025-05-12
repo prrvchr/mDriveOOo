@@ -3,8 +3,6 @@
 Implements the Distutils 'install_headers' command, to install C/C++ header
 files to the Python include directory."""
 
-from typing import ClassVar
-
 from ..core import Command
 
 
@@ -12,7 +10,7 @@ from ..core import Command
 class install_headers(Command):
     description = "install C/C++ header files"
 
-    user_options: ClassVar[list[tuple[str, str, str]]] = [
+    user_options = [
         ('install-dir=', 'd', "directory to install header files to"),
         ('force', 'f', "force installation (overwrite existing files)"),
     ]

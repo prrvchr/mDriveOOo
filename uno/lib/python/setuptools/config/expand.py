@@ -25,16 +25,14 @@ import importlib
 import os
 import pathlib
 import sys
-from collections.abc import Iterable, Iterator, Mapping
 from configparser import ConfigParser
 from glob import iglob
 from importlib.machinery import ModuleSpec, all_suffixes
 from itertools import chain
 from pathlib import Path
 from types import ModuleType, TracebackType
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Mapping, TypeVar
 
-from .. import _static
 from .._path import StrPath, same_path as _same_path
 from ..discovery import find_package_path
 from ..warnings import SetuptoolsWarning
@@ -53,7 +51,7 @@ _V_co = TypeVar("_V_co", covariant=True)
 class StaticModule:
     """Proxy to a module object that avoids executing arbitrary code."""
 
-    def __init__(self, name: str, spec: ModuleSpec) -> None:
+    def __init__(self, name: str, spec: ModuleSpec):
         module = ast.parse(pathlib.Path(spec.origin).read_bytes())  # type: ignore[arg-type] # Let it raise an error on None
         vars(self).update(locals())
         del self.self
@@ -182,9 +180,7 @@ def read_attr(
     spec = _find_spec(module_name, path)
 
     try:
-        value = getattr(StaticModule(module_name, spec), attr_name)
-        # XXX: Is marking as static contents coming from modules too optimistic?
-        return _static.attempt_conversion(value)
+        return getattr(StaticModule(module_name, spec), attr_name)
     except Exception:
         # fallback to evaluate module
         module = _load_spec(spec, module_name)
@@ -332,7 +328,7 @@ def version(value: Callable | Iterable[str | int] | str) -> str:
         return _value
     if hasattr(_value, '__iter__'):
         return '.'.join(map(str, _value))
-    return f'{_value}'
+    return '%s' % _value
 
 
 def canonic_package_data(package_data: dict) -> dict:
@@ -358,9 +354,7 @@ def canonic_data_files(
     ]
 
 
-def entry_points(
-    text: str, text_source: str = "entry-points"
-) -> dict[str, dict[str, str]]:
+def entry_points(text: str, text_source: str = "entry-points") -> dict[str, dict]:
     """Given the contents of entry-points file,
     process it into a 2-level dictionary (``dict[str, dict[str, str]]``).
     The first level keys are entry-point groups, the second level keys are
@@ -386,7 +380,7 @@ class EnsurePackagesDiscovered:
     and those might not have been processed yet.
     """
 
-    def __init__(self, distribution: Distribution) -> None:
+    def __init__(self, distribution: Distribution):
         self._dist = distribution
         self._called = False
 
@@ -433,7 +427,7 @@ class LazyMappingProxy(Mapping[_K, _V_co]):
     'other value'
     """
 
-    def __init__(self, obtain_mapping_value: Callable[[], Mapping[_K, _V_co]]) -> None:
+    def __init__(self, obtain_mapping_value: Callable[[], Mapping[_K, _V_co]]):
         self._obtain = obtain_mapping_value
         self._value: Mapping[_K, _V_co] | None = None
 

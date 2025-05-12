@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 import time
 from pathlib import Path
@@ -18,14 +16,14 @@ DOWNLOAD_DIR = Path(__file__).parent
 # ----------------------------------------------------------------------
 
 
-def output_file(url: str, download_dir: Path = DOWNLOAD_DIR) -> Path:
+def output_file(url: str, download_dir: Path = DOWNLOAD_DIR):
     file_name = url.strip()
     for part in NAME_REMOVE:
         file_name = file_name.replace(part, '').strip().strip('/:').strip()
     return Path(download_dir, re.sub(r"[^\-_\.\w\d]+", "_", file_name))
 
 
-def retrieve_file(url: str, download_dir: Path = DOWNLOAD_DIR, wait: float = 5) -> Path:
+def retrieve_file(url: str, download_dir: Path = DOWNLOAD_DIR, wait: float = 5):
     path = output_file(url, download_dir)
     if path.exists():
         print(f"Skipping {url} (already exists: {path})")
@@ -40,7 +38,7 @@ def retrieve_file(url: str, download_dir: Path = DOWNLOAD_DIR, wait: float = 5) 
     return path
 
 
-def urls_from_file(list_file: Path) -> list[str]:
+def urls_from_file(list_file: Path):
     """``list_file`` should be a text file where each line corresponds to a URL to
     download.
     """

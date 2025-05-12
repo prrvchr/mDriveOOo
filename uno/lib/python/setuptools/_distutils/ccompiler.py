@@ -4,7 +4,6 @@ Contains CCompiler, an abstract base class that defines the interface
 for the Distutils compiler abstraction model."""
 
 import os
-import pathlib
 import re
 import sys
 import types
@@ -970,33 +969,27 @@ int main (int argc, char **argv) {{
         return dict.fromkeys(self.src_extensions, self.obj_extension)
 
     def _make_out_path(self, output_dir, strip_dir, src_name):
-        return self._make_out_path_exts(
-            output_dir, strip_dir, src_name, self.out_extensions
-        )
-
-    @classmethod
-    def _make_out_path_exts(cls, output_dir, strip_dir, src_name, extensions):
-        r"""
-        >>> exts = {'.c': '.o'}
-        >>> CCompiler._make_out_path_exts('.', False, '/foo/bar.c', exts).replace('\\', '/')
-        './foo/bar.o'
-        >>> CCompiler._make_out_path_exts('.', True, '/foo/bar.c', exts).replace('\\', '/')
-        './bar.o'
-        """
-        src = pathlib.PurePath(src_name)
-        # Ensure base is relative to honor output_dir (python/cpython#37775).
-        base = cls._make_relative(src)
+        base, ext = os.path.splitext(src_name)
+        base = self._make_relative(base)
         try:
-            new_ext = extensions[src.suffix]
+            new_ext = self.out_extensions[ext]
         except LookupError:
-            raise UnknownFileError(f"unknown file type '{src.suffix}' (from '{src}')")
+            raise UnknownFileError(f"unknown file type '{ext}' (from '{src_name}')")
         if strip_dir:
-            base = pathlib.PurePath(base.name)
-        return os.path.join(output_dir, base.with_suffix(new_ext))
+            base = os.path.basename(base)
+        return os.path.join(output_dir, base + new_ext)
 
     @staticmethod
-    def _make_relative(base: pathlib.Path):
-        return base.relative_to(base.anchor)
+    def _make_relative(base):
+        """
+        In order to ensure that a filename always honors the
+        indicated output_dir, make sure it's relative.
+        Ref python/cpython#37775.
+        """
+        # Chop off the drive
+        no_drive = os.path.splitdrive(base)[1]
+        # If abs, chop off leading /
+        return no_drive[os.path.isabs(no_drive) :]
 
     def shared_object_filename(self, basename, strip_dir=False, output_dir=''):
         assert output_dir is not None

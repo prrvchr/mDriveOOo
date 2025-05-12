@@ -10,7 +10,7 @@ import sys
 import tokenize
 
 
-def run() -> None:
+def run():
     """
     Run the script in sys.argv[1] as if it had
     been invoked naturally.

@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -37,40 +37,39 @@ import traceback
 
 
 class OptionManager():
-    def __init__(self, ctx, window, offset, logger, *loggers):
+    def __init__(self, ctx, window, restart, offset, logger, *loggers):
         self._logmanager = LogManager(ctx, window, 'requirements.txt', logger, *loggers)
-        self._model = OptionModel(ctx, logger)
-        self._view = OptionWindow(ctx, window, WindowHandler(self), OptionManager._restart, offset)
-        self._initView()
+        self._model = OptionModel(ctx)
+        self._view = OptionWindow(ctx, window, WindowHandler(self), restart, offset)
 
-    _restart = False
+# OptionManager setter methods
+    def initView(self):
+        self._logmanager.initView()
+        self._initView()
 
     def dispose(self):
         self._logmanager.dispose()
         self._view.dispose()
 
 # OptionManager getter methods
-    def getDriverService(self):
-        return self._model.getDriverService()
+    def getConfigApiLevel(self):
+        return self._model.getConfigApiLevel()
+
+    def getApiLevel(self):
+        return self._model.getApiLevel()
 
 # OptionManager setter methods
     def saveSetting(self):
         saved = self._logmanager.saveSetting()
         saved |= self._model.saveSetting(*self._view.getOptions())
-        if saved:
-            OptionManager._restart = True
-            self._view.setRestart(True)
         return saved
+
+    def setRestart(self, state):
+        self._view.setRestart(state)
 
     def loadSetting(self):
         self._logmanager.loadSetting()
         self._initView()
-
-    def setDriverService(self, driver):
-        level = self._view.getApiLevel()
-        level, enabled, system, bookmark, mode = self._model.setDriverService(driver, level)
-        self._view.setApiLevel(level, enabled, bookmark, mode)
-        self._view.setSystemTable(driver, system)
 
     def setApiLevel(self, level):
         self._view.enableOptions(*self._model.setApiLevel(level))
@@ -86,8 +85,6 @@ class OptionManager():
 
 # OptionManager private methods
     def _initView(self):
-        driver, level, enabled, system, bookmark, mode = self._model.getViewData()
-        self._view.setDriverLevel(driver)
-        self._view.setApiLevel(level, enabled, bookmark, mode)
-        self._view.setSystemTable(driver, system)
+        level, system, bookmark, mode = self._model.getViewData()
+        self._view.setApiLevel(level, system, bookmark, mode)
 

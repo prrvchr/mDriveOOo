@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -27,7 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
 import unohelper
 
 from com.sun.star.lang import XServiceInfo
@@ -44,8 +43,11 @@ from .unotool import checkVersion
 from .unotool import createService
 from .unotool import getConfiguration
 from .unotool import getExtensionVersion
+from .unotool import getLibreOfficeInfo
 from .unotool import getPropertyValueSet
 from .unotool import getResourceLocation
+
+from .helper import getException
 
 from .logger import getLogger
 
@@ -71,15 +73,13 @@ class Driver(unohelper.Base,
              XServiceInfo,
              XDriver):
 
-    def __init__(self, ctx, lock, service, name):
+    def __init__(self, ctx, lock, logger, service, implementation, services):
         self._ctx = ctx
         self._lock = lock
-        self._service = service
-        self._name = name
-        self._logger = getLogger(ctx, g_defaultlog, g_basename)
-        # FIXME: Driver is lazy loaded in connect() driver method to be able to throw
-        # FIXME: an exception if jdbcDriverOOo extension is not installed.
-        self._driver = None
+        self._driver = createService(ctx, service)
+        self._implementation = implementation
+        self._services = services
+        self._logger = logger
         # FIXME: If we want to add the StorageChangeListener only once,
         # FIXME: we need to be able to retrieve the DocumentHandler (keep a reference)
         self._handlers = []
@@ -87,17 +87,16 @@ class Driver(unohelper.Base,
     # XDriver
     def connect(self, url, infos):
         # XXX: We need to test first if configuration is OK...
-        driver = self._getDriver()
         newinfos, document, storage, location = self._getConnectionInfo(infos)
         if storage is None or location is None:
             self._logException(112, url, ' ')
             raise self._getException(1001, None, 111, 112, url, '\n')
-        handler = self._getDocumentHandler(driver, location)
+        handler = self._getDocumentHandler(location)
         # XXX: Getting path from handler unpacks the database files
         path = handler.getConnectionUrl(storage)
         self._logger.logprb(INFO, 'Driver', 'connect()', 113, location)
         try:
-            connection = driver.connect(path, newinfos)
+            connection = self._driver.connect(path, newinfos)
         except Exception as e:
             self._logger.logprb(SEVERE, 'Driver', 'connect()', 115, str(e), traceback.format_exc())
             # XXX: Database files will only be deleted if they have been unpacked
@@ -117,9 +116,8 @@ class Driver(unohelper.Base,
     def getPropertyInfo(self, url, infos):
         try:
             # XXX: We need to test first if configuration is OK...
-            driver = self._getDriver()
             self._logger.logprb(INFO, 'Driver', 'getPropertyInfo()', 141, url)
-            drvinfo = driver.getPropertyInfo(g_protocol, infos)
+            drvinfo = self._driver.getPropertyInfo(g_protocol, infos)
             for info in drvinfo:
                 self._logger.logprb(INFO, 'Driver', 'getPropertyInfo()', 142, info.Name, info.Value)
             return drvinfo
@@ -139,37 +137,11 @@ class Driver(unohelper.Base,
     def supportsService(self, service):
         return service in self._services
     def getImplementationName(self):
-        return self._name
+        return self._implementation
     def getSupportedServiceNames(self):
         return self._services
 
     # Driver private getter methods
-    def _getDriver(self):
-        # FIXME: If jdbcDriverOOo is not installed,
-        # FIXME: we need to throw SQLException
-        if self._driver is None:
-            self._checkConfiguration()
-            self._driver = createService(self._ctx, self._service)
-        return self._driver
-
-    def _checkConfiguration(self):
-        self._checkLibreOffice()
-        version = getExtensionVersion(self._ctx, g_jdbcid)
-        if version is None:
-            self._logException(122, g_jdbcext, ' ', g_extension)
-            raise self._getException(1001, None, 121, 123, g_jdbcext, '\n', g_extension)
-        if not checkVersion(version, g_jdbcver):
-            self._logException(125, version, g_jdbcext, ' ', g_jdbcver)
-            raise self._getException(1001, None, 122, 125, version, g_jdbcext, '\n', g_jdbcver)
-
-    def _checkLibreOffice(self):
-        configuration = getConfiguration(self._ctx, '/org.openoffice.Setup/Product')
-        name = configuration.getByName('ooName')
-        version = configuration.getByName('ooSetupVersion')
-        if not checkVersion(version, g_lover):
-            self._logException(124, name, version, ' ', name, g_lover)
-            raise self._getException(1001, None, 122, 124, name, version, '\n', name, g_lover)
-
     def _getConnectionInfo(self, infos):
         document = storage = url = None
         config = getConfiguration(self._ctx, g_identifier)
@@ -210,11 +182,11 @@ class Driver(unohelper.Base,
                 document = handler
         return document
 
-    def _getDocumentHandler(self, driver, location):
+    def _getDocumentHandler(self, location):
         with self._lock:
             handler = self._getHandler(location)
             if handler is None:
-                handler = DocumentHandler(self._ctx, self._lock, self._logger, driver, location)
+                handler = DocumentHandler(self._ctx, self._lock, self._logger, self._driver, location)
             return handler
 
     def _setDocumentHandler(self, document, handler):
@@ -238,12 +210,6 @@ class Driver(unohelper.Base,
     def _logException(self, resource, *args):
         self._logger.logprb(SEVERE, 'Driver', 'connect()', resource, *args)
 
-    def _getException(self, code, exception, state, resource, *args):
-        error = SQLException()
-        error.ErrorCode = code
-        error.NextException = exception
-        error.SQLState = self._logger.resolveString(state)
-        error.Message = self._logger.resolveString(resource, *args)
-        error.Context = self
-        return error
+    def _getException(self, code, exc, state, resource, *args):
+        return getException(self._logger, self, code, exc, state, resource, *args)
 

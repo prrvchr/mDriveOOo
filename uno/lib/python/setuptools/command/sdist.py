@@ -53,9 +53,9 @@ class sdist(orig.sdist):
     negative_opt: ClassVar[dict[str, str]] = {}
 
     README_EXTENSIONS = ['', '.rst', '.txt', '.md']
-    READMES = tuple(f'README{ext}' for ext in README_EXTENSIONS)
+    READMES = tuple('README{0}'.format(ext) for ext in README_EXTENSIONS)
 
-    def run(self) -> None:
+    def run(self):
         self.run_command('egg_info')
         ei_cmd = self.get_finalized_command('egg_info')
         self.filelist = ei_cmd.filelist
@@ -74,10 +74,10 @@ class sdist(orig.sdist):
             if data not in dist_files:
                 dist_files.append(data)
 
-    def initialize_options(self) -> None:
+    def initialize_options(self):
         orig.sdist.initialize_options(self)
 
-    def make_distribution(self) -> None:
+    def make_distribution(self):
         """
         Workaround for #516
         """
@@ -105,7 +105,7 @@ class sdist(orig.sdist):
             if orig_val is not NoValue:
                 os.link = orig_val
 
-    def add_defaults(self) -> None:
+    def add_defaults(self):
         super().add_defaults()
         self._add_defaults_build_sub_commands()
 
@@ -158,13 +158,13 @@ class sdist(orig.sdist):
         except TypeError:
             log.warn("data_files contains unexpected objects")
 
-    def prune_file_list(self) -> None:
+    def prune_file_list(self):
         super().prune_file_list()
         # Prevent accidental inclusion of test-related cache dirs at the project root
         sep = re.escape(os.sep)
         self.filelist.exclude_pattern(r"^(\.tox|\.nox|\.venv)" + sep, is_regex=True)
 
-    def check_readme(self) -> None:
+    def check_readme(self):
         for f in self.READMES:
             if os.path.exists(f):
                 return
@@ -173,7 +173,7 @@ class sdist(orig.sdist):
                 "standard file not found: should have one of " + ', '.join(self.READMES)
             )
 
-    def make_release_tree(self, base_dir, files) -> None:
+    def make_release_tree(self, base_dir, files):
         orig.sdist.make_release_tree(self, base_dir, files)
 
         # Save any egg_info command line options used to create this sdist
@@ -202,12 +202,12 @@ class sdist(orig.sdist):
         """
         log.info("reading manifest file '%s'", self.manifest)
         manifest = open(self.manifest, 'rb')
-        for bytes_line in manifest:
+        for line in manifest:
             # The manifest must contain UTF-8. See #303.
             try:
-                line = bytes_line.decode('UTF-8')
+                line = line.decode('UTF-8')
             except UnicodeDecodeError:
-                log.warn(f"{line!r} not UTF-8 decodable -- skipping")
+                log.warn("%r not UTF-8 decodable -- skipping" % line)
                 continue
             # ignore comments and blank lines
             line = line.strip()

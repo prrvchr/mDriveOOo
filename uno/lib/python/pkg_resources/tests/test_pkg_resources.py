@@ -214,8 +214,8 @@ def test_get_metadata__bad_utf8(tmpdir):
         "codec can't decode byte 0xe9 in position 1: "
         'invalid continuation byte in METADATA file at path: '
     )
-    assert expected in actual, f'actual: {actual}'
-    assert actual.endswith(metadata_path), f'actual: {actual}'
+    assert expected in actual, 'actual: {}'.format(actual)
+    assert actual.endswith(metadata_path), 'actual: {}'.format(actual)
 
 
 def make_distribution_no_version(tmpdir, basename):
@@ -236,7 +236,7 @@ def make_distribution_no_version(tmpdir, basename):
 
 
 @pytest.mark.parametrize(
-    ("suffix", "expected_filename", "expected_dist_type"),
+    'suffix, expected_filename, expected_dist_type',
     [
         ('egg-info', 'PKG-INFO', EggInfoDistribution),
         ('dist-info', 'METADATA', DistInfoDistribution),
@@ -252,11 +252,11 @@ def test_distribution_version_missing(
     """
     Test Distribution.version when the "Version" header is missing.
     """
-    basename = f'foo.{suffix}'
+    basename = 'foo.{}'.format(suffix)
     dist, dist_dir = make_distribution_no_version(tmpdir, basename)
 
-    expected_text = (
-        f"Missing 'Version:' header and/or {expected_filename} file at path: "
+    expected_text = ("Missing 'Version:' header and/or {} file at path: ").format(
+        expected_filename
     )
     metadata_path = os.path.join(dist_dir, expected_filename)
 
@@ -376,7 +376,7 @@ class TestDeepVersionLookupDistutils:
         assert dist.version == version
 
     @pytest.mark.parametrize(
-        ("unnormalized", "normalized"),
+        'unnormalized, normalized',
         [
             ('foo', 'foo'),
             ('foo/', 'foo'),
@@ -398,7 +398,7 @@ class TestDeepVersionLookupDistutils:
         reason='Testing case-insensitive filesystems.',
     )
     @pytest.mark.parametrize(
-        ("unnormalized", "normalized"),
+        'unnormalized, normalized',
         [
             ('MiXeD/CasE', 'mixed/case'),
         ],
@@ -414,7 +414,7 @@ class TestDeepVersionLookupDistutils:
         reason='Testing systems using backslashes as path separators.',
     )
     @pytest.mark.parametrize(
-        ("unnormalized", "expected"),
+        'unnormalized, expected',
         [
             ('forward/slash', 'forward\\slash'),
             ('forward/slash/', 'forward\\slash'),

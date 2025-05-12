@@ -169,7 +169,7 @@ class TestWheelCompatibility:
 
     @pytest.mark.parametrize("name", "my-proj my_proj my.proj My.Proj".split())
     @pytest.mark.parametrize("version", ["0.42.13"])
-    @pytest.mark.parametrize(("suffix", "cfg"), EGG_INFO_OPTS)
+    @pytest.mark.parametrize("suffix, cfg", EGG_INFO_OPTS)
     def test_dist_info_is_the_same_as_in_wheel(
         self, name, version, tmp_path, suffix, cfg
     ):
@@ -188,7 +188,7 @@ class TestWheelCompatibility:
         dist_info = next(tmp_path.glob("dir_dist/*.dist-info"))
 
         assert dist_info.name == wheel_dist_info.name
-        assert dist_info.name.startswith(f"{name.replace('-', '_')}-{version}{suffix}")
+        assert dist_info.name.startswith(f"my_proj-{version}{suffix}")
         for file in "METADATA", "entry_points.txt":
             assert read(dist_info / file) == read(wheel_dist_info / file)
 

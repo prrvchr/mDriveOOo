@@ -85,15 +85,15 @@ class SubCommand(Protocol):
             ...
     """
 
-    def initialize_options(self) -> None:
+    def initialize_options(self):
         """(Required by the original :class:`setuptools.Command` interface)"""
         ...
 
-    def finalize_options(self) -> None:
+    def finalize_options(self):
         """(Required by the original :class:`setuptools.Command` interface)"""
         ...
 
-    def run(self) -> None:
+    def run(self):
         """(Required by the original :class:`setuptools.Command` interface)"""
         ...
 

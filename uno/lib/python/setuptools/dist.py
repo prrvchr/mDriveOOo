@@ -6,24 +6,33 @@ import numbers
 import os
 import re
 import sys
-from collections.abc import Iterable, MutableMapping, Sequence
+from collections.abc import Iterable
 from glob import iglob
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    MutableMapping,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from more_itertools import partition, unique_everseen
 from packaging.markers import InvalidMarker, Marker
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from packaging.version import Version
 
+from setuptools._path import StrPath
+
 from . import (
     _entry_points,
     _reqs,
-    _static,
     command as _,  # noqa: F401 # imported for side-effects
 )
 from ._importlib import metadata
-from ._path import StrPath
 from ._reqs import _StrOrIter
 from .config import pyprojecttoml, setupcfg
 from .discovery import ConfigDiscovery
@@ -43,9 +52,6 @@ from distutils.util import strtobool
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias
 
-    from pkg_resources import Distribution as _pkg_resources_Distribution
-
-
 __all__ = ['Distribution']
 
 _sequence = tuple, list
@@ -58,10 +64,10 @@ Supported iterable types that are known to be:
 - not imply a nested type (like `dict`)
 for use with `isinstance`.
 """
-_Sequence: TypeAlias = Union[tuple[str, ...], list[str]]
+_Sequence: TypeAlias = Union[Tuple[str, ...], List[str]]
 # This is how stringifying _Sequence would look in Python 3.10
 _sequence_type_repr = "tuple[str, ...] | list[str]"
-_OrderedStrSequence: TypeAlias = Union[str, dict[str, Any], Sequence[str]]
+_OrderedStrSequence: TypeAlias = Union[str, Dict[str, Any], Sequence[str]]
 """
 :meta private:
 Avoid single-use iterable. Disallow sets.
@@ -86,7 +92,7 @@ def check_importable(dist, attr, value):
         assert not ep.extras
     except (TypeError, ValueError, AttributeError, AssertionError) as e:
         raise DistutilsSetupError(
-            f"{attr!r} must be importable 'module:attrs' string (got {value!r})"
+            "%r must be importable 'module:attrs' string (got %r)" % (attr, value)
         ) from e
 
 
@@ -111,9 +117,10 @@ def check_nsp(dist, attr, value):
     for nsp in ns_packages:
         if not dist.has_contents_for(nsp):
             raise DistutilsSetupError(
-                f"Distribution contains no modules or packages for namespace package {nsp!r}"
+                "Distribution contains no modules or packages for "
+                + "namespace package %r" % nsp
             )
-        parent, _sep, _child = nsp.rpartition('.')
+        parent, sep, child = nsp.rpartition('.')
         if parent and parent not in ns_packages:
             distutils.log.warn(
                 "WARNING: %r is declared as a package namespace, but %r"
@@ -145,7 +152,7 @@ def check_extras(dist, attr, value):
 
 
 def _check_extra(extra, reqs):
-    _name, _sep, marker = extra.partition(':')
+    name, sep, marker = extra.partition(':')
     try:
         _check_marker(marker)
     except InvalidMarker:
@@ -210,15 +217,15 @@ def check_package_data(dist, attr, value):
     """Verify that value is a dictionary of package names to glob lists"""
     if not isinstance(value, dict):
         raise DistutilsSetupError(
-            f"{attr!r} must be a dictionary mapping package names to lists of "
-            "string wildcard patterns"
+            "{!r} must be a dictionary mapping package names to lists of "
+            "string wildcard patterns".format(attr)
         )
     for k, v in value.items():
         if not isinstance(k, str):
             raise DistutilsSetupError(
-                f"keys of {attr!r} dict must be strings (got {k!r})"
+                "keys of {!r} dict must be strings (got {!r})".format(attr, k)
             )
-        assert_string_list(dist, f'values of {attr!r} dict', v)
+        assert_string_list(dist, 'values of {!r} dict'.format(attr), v)
 
 
 def check_packages(dist, attr, value):
@@ -321,7 +328,7 @@ class Distribution(_Distribution):
         # Private API (setuptools-use only, not restricted to Distribution)
         # Stores files that are referenced by the configuration and need to be in the
         # sdist (e.g. `version = file: VERSION.txt`)
-        self._referenced_files = set[str]()
+        self._referenced_files: set[str] = set()
 
         self.set_defaults = ConfigDiscovery(self)
 
@@ -392,20 +399,15 @@ class Distribution(_Distribution):
         """Make sure requirement-related attributes exist and are normalized"""
         install_requires = getattr(self, "install_requires", None) or []
         extras_require = getattr(self, "extras_require", None) or {}
-
-        # Preserve the "static"-ness of values parsed from config files
-        list_ = _static.List if _static.is_static(install_requires) else list
-        self.install_requires = list_(map(str, _reqs.parse(install_requires)))
-
-        dict_ = _static.Dict if _static.is_static(extras_require) else dict
-        self.extras_require = dict_(
-            (k, list(map(str, _reqs.parse(v or [])))) for k, v in extras_require.items()
-        )
+        self.install_requires = list(map(str, _reqs.parse(install_requires)))
+        self.extras_require = {
+            k: list(map(str, _reqs.parse(v or []))) for k, v in extras_require.items()
+        }
 
     def _finalize_license_files(self) -> None:
         """Compute names of all license files which should be included."""
         license_files: list[str] | None = self.metadata.license_files
-        patterns = license_files or []
+        patterns: list[str] = license_files if license_files else []
 
         license_file: str | None = self.metadata.license_file
         if license_file and license_file not in patterns:
@@ -516,7 +518,7 @@ class Distribution(_Distribution):
             except ValueError as e:
                 raise DistutilsOptionError(e) from e
 
-    def warn_dash_deprecation(self, opt: str, section: str) -> str:
+    def warn_dash_deprecation(self, opt: str, section: str):
         if section in (
             'options.extras_require',
             'options.data_files',
@@ -558,7 +560,7 @@ class Distribution(_Distribution):
             # during bootstrapping, distribution doesn't exist
             return []
 
-    def make_option_lowercase(self, opt: str, section: str) -> str:
+    def make_option_lowercase(self, opt: str, section: str):
         if section != 'metadata' or opt.islower():
             return opt
 
@@ -593,10 +595,10 @@ class Distribution(_Distribution):
             option_dict = self.get_option_dict(command_name)
 
         if DEBUG:
-            self.announce(f"  setting options for '{command_name}' command:")
+            self.announce("  setting options for '%s' command:" % command_name)
         for option, (source, value) in option_dict.items():
             if DEBUG:
-                self.announce(f"    {option} = {value} (from {source})")
+                self.announce("    %s = %s (from %s)" % (option, value, source))
             try:
                 bool_opts = [translate_longopt(o) for o in command_obj.boolean_options]
             except AttributeError:
@@ -616,7 +618,8 @@ class Distribution(_Distribution):
                     setattr(command_obj, option, value)
                 else:
                     raise DistutilsOptionError(
-                        f"error in {source}: command '{command_name}' has no such option '{option}'"
+                        "error in %s: command '%s' has no such option '%s'"
+                        % (source, command_name, option)
                     )
             except ValueError as e:
                 raise DistutilsOptionError(e) from e
@@ -637,7 +640,7 @@ class Distribution(_Distribution):
         self,
         filenames: Iterable[StrPath] | None = None,
         ignore_option_errors: bool = False,
-    ) -> None:
+    ):
         """Parses configuration files from various levels
         and loads configuration.
         """
@@ -654,15 +657,13 @@ class Distribution(_Distribution):
         self._finalize_requires()
         self._finalize_license_files()
 
-    def fetch_build_eggs(
-        self, requires: _StrOrIter
-    ) -> list[_pkg_resources_Distribution]:
+    def fetch_build_eggs(self, requires: _StrOrIter):
         """Resolve pre-setup requirements"""
         from .installer import _fetch_build_eggs
 
         return _fetch_build_eggs(self, requires)
 
-    def finalize_options(self) -> None:
+    def finalize_options(self):
         """
         Allow plugins to apply arbitrary operations to the
         distribution. Each hook may optionally define a 'order'
@@ -727,7 +728,7 @@ class Distribution(_Distribution):
 
         return fetch_build_egg(self, req)
 
-    def get_command_class(self, command: str) -> type[distutils.cmd.Command]:  # type: ignore[override] # Not doing complex overrides yet
+    def get_command_class(self, command: str):
         """Pluggable version of get_command_class()"""
         if command in self.cmdclass:
             return self.cmdclass[command]
@@ -759,7 +760,7 @@ class Distribution(_Distribution):
                 self.cmdclass[ep.name] = cmdclass
         return _Distribution.get_command_list(self)
 
-    def include(self, **attrs) -> None:
+    def include(self, **attrs):
         """Add items to distribution that are named in keyword arguments
 
         For example, 'dist.include(py_modules=["x"])' would add 'x' to
@@ -781,7 +782,7 @@ class Distribution(_Distribution):
             else:
                 self._include_misc(k, v)
 
-    def exclude_package(self, package: str) -> None:
+    def exclude_package(self, package: str):
         """Remove packages, modules, and extensions in named package"""
 
         pfx = package + '.'
@@ -802,7 +803,7 @@ class Distribution(_Distribution):
                 if p.name != package and not p.name.startswith(pfx)
             ]
 
-    def has_contents_for(self, package: str) -> bool:
+    def has_contents_for(self, package: str):
         """Return true if 'exclude_package(package)' would do something"""
 
         pfx = package + '.'
@@ -822,7 +823,7 @@ class Distribution(_Distribution):
         try:
             old = getattr(self, name)
         except AttributeError as e:
-            raise DistutilsSetupError(f"{name}: No such distribution setting") from e
+            raise DistutilsSetupError("%s: No such distribution setting" % name) from e
         if old is not None and not isinstance(old, _sequence):
             raise DistutilsSetupError(
                 name + ": this setting cannot be changed via include/exclude"
@@ -840,7 +841,7 @@ class Distribution(_Distribution):
         try:
             old = getattr(self, name)
         except AttributeError as e:
-            raise DistutilsSetupError(f"{name}: No such distribution setting") from e
+            raise DistutilsSetupError("%s: No such distribution setting" % name) from e
         if old is None:
             setattr(self, name, value)
         elif not isinstance(old, _sequence):
@@ -851,7 +852,7 @@ class Distribution(_Distribution):
             new = [item for item in value if item not in old]
             setattr(self, name, list(old) + new)
 
-    def exclude(self, **attrs) -> None:
+    def exclude(self, **attrs):
         """Remove items from distribution that are named in keyword arguments
 
         For example, 'dist.exclude(py_modules=["x"])' would remove 'x' from
@@ -890,7 +891,7 @@ class Distribution(_Distribution):
         command = args[0]
         aliases = self.get_option_dict('aliases')
         while command in aliases:
-            _src, alias = aliases[command]
+            src, alias = aliases[command]
             del aliases[command]  # ensure each alias can expand only once!
             import shlex
 
@@ -908,7 +909,7 @@ class Distribution(_Distribution):
 
         return nargs
 
-    def get_cmdline_options(self) -> dict[str, dict[str, str | None]]:
+    def get_cmdline_options(self):
         """Return a '{cmd: {opt:val}}' map of all command-line options
 
         Option names are all long, but do not include the leading '--', and
@@ -918,10 +919,9 @@ class Distribution(_Distribution):
         Note that options provided by config files are intentionally excluded.
         """
 
-        d: dict[str, dict[str, str | None]] = {}
+        d = {}
 
         for cmd, opts in self.command_options.items():
-            val: str | None
             for opt, (src, val) in opts.items():
                 if src != "command line":
                     continue
@@ -956,7 +956,7 @@ class Distribution(_Distribution):
 
         for ext in self.ext_modules or ():
             if isinstance(ext, tuple):
-                name, _buildinfo = ext
+                name, buildinfo = ext
             else:
                 name = ext.name
             if name.endswith('module'):
@@ -991,7 +991,7 @@ class Distribution(_Distribution):
         finally:
             sys.stdout.reconfigure(encoding=encoding)
 
-    def run_command(self, command) -> None:
+    def run_command(self, command):
         self.set_defaults()
         # Postpone defaults until all explicit configuration is considered
         # (setup() args, config files, command line and plugins)

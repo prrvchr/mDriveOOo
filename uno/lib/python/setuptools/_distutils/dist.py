@@ -4,8 +4,6 @@ Provides the Distribution class, which represents the module distribution
 being built/installed/distributed.
 """
 
-from __future__ import annotations
-
 import contextlib
 import logging
 import os
@@ -15,7 +13,6 @@ import sys
 import warnings
 from collections.abc import Iterable
 from email import message_from_file
-from typing import TYPE_CHECKING, Literal, TypeVar, overload
 
 from packaging.utils import canonicalize_name, canonicalize_version
 
@@ -29,12 +26,6 @@ from .errors import (
 )
 from .fancy_getopt import FancyGetopt, translate_longopt
 from .util import check_environ, rfc822_escape, strtobool
-
-if TYPE_CHECKING:
-    # type-only import because of mutual dependence between these modules
-    from .cmd import Command
-
-_CommandT = TypeVar("_CommandT", bound="Command")
 
 # Regex to define acceptable Distutils command names.  This is not *quite*
 # the same as a Python NAME -- I don't allow leading underscores.  The fact
@@ -148,7 +139,7 @@ Common commands: (see '--help-commands' for more)
         self.dry_run = False
         self.help = False
         for attr in self.display_option_names:
-            setattr(self, attr, False)
+            setattr(self, attr, 0)
 
         # Store the distribution meta-data (name, version, author, and so
         # forth) in a separate object -- we're getting to have enough
@@ -178,7 +169,7 @@ Common commands: (see '--help-commands' for more)
         # and sys.argv[1:], but they can be overridden when the caller is
         # not necessarily a setup script run from the command-line.
         self.script_name = None
-        self.script_args: list[str] | None = None
+        self.script_args = None
 
         # 'command_options' is where we store command options between
         # parsing them (from config files, the command-line, etc.) and when
@@ -278,8 +269,6 @@ Common commands: (see '--help-commands' for more)
         self.want_user_cfg = True
 
         if self.script_args is not None:
-            # Coerce any possible iterable from attrs into a list
-            self.script_args = list(self.script_args)
             for arg in self.script_args:
                 if not arg.startswith('-'):
                     break
@@ -733,7 +722,7 @@ Common commands: (see '--help-commands' for more)
             except AttributeError:
                 description = "(no description available)"
 
-            print(f"  {cmd:<{max_length}}  {description}")
+            print("  %-*s  %s" % (max_length, cmd, description))
 
     def print_commands(self):
         """Print out a help message listing all available commands with a
@@ -840,15 +829,7 @@ Common commands: (see '--help-commands' for more)
 
         raise DistutilsModuleError(f"invalid command '{command}'")
 
-    @overload
-    def get_command_obj(
-        self, command: str, create: Literal[True] = True
-    ) -> Command: ...
-    @overload
-    def get_command_obj(
-        self, command: str, create: Literal[False]
-    ) -> Command | None: ...
-    def get_command_obj(self, command: str, create: bool = True) -> Command | None:
+    def get_command_obj(self, command, create=True):
         """Return the command object for 'command'.  Normally this object
         is cached on a previous call to 'get_command_obj()'; if no command
         object for 'command' is in the cache, then we either create and
@@ -919,17 +900,7 @@ Common commands: (see '--help-commands' for more)
             except ValueError as msg:
                 raise DistutilsOptionError(msg)
 
-    @overload
-    def reinitialize_command(
-        self, command: str, reinit_subcommands: bool = False
-    ) -> Command: ...
-    @overload
-    def reinitialize_command(
-        self, command: _CommandT, reinit_subcommands: bool = False
-    ) -> _CommandT: ...
-    def reinitialize_command(
-        self, command: str | Command, reinit_subcommands=False
-    ) -> Command:
+    def reinitialize_command(self, command, reinit_subcommands=False):
         """Reinitializes a command to the state it was in when first
         returned by 'get_command_obj()': ie., initialized but not yet
         finalized.  This provides the opportunity to sneak option

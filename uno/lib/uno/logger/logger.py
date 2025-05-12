@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -113,8 +113,8 @@ class Logger(unohelper.Base,
         self._notifyListener()
 
     def _notifyListener(self):
-        event = uno.createUnoStruct('com.sun.star.lang.EventObject')
-        event.Source = self
-        for listener in self._listeners:
-            listener.modified(event)
+        if self._listeners:
+            event = uno.createUnoStruct('com.sun.star.lang.EventObject', self)
+            for listener in self._listeners:
+                listener.modified(event)
 

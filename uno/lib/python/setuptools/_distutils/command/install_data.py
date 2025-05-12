@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import functools
 import os
-from collections.abc import Iterable
+from typing import Iterable
 
 from ..core import Command
 from ..util import change_root, convert_path
@@ -22,7 +22,8 @@ class install_data(Command):
         (
             'install-dir=',
             'd',
-            "base directory for installing data files [default: installation base dir]",
+            "base directory for installing data files "
+            "[default: installation base dir]",
         ),
         ('root=', None, "install everything relative to this alternate root directory"),
         ('force', 'f', "force installation (overwrite existing files)"),

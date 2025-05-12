@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -52,11 +52,14 @@ from ..dbtool import getConnectionUrl
 from ..unotool import checkVersion
 from ..unotool import createMessageBox
 from ..unotool import createService
+from ..unotool import getDesktop
+from ..unotool import getDispatcher
 from ..unotool import getExtensionVersion
+from ..unotool import getNamedValueSet
 from ..unotool import getParentWindow
 from ..unotool import getProperty
 from ..unotool import getPropertyValue
-from ..unotool import getNamedValueSet
+from ..unotool import getPropertyValueSet
 
 from ..oauth20 import getOAuth2Version
 from ..oauth20 import g_extension as g_oauth2ext
@@ -78,16 +81,20 @@ def getDataSourceUrl(ctx, source, logger, cls, mtd):
     oauth2 = getOAuth2Version(ctx)
     driver = getExtensionVersion(ctx, g_jdbcid)
     if oauth2 is None:
-        msg = getExceptionMessage(ctx, logger, cls, mtd, 221, g_oauth2ext, g_oauth2ext, g_extension)
+        title, msg = getExceptionMessage(ctx, logger, cls, mtd, 221, g_oauth2ext, g_oauth2ext, g_extension)
+        showWarning(ctx, msg, title)
         raise IllegalIdentifierException(msg, source)
     if not checkVersion(oauth2, g_oauth2ver):
-        msg = getExceptionMessage(ctx, logger, cls, mtd, 223, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
+        title, msg = getExceptionMessage(ctx, logger, cls, mtd, 223, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
+        showWarning(ctx, msg, title)
         raise IllegalIdentifierException(msg, source)
     if driver is None:
-        msg = getExceptionMessage(ctx, logger, cls, mtd, 221, g_jdbcext, g_jdbcext, g_extension)
+        title, msg = getExceptionMessage(ctx, logger, cls, mtd, 221, g_jdbcext, g_jdbcext, g_extension)
+        showWarning(ctx, msg, title)
         raise IllegalIdentifierException(msg, source)
     if not checkVersion(driver, g_jdbcver):
-        msg = getExceptionMessage(ctx, logger, cls, mtd, 223, g_jdbcext, driver, g_jdbcext, g_jdbcver)
+        title, msg = getExceptionMessage(ctx, logger, cls, mtd, 223, g_jdbcext, driver, g_jdbcext, g_jdbcver)
+        showWarning(ctx, msg, title)
         raise IllegalIdentifierException(msg, source)
     return getConnectionUrl(ctx, g_folder + g_ucbseparator + g_scheme)
 
@@ -216,8 +223,14 @@ def getExceptionMessage(ctx, logger, cls, method, code, extension, *args):
     title = logger.resolveString(code, extension)
     message = logger.resolveString(code + 1, *args)
     logger.logp(SEVERE, cls, method, message)
-    msgbox = createMessageBox(getParentWindow(ctx), message, title, 'error', 1)
-    msgbox.execute()
-    msgbox.dispose()
-    return message
+    #msgbox = createMessageBox(getParentWindow(ctx), message, title, 'error', 1)
+    #msgbox.execute()
+    #msgbox.dispose()
+    return title, message
 
+def showWarning(ctx, message, title):
+    frame = getDesktop(ctx).getCurrentFrame()
+    #getDispatcher(ctx).executeDispatch(frame, 'gdrive:ShowWarning', '', 0, (message, title, 'error', 1))
+    box = uno.Enum('com.sun.star.awt.MessageBoxType', 'ERRORBOX')
+    arguments = getPropertyValueSet({'Title': title, 'Message': message, 'Box': box, 'Button': 1})
+    getDispatcher(ctx).executeDispatch(frame, 'gdrive:ShowWarning', '', 0, arguments)

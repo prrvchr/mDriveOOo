@@ -3,7 +3,8 @@ import os
 import sys
 
 report_url = (
-    "https://github.com/pypa/setuptools/issues/new?template=distutils-deprecation.yml"
+    "https://github.com/pypa/setuptools/issues/new?"
+    "template=distutils-deprecation.yml"
 )
 
 
@@ -90,7 +91,7 @@ def do_override():
 
 
 class _TrivialRe:
-    def __init__(self, *patterns) -> None:
+    def __init__(self, *patterns):
         self._patterns = patterns
 
     def match(self, string):

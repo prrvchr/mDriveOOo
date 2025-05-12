@@ -17,7 +17,7 @@ setup(py_modules=['hi'])
 """
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def setup_context(tmpdir):
     with (tmpdir / 'setup.py').open('w') as f:
         f.write(SETUP_PY)
@@ -28,9 +28,7 @@ def setup_context(tmpdir):
 
 
 class Test:
-    @pytest.mark.usefixtures("user_override")
-    @pytest.mark.usefixtures("setup_context")
-    def test_bdist_egg(self):
+    def test_bdist_egg(self, setup_context, user_override):
         dist = Distribution(
             dict(
                 script_name='setup.py',
@@ -52,9 +50,7 @@ class Test:
         os.environ.get('PYTHONDONTWRITEBYTECODE', False),
         reason="Byte code disabled",
     )
-    @pytest.mark.usefixtures("user_override")
-    @pytest.mark.usefixtures("setup_context")
-    def test_exclude_source_files(self):
+    def test_exclude_source_files(self, setup_context, user_override):
         dist = Distribution(
             dict(
                 script_name='setup.py',

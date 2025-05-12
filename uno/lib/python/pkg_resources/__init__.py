@@ -21,8 +21,8 @@ from __future__ import annotations
 
 import sys
 
-if sys.version_info < (3, 9):  # noqa: UP036 # Check for unsupported versions
-    raise RuntimeError("Python 3.9 or later is required")
+if sys.version_info < (3, 8):  # noqa: UP036 # Check for unsupported versions
+    raise RuntimeError("Python 3.8 or later is required")
 
 import _imp
 import collections
@@ -50,17 +50,22 @@ import types
 import warnings
 import zipfile
 import zipimport
-from collections.abc import Iterable, Iterator, Mapping, MutableSequence
 from pkgutil import get_importer
 from typing import (
     TYPE_CHECKING,
     Any,
     BinaryIO,
     Callable,
+    Dict,
+    Iterable,
+    Iterator,
     Literal,
+    Mapping,
+    MutableSequence,
     NamedTuple,
     NoReturn,
     Protocol,
+    Tuple,
     TypeVar,
     Union,
     overload,
@@ -167,7 +172,7 @@ def _sget_dict(val):
     return val.copy()
 
 
-def _sset_dict(key, ob, state) -> None:
+def _sset_dict(key, ob, state):
     ob.clear()
     ob.update(state)
 
@@ -176,7 +181,7 @@ def _sget_object(val):
     return val.__getstate__()
 
 
-def _sset_object(key, ob, state) -> None:
+def _sset_object(key, ob, state):
     ob.__setstate__(state)
 
 
@@ -200,9 +205,7 @@ def get_supported_platform():
     m = macosVersionString.match(plat)
     if m is not None and sys.platform == "darwin":
         try:
-            major_minor = '.'.join(_macos_vers()[:2])
-            build = m.group(3)
-            plat = f'macosx-{major_minor}-{build}'
+            plat = 'macosx-%s-%s' % ('.'.join(_macos_vers()[:2]), m.group(3))
         except ValueError:
             # not macOS
             pass
@@ -384,7 +387,7 @@ class UnknownExtra(ResolutionError):
 
 _provider_factories: dict[type[_ModuleLike], _ProviderFactoryType] = {}
 
-PY_MAJOR = f'{sys.version_info.major}.{sys.version_info.minor}'
+PY_MAJOR = '{}.{}'.format(*sys.version_info)
 EGG_DIST = 3
 BINARY_DIST = 2
 SOURCE_DIST = 1
@@ -421,7 +424,7 @@ def get_provider(moduleOrReq: str | Requirement) -> IResourceProvider | Distribu
     return _find_adapter(_provider_factories, loader)(module)
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def _macos_vers():
     version = platform.mac_ver()[0]
     # fallback for MacPorts
@@ -451,8 +454,12 @@ def get_build_platform():
     if sys.platform == "darwin" and not plat.startswith('macosx-'):
         try:
             version = _macos_vers()
-            machine = _macos_arch(os.uname()[4].replace(" ", "_"))
-            return f"macosx-{version[0]}.{version[1]}-{machine}"
+            machine = os.uname()[4].replace(" ", "_")
+            return "macosx-%d.%d-%s" % (
+                int(version[0]),
+                int(version[1]),
+                _macos_arch(machine),
+            )
         except ValueError:
             # if someone is running a non-Mac darwin system, this will fall
             # through to the default implementation
@@ -490,7 +497,7 @@ def compatible_platforms(provided: str | None, required: str | None) -> bool:
             provDarwin = darwinVersionString.match(provided)
             if provDarwin:
                 dversion = int(provDarwin.group(1))
-                macosversion = f"{reqMac.group(1)}.{reqMac.group(2)}"
+                macosversion = "%s.%s" % (reqMac.group(1), reqMac.group(2))
                 if (
                     dversion == 7
                     and macosversion >= "10.3"
@@ -873,7 +880,9 @@ class WorkingSet:
 
         # Mapping of requirement to set of distributions that required it;
         # useful for reporting info about conflicts.
-        required_by = collections.defaultdict[Requirement, set[str]](set)
+        required_by: collections.defaultdict[Requirement, set[str]] = (
+            collections.defaultdict(set)
+        )
 
         while requirements:
             # process dependencies breadth-first
@@ -1081,7 +1090,7 @@ class WorkingSet:
         for dist in self:
             callback(dist)
 
-    def _added_new(self, dist) -> None:
+    def _added_new(self, dist):
         for callback in self.callbacks:
             callback(dist)
 
@@ -1111,7 +1120,7 @@ class WorkingSet:
         self.callbacks = callbacks[:]
 
 
-class _ReqExtras(dict["Requirement", tuple[str, ...]]):
+class _ReqExtras(Dict["Requirement", Tuple[str, ...]]):
     """
     Map each requirement to the extras that demanded it.
     """
@@ -1312,7 +1321,7 @@ class Environment:
                 for dist in other[project]:
                     self.add(dist)
         else:
-            raise TypeError(f"Can't add {other!r} to environment")
+            raise TypeError("Can't add %r to environment" % (other,))
         return self
 
     def __add__(self, other: Distribution | Environment) -> Self:
@@ -1454,7 +1463,7 @@ class ResourceManager:
         return target_path
 
     @staticmethod
-    def _warn_unsafe_extraction_path(path) -> None:
+    def _warn_unsafe_extraction_path(path):
         """
         If the default extraction path is overridden and set to an insecure
         location, such as /tmp, it opens up an opportunity for an attacker to
@@ -1568,7 +1577,7 @@ def safe_version(version: str) -> str:
         return re.sub('[^A-Za-z0-9.]+', '-', version)
 
 
-def _forgiving_version(version) -> str:
+def _forgiving_version(version):
     """Fallback when ``safe_version`` is not safe enough
     >>> parse_version(_forgiving_version('0.23ubuntu1'))
     <Version('0.23.dev0+sanitized.ubuntu1')>
@@ -1695,7 +1704,7 @@ class NullProvider:
         except UnicodeDecodeError as exc:
             # Include the path in the error message to simplify
             # troubleshooting, and without changing the exception type.
-            exc.reason += f' in {name} file at path: {path}'
+            exc.reason += ' in {} file at path: {}'.format(name, path)
             raise
 
     def get_metadata_lines(self, name: str) -> Iterator[str]:
@@ -1770,7 +1779,7 @@ class NullProvider:
         return base
 
     @staticmethod
-    def _validate_resource_path(path) -> None:
+    def _validate_resource_path(path):
         """
         Validate the resource paths according to the docs.
         https://setuptools.pypa.io/en/latest/pkg_resources.html#basic-resource-access
@@ -1881,7 +1890,7 @@ class EggProvider(NullProvider):
         egg = next(eggs, None)
         egg and self._set_egg(egg)
 
-    def _set_egg(self, path: str) -> None:
+    def _set_egg(self, path: str):
         self.egg_name = os.path.basename(path)
         self.egg_info = os.path.join(path, 'EGG-INFO')
         self.egg_root = path
@@ -1909,7 +1918,7 @@ class DefaultProvider(EggProvider):
             return stream.read()
 
     @classmethod
-    def _register(cls) -> None:
+    def _register(cls):
         loader_names = (
             'SourceFileLoader',
             'SourcelessFileLoader',
@@ -1943,7 +1952,7 @@ class EmptyProvider(NullProvider):
 empty_provider = EmptyProvider()
 
 
-class ZipManifests(dict[str, "MemoizedZipManifests.manifest_mod"]):
+class ZipManifests(Dict[str, "MemoizedZipManifests.manifest_mod"]):
     """
     zip manifest builder
     """
@@ -2014,7 +2023,7 @@ class ZipProvider(EggProvider):
             return ''
         if fspath.startswith(self.zip_pre):
             return fspath[len(self.zip_pre) :]
-        raise AssertionError(f"{fspath} is not a subpath of {self.zip_pre}")
+        raise AssertionError("%s is not a subpath of %s" % (fspath, self.zip_pre))
 
     def _parts(self, zip_path):
         # Convert a zipfile subpath into an egg-relative path part list.
@@ -2022,7 +2031,7 @@ class ZipProvider(EggProvider):
         fspath = self.zip_pre + zip_path
         if fspath.startswith(self.egg_root + os.sep):
             return fspath[len(self.egg_root) + 1 :].split(os.sep)
-        raise AssertionError(f"{fspath} is not a subpath of {self.egg_root}")
+        raise AssertionError("%s is not a subpath of %s" % (fspath, self.egg_root))
 
     @property
     def zipinfo(self):
@@ -2060,7 +2069,7 @@ class ZipProvider(EggProvider):
             # return the extracted directory name
             return os.path.dirname(last)
 
-        timestamp, _size = self._get_date_and_size(self.zipinfo[zip_path])
+        timestamp, size = self._get_date_and_size(self.zipinfo[zip_path])
 
         if not WRITE_SUPPORT:
             raise OSError(
@@ -2199,7 +2208,7 @@ class FileMetadata(EmptyProvider):
         self._warn_on_replacement(metadata)
         return metadata
 
-    def _warn_on_replacement(self, metadata) -> None:
+    def _warn_on_replacement(self, metadata):
         replacement_char = '�'
         if replacement_char in metadata:
             tmpl = "{self.path} could not be properly decoded in UTF-8"
@@ -2496,7 +2505,7 @@ def _handle_ns(packageName, path_item):
     return subpath
 
 
-def _rebuild_mod_path(orig_path, package_name, module: types.ModuleType) -> None:
+def _rebuild_mod_path(orig_path, package_name, module: types.ModuleType):
     """
     Rebuild module.__path__ ensuring that all entries are ordered
     corresponding to their sys.path order
@@ -2615,7 +2624,7 @@ def null_ns_handler(
     path_item: str | None,
     packageName: str | None,
     module: _ModuleLike | None,
-) -> None:
+):
     return None
 
 
@@ -2626,7 +2635,7 @@ register_namespace_handler(object, null_ns_handler)
 def normalize_path(filename: StrPath) -> str: ...
 @overload
 def normalize_path(filename: BytesPath) -> bytes: ...
-def normalize_path(filename: StrOrBytesPath) -> str | bytes:
+def normalize_path(filename: StrOrBytesPath):
     """Normalize a file/dir name for comparison purposes"""
     return os.path.normcase(os.path.realpath(os.path.normpath(_cygwin_patch(filename))))
 
@@ -2653,7 +2662,7 @@ if TYPE_CHECKING:
 
 else:
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def _normalize_cached(filename):
         return normalize_path(filename)
 
@@ -2682,7 +2691,7 @@ def _is_unpacked_egg(path):
     )
 
 
-def _set_parent_ns(packageName) -> None:
+def _set_parent_ns(packageName):
     parts = packageName.split('.')
     name = parts.pop()
     if parts:
@@ -2725,16 +2734,15 @@ class EntryPoint:
         self.dist = dist
 
     def __str__(self) -> str:
-        s = f"{self.name} = {self.module_name}"
+        s = "%s = %s" % (self.name, self.module_name)
         if self.attrs:
             s += ':' + '.'.join(self.attrs)
         if self.extras:
-            extras = ','.join(self.extras)
-            s += f' [{extras}]'
+            s += ' [%s]' % ','.join(self.extras)
         return s
 
     def __repr__(self) -> str:
-        return f"EntryPoint.parse({str(self)!r})"
+        return "EntryPoint.parse(%r)" % str(self)
 
     @overload
     def load(
@@ -3046,7 +3054,9 @@ class Distribution:
             version = self._get_version()
             if version is None:
                 path = self._get_metadata_path_for_display(self.PKG_INFO)
-                msg = f"Missing 'Version:' header and/or {self.PKG_INFO} file at path: {path}"
+                msg = ("Missing 'Version:' header and/or {} file at path: {}").format(
+                    self.PKG_INFO, path
+                )
                 raise ValueError(msg, self) from e
 
             return version
@@ -3102,7 +3112,9 @@ class Distribution:
             try:
                 deps.extend(dm[safe_extra(ext)])
             except KeyError as e:
-                raise UnknownExtra(f"{self} has no such extra feature {ext!r}") from e
+                raise UnknownExtra(
+                    "%s has no such extra feature %r" % (self, ext)
+                ) from e
         return deps
 
     def _get_metadata_path_for_display(self, name):
@@ -3143,7 +3155,11 @@ class Distribution:
 
     def egg_name(self):
         """Return what this distribution's standard .egg filename should be"""
-        filename = f"{to_filename(self.project_name)}-{to_filename(self.version)}-py{self.py_version or PY_MAJOR}"
+        filename = "%s-%s-py%s" % (
+            to_filename(self.project_name),
+            to_filename(self.version),
+            self.py_version or PY_MAJOR,
+        )
 
         if self.platform:
             filename += '-' + self.platform
@@ -3151,7 +3167,7 @@ class Distribution:
 
     def __repr__(self) -> str:
         if self.location:
-            return f"{self} ({self.location})"
+            return "%s (%s)" % (self, self.location)
         else:
             return str(self)
 
@@ -3161,7 +3177,7 @@ class Distribution:
         except ValueError:
             version = None
         version = version or "[unknown version]"
-        return f"{self.project_name} {version}"
+        return "%s %s" % (self.project_name, version)
 
     def __getattr__(self, attr: str):
         """Delegate all unrecognized public attributes to .metadata provider"""
@@ -3189,9 +3205,9 @@ class Distribution:
     def as_requirement(self):
         """Return a ``Requirement`` that matches this distribution exactly"""
         if isinstance(self.parsed_version, packaging.version.Version):
-            spec = f"{self.project_name}=={self.parsed_version}"
+            spec = "%s==%s" % (self.project_name, self.parsed_version)
         else:
-            spec = f"{self.project_name}==={self.parsed_version}"
+            spec = "%s===%s" % (self.project_name, self.parsed_version)
 
         return Requirement.parse(spec)
 
@@ -3199,7 +3215,7 @@ class Distribution:
         """Return the `name` entry point of `group` or raise ImportError"""
         ep = self.get_entry_info(group, name)
         if ep is None:
-            raise ImportError(f"Entry point {(group, name)!r} not found")
+            raise ImportError("Entry point %r not found" % ((group, name),))
         return ep.load()
 
     @overload
@@ -3316,11 +3332,11 @@ class Distribution:
             ):
                 continue
             issue_warning(
-                f"Module {modname} was already imported from {fn}, "
-                f"but {self.location} is being added to sys.path",
+                "Module %s was already imported from %s, but %s is being added"
+                " to sys.path" % (modname, fn, self.location),
             )
 
-    def has_version(self) -> bool:
+    def has_version(self):
         try:
             self.version
         except ValueError:
@@ -3501,7 +3517,7 @@ class Requirement(packaging.requirements.Requirement):
         return self.__hash
 
     def __repr__(self) -> str:
-        return f"Requirement.parse({str(self)!r})"
+        return "Requirement.parse(%r)" % str(self)
 
     @staticmethod
     def parse(s: str | Iterable[str]) -> Requirement:
@@ -3536,7 +3552,7 @@ def ensure_directory(path: StrOrBytesPath) -> None:
     os.makedirs(dirname, exist_ok=True)
 
 
-def _bypass_ensure_directory(path) -> None:
+def _bypass_ensure_directory(path):
     """Sandbox-bypassing version of ensure_directory()"""
     if not WRITE_SUPPORT:
         raise OSError('"os.mkdir" not supported on this platform.')
@@ -3642,7 +3658,7 @@ def _call_aside(f, *args, **kwargs):
 
 
 @_call_aside
-def _initialize(g=globals()) -> None:
+def _initialize(g=globals()):
     "Set up global resource manager (deliberately not state-saved)"
     manager = ResourceManager()
     g['_manager'] = manager
@@ -3654,7 +3670,7 @@ def _initialize(g=globals()) -> None:
 
 
 @_call_aside
-def _initialize_master_working_set() -> None:
+def _initialize_master_working_set():
     """
     Prepare the master working set and make the ``require()``
     API available.

@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -46,18 +46,21 @@ from ..loghelper import getLoggerName
 class LogManager():
     def __init__(self, ctx, window, requirements, *loggers):
         self._ctx = ctx
-        self._requirements = requirements
-        self._dialog = None
         self._model = LogModel(ctx, loggers)
         self._view = LogWindow(ctx, window, WindowHandler(self))
+        self._requirements = requirements
+        self._dialog = None
+        self._model.addPoolListener(PoolListener(self))
+        self._update = True
+
+# LogManager setter methods
+    def initView(self):
         # FIXME: If we want to load data using handlers,
         # FIXME: it is necessary to devalidate all resulting updates
         self._update = False
         self._view.initView(self._model.getLoggerNames())
         self._update = True
-        self._model.addPoolListener(PoolListener(self))
 
-# LogManager setter methods
     def dispose(self):
         self._model.dispose()
         self._view.dispose()

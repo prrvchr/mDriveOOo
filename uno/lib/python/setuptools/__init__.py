@@ -60,7 +60,7 @@ def _install_setup_requires(attrs):
         fetch_build_eggs interface.
         """
 
-        def __init__(self, attrs: Mapping[str, object]) -> None:
+        def __init__(self, attrs: Mapping[str, object]):
             _incl = 'dependency_links', 'setup_requires'
             filtered = {k: attrs[k] for k in set(_incl) & set(attrs)}
             super().__init__(filtered)
@@ -70,7 +70,7 @@ def _install_setup_requires(attrs):
         def _get_project_config_files(self, filenames=None):
             """Ignore ``pyproject.toml``, they are not related to setup_requires"""
             try:
-                cfg, _toml = super()._split_standard_project_metadata(filenames)
+                cfg, toml = super()._split_standard_project_metadata(filenames)
             except Exception:
                 return filenames, ()
             return cfg, ()
@@ -167,7 +167,7 @@ class Command(_Command):
     command_consumes_arguments = False
     distribution: Distribution  # override distutils.dist.Distribution with setuptools.dist.Distribution
 
-    def __init__(self, dist: Distribution, **kw) -> None:
+    def __init__(self, dist: Distribution, **kw):
         """
         Construct the command for dist, updating
         vars(self) with any keyword parameters.
@@ -181,10 +181,12 @@ class Command(_Command):
             setattr(self, option, default)
             return default
         elif not isinstance(val, str):
-            raise DistutilsOptionError(f"'{option}' must be a {what} (got `{val}`)")
+            raise DistutilsOptionError(
+                "'%s' must be a %s (got `%s`)" % (option, what, val)
+            )
         return val
 
-    def ensure_string_list(self, option: str) -> None:
+    def ensure_string_list(self, option: str):
         r"""Ensure that 'option' is a list of strings.  If 'option' is
         currently a string, we split it either on /,\s*/ or /\s+/, so
         "foo bar baz", "foo,bar,baz", and "foo,   bar baz" all become
@@ -208,7 +210,7 @@ class Command(_Command):
                 ok = False
             if not ok:
                 raise DistutilsOptionError(
-                    f"'{option}' must be a list of strings (got {val!r})"
+                    "'%s' must be a list of strings (got %r)" % (option, val)
                 )
 
     @overload
@@ -224,7 +226,7 @@ class Command(_Command):
     ) -> _Command:
         cmd = _Command.reinitialize_command(self, command, reinit_subcommands)
         vars(cmd).update(kw)
-        return cmd  # pyright: ignore[reportReturnType] # pypa/distutils#307
+        return cmd
 
     @abstractmethod
     def initialize_options(self) -> None:

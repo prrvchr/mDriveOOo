@@ -1,5 +1,4 @@
 import http.client
-import re
 import urllib.error
 import urllib.request
 from inspect import cleandoc
@@ -25,8 +24,11 @@ class TestPackageIndex:
     def test_bad_url_bad_port(self):
         index = setuptools.package_index.PackageIndex()
         url = 'http://127.0.0.1:0/nonesuch/test_package_index'
-        with pytest.raises(Exception, match=re.escape(url)):
+        try:
             v = index.open_url(url)
+        except Exception as exc:
+            assert url in str(exc)
+        else:
             assert isinstance(v, urllib.error.HTTPError)
 
     def test_bad_url_typo(self):
@@ -35,10 +37,15 @@ class TestPackageIndex:
         # in its home URL
         index = setuptools.package_index.PackageIndex(hosts=('www.example.com',))
 
-        url = 'url:%20https://svn.plone.org/svn/collective/inquant.contentmirror.plone/trunk'
-
-        with pytest.raises(Exception, match=re.escape(url)):
+        url = (
+            'url:%20https://svn.plone.org/svn'
+            '/collective/inquant.contentmirror.plone/trunk'
+        )
+        try:
             v = index.open_url(url)
+        except Exception as exc:
+            assert url in str(exc)
+        else:
             assert isinstance(v, urllib.error.HTTPError)
 
     def test_bad_url_bad_status_line(self):
@@ -49,8 +56,12 @@ class TestPackageIndex:
 
         index.opener = _urlopen
         url = 'http://example.com'
-        with pytest.raises(Exception, match=r'line'):
+        try:
             index.open_url(url)
+        except Exception as exc:
+            assert 'line' in str(exc)
+        else:
+            raise AssertionError('Should have raise here!')
 
     def test_bad_url_double_scheme(self):
         """

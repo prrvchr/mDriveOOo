@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -32,12 +32,15 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.uno import Exception as UnoException
 
+from ..logger import getLogger
+
 from ..unotool import createService
 
-from ..configuration import g_defaultlog
+from ..jdbcdriver import g_service as jdbc
 
-from ..logger import getLogger
-g_basename = 'OptionsDialog'
+from ..configuration import g_service as embedded
+from ..configuration import g_defaultlog
+from ..configuration import g_basename
 
 import traceback
 
@@ -46,26 +49,24 @@ class OptionsModel():
     def __init__(self, ctx, url=None):
         self._ctx = ctx
         self._url = url
+        self._logger = getLogger(ctx, g_defaultlog, g_basename)
+        self._logger.logprb(INFO, 'OptionsModel', '__init__', 301)
 
 # OptionsModel getter methods
-    def getDriverVersion(self, service):
+    def getDriverVersion(self, apilevel):
+        driver = None
         version = 'N/A'
-        if self._url is None:
-            return version
         try:
-            driver = createService(self._ctx, service)
-            # FIXME: If jdbcDriverOOo extension has not been installed then driver is None
-            if driver is not None:
+            # We must try all the required services 
+            driver = createService(self._ctx, embedded)
+            driver = createService(self._ctx, jdbc)
+            if driver and self._url:
                 connection = driver.connect(self._url, ())
                 version = connection.getMetaData().getDriverVersion()
                 connection.close()
-                driver.dispose()
         except UnoException as e:
-            self._getLogger().logprb(SEVERE, 'OptionsModel', '_getDriverVersion()', 141, e.Message)
-        except Exception as e:
-            self._getLogger().logprb(SEVERE, 'OptionsModel', '_getDriverVersion()', 142, str(e), traceback.format_exc())
+            # If the driver is None, the error is already logged
+            if driver is not None:
+                self._logger.logprb(SEVERE, 'OptionsModel', 'getDriverVersion', 102, g_service, apilevel, e.Message)
         return version
 
-# OptionsModel private methods
-    def _getLogger(self):
-        return getLogger(self._ctx, g_defaultlog, g_basename)

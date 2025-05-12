@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020 https://prrvchr.github.io                                     ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -27,23 +27,17 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from .driver import Driver
+
 from .options import OptionsManager
 
-from .datasource import DataSource
-
-from .cardtool import getDataSourceUrl
-from .cardtool import getLogException
-
-from .dbtool import getDriverPropertyInfos
+from .helper import checkConfiguration
 
 from .logger import getLogger
 
 from .dbconfig import g_version
 
+from .configuration import g_basename
 from .configuration import g_defaultlog
 from .configuration import g_identifier
-from .configuration import g_protocol
-from .configuration import g_scheme
-from .configuration import g_scope
-from .configuration import g_host
 

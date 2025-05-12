@@ -11,6 +11,7 @@ import sys
 import sysconfig
 from contextlib import suppress
 from inspect import cleandoc
+from unittest.mock import Mock
 from zipfile import ZipFile
 
 import jaraco.path
@@ -18,7 +19,12 @@ import pytest
 from packaging import tags
 
 import setuptools
-from setuptools.command.bdist_wheel import bdist_wheel, get_abi_tag
+from setuptools.command.bdist_wheel import (
+    bdist_wheel,
+    get_abi_tag,
+    remove_readonly,
+    remove_readonly_exc,
+)
 from setuptools.dist import Distribution
 from setuptools.warnings import SetuptoolsDeprecationWarning
 
@@ -246,9 +252,9 @@ def test_no_scripts(wheel_paths):
 
 
 def test_unicode_record(wheel_paths):
-    path = next(path for path in wheel_paths if "unicode.dist" in path)
+    path = next(path for path in wheel_paths if "unicode_dist" in path)
     with ZipFile(path) as zf:
-        record = zf.read("unicode.dist-0.1.dist-info/RECORD")
+        record = zf.read("unicode_dist-0.1.dist-info/RECORD")
 
     assert "åäö_日本語.py".encode() in record
 
@@ -316,7 +322,7 @@ def test_licenses_deprecated(dummy_dist, monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("config_file", "config"),
+    "config_file, config",
     [
         ("setup.cfg", "[metadata]\nlicense_files=licenses/*\n  LICENSE"),
         ("setup.cfg", "[metadata]\nlicense_files=licenses/*, LICENSE"),
@@ -428,7 +434,7 @@ def test_build_from_readonly_tree(dummy_dist, monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("option", "compress_type"),
+    "option, compress_type",
     list(bdist_wheel.supported_compressions.items()),
     ids=list(bdist_wheel.supported_compressions),
 )
@@ -504,6 +510,29 @@ def test_platform_with_space(dummy_dist, monkeypatch):
     bdist_wheel_cmd(plat_name="isilon onefs").run()
 
 
+def test_rmtree_readonly(monkeypatch, tmp_path):
+    """Verify onerr works as expected"""
+
+    bdist_dir = tmp_path / "with_readonly"
+    bdist_dir.mkdir()
+    some_file = bdist_dir.joinpath("file.txt")
+    some_file.touch()
+    some_file.chmod(stat.S_IREAD)
+
+    expected_count = 1 if sys.platform.startswith("win") else 0
+
+    if sys.version_info < (3, 12):
+        count_remove_readonly = Mock(side_effect=remove_readonly)
+        shutil.rmtree(bdist_dir, onerror=count_remove_readonly)
+        assert count_remove_readonly.call_count == expected_count
+    else:
+        count_remove_readonly_exc = Mock(side_effect=remove_readonly_exc)
+        shutil.rmtree(bdist_dir, onexc=count_remove_readonly_exc)
+        assert count_remove_readonly_exc.call_count == expected_count
+
+    assert not bdist_dir.is_dir()
+
+
 def test_data_dir_with_tag_build(monkeypatch, tmp_path):
     """
     Setuptools allow authors to set PEP 440's local version segments
@@ -560,7 +589,7 @@ def test_data_dir_with_tag_build(monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("reported", "expected"),
+    "reported,expected",
     [("linux-x86_64", "linux_i686"), ("linux-aarch64", "linux_armv7l")],
 )
 @pytest.mark.skipif(

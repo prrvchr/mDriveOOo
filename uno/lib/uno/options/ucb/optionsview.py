@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -31,7 +31,7 @@ import traceback
 
 
 class OptionsView():
-    def __init__(self, window, exist, hasfile, resumable):
+    def __init__(self, window, exist, hasfile, resumable, link):
         self._window = window
         if exist:
             self._disableShare()
@@ -40,6 +40,7 @@ class OptionsView():
         self._getDatasource().Model.Enabled = exist
         self._getFile().Model.Enabled = hasfile
         self._getUpload().Model.Enabled = resumable
+        self._getLink().URL = link
 
 # OptionsView getter methods
     def getViewData(self):
@@ -51,7 +52,8 @@ class OptionsView():
         timeout = int(self._getTimeout().Value)
         download = self._getSetting(0)
         upload = self._getSetting(1)
-        return reset, share, name, index, timeout, download, upload
+        macro = bool(self._getMacro().State)
+        return reset, share, name, index, timeout, download, upload, macro
 
     def getChunk(self, index):
         return int(self._getChunk(index).Value)
@@ -63,7 +65,7 @@ class OptionsView():
         # XXX: because it was lost (ie: after setting the new step everything is visible).
         self.setRestart(restart)
 
-    def setViewData(self, exist, reset, support, share, name, index, timeout, download, upload, restart):
+    def setViewData(self, exist, reset, support, share, name, index, timeout, download, upload, macro, restart):
         self._getResetSync().State = int(reset != 0)
         self._getResetFile().State = int(reset == 2)
         self.enableResetFile(reset != 0)
@@ -82,6 +84,8 @@ class OptionsView():
         self._getTimeout().Value = timeout
         self._setSetting(download, 0)
         self._setSetting(upload, 1)
+        self._getMacro().State = int(macro)
+        self.enableCustomize(macro)
         self.setRestart(restart)
 
     def enableShare(self, enabled):
@@ -97,6 +101,10 @@ class OptionsView():
         self._getResetFile().Model.Enabled = enabled
         if not enabled:
             self._getResetFile().State = 0
+
+    def enableCustomize(self, enabled):
+        self._getLink().Model.Enabled = enabled
+        self._getCustomize().Model.Enabled = enabled
 
     def setRestart(self, enabled):
         self._getRestart().setVisible(enabled)
@@ -194,4 +202,13 @@ class OptionsView():
 
     def _getRestart(self):
         return self._window.getControl('Label8')
+
+    def _getMacro(self):
+        return self._window.getControl('CheckBox4')
+
+    def _getLink(self):
+        return self._window.getControl('Hyperlink1')
+
+    def _getCustomize(self):
+        return self._window.getControl('CommandButton7')
 

@@ -1,7 +1,7 @@
 /*
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -34,7 +34,7 @@
 #include <com/sun/star/rest/XRequestParameter.idl>
 #include <com/sun/star/rest/JSONDecodeException.idl>
 #include <com/sun/star/json/XJsonStructure.idl>
-#include <io/github/prrvchr/css/util/Duration.idl>
+#include <com/sun/star/util/Duration.idl>
 
 
 module com { module sun { module star { module rest {
@@ -82,7 +82,7 @@ interface XRequestResponse: com::sun::star::uno::XInterface
     [attribute, readonly] boolean Ok;
     [attribute, readonly] boolean IsPermanentRedirect;
     [attribute, readonly] boolean IsRedirect;
-    [attribute, readonly] io::github::prrvchr::css::util::Duration Elapsed;
+    [attribute, readonly] com::sun::star::util::Duration Elapsed;
     [attribute, readonly] com::sun::star::io::XInputStream DataSink;
     [attribute, readonly] any Error;
 

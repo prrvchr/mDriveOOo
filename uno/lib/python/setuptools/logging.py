@@ -11,7 +11,7 @@ def _not_warning(record):
     return record.levelno < logging.WARNING
 
 
-def configure() -> None:
+def configure():
     """
     Configure logging to emit warning and above to stderr
     and everything else to stdout. This behavior is provided
@@ -35,6 +35,6 @@ def configure() -> None:
         distutils.dist.log = distutils.log
 
 
-def set_threshold(level: int) -> int:
+def set_threshold(level: int):
     logging.root.setLevel(level * 10)
     return set_threshold.unpatched(level)

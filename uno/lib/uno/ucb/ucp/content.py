@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -236,12 +236,15 @@ class Content(unohelper.Base,
             self._logger.logprb(SEVERE, 'Content', 'getIdentifier', 652, e, traceback.format_exc())
 
     def getContentType(self):
+        print("Content.getContentType() 1")
         return self._metadata.get('ContentType')
 
     def addContentEventListener(self, listener):
+        print("Content.addContentEventListener() 1")
         self._contentListeners.append(listener)
 
     def removeContentEventListener(self, listener):
+        print("Content.removeContentEventListener() 1")
         if listener in self._contentListeners:
             self._contentListeners.remove(listener)
 

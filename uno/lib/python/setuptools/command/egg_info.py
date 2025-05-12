@@ -7,7 +7,6 @@ import os
 import re
 import sys
 import time
-from collections.abc import Callable
 
 import packaging
 import packaging.requirements
@@ -32,7 +31,7 @@ from distutils.errors import DistutilsInternalError
 from distutils.filelist import FileList as _FileList
 from distutils.util import convert_path
 
-PY_MAJOR = f'{sys.version_info.major}.{sys.version_info.minor}'
+PY_MAJOR = '{}.{}'.format(*sys.version_info)
 
 
 def translate_pattern(glob):  # noqa: C901  # is too complex (14)  # FIXME
@@ -48,7 +47,7 @@ def translate_pattern(glob):  # noqa: C901  # is too complex (14)  # FIXME
     chunks = glob.split(os.path.sep)
 
     sep = re.escape(os.sep)
-    valid_char = f'[^{sep}]'
+    valid_char = '[^%s]' % (sep,)
 
     for c, chunk in enumerate(chunks):
         last_chunk = c == len(chunks) - 1
@@ -60,7 +59,7 @@ def translate_pattern(glob):  # noqa: C901  # is too complex (14)  # FIXME
                 pat += '.*'
             else:
                 # Match '(name/)*'
-                pat += f'(?:{valid_char}+{sep})*'
+                pat += '(?:%s+%s)*' % (valid_char, sep)
             continue  # Break here as the whole path component has been handled
 
         # Find any special characters in the remainder
@@ -102,7 +101,7 @@ def translate_pattern(glob):  # noqa: C901  # is too complex (14)  # FIXME
                         inner = inner[1:]
 
                     char_class += re.escape(inner)
-                    pat += f'[{char_class}]'
+                    pat += '[%s]' % (char_class,)
 
                     # Skip to the end ]
                     i = inner_i
@@ -196,7 +195,7 @@ class egg_info(InfoCommon, Command):
     # allow the 'tag_svn_revision' to be detected and
     # set, supporting sdists built on older Setuptools.
     @property
-    def tag_svn_revision(self) -> None:
+    def tag_svn_revision(self):
         pass
 
     @tag_svn_revision.setter
@@ -205,7 +204,7 @@ class egg_info(InfoCommon, Command):
 
     ####################################
 
-    def save_version_info(self, filename) -> None:
+    def save_version_info(self, filename):
         """
         Materialize the value of date into the
         build tag. Install build keys in a deterministic order
@@ -216,7 +215,7 @@ class egg_info(InfoCommon, Command):
         egg_info = dict(tag_build=self.tags(), tag_date=0)
         edit_config(filename, dict(egg_info=egg_info))
 
-    def finalize_options(self) -> None:
+    def finalize_options(self):
         # Note: we need to capture the current value returned
         # by `self.tagged_version()`, so we can later update
         # `self.distribution.metadata.version` without
@@ -231,7 +230,8 @@ class egg_info(InfoCommon, Command):
             packaging.requirements.Requirement(spec % (self.egg_name, self.egg_version))
         except ValueError as e:
             raise distutils.errors.DistutilsOptionError(
-                f"Invalid distribution name or version syntax: {self.egg_name}-{self.egg_version}"
+                "Invalid distribution name or version syntax: %s-%s"
+                % (self.egg_name, self.egg_version)
             ) from e
 
         if self.egg_base is None:
@@ -252,7 +252,7 @@ class egg_info(InfoCommon, Command):
         """Compute filename of the output egg. Private API."""
         return _egg_basename(self.egg_name, self.egg_version, py_version, platform)
 
-    def write_or_delete_file(self, what, filename, data, force: bool = False) -> None:
+    def write_or_delete_file(self, what, filename, data, force: bool = False):
         """Write `data` to `filename` or delete if empty
 
         If `data` is non-empty, this routine is the same as ``write_file()``.
@@ -270,7 +270,7 @@ class egg_info(InfoCommon, Command):
             else:
                 self.delete_file(filename)
 
-    def write_file(self, what, filename, data) -> None:
+    def write_file(self, what, filename, data):
         """Write `data` to `filename` (if not a dry run) after announcing it
 
         `what` is used in a log message to identify what is being written
@@ -283,13 +283,13 @@ class egg_info(InfoCommon, Command):
             f.write(data)
             f.close()
 
-    def delete_file(self, filename) -> None:
+    def delete_file(self, filename):
         """Delete `filename` (if not a dry run) after announcing it"""
         log.info("deleting %s", filename)
         if not self.dry_run:
             os.unlink(filename)
 
-    def run(self) -> None:
+    def run(self):
         # Pre-load to avoid iterating over entry-points while an empty .egg-info
         # exists in sys.path. See pypa/pyproject-hooks#206
         writers = list(metadata.entry_points(group='egg_info.writers'))
@@ -311,7 +311,7 @@ class egg_info(InfoCommon, Command):
 
         self.find_sources()
 
-    def find_sources(self) -> None:
+    def find_sources(self):
         """Generate SOURCES.txt manifest file"""
         manifest_filename = os.path.join(self.egg_info, "SOURCES.txt")
         mm = manifest_maker(self.distribution)
@@ -324,13 +324,11 @@ class egg_info(InfoCommon, Command):
 class FileList(_FileList):
     # Implementations of the various MANIFEST.in commands
 
-    def __init__(
-        self, warn=None, debug_print=None, ignore_egg_info_dir: bool = False
-    ) -> None:
+    def __init__(self, warn=None, debug_print=None, ignore_egg_info_dir: bool = False):
         super().__init__(warn, debug_print)
         self.ignore_egg_info_dir = ignore_egg_info_dir
 
-    def process_template_line(self, line) -> None:
+    def process_template_line(self, line):
         # Parse the line: split it up, make sure the right number of words
         # is there, and return the relevant words.  'action' is always
         # defined: it's the first word of the line.  Which of the other
@@ -338,7 +336,7 @@ class FileList(_FileList):
         # patterns, (dir and patterns), or (dir_pattern).
         (action, patterns, dir, dir_pattern) = self._parse_template_line(line)
 
-        action_map: dict[str, Callable] = {
+        action_map = {
             'include': self.include,
             'exclude': self.exclude,
             'global-include': self.global_include,
@@ -474,7 +472,7 @@ class FileList(_FileList):
         match = translate_pattern(os.path.join('**', pattern))
         return self._remove_files(match.match)
 
-    def append(self, item) -> None:
+    def append(self, item):
         if item.endswith('\r'):  # Fix older sdists built on Windows
             item = item[:-1]
         path = convert_path(item)
@@ -482,7 +480,7 @@ class FileList(_FileList):
         if self._safe_path(path):
             self.files.append(path)
 
-    def extend(self, paths) -> None:
+    def extend(self, paths):
         self.files.extend(filter(self._safe_path, paths))
 
     def _repair(self):
@@ -501,7 +499,7 @@ class FileList(_FileList):
         # To avoid accidental trans-codings errors, first to unicode
         u_path = unicode_utils.filesys_decode(path)
         if u_path is None:
-            log.warn(f"'{path}' in unexpected encoding -- skipping")
+            log.warn("'%s' in unexpected encoding -- skipping" % path)
             return False
 
         # Must ensure utf-8 encodability
@@ -526,17 +524,17 @@ class FileList(_FileList):
 class manifest_maker(sdist):
     template = "MANIFEST.in"
 
-    def initialize_options(self) -> None:
+    def initialize_options(self):
         self.use_defaults = True
         self.prune = True
         self.manifest_only = True
         self.force_manifest = True
         self.ignore_egg_info_dir = False
 
-    def finalize_options(self) -> None:
+    def finalize_options(self):
         pass
 
-    def run(self) -> None:
+    def run(self):
         self.filelist = FileList(ignore_egg_info_dir=self.ignore_egg_info_dir)
         if not os.path.exists(self.manifest):
             self.write_manifest()  # it must exist so it'll get in the list
@@ -554,7 +552,7 @@ class manifest_maker(sdist):
         path = unicode_utils.filesys_decode(path)
         return path.replace(os.sep, '/')
 
-    def write_manifest(self) -> None:
+    def write_manifest(self):
         """
         Write the file list in 'self.filelist' to the manifest file
         named by 'self.manifest'.
@@ -563,10 +561,10 @@ class manifest_maker(sdist):
 
         # Now _repairs should encodability, but not unicode
         files = [self._manifest_normalize(f) for f in self.filelist.files]
-        msg = f"writing manifest file '{self.manifest}'"
+        msg = "writing manifest file '%s'" % self.manifest
         self.execute(write_file, (self.manifest, files), msg)
 
-    def warn(self, msg) -> None:
+    def warn(self, msg):
         if not self._should_suppress_warning(msg):
             sdist.warn(self, msg)
 
@@ -577,7 +575,7 @@ class manifest_maker(sdist):
         """
         return re.match(r"standard file .*not found", msg)
 
-    def add_defaults(self) -> None:
+    def add_defaults(self):
         sdist.add_defaults(self)
         self.filelist.append(self.template)
         self.filelist.append(self.manifest)
@@ -595,7 +593,7 @@ class manifest_maker(sdist):
         ei_cmd = self.get_finalized_command('egg_info')
         self.filelist.graft(ei_cmd.egg_info)
 
-    def add_license_files(self) -> None:
+    def add_license_files(self):
         license_files = self.distribution.metadata.license_files or []
         for lf in license_files:
             log.info("adding license file '%s'", lf)
@@ -634,7 +632,7 @@ class manifest_maker(sdist):
         return build_py.get_data_files()
 
 
-def write_file(filename, contents) -> None:
+def write_file(filename, contents):
     """Create a file with the specified name and write 'contents' (a
     sequence of strings without line terminators) to it.
     """
@@ -647,7 +645,7 @@ def write_file(filename, contents) -> None:
         f.write(contents)
 
 
-def write_pkg_info(cmd, basename, filename) -> None:
+def write_pkg_info(cmd, basename, filename):
     log.info("writing %s", filename)
     if not cmd.dry_run:
         metadata = cmd.distribution.metadata
@@ -666,7 +664,7 @@ def write_pkg_info(cmd, basename, filename) -> None:
         bdist_egg.write_safety_flag(cmd.egg_info, safe)
 
 
-def warn_depends_obsolete(cmd, basename, filename) -> None:
+def warn_depends_obsolete(cmd, basename, filename):
     """
     Unused: left to avoid errors when updating (from source) from <= 67.8.
     Old installations have a .dist-info directory with the entry-point
@@ -681,18 +679,18 @@ write_requirements = _requirestxt.write_requirements
 write_setup_requirements = _requirestxt.write_setup_requirements
 
 
-def write_toplevel_names(cmd, basename, filename) -> None:
+def write_toplevel_names(cmd, basename, filename):
     pkgs = dict.fromkeys([
         k.split('.', 1)[0] for k in cmd.distribution.iter_distribution_names()
     ])
     cmd.write_file("top-level names", filename, '\n'.join(sorted(pkgs)) + '\n')
 
 
-def overwrite_arg(cmd, basename, filename) -> None:
+def overwrite_arg(cmd, basename, filename):
     write_arg(cmd, basename, filename, True)
 
 
-def write_arg(cmd, basename, filename, force: bool = False) -> None:
+def write_arg(cmd, basename, filename, force: bool = False):
     argname = os.path.splitext(basename)[0]
     value = getattr(cmd.distribution, argname, None)
     if value is not None:
@@ -700,7 +698,7 @@ def write_arg(cmd, basename, filename, force: bool = False) -> None:
     cmd.write_or_delete_file(argname, filename, value, force)
 
 
-def write_entries(cmd, basename, filename) -> None:
+def write_entries(cmd, basename, filename):
     eps = _entry_points.load(cmd.distribution.entry_points)
     defn = _entry_points.render(eps)
     cmd.write_or_delete_file('entry points', filename, defn, True)

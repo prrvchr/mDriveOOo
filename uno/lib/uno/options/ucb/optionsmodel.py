@@ -4,7 +4,7 @@
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
-║   Copyright (c) 2020-24 https://prrvchr.github.io                                  ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
 ║                                                                                    ║
 ║   Permission is hereby granted, free of charge, to any person obtaining            ║
 ║   a copy of this software and associated documentation files (the "Software"),     ║
@@ -34,6 +34,7 @@ from com.sun.star.ucb.SynchronizePolicy import NONE_IS_MASTER
 from ..unotool import getConfiguration
 from ..unotool import getResourceLocation
 from ..unotool import getSimpleFile
+from ..unotool import getStringResource
 
 from ..dbconfig  import g_folder
 
@@ -48,12 +49,16 @@ import traceback
 class OptionsModel():
     def __init__(self, ctx):
         self._config = getConfiguration(ctx, g_identifier, True)
+        self._common = getConfiguration(ctx, 'org.openoffice.Office.Common', True)
         self._url = getResourceLocation(ctx, g_identifier)
         self._policies = {'SERVER_IS_MASTER': 1, 'CLIENT_IS_MASTER': 2, 'NONE_IS_MASTER': 3}
         self._factors = {'Timeout': 60, 'Chunk': 1024}
         sf = getSimpleFile(ctx)
         self._hasdatabase = sf.exists(self.getDatasourceUrl())
         self._hasfile = sf.exists(self.getFileUrl())
+        self._resolver = getStringResource(ctx, g_identifier, 'dialogs', 'OptionsDialog')
+        self._resources = {'Link': 'OptionsDialog.Hyperlink1.Link'}
+
 
     @property
     def _ResetSync(self):
@@ -83,11 +88,14 @@ class OptionsModel():
     @property
     def _SupportShare(self):
         return self._config.getByName('SupportShare')
+    @property
+    def _Macro(self):
+        return self._common.getByHierarchicalName('Misc/UseSystemFileDialog')
 
 # OptionsModel getter methods
     def getInitData(self):
         resumable = self._config.getByName('ResumableUpload')
-        return self._hasdatabase, self._hasfile, resumable
+        return self._hasdatabase, self._hasfile, resumable, self._getLink()
 
     def hasDataBase(self):
         return self._hasdatabase
@@ -95,7 +103,7 @@ class OptionsModel():
     def getViewData(self, restart):
         return (self._hasdatabase, self._ResetSync, self._SupportShare,
                 self._IsShared, self._ShareName, self._Policy,
-                self._Timeout, self._Download, self._Upload, restart)
+                self._Timeout, self._Download, self._Upload, self._Macro, restart)
 
     def getDatasourceUrl(self):
         folder = g_ucbseparator + g_folder + g_ucbseparator + g_scheme
@@ -106,7 +114,8 @@ class OptionsModel():
         return self._url + folder
 
 # OptionsModel setter methods
-    def setViewData(self, reset, share, name, index, timeout, download, upload):
+    def setViewData(self, reset, share, name, index, timeout, download, upload, macro):
+        changed = False
         self._setReset(reset)
         self._setShared(share)
         self._setShare(name)
@@ -116,8 +125,11 @@ class OptionsModel():
         self._setUpload(upload)
         if self._config.hasPendingChanges():
             self._config.commitChanges()
-            return True
-        return False
+            changed = True
+        self._setMacro(macro)
+        if self._common.hasPendingChanges():
+            self._common.commitChanges()
+        return changed
 
 # OptionsModel private getter methods
     def _getSynchronizePolicy(self, index):
@@ -171,4 +183,12 @@ class OptionsModel():
             if name in self._factors:
                 value = value * self._factors[name]
             config.replaceByName(name, value)
+
+    def _setMacro(self, enabled):
+        if enabled != self._Macro:
+            self._common.replaceByHierarchicalName('Misc/UseSystemFileDialog', enabled)
+
+    def _getLink(self):
+        resource = self._resources.get('Link')
+        return self._resolver.resolveString(resource)
 

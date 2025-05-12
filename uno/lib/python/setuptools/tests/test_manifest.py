@@ -34,11 +34,14 @@ SETUP_ATTRS = {
     'packages': ['app'],
 }
 
-SETUP_PY = f"""\
+SETUP_PY = (
+    """\
 from setuptools import setup
 
-setup(**{SETUP_ATTRS!r})
+setup(**%r)
 """
+    % SETUP_ATTRS
+)
 
 
 @contextlib.contextmanager
@@ -366,7 +369,7 @@ class TestFileListTest(TempDirTestCase):
     def make_files(self, files):
         for file in files:
             file = os.path.join(self.temp_dir, file)
-            dirname, _basename = os.path.split(file)
+            dirname, basename = os.path.split(file)
             os.makedirs(dirname, exist_ok=True)
             touch(file)
 
