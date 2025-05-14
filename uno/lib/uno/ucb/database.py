@@ -53,37 +53,34 @@ from .dbtool import getDataFromResult
 from .dbinit import createDataBase
 from .dbinit import getDataBaseConnection
 
+from .helper import checkConnection
+from .helper import checkDatabaseVersion
+
 from .dbconfig import g_role
-from .dbconfig import g_version
 
 import os
 import traceback
 
 
 class DataBase():
-    def __init__(self, ctx, logger, url, user='', pwd=''):
-        print("DataBase.__init__() 1")
-        self._ctx = ctx
+    def __init__(self, ctx, source, logger, url, user='', pwd=''):
         cls, mtd = 'DataBase', '__init__'
         logger.logprb(INFO, cls, mtd, 401)
+        self._ctx = ctx
         self._url = url
         odb = url + '.odb'
         new = not getSimpleFile(ctx).exists(odb)
         connection = getDataBaseConnection(ctx, url, user, pwd, new)
+        checkConnection(ctx, source, connection, logger, new)
         version = connection.getMetaData().getDriverVersion()
-        print("DataBase.__init__() 2 version: %s - new: %s" % (version, new))
         if new:
-            if checkVersion(version, g_version):
-                logger.logprb(INFO, cls, mtd, 402, version)
-                createDataBase(ctx, connection, odb)
-                logger.logprb(INFO, cls, mtd, 403)
-            else:
-                logger.logprb(SEVERE, cls, mtd, 404, version, g_version)
+            logger.logprb(INFO, cls, mtd, 402, version)
+            createDataBase(ctx, connection, odb)
+            logger.logprb(INFO, cls, mtd, 403)
         self._statement = connection.createStatement()
         self._version = version
         self._logger = logger
-        logger.logprb(INFO, cls, mtd, 405)
-        print("DataBase.__init__() 3")
+        logger.logprb(INFO, cls, mtd, 404)
 
     @property
     def Url(self):
@@ -97,7 +94,7 @@ class DataBase():
         return self._statement.getConnection()
 
     def isUptoDate(self):
-        return checkVersion(self._version, g_version)
+        return checkDatabaseVersion(self._version)
 
 # Procedures called by the DataSource
     def addCloseListener(self, listener):

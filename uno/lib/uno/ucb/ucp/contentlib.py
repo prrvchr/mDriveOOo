@@ -46,7 +46,7 @@ from ..unolib import PropertySet
 
 from ..unotool import getProperty
 
-from .contenthelper import getParametersRequest
+from ..helper import getParametersRequest
 
 import traceback
 

@@ -47,56 +47,85 @@ from com.sun.star.ucb.ConnectionMode import OFFLINE
 
 from com.sun.star.sdb import ParametersRequest
 
-from ..dbtool import getConnectionUrl
+from .dbtool import getConnectionUrl
 
-from ..unotool import checkVersion
-from ..unotool import createMessageBox
-from ..unotool import createService
-from ..unotool import getDesktop
-from ..unotool import getDispatcher
-from ..unotool import getExtensionVersion
-from ..unotool import getNamedValueSet
-from ..unotool import getParentWindow
-from ..unotool import getProperty
-from ..unotool import getPropertyValue
-from ..unotool import getPropertyValueSet
+from .unotool import checkVersion
+from .unotool import createMessageBox
+from .unotool import createService
+from .unotool import hasInterface
+from .unotool import getDesktop
+from .unotool import getDispatcher
+from .unotool import getExtensionVersion
+from .unotool import getNamedValueSet
+from .unotool import getParentWindow
+from .unotool import getProperty
+from .unotool import getPropertyValue
+from .unotool import getPropertyValueSet
+from .unotool import parseUrl
 
-from ..oauth20 import getOAuth2Version
-from ..oauth20 import g_extension as g_oauth2ext
-from ..oauth20 import g_version as g_oauth2ver
+from .oauth20 import getOAuth2Version
+from .oauth20 import g_extension as g_oauth2ext
+from .oauth20 import g_version as g_oauth2ver
 
-from ..jdbcdriver import g_extension as g_jdbcext
-from ..jdbcdriver import g_identifier as g_jdbcid
-from ..jdbcdriver import g_version as g_jdbcver
+from .jdbcdriver import g_extension as g_jdbcext
+from .jdbcdriver import g_identifier as g_jdbcid
+from .jdbcdriver import g_version as g_jdbcver
 
-from ..dbconfig import g_folder
+from .dbconfig import g_folder
+from .dbconfig import g_version
 
-from ..configuration import g_extension
-from ..configuration import g_scheme
+from .configuration import g_extension
+from .configuration import g_scheme
 
-from .configuration import g_ucbseparator
+from .ucp import g_ucbseparator
 
 
-def getDataSourceUrl(ctx, source, logger, cls, mtd):
+def getPresentationUrl(transformer, url):
+    # FIXME: Sometimes the url can end with a dot, it must be removed
+    url = url.rstrip('.')
+    uri = parseUrl(transformer, url)
+    if uri is not None:
+        url = transformer.getPresentation(uri, True)
+    return url
+
+def getDataSourceUrl(ctx, source, logger):
     oauth2 = getOAuth2Version(ctx)
     driver = getExtensionVersion(ctx, g_jdbcid)
     if oauth2 is None:
-        title, msg = getExceptionMessage(ctx, logger, cls, mtd, 221, g_oauth2ext, g_oauth2ext, g_extension)
+        title, msg = getExceptionMessage(logger, 801, g_oauth2ext, g_oauth2ext, g_extension)
         showWarning(ctx, msg, title)
         raise IllegalIdentifierException(msg, source)
     if not checkVersion(oauth2, g_oauth2ver):
-        title, msg = getExceptionMessage(ctx, logger, cls, mtd, 223, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
+        title, msg = getExceptionMessage(logger, 803, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
         showWarning(ctx, msg, title)
         raise IllegalIdentifierException(msg, source)
     if driver is None:
-        title, msg = getExceptionMessage(ctx, logger, cls, mtd, 221, g_jdbcext, g_jdbcext, g_extension)
+        title, msg = getExceptionMessage(logger, 801, g_jdbcext, g_jdbcext, g_extension)
         showWarning(ctx, msg, title)
         raise IllegalIdentifierException(msg, source)
     if not checkVersion(driver, g_jdbcver):
-        title, msg = getExceptionMessage(ctx, logger, cls, mtd, 223, g_jdbcext, driver, g_jdbcext, g_jdbcver)
+        title, msg = getExceptionMessage(logger, 803, g_jdbcext, driver, g_jdbcext, g_jdbcver)
         showWarning(ctx, msg, title)
         raise IllegalIdentifierException(msg, source)
     return getConnectionUrl(ctx, g_folder + g_ucbseparator + g_scheme)
+
+def checkConnection(ctx, source, connection, logger, new):
+    version = connection.getMetaData().getDriverVersion()
+    if not checkDatabaseVersion(version):
+        connection.close()
+        title, msg = getExceptionMessage(logger, 811, g_jdbcext, version, g_version)
+        showWarning(ctx, msg, title)
+        raise IllegalIdentifierException(msg, source)
+    service = 'com.sun.star.sdb.Connection'
+    interface = 'com.sun.star.sdbcx.XGroupsSupplier'
+    if new and not _checkConnection(connection, service, interface):
+        connection.close()
+        title, msg = getExceptionMessage(logger, 813, g_jdbcext, service, interface)
+        showWarning(ctx, msg, title)
+        raise IllegalIdentifierException(msg, source)
+
+def checkDatabaseVersion(version):
+    return checkVersion(version, g_version)
 
 def propertyChange(source, name, oldvalue, newvalue):
     if name in source.propertiesListener:
@@ -121,23 +150,6 @@ def setContentData(content, call, properties, index=1):
             call.setLong(index, value)
         index += 1
     return index
-
-def _getContentProperties(content, properties):
-    namedvalues = []
-    for name in properties:
-        namedvalues.append(getProperty(name))
-    command = getCommand('getPropertyValues', tuple(namedvalues))
-    return content.execute(command, 0, None)
-
-def _getPropertyChangeEvent(source, name, oldvalue, newvalue, further=False, handle=-1):
-    event = uno.createUnoStruct('com.sun.star.beans.PropertyChangeEvent')
-    event.Source = source
-    event.PropertyName = name
-    event.Further = further
-    event.PropertyHandle = handle
-    event.OldValue = oldvalue
-    event.NewValue = newvalue
-    return event
 
 def getPump(ctx):
     return ctx.ServiceManager.createInstance('com.sun.star.io.Pump')
@@ -219,18 +231,35 @@ def executeContentCommand(content, name, argument, environment):
     command = getCommand(name, argument)
     return content.execute(command, 0, environment)
 
-def getExceptionMessage(ctx, logger, cls, method, code, extension, *args):
+def getExceptionMessage(logger, code, extension, *args):
     title = logger.resolveString(code, extension)
     message = logger.resolveString(code + 1, *args)
-    logger.logp(SEVERE, cls, method, message)
-    #msgbox = createMessageBox(getParentWindow(ctx), message, title, 'error', 1)
-    #msgbox.execute()
-    #msgbox.dispose()
     return title, message
 
 def showWarning(ctx, message, title):
     frame = getDesktop(ctx).getCurrentFrame()
-    #getDispatcher(ctx).executeDispatch(frame, 'gdrive:ShowWarning', '', 0, (message, title, 'error', 1))
     box = uno.Enum('com.sun.star.awt.MessageBoxType', 'ERRORBOX')
     arguments = getPropertyValueSet({'Title': title, 'Message': message, 'Box': box, 'Button': 1})
     getDispatcher(ctx).executeDispatch(frame, 'gdrive:ShowWarning', '', 0, arguments)
+
+# Private method
+def _checkConnection(connection, service, interface):
+    return connection.supportsService(service) and hasInterface(connection, interface)
+
+def _getContentProperties(content, properties):
+    namedvalues = []
+    for name in properties:
+        namedvalues.append(getProperty(name))
+    command = getCommand('getPropertyValues', tuple(namedvalues))
+    return content.execute(command, 0, None)
+
+def _getPropertyChangeEvent(source, name, oldvalue, newvalue, further=False, handle=-1):
+    event = uno.createUnoStruct('com.sun.star.beans.PropertyChangeEvent')
+    event.Source = source
+    event.PropertyName = name
+    event.Further = further
+    event.PropertyHandle = handle
+    event.OldValue = oldvalue
+    event.NewValue = newvalue
+    return event
+

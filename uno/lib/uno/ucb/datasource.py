@@ -39,8 +39,9 @@ from .oauth20 import getOAuth2UserName
 from .unotool import getUriFactory
 
 from .ucp import User
-from .ucp import getExceptionMessage
-from .ucp import showWarning
+
+from .helper import getExceptionMessage
+from .helper import showWarning
 
 from .provider import Provider
 
@@ -56,8 +57,7 @@ import traceback
 
 
 class DataSource():
-    def __init__(self, ctx, logger, url):
-        print("DataSource.__init__() 1")
+    def __init__(self, ctx, source, logger, url):
         cls, mtd = 'DataSource', '__init__'
         logger.logprb(INFO, cls, mtd, 301)
         self._ctx = ctx
@@ -66,8 +66,7 @@ class DataSource():
         self._sync = Event()
         self._lock = Lock()
         self._urifactory = getUriFactory(ctx)
-        database = DataBase(ctx, logger, url)
-        print("DataSource.__init__() 2")
+        database = DataBase(ctx, source, logger, url)
         provider = Provider(ctx, logger)
         self._replicator = Replicator(ctx, url, provider, self._users, self._sync, self._lock)
         self._database = database
@@ -75,7 +74,6 @@ class DataSource():
         self._logger = logger
         database.addCloseListener(CloseListener(self))
         logger.logprb(INFO, cls, mtd, 302)
-        print("DataSource.__init__() 3")
 
     @property
     def DataBase(self):
@@ -133,7 +131,7 @@ class DataSource():
             if uri.hasAuthority() and uri.getAuthority() != '':
                 name = uri.getAuthority()
             else:
-                title, msg = self._getExceptionMessage('_getUser', 322, url)
+                title, msg = self._getExceptionMessage(322, url)
                 showWarning(self._ctx, msg, title)
                 raise IllegalIdentifierException(msg, source)
         elif self._default:
@@ -147,7 +145,7 @@ class DataSource():
             if not user.Request.isAuthorized():
                 # XXX: The user's OAuth2 configuration has been deleted and
                 # XXX: the OAuth2 configuration wizard has been canceled.
-                title, msg = self._getExceptionMessage('_getUser', 324, name)
+                title, msg = self._getExceptionMessage(324, name)
                 showWarning(self._ctx, msg, title)
                 raise IllegalIdentifierException(msg, source)
         else:
@@ -166,10 +164,10 @@ class DataSource():
         except Exception as e:
             print("DataSource._getUserName() ERROR: %s - %s" % (e, traceback.format_exc()))
         if not name:
-            title, msg = self._getExceptionMessage('_getUserName', 331, url)
+            title, msg = self._getExceptionMessage(331, url)
             showWarning(self._ctx, msg, title)
             raise IllegalIdentifierException(msg, source)
         return name
 
-    def _getExceptionMessage(self, method, code, *args):
-        return getExceptionMessage(self._ctx, self._logger, 'DataSource', method, code, g_extension, *args)
+    def _getExceptionMessage(self, code, *args):
+        return getExceptionMessage(self._logger, code, g_extension, *args)

@@ -76,15 +76,15 @@ from ..unotool import getProperty
 from ..unotool import getPropertyValueSet
 from ..unotool import hasInterface
 
+from ..helper import getCommandInfo
+from ..helper import getContentEvent
+from ..helper import getContentInfo
+from ..helper import getInteractiveAugmentedIOException
+from ..helper import getMimeType
+
 from .contentlib import CommandInfo
 from .contentlib import Row
 from .contentlib import DynamicResultSet
-
-from .contenthelper import getCommandInfo
-from .contenthelper import getContentEvent
-from .contenthelper import getContentInfo
-from .contenthelper import getInteractiveAugmentedIOException
-from .contenthelper import getMimeType
 
 from .identifier import Identifier
 

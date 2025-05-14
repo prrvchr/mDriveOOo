@@ -27,13 +27,14 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
 import unohelper
 
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.lang import XServiceInfo
+
+from com.sun.star.uno import Exception as UnoException
 
 from com.sun.star.sdbc import SQLException
 
@@ -43,14 +44,16 @@ from com.sun.star.ucb import XParameterizedContentProvider
 from com.sun.star.ucb import IllegalIdentifierException
 
 from .ucp import Identifier
-from .ucp import getDataSourceUrl
-from .ucp import getExceptionMessage
-from .ucp import showWarning
 
 from .datasource import DataSource
 
 from .unotool import getUrlTransformer
 from .unotool import parseUrl
+
+from .helper import getDataSourceUrl
+from .helper import getExceptionMessage
+from .helper import getPresentationUrl
+from .helper import showWarning
 
 from .logger import getLogger
 
@@ -69,11 +72,12 @@ class ContentProvider(unohelper.Base,
                       XServiceInfo,
                       XContentIdentifierFactory,
                       XContentProvider):
-    def __init__(self, ctx, logger, authority, arguments):
-        self._ctx = ctx
-        self._authority = authority
+    def __init__(self, ctx, logger, implementation, authority, arguments):
         self._cls = f'{arguments}ContentProvider'
-        self._services = ('com.sun.star.ucb.ContentProvider', f'{g_identifier}.ContentProvider')
+        self._ctx = ctx
+        self._implementation = implementation
+        self._authority = authority
+        self._services = ('com.sun.star.ucb.ContentProvider', implementation)
         self._transformer = getUrlTransformer(ctx)
         self._logger = logger
         self._logger.logprb(INFO, self._cls, '__init__', 201, arguments)
@@ -83,7 +87,9 @@ class ContentProvider(unohelper.Base,
     @property
     def _datasource(self):
         if ContentProvider.__datasource is None:
-            ContentProvider.__datasource = self._getDataSource()
+            url = getDataSourceUrl(self._ctx, self, self._logger)
+            datasource = DataSource(self._ctx, self, self._logger, url)
+            ContentProvider.__datasource = datasource
         return ContentProvider.__datasource
 
     # XContentIdentifierFactory
@@ -95,20 +101,20 @@ class ContentProvider(unohelper.Base,
     # XContentProvider
     def queryContent(self, identifier):
         try:
-            print("ContentProvider.queryContent() 1")
             url = self._getPresentationUrl(identifier.getContentIdentifier())
-            print("ContentProvider.queryContent() 2")
             content = self._datasource.queryContent(self, self._authority, url)
-            print("ContentProvider.queryContent() 3")
-            self._logger.logprb(INFO, self._cls, 'queryContent', 231, url)
+            self._logger.logprb(INFO, self._cls, 'queryContent', 221, url)
             return content
         except IllegalIdentifierException as e:
-            self._logger.logprb(SEVERE, self._cls, 'queryContent', 232, e.Message)
+            self._logger.logprb(SEVERE, self._cls, 'queryContent', 222, e.Message)
             raise e
+        except UnoException as e:
+            self._logger.logprb(SEVERE, self._cls, 'queryContent', 223, type(e).__name__, e.Message)
+            raise IllegalIdentifierException(e.Message, e.Context)
         except Exception as e:
-            msg = self._logger.resolveString(233, traceback.format_exc())
+            msg = self._logger.resolveString(224, type(e).__name__, traceback.format_exc())
             self._logger.logp(SEVERE, self._cls, 'queryContent', msg)
-            print(msg)
+            raise IllegalIdentifierException(msg, self)
 
     def compareContentIds(self, id1, id2):
         uri1 = self._datasource.parseUrl(self._getPresentationUrl(id1.getContentIdentifier()))
@@ -116,10 +122,10 @@ class ContentProvider(unohelper.Base,
         auth1 = uri1.getAuthority() if uri1.hasAuthority() else self._datasource.getDefaultUser()
         auth2 = uri2.getAuthority() if uri2.hasAuthority() else self._datasource.getDefaultUser()
         if (auth1 != auth2 or uri1.getPath() != uri2.getPath()):
-            self._logger.logprb(INFO, self._cls, 'compareContentIds', 242, uri1.getUriReference(), uri2.getUriReference())
+            self._logger.logprb(INFO, self._cls, 'compareContentIds', 231, uri1.getUriReference(), uri2.getUriReference())
             compare = -1
         else:
-            self._logger.logprb(INFO, self._cls, 'compareContentIds', 241, uri1.getUriReference(), uri2.getUriReference())
+            self._logger.logprb(INFO, self._cls, 'compareContentIds', 232, uri1.getUriReference(), uri2.getUriReference())
             compare = 0
         return compare
 
@@ -127,35 +133,14 @@ class ContentProvider(unohelper.Base,
     def supportsService(self, service):
         return service in self._services
     def getImplementationName(self):
-        return self._services[1]
+        return self._implementation
     def getSupportedServiceNames(self):
         return self._services
 
     # Private methods
-    def _getDataSource(self):
-        mtd = '_getDataSource'
-        url = getDataSourceUrl(self._ctx, self, self._logger, self._cls, mtd)
-        try:
-            datasource = DataSource(self._ctx, self._logger, url)
-        except SQLException as e:
-            title, msg = self._getExceptionMessage(mtd, 225, g_extension, url, e.Message)
-            showWarning(self._ctx, msg, title)
-            raise IllegalIdentifierException(msg, self)
-        if not datasource.isUptoDate():
-            title, msg = self._getExceptionMessage(mtd, 227, g_jdbcext, datasource.getDataBaseVersion(), g_version)
-            showWarning(self._ctx, msg, title)
-            raise IllegalIdentifierException(msg, self)
-        return datasource
-
     def _getPresentationUrl(self, url):
-        # FIXME: Sometimes the url can end with a dot, it must be removed
-        url = url.rstrip('.')
-        uri = parseUrl(self._transformer, url)
-        if uri is not None:
-            url = self._transformer.getPresentation(uri, True)
-        print("ContentProvider._getPresentationUrl() url: %s" % url)
-        return url
+        return getPresentationUrl(self._transformer, url)
 
-    def _getExceptionMessage(self, mtd, code, extension, *args):
-        return getExceptionMessage(self._ctx, self._logger, self._cls, mtd, code, extension, *args)
+    def _getExceptionMessage(self, extension, *args):
+        return getExceptionMessage(self._logger, code, extension, *args)
 

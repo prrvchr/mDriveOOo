@@ -52,11 +52,11 @@ from ..unotool import getUriFactory
 
 from ..database import DataBase
 
-from .content import Content
+from ..helper import getContentInfo
+from ..helper import getExceptionMessage
+from ..helper import showWarning
 
-from .contenthelper import getContentInfo
-from .contenthelper import getExceptionMessage
-from .contenthelper import showWarning
+from .content import Content
 
 from .configuration import g_ucbfolder
 from .configuration import g_ucbfile
@@ -73,7 +73,6 @@ import traceback
 
 class User():
     def __init__(self, ctx, source, logger, database, provider, sync, name, password=''):
-        mtd = '__init__'
         self._ctx = ctx
         self._name = name
         self._sync = sync
@@ -90,29 +89,29 @@ class User():
             if request is None:
                 # If we have a Null value here then it means that the user has abandoned
                 # the OAuth2 Wizard, there is nothing more to do except throw an exception
-                title, msg = self._getExceptionMessage(mtd, 501, name)
+                title, msg = self._getExceptionMessage(501, name)
                 showWarning(self._ctx, msg, title)
                 raise IllegalIdentifierException(msg, source)
         else:
             if not self.Provider.isOnLine():
-                title, msg = self._getExceptionMessage(mtd, 503, name)
+                title, msg = self._getExceptionMessage(503, name)
                 showWarning(self._ctx, msg, title)
                 raise IllegalIdentifierException(msg, source)
             request = getRequest(ctx, self.Provider.Scheme, name)
             if request is None:
                 # If we have a Null value here then it means that the user has abandoned
                 # the OAuth2 Wizard, there is nothing more to do except throw an exception
-                title, msg = self._getExceptionMessage(mtd, 501, g_service)
+                title, msg = self._getExceptionMessage(501, g_service)
                 showWarning(self._ctx, msg, title)
                 raise IllegalIdentifierException(msg, source)
             user = self.Provider.getUser(source, request, name)
             metadata = database.insertUser(user)
             if metadata is None:
-                title, msg = self._getExceptionMessage(mtd, 505, name)
+                title, msg = self._getExceptionMessage(505, name)
                 showWarning(self._ctx, msg, title)
                 raise IllegalIdentifierException(msg, source)
             if not database.createUser(name, password):
-                title, msg = self._getExceptionMessage(mtd, 507, name)
+                title, msg = self._getExceptionMessage(507, name)
                 showWarning(self._ctx, msg, title)
                 raise IllegalIdentifierException(msg, source)
         self._paths = {}
@@ -125,7 +124,7 @@ class User():
             # Start Replicator for pushing changes…
             self._lock = Event()
             self._sync.set()
-        self._logger.logprb(INFO, 'User', mtd, 509)
+        self._logger.logprb(INFO, 'User', '__init__', 509)
 
     @property
     def Name(self):
@@ -321,6 +320,6 @@ class User():
             identifier = generateUuid()
         return identifier
 
-    def _getExceptionMessage(self, method, code, *args):
-        return getExceptionMessage(self._ctx, self._logger, 'User', method, code, g_extension, *args)
+    def _getExceptionMessage(self, code, *args):
+        return getExceptionMessage(self._logger, code, g_extension, *args)
 
