@@ -313,7 +313,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 - Il est désormais possible de créer le fichier oxt de l'extension mDriveOOo uniquement avec Apache Ant et une copie du dépôt GitHub. La section [Comment créer l'extension][68] a été ajoutée à la documentation.
 - Implémentation de [PEP 570][69] dans la [journalisation][70] pour prendre en charge les arguments multiples uniques.
 - Pour garantir la création correcte de la base de données mDriveOOo, il sera vérifié que l'extension jdbcDriverOOo a `com.sun.star.sdb` comme niveau d'API.
-- Ecriture deux macros `OpenRemote` et `SaveRemote` pour créer des menus personnalisés et pouvoir conserver la fenêtre de dialogue système pour l'ouverture et l'enregistrement de fichiers dans LibreOffice. Pour faciliter la création de ces menus personnalisés, la section [Comment personnaliser les menus de LibreOffice][71] a été ajoutée à la documentation.
+- Ecriture de deux macros `OpenRemote` et `SaveRemote` permettant de créer des menus personnalisés et de conserver la fenêtre de dialogue système pour l'ouverture et l'enregistrement de fichiers dans LibreOffice. Pour faciliter la création de ces menus personnalisés, la section [Comment personnaliser les menus de LibreOffice][71] a été ajoutée à la documentation.
 - Nécessite l'extension **jdbcDriverOOo en version 1.5.0 minimum**.
 - Nécessite l'extension **OAuth2OOo en version 1.5.0 minimum**.
 
