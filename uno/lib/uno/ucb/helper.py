@@ -52,6 +52,7 @@ from .dbtool import getConnectionUrl
 from .unotool import checkVersion
 from .unotool import createMessageBox
 from .unotool import createService
+from .unotool import executeDispatch
 from .unotool import hasInterface
 from .unotool import getDesktop
 from .unotool import getDispatcher
@@ -237,10 +238,9 @@ def getExceptionMessage(logger, code, extension, *args):
     return title, message
 
 def showWarning(ctx, message, title):
-    frame = getDesktop(ctx).getCurrentFrame()
     box = uno.Enum('com.sun.star.awt.MessageBoxType', 'ERRORBOX')
-    arguments = getPropertyValueSet({'Title': title, 'Message': message, 'Box': box, 'Button': 1})
-    getDispatcher(ctx).executeDispatch(frame, 'gdrive:ShowWarning', '', 0, arguments)
+    args = {'Box': box, 'Button': 1, 'Title': title, 'Message': message}
+    executeDispatch(ctx, 'gdrive:ShowWarning', **args)
 
 # Private method
 def _checkConnection(connection, service, interface):

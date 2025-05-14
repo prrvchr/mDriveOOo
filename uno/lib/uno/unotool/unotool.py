@@ -67,6 +67,9 @@ def getDesktop(ctx):
 def getDispatcher(ctx):
     return createService(ctx, 'com.sun.star.frame.DispatchHelper')
 
+def getToolKit(ctx):
+    return createService(ctx, 'com.sun.star.awt.Toolkit')
+
 def getSimpleFile(ctx):
     return createService(ctx, 'com.sun.star.ucb.SimpleFileAccess')
 
@@ -188,6 +191,9 @@ def getComponentTypes(component):
         return component.getTypes()
     except:
         return ()
+
+def getInterfaceNames(component):
+    return (t.typeName for t in getComponentTypes(component))
 
 def getInterfaceTypes(component):
     return getComponentTypes(component)
@@ -327,30 +333,27 @@ def executeShell(ctx, url, option=''):
     shell = createService(ctx, 'com.sun.star.system.SystemShellExecute')
     shell.execute(url, option, 0)
 
-def executeFrameDispatch(ctx, frame, url, arguments=(), listener=None):
+def executeDispatch(ctx, url, /, **args):
+    frame = getDesktop(ctx).getCurrentFrame()
+    arguments = getPropertyValueSet(args)
+    getDispatcher(ctx).executeDispatch(frame, url, '', 0, arguments)
+
+def executeFrameDispatch(ctx, url, listener=None, /, **args):
     url = getUrl(ctx, url)
+    frame = getDesktop(ctx).getCurrentFrame()
     dispatcher = frame.queryDispatch(url, '', 0)
+    arguments = getPropertyValueSet(args)
     if dispatcher is not None:
         if listener is not None:
             dispatcher.dispatchWithNotification(url, arguments, listener)
         else:
             dispatcher.dispatch(url, arguments)
 
-def executeDispatch(ctx, url, arguments=(), listener=None):
-    frame = getDesktop(ctx).getCurrentFrame()
-    executeFrameDispatch(ctx, frame, url, arguments, listener)
+def createMessageBox(peer, box, button, title, message):
+    return getMessageBox(peer.getToolkit(), peer, box, button, title, message)
 
-def createMessageBox(peer, message, title, box='message', button=2):
-    boxtypes = {'message': 'MESSAGEBOX',
-                'info':    'INFOBOX',
-                'warning': 'WARNINGBOX',
-                'error':   'ERRORBOX',
-                'query':   'QUERYBOX'}
-    box = uno.Enum('com.sun.star.awt.MessageBoxType', boxtypes.get(box, 'MESSAGEBOX'))
-    return getMessageBox(peer, {'Box': box, 'Button': button, 'Title': title, 'Message': message})
-
-def getMessageBox(peer, /, **args):
-    return peer.getToolkit().createMessageBox(peer, args['Box'], args['Button'], args['Title'], args['Message'])
+def getMessageBox(toolkit, peer, box, button, title, message):
+    return toolkit.createMessageBox(peer, box, button, title, message)
 
 def createService(ctx, name, *args, **kwargs):
     if args:

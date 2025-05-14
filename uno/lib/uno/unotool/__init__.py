@@ -53,6 +53,7 @@ from .unotool import getFilePicker
 from .unotool import getFileSequence
 from .unotool import getFileUrl
 from .unotool import getInteractionHandler
+from .unotool import getInterfaceNames
 from .unotool import getInterfaceTypes
 from .unotool import getLibreOfficeInfo
 from .unotool import getLibreOfficeVersion
@@ -73,6 +74,7 @@ from .unotool import getStreamSequence
 from .unotool import getStringResource
 from .unotool import getStringResourceWithLocation
 from .unotool import getTempFile
+from .unotool import getToolKit
 from .unotool import getTypeDetection
 from .unotool import getUriFactory
 from .unotool import getUrl

@@ -44,6 +44,7 @@ from .unotool import createService
 from .unotool import getArgumentSet
 from .unotool import getDesktop
 from .unotool import getMessageBox
+from .unotool import getToolKit
 
 import traceback
 
@@ -68,43 +69,18 @@ class Dispatch(unohelper.Base,
 
     def dispatch(self, url, arguments):
         state = FAILURE
-        result = None
+        result = ()
         if url.Path == 'Open':
-            fp = createService(self._ctx, self._service, FILEOPEN_SIMPLE)
-            fp.setDisplayDirectory(Dispatch._path)
-            fp.setMultiSelectionMode(True)
-            urls = ()
-            if fp.execute():
-                urls = fp.getSelectedFiles()
-                Dispatch._path = fp.getDisplayDirectory()
-                state = SUCCESS
-            fp.dispose()
+            urls, state = self._open()
             if state == SUCCESS:
                 desktop = getDesktop(self._ctx)
                 for url in urls:
                     desktop.loadComponentFromURL(url, '_default', 0, ())
         elif url.Path == 'SaveAs':
             document = self._frame.getController().getModel()
-            source = document.getURL()
-            path, _, name = source.rpartition(self._sep)
-            fp = createService(self._ctx, self._service, FILESAVE_SIMPLE)
-            fp.setDisplayDirectory(path + self._sep)
-            fp.setDefaultName(name)
-            if fp.execute():
-                target = fp.getSelectedFiles()[0]
-                Dispatch._path = fp.getDisplayDirectory()
-                if source != target:
-                    document.storeAsURL(target, ())
-                else:
-                    document.store()
-                state = SUCCESS
-            fp.dispose()
+            state = self._saveAs(document)
         elif url.Path == 'ShowWarning':
-            window = self._frame.getContainerWindow().getToolkit().getActiveTopWindow()
-            msgbox = getMessageBox(window, **getArgumentSet(arguments))
-            msgbox.execute()
-            msgbox.dispose()
-            state = SUCCESS
+            state = self._showWarning(arguments)
         return state, result
 
     def addStatusListener(self, listener, url):
@@ -119,3 +95,42 @@ class Dispatch(unohelper.Base,
         if listener in self._listeners:
             self._listeners.remove(listener)
 
+    def _open(self):
+        state = FAILURE
+        fp = createService(self._ctx, self._service, FILEOPEN_SIMPLE)
+        fp.setDisplayDirectory(Dispatch._path)
+        fp.setMultiSelectionMode(True)
+        urls = ()
+        if fp.execute():
+            urls = fp.getSelectedFiles()
+            Dispatch._path = fp.getDisplayDirectory()
+            state = SUCCESS
+        fp.dispose()
+        return urls, state
+
+    def _saveAs(self, document):
+        state = FAILURE
+        source = document.getURL()
+        path, _, name = source.rpartition(self._sep)
+        fp = createService(self._ctx, self._service, FILESAVE_SIMPLE)
+        fp.setDisplayDirectory(path + self._sep)
+        fp.setDefaultName(name)
+        if fp.execute():
+            target = fp.getSelectedFiles()[0]
+            Dispatch._path = fp.getDisplayDirectory()
+            if source != target:
+                document.storeAsURL(target, ())
+            else:
+                document.store()
+            state = SUCCESS
+        fp.dispose()
+        return state
+
+    def _showWarning(self, arguments):
+        toolkit = getToolKit(self._ctx)
+        peer = toolkit.getActiveTopWindow()
+        args = getArgumentSet(arguments)
+        msgbox = getMessageBox(toolkit, peer, args['Box'], args['Button'], args['Title'], args['Message'])
+        msgbox.execute()
+        msgbox.dispose()
+        return SUCCESS

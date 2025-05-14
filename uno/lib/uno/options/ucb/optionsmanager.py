@@ -35,7 +35,6 @@ from .optionsview import OptionsView
 
 from ..unotool import executeDispatch
 from ..unotool import getDesktop
-from ..unotool import getDispatcher
 from ..unotool import getFilePicker
 from ..unotool import createService
 
@@ -110,6 +109,5 @@ class OptionsManager():
         self._view.enableCustomize(enabled)
 
     def customizeMenu(self):
-        frame = getDesktop(self._ctx).getCurrentFrame()
-        getDispatcher(self._ctx).executeDispatch(frame, '.uno:ConfigureDialog', '', 0, ())
+        executeDispatch(self._ctx, '.uno:ConfigureDialog')
 
