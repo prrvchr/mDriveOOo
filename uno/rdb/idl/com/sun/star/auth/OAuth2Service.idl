@@ -27,9 +27,10 @@
 #ifndef __com_sun_star_auth_OAuth2Service_idl__
 #define __com_sun_star_auth_OAuth2Service_idl__
 
+#include <com/sun/star/auth/XOAuth2Service.idl>
+
 module com { module sun { module star { module auth {
 
-interface XOAuth2Service;
 
 service OAuth2Service : XOAuth2Service
 {

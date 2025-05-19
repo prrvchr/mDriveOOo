@@ -37,31 +37,31 @@ from com.sun.star.sdbc.DataType import VARCHAR
 from com.sun.star.sdbcx.CheckOption import CASCADE
 from com.sun.star.sdbcx.PrivilegeObject import TABLE
 
-from .dbtool import Array
-from .dbtool import createUser
-from .dbtool import createViews
-from .dbtool import currentDateTimeInTZ
-from .dbtool import getDataFromResult
-from .dbtool import getDataSourceCall
-from .dbtool import getDataSourceConnection
-from .dbtool import getSequenceFromResult
-from .dbtool import getValueFromResult
+from ..dbtool import Array
+from ..dbtool import createUser
+from ..dbtool import createViews
+from ..dbtool import currentDateTimeInTZ
+from ..dbtool import getDataFromResult
+from ..dbtool import getDataSourceCall
+from ..dbtool import getDataSourceConnection
+from ..dbtool import getSequenceFromResult
+from ..dbtool import getValueFromResult
 
-from .unotool import checkVersion
-from .unotool import getConfiguration
-from .unotool import getSimpleFile
+from ..unotool import checkVersion
+from ..unotool import getConfiguration
+from ..unotool import getSimpleFile
 
-from .configuration import g_identifier
-from .configuration import g_host
+from ..configuration import g_identifier
+from ..configuration import g_host
 
-from .dbqueries import getSqlQuery
+from ..dbqueries import getSqlQuery
 
-from .dbconfig import g_catalog
-from .dbconfig import g_schema
-from .dbconfig import g_version
+from ..dbconfig import g_catalog
+from ..dbconfig import g_schema
+from ..dbconfig import g_version
 
-from .dbinit import getDataBaseConnection
-from .dbinit import createDataBase
+from ..dbinit import getDataBaseConnection
+from ..dbinit import createDataBase
 
 from collections import OrderedDict
 import json
@@ -200,25 +200,38 @@ class DataBase():
         yield catalog, schema, name, *options
 
     def selectUser(self, server, name):
+        userid = None
         metadata = None
-        args = []
+        books = []
         call = self._getCall('selectUser')
         call.setString(1, server)
         call.setString(2, name)
         result = call.executeQuery()
-        user = call.getInt(3)
-        if not call.wasNull():
-            metadata = {'User': user,
-                        'Uri': call.getString(4),
-                        'Scheme': call.getString(5),
+        if result.next():
+            userid = result.getInt(1)
+            metadata = {'User': userid,
+                        'Uri': result.getString(2),
+                        'Scheme': result.getString(3),
                         'Server': server,
-                        'Path': call.getString(6),
+                        'Path': result.getString(4),
                         'Name': name}
-            while result.next():
-                args.append(getDataFromResult(result))
+            
         result.close()
         call.close()
-        return metadata, args
+        if userid is not None:
+            books = self._selectBooks(userid)
+        return metadata, books
+
+    def _selectBooks(self, userid):
+        books = []
+        call = self._getCall('selectBooks')
+        call.setInt(1, userid)
+        result = call.executeQuery()
+        while result.next():
+            books.append(getDataFromResult(result))
+        result.close()
+        call.close()
+        return books
 
 # Procedures called by the User
     def getUserFields(self):

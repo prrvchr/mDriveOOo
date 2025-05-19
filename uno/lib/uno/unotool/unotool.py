@@ -338,16 +338,14 @@ def executeDispatch(ctx, url, /, **args):
     arguments = getPropertyValueSet(args)
     getDispatcher(ctx).executeDispatch(frame, url, '', 0, arguments)
 
-def executeFrameDispatch(ctx, url, listener=None, /, **args):
+def executeFrameDispatch(ctx, frame, url, listener=None, /, *properties):
     url = getUrl(ctx, url)
-    frame = getDesktop(ctx).getCurrentFrame()
     dispatcher = frame.queryDispatch(url, '', 0)
-    arguments = getPropertyValueSet(args)
     if dispatcher is not None:
         if listener is not None:
-            dispatcher.dispatchWithNotification(url, arguments, listener)
+            dispatcher.dispatchWithNotification(url, properties, listener)
         else:
-            dispatcher.dispatch(url, arguments)
+            dispatcher.dispatch(url, properties)
 
 def createMessageBox(peer, box, button, title, message):
     return getMessageBox(peer.getToolkit(), peer, box, button, title, message)

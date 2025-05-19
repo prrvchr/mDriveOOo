@@ -32,9 +32,9 @@ import uno
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .helper import getSqlException
+from ..helper import getSqlException
 
-from .oauth20 import getRequest
+from ..oauth20 import getRequest
 
 from dateutil import parser
 from dateutil import tz
@@ -79,11 +79,8 @@ class Provider():
 
 
     # Method called from User.__init__()
-    def insertUser(self, logger, database, request, scheme, server, name, pwd):
-        mtd = 'insertUser'
-        logger.logprb(INFO, self._cls, mtd, 1301, name)
+    def insertUser(self, database, request, scheme, server, name, pwd):
         userid = self.getNewUserId(request, scheme, server, name, pwd)
-        logger.logprb(INFO, self._cls, mtd, 1302, userid, name)
         return database.insertUser(userid, scheme, server, '', name)
 
     # Need to be implemented method
@@ -91,21 +88,16 @@ class Provider():
         raise NotImplementedError
 
     # Method called from DataSource.getConnection()
-    def initAddressbooks(self, logger, database, user):
-        mtd = 'initAddressbooks'
-        logger.logprb(INFO, self._cls, mtd, 1321, user.Name)
-        books = self.getAddressbooks(logger, database, user)
-        self._initUserBooks(logger, database, user, books)
-        logger.logprb(INFO, self._cls, mtd, 1322, user.Name)
+    def initAddressbooks(self, database, user):
+        books = self.getAddressbooks(database, user)
+        self._initUserBooks(database, user, books)
 
-    def getAddressbooks(self, logger, database, user):
+    def getAddressbooks(self, database, user):
         raise NotImplementedError
 
-    def _initUserBooks(self, logger, database, user, books):
+    def _initUserBooks(self, database, user, books):
         count = 0
         modified = False
-        mtd = '_initUserBooks'
-        logger.logprb(INFO, self._cls, mtd, 1331, user.Name)
         for uri, name, tag, token in books:
             if user.hasBook(uri):
                 book = user.getBook(uri)
@@ -117,24 +109,18 @@ class Provider():
                 args = database.insertBook(user.Id, uri, name, tag, token)
                 book = user.setNewBook(uri, **args)
                 modified = True
-            self.initUserGroups(logger, database, user, book)
+            self.initUserGroups(database, user, book)
             count += 1
         if not count:
             raise getSqlException(self._ctx, self._src, 1006, 1611, self._cls, 'initUserBooks', user.Name, user.Server)
         if modified and self.supportAddressBook():
             database.initAddressbooks(user)
-        logger.logprb(INFO, self._cls, mtd, 1332, user.Name)
 
-    def initUserGroups(self, logger, database, user, book):
-        mtd = 'initUserGroups'
-        logger.logprb(INFO, self._cls, mtd, 1341, book.Name)
-        groups = self.getUserGroups(logger, database, user, book)
-        self._initUserGroup(logger, database, user, book, groups)
-        logger.logprb(INFO, self._cls, mtd, 1342, book.Name)
+    def initUserGroups(self, database, user, book):
+        groups = self.getUserGroups(database, user, book)
+        self._initUserGroup(database, user, book, groups)
 
-    def _initUserGroup(self, logger, database, user, book, groups):
-        mtd = 'initUserGroup'
-        logger.logprb(INFO, self._cls, mtd, 1351, book.Name)
+    def _initUserGroup(self, database, user, book, groups):
         for uri, name in groups:
             if book.hasGroup(uri):
                 group = book.getGroup(uri)
@@ -146,7 +132,6 @@ class Provider():
                 args = database.insertGroup(book.Id, uri, name)
                 group = book.setNewGroup(uri, *args)
                 database.createGroupView(user, group)
-        logger.logprb(INFO, self._cls, mtd, 1352, book.Name)
 
     def firstPullCard(self, database, user, book, pages, count):
         raise NotImplementedError

@@ -30,8 +30,10 @@
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .card import DataBase
-from .card import Provider
+from .database import DataBase
+
+from .provider import Provider
+
 from .card import User
 
 from .card import Replicator
@@ -99,7 +101,7 @@ class DataSource():
             self._users[name] = user
             self._maps[uri] = name
         if user.isOnLine():
-            self._provider.initAddressbooks(logger, self._database, user)
+            self._provider.initAddressbooks(self._database, user)
         connection = self._database.getConnection(name, user.getPassword())
         user.addSession(self._database.getSessionId(connection))
         # User and/or AddressBooks has been initialized and the connection to the database is done...

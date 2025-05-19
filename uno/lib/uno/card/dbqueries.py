@@ -119,26 +119,33 @@ SELECT "Name" FROM "Fields" WHERE "Table"='Loop' AND "Column"=1;'''
     elif name == 'createSelectUser':
         query = """\
 CREATE PROCEDURE "SelectUser"(IN SERVER VARCHAR(128),
-                              IN NAME VARCHAR(128),
-                              OUT ID INTEGER,
-                              OUT URI VARCHAR(256),
-                              OUT SCHEME VARCHAR(128),
-                              OUT PATH VARCHAR(128))
+                              IN NAME VARCHAR(128))
   SPECIFIC "SelectUser_1"
+  READS SQL DATA
+  DYNAMIC RESULT SETS 1
+  BEGIN ATOMIC
+    DECLARE RSLT CURSOR WITH RETURN FOR
+      SELECT "User", "Uri", "Scheme", "Path" FROM "Users"
+      WHERE "Server" = SERVER AND "Name" = NAME
+    FOR READ ONLY;
+    OPEN RSLT;
+  END"""
+
+    elif name == 'createSelectBooks':
+        query = """\
+CREATE PROCEDURE "SelectBooks"(IN USERID INTEGER)
+  SPECIFIC "SelectBooks_1"
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE RSLT CURSOR WITH RETURN FOR
       SELECT B."Book", B."Uri", B."Name", B."Tag", B."Token",
         JSON_ARRAYAGG(JSON_ARRAY(G."Group", G."Uri", G."Name", G."Token")) AS "Groups"
-      FROM "Users" AS U
-      INNER JOIN "Books" AS B ON U."User" = B."User"
+      FROM "Books" AS B
       LEFT JOIN "Groups" AS G ON B."Book" = G."Book"
-      WHERE U."Server" = SERVER AND U."Name" = NAME
+      WHERE B."User" = USERID
       GROUP BY B."Book", B."Uri", B."Name", B."Tag", B."Token"
     FOR READ ONLY;
-      SELECT "User", "Uri", "Scheme", "Path" INTO ID, URI, SCHEME, PATH FROM "Users"
-      WHERE "Server" = SERVER AND "Name" = NAME;
     OPEN RSLT;
   END"""
 
@@ -777,7 +784,9 @@ CREATE PROCEDURE "MergeCardGroups"(IN BOOKID INTEGER,
 
 # Get Procedure Query
     elif name == 'selectUser':
-        query = 'CALL "SelectUser"(?,?,?,?,?,?)'
+        query = 'CALL "SelectUser"(?,?)'
+    elif name == 'selectBooks':
+        query = 'CALL "SelectBooks"(?)'
     elif name == 'insertUser':
         query = 'CALL "InsertUser"(?,?,?,?,?,?)'
     elif name == 'insertBook':

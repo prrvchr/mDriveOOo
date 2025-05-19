@@ -36,6 +36,7 @@ from .loggerpool import LoggerPool
 from ..unotool import getResourceLocation
 from ..unotool import getStringResourceWithLocation
 
+from ..configuration import g_extension
 from ..configuration import g_identifier
 from ..configuration import g_resource
 
@@ -120,7 +121,7 @@ class LogWrapper():
         return self._resolveErrorMessage(resolver, resource)
 
     def _resolveErrorMessage(self, resolver, resource):
-        return resolver.resolveString(101).format(resource, self._url, self._basename)
+        return resolver.resolveString(101).format(resource, g_extension, g_resource, self._basename)
 
     def _getPoolLogger(self, name, basename):
         url = getResourceLocation(self._ctx, g_identifier, g_resource)
