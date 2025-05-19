@@ -55,7 +55,8 @@ The mDriveOOo extension uses the OAuth2OOo extension to work.
 It must therefore meet the [requirement of the OAuth2OOo extension][14].
 
 The mDriveOOo extension uses the jdbcDriverOOo extension to work.  
-It must therefore meet the [requirement of the jdbcDriverOOo extension][15].
+It must therefore meet the [requirement of the jdbcDriverOOo extension][15].  
+Additionally, mDriveOOo requires the jdbcDriverOOo extension to be configured to provide `com.sun.star.sdb` as the API level, which is the default configuration.
 
 ___
 
@@ -310,6 +311,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 - Updated the [Python packaging][61] package to version 25.0.
 - Downgrade the [Python setuptools][62] package to version 75.3.2. to ensure support for Python 3.8.
 - Passive registration deployment that allows for much faster installation of extensions and differentiation of registered UNO services from those provided by a Java or Python implementation. This passive registration is provided by the [LOEclipse][28] extension via [PR#152][66] and [PR#157][67].
+- Modified [LOEclipse][28] to support the new `rdb` file format produced by the `unoidl-write` compilation utility. `idl` files have been updated to support both available compilation tools: idlc and unoidl-write.
 - It is now possible to build the oxt file of the mDriveOOo extension only with the help of Apache Ant and a copy of the GitHub repository. The [How to build the extension][68] section has been added to the documentation.
 - Implemented [PEP 570][69] in [logging][70] to support unique multiple arguments.
 - To ensure the correct creation of the mDriveOOo database, it will be checked that the jdbcDriverOOo extension has `com.sun.star.sdb` as API level.
