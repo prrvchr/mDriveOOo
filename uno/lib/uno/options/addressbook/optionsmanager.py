@@ -42,7 +42,7 @@ from ..configuration import g_synclog
 
 
 class OptionsManager():
-    def __init__(self, ctx, window, logger, offset=0):
+    def __init__(self, ctx, logger, window, offset=0):
         self._ctx = ctx
         self._logger = logger
         self._model = OptionsModel(ctx)

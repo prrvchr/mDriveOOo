@@ -32,25 +32,21 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.uno import Exception as UnoException
 
-from ..logger import getLogger
-
 from ..unotool import createService
 
 from ..jdbcdriver import g_service as jdbc
 
 from ..configuration import g_service as embedded
-from ..configuration import g_defaultlog
-from ..configuration import g_basename
 
 import traceback
 
 
 class OptionsModel():
-    def __init__(self, ctx, url=None):
+    def __init__(self, ctx, logger, url=None):
         self._ctx = ctx
         self._url = url
-        self._logger = getLogger(ctx, g_defaultlog, g_basename)
-        self._logger.logprb(INFO, 'OptionsModel', '__init__', 301)
+        self._logger = logger
+        self._logger.logprb(INFO, 'OptionsModel', '__init__', 401)
 
 # OptionsModel getter methods
     def getDriverVersion(self, apilevel):
