@@ -38,9 +38,7 @@ from com.sun.star.sdbc.DataType import VARCHAR
 
 from .dbtool import Array
 
-from .unotool import checkVersion
 from .unotool import generateUuid
-from .unotool import getSimpleFile
 
 from .dbqueries import getSqlQuery
 
@@ -50,51 +48,30 @@ from .dbtool import currentUnoDateTime
 from .dbtool import getDataSourceCall
 from .dbtool import getDataFromResult
 
-from .dbinit import createDataBase
-from .dbinit import getDataBaseConnection
-
-from .helper import checkConnection
-from .helper import checkDatabaseVersion
+from .logger import getLogger
 
 from .dbconfig import g_role
+
+from .configuration import g_defaultlog
 
 import os
 import traceback
 
 
 class DataBase():
-    def __init__(self, ctx, source, logger, url, user='', pwd=''):
-        cls, mtd = 'DataBase', '__init__'
-        logger.logprb(INFO, cls, mtd, 401)
+    def __init__(self, ctx, connection, url):
         self._ctx = ctx
         self._url = url
-        odb = url + '.odb'
-        new = not getSimpleFile(ctx).exists(odb)
-        connection = getDataBaseConnection(ctx, url, user, pwd, new)
-        checkConnection(ctx, source, connection, logger, new)
-        version = connection.getMetaData().getDriverVersion()
-        if new:
-            logger.logprb(INFO, cls, mtd, 402, version)
-            createDataBase(ctx, connection, odb)
-            logger.logprb(INFO, cls, mtd, 403)
+        print("DataBase.__init__() url: %s" % self._url)
         self._statement = connection.createStatement()
-        self._version = version
-        self._logger = logger
-        logger.logprb(INFO, cls, mtd, 404)
 
     @property
     def Url(self):
         return self._url
-    @property
-    def Version(self):
-        return self._version
 
     @property
     def Connection(self):
         return self._statement.getConnection()
-
-    def isUptoDate(self):
-        return checkDatabaseVersion(self._version)
 
 # Procedures called by the DataSource
     def addCloseListener(self, listener):
@@ -472,7 +449,7 @@ class DataBase():
             mx = 2 ** 32 / 2 -1
             if size > mx:
                 size = min(size, mx)
-                self._logger.logprb(SEVERE, 'DataBase', '_mergeItem', 451, size, item.get('Size'))
+                getLogger(self._ctx, g_defaultlog).logprb(SEVERE, 'DataBase', '_mergeItem', 401, os.name, item.get('Size'), size)
         call.setLong(10, size)
         call.setString(11, item.get('Link'))
         call.setBoolean(12, item.get('Trashed'))

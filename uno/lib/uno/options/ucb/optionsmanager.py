@@ -28,6 +28,9 @@
 """
 
 from com.sun.star.logging.LogLevel import INFO
+from com.sun.star.logging.LogLevel import SEVERE
+
+from com.sun.star.uno import Exception as UnoException
 
 from .optionsmodel import OptionsModel
 from .optionsview import OptionsView
@@ -35,6 +38,9 @@ from .optionsview import OptionsView
 from ..unotool import executeDispatch
 from ..unotool import getDesktop
 from ..unotool import getFilePicker
+
+from ..helper import getDataBaseConnection
+from ..helper import getDataBaseUrl
 
 from ..logger import LogManager
 
@@ -45,7 +51,7 @@ import traceback
 
 
 class OptionsManager():
-    def __init__(self, ctx, logger, window):
+    def __init__(self, ctx, source, logger, window):
         self._ctx = ctx
         self._logger = logger
         self._model = OptionsModel(ctx)
@@ -54,6 +60,13 @@ class OptionsManager():
         self._logmanager.initView()
         self._view.setViewData(*self._model.getViewData(OptionsManager._restart))
         self._logger.logprb(INFO, 'OptionsManager', '__init__', 151)
+        try:
+            url = getDataBaseUrl(ctx)
+            connection = getDataBaseConnection(ctx, source, logger, url, False, False)
+        except UnoException as e:
+            logger.logprb(SEVERE, 'OptionsManager', '__init__', 152, e.Message)
+        else:
+            connection.close()
 
     _restart = False
 
@@ -106,4 +119,3 @@ class OptionsManager():
 
     def customizeMenu(self):
         executeDispatch(self._ctx, '.uno:ConfigureDialog')
-

@@ -40,4 +40,5 @@ from .logger import getLogger
 from .configuration import g_identifier
 from .configuration import g_basename
 from .configuration import g_defaultlog
+from .configuration import g_scheme
 

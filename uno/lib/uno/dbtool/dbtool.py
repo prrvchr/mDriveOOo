@@ -106,7 +106,7 @@ def getConnectionUrl(ctx, path):
     location = getResourceLocation(ctx, g_identifier, path)
     return getUrlPresentation(ctx, location)
 
-def getDataSourceConnection(ctx, url, name='', password='', create=True, infos=None, isolated=True):
+def getDataSourceConnection(ctx, url, name='', password='', create=False, infos=None, isolated=True):
     if create:
         # XXX: The connection infos must be given to the creation
         datasource = createDataSource(ctx, url, infos)

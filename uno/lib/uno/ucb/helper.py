@@ -48,6 +48,8 @@ from com.sun.star.ucb.ConnectionMode import OFFLINE
 from com.sun.star.sdb import ParametersRequest
 
 from .dbtool import getConnectionUrl
+from .dbtool import getDataSourceConnection
+from .dbtool import getDriverInfos
 
 from .unotool import checkVersion
 from .unotool import createMessageBox
@@ -62,7 +64,10 @@ from .unotool import getParentWindow
 from .unotool import getProperty
 from .unotool import getPropertyValue
 from .unotool import getPropertyValueSet
+from .unotool import getSimpleFile
 from .unotool import parseUrl
+
+from .dbinit import createDataBase
 
 from .oauth20 import getOAuth2Version
 from .oauth20 import g_extension as g_oauth2ext
@@ -72,6 +77,7 @@ from .jdbcdriver import g_extension as g_jdbcext
 from .jdbcdriver import g_identifier as g_jdbcid
 from .jdbcdriver import g_version as g_jdbcver
 
+from .dbconfig import g_drvinfos
 from .dbconfig import g_folder
 from .dbconfig import g_version
 
@@ -89,44 +95,19 @@ def getPresentationUrl(transformer, url):
         url = transformer.getPresentation(uri, True)
     return url
 
-def getDataSourceUrl(ctx, source, logger):
-    oauth2 = getOAuth2Version(ctx)
-    driver = getExtensionVersion(ctx, g_jdbcid)
-    if oauth2 is None:
-        title, msg = getExceptionMessage(logger, 801, g_oauth2ext, g_oauth2ext, g_extension)
-        showWarning(ctx, msg, title)
-        raise IllegalIdentifierException(msg, source)
-    if not checkVersion(oauth2, g_oauth2ver):
-        title, msg = getExceptionMessage(logger, 803, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
-        showWarning(ctx, msg, title)
-        raise IllegalIdentifierException(msg, source)
-    if driver is None:
-        title, msg = getExceptionMessage(logger, 801, g_jdbcext, g_jdbcext, g_extension)
-        showWarning(ctx, msg, title)
-        raise IllegalIdentifierException(msg, source)
-    if not checkVersion(driver, g_jdbcver):
-        title, msg = getExceptionMessage(logger, 803, g_jdbcext, driver, g_jdbcext, g_jdbcver)
-        showWarning(ctx, msg, title)
-        raise IllegalIdentifierException(msg, source)
+def getDataBaseUrl(ctx):
     return getConnectionUrl(ctx, g_folder + g_ucbseparator + g_scheme)
 
-def checkConnection(ctx, source, connection, logger, new):
-    version = connection.getMetaData().getDriverVersion()
-    if not checkDatabaseVersion(version):
-        connection.close()
-        title, msg = getExceptionMessage(logger, 811, g_jdbcext, version, g_version)
-        showWarning(ctx, msg, title)
-        raise IllegalIdentifierException(msg, source)
-    service = 'com.sun.star.sdb.Connection'
-    interface = 'com.sun.star.sdbcx.XGroupsSupplier'
-    if new and not _checkConnection(connection, service, interface):
-        connection.close()
-        title, msg = getExceptionMessage(logger, 813, g_jdbcext, service, interface)
-        showWarning(ctx, msg, title)
-        raise IllegalIdentifierException(msg, source)
-
-def checkDatabaseVersion(version):
-    return checkVersion(version, g_version)
+def getDataBaseConnection(ctx, source, logger, url, create=True, warn=True):
+    _checkConfiguration(ctx, source, logger, warn)
+    odb = url + '.odb'
+    new = not getSimpleFile(ctx).exists(odb)
+    connection = _getDataSourceConnection(ctx, url, new)
+    _checkConnection(ctx, source, connection, logger, new, warn)
+    if new and create:
+        createDataBase(ctx, connection)
+        connection.getParent().DatabaseDocument.storeAsURL(odb, ())
+    return connection
 
 def propertyChange(source, name, oldvalue, newvalue):
     if name in source.propertiesListener:
@@ -240,10 +221,56 @@ def getExceptionMessage(logger, code, extension, *args):
 def showWarning(ctx, message, title):
     box = uno.Enum('com.sun.star.awt.MessageBoxType', 'ERRORBOX')
     args = {'Box': box, 'Button': 1, 'Title': title, 'Message': message}
-    executeDispatch(ctx, 'gdrive:ShowWarning', **args)
+    executeDispatch(ctx, '%s:ShowWarning' % g_scheme, **args)
 
 # Private method
-def _checkConnection(connection, service, interface):
+def _checkConfiguration(ctx, source, logger, warn):
+    oauth2 = getOAuth2Version(ctx)
+    driver = getExtensionVersion(ctx, g_jdbcid)
+    if oauth2 is None:
+        title, msg = getExceptionMessage(logger, 801, g_oauth2ext, g_oauth2ext, g_extension)
+        if warn:
+            showWarning(ctx, msg, title)
+        raise IllegalIdentifierException(msg, source)
+    if not checkVersion(oauth2, g_oauth2ver):
+        title, msg = getExceptionMessage(logger, 803, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
+        if warn:
+            showWarning(ctx, msg, title)
+        raise IllegalIdentifierException(msg, source)
+    if driver is None:
+        title, msg = getExceptionMessage(logger, 801, g_jdbcext, g_jdbcext, g_extension)
+        if warn:
+            showWarning(ctx, msg, title)
+        raise IllegalIdentifierException(msg, source)
+    if not checkVersion(driver, g_jdbcver):
+        title, msg = getExceptionMessage(logger, 803, g_jdbcext, driver, g_jdbcext, g_jdbcver)
+        if warn:
+            showWarning(ctx, msg, title)
+        raise IllegalIdentifierException(msg, source)
+
+def _getDataSourceConnection(ctx, url, new, infos=None):
+    if new:
+        infos = getDriverInfos(ctx, url, g_drvinfos)
+    return getDataSourceConnection(ctx, url, '', '', new, infos)
+
+def _checkConnection(ctx, source, connection, logger, new, warn):
+    version = connection.getMetaData().getDriverVersion()
+    if not checkVersion(version, g_version):
+        connection.close()
+        title, msg = getExceptionMessage(logger, 811, g_jdbcext, version, g_version)
+        if warn:
+            showWarning(ctx, msg, title)
+        raise IllegalIdentifierException(msg, source)
+    service = 'com.sun.star.sdb.Connection'
+    interface = 'com.sun.star.sdbcx.XGroupsSupplier'
+    if new and not _checkConnectionApi(connection, service, interface):
+        connection.close()
+        title, msg = getExceptionMessage(logger, 813, g_jdbcext, service, interface)
+        if warn:
+            showWarning(ctx, msg, title)
+        raise IllegalIdentifierException(msg, source)
+
+def _checkConnectionApi(connection, service, interface):
     return connection.supportsService(service) and hasInterface(connection, interface)
 
 def _getContentProperties(content, properties):

@@ -57,7 +57,7 @@ import traceback
 
 
 class DataSource():
-    def __init__(self, ctx, source, logger, url):
+    def __init__(self, ctx, logger, connection, url):
         cls, mtd = 'DataSource', '__init__'
         logger.logprb(INFO, cls, mtd, 301)
         self._ctx = ctx
@@ -66,13 +66,11 @@ class DataSource():
         self._sync = Event()
         self._lock = Lock()
         self._urifactory = getUriFactory(ctx)
-        database = DataBase(ctx, source, logger, url)
-        provider = Provider(ctx, logger)
-        self._replicator = Replicator(ctx, url, provider, self._users, self._sync, self._lock)
-        self._database = database
-        self._provider = provider
+        self._database = DataBase(ctx, connection, url)
+        self._provider = Provider(ctx, logger)
+        self._replicator = Replicator(ctx, url, self._provider, self._users, self._sync, self._lock)
         self._logger = logger
-        database.addCloseListener(CloseListener(self))
+        self._database.addCloseListener(CloseListener(self))
         logger.logprb(INFO, cls, mtd, 302)
 
     @property
@@ -81,12 +79,6 @@ class DataSource():
     @property
     def Replicator(self):
         return self._replicator
-
-    def isUptoDate(self):
-        return self.DataBase.isUptoDate()
-
-    def getDataBaseVersion(self):
-        return self.DataBase.Version
 
     # called from XCloseListener
     def dispose(self):

@@ -45,6 +45,7 @@ from ..oauth20 import g_service
 
 from ..dbtool import currentDateTimeInTZ
 from ..dbtool import currentUnoDateTime
+from ..dbtool import getDataSourceConnection
 
 from ..unotool import generateUuid
 from ..unotool import getProperty
@@ -119,7 +120,9 @@ class User():
         self._lock = None
         self._metadata = metadata
         self.Request = request
-        self.DataBase = DataBase(ctx, logger, database.Url, name, password)
+        url = database.Url
+        connection = getDataSourceConnection(ctx, url, name, password)
+        self.DataBase = DataBase(ctx, connection, url)
         if new:
             # Start Replicator for pushing changes…
             self._lock = Event()

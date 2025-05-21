@@ -50,20 +50,10 @@ from .datasource import DataSource
 from .unotool import getUrlTransformer
 from .unotool import parseUrl
 
-from .helper import getDataSourceUrl
+from .helper import getDataBaseConnection
+from .helper import getDataBaseUrl
 from .helper import getExceptionMessage
 from .helper import getPresentationUrl
-from .helper import showWarning
-
-from .logger import getLogger
-
-from .jdbcdriver import g_extension as g_jdbcext
-
-from .dbconfig import g_version
-
-from .configuration import g_extension
-from .configuration import g_identifier
-from .configuration import g_defaultlog
 
 import traceback
 
@@ -73,7 +63,7 @@ class ContentProvider(unohelper.Base,
                       XContentIdentifierFactory,
                       XContentProvider):
     def __init__(self, ctx, logger, implementation, authority, arguments):
-        self._cls = f'{arguments}ContentProvider'
+        self._cls = '%sContentProvider' % arguments
         self._ctx = ctx
         self._implementation = implementation
         self._authority = authority
@@ -87,8 +77,9 @@ class ContentProvider(unohelper.Base,
     @property
     def _datasource(self):
         if ContentProvider.__datasource is None:
-            url = getDataSourceUrl(self._ctx, self, self._logger)
-            datasource = DataSource(self._ctx, self, self._logger, url)
+            url = getDataBaseUrl(self._ctx)
+            connection = getDataBaseConnection(self._ctx, self, self._logger, url)
+            datasource = DataSource(self._ctx, self._logger, connection, url)
             ContentProvider.__datasource = datasource
         return ContentProvider.__datasource
 
@@ -101,6 +92,7 @@ class ContentProvider(unohelper.Base,
     # XContentProvider
     def queryContent(self, identifier):
         try:
+            content = None
             url = self._getPresentationUrl(identifier.getContentIdentifier())
             content = self._datasource.queryContent(self, self._authority, url)
             self._logger.logprb(INFO, self._cls, 'queryContent', 221, url)

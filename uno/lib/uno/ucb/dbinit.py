@@ -55,8 +55,6 @@ from .dbtool import getConnectionInfos
 from .dbtool import getDataBaseTables
 from .dbtool import getDataBaseIndexes
 from .dbtool import getDataBaseForeignKeys
-from .dbtool import getDataSourceConnection
-from .dbtool import getDriverInfos
 from .dbtool import getTableNames
 from .dbtool import getTables
 from .dbtool import getTablePrivileges
@@ -71,18 +69,12 @@ from .dbconfig import g_schema
 from .dbconfig import g_csv
 from .dbconfig import g_role
 from .dbconfig import g_queries
-from .dbconfig import g_drvinfos
 
 from collections import OrderedDict
 import traceback
 
 
-def getDataBaseConnection(ctx, url, user, pwd, new, infos=None):
-    if new:
-        infos = getDriverInfos(ctx, url, g_drvinfos)
-    return getDataSourceConnection(ctx, url, user, pwd, new, infos)
-
-def createDataBase(ctx, connection, odb):
+def createDataBase(ctx, connection):
     # XXX Creation order are very important here...
     tables = connection.getTables()
     statement = connection.createStatement()
@@ -100,7 +92,6 @@ def createDataBase(ctx, connection, odb):
     createRoleAndPrivileges(tables, groups, _getItemOptions(_getViews(), PrivilegeObject.TABLE, g_role, 1))
     executeQueries(ctx, statement, _getProcedures(), 'create%s', g_queries)
     statement.close()
-    connection.getParent().DatabaseDocument.storeAsURL(odb, ())
 
 def _createTables(connection, statement, tables):
     infos = getConnectionInfos(connection, 'AutoIncrementCreation', 'RowVersionCreation')
