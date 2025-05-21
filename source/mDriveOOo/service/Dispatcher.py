@@ -39,6 +39,7 @@ from mdrive import Dispatch
 from mdrive import hasInterface
 
 from mdrive import g_identifier
+from mdrive import g_scheme
 
 import traceback
 
@@ -55,6 +56,7 @@ class Dispatcher(unohelper.Base,
     def __init__(self, ctx):
         self._ctx = ctx
         self._frame = None
+        self._protocol = '%s:' % g_scheme
 
 # XInitialization
     def initialize(self, args):
@@ -66,7 +68,7 @@ class Dispatcher(unohelper.Base,
 # XDispatchProvider
     def queryDispatch(self, url, frame, flags):
         dispatch = None
-        if url.Protocol == 'mdrive:':
+        if url.Protocol == self._protocol:
             dispatch = Dispatch(self._ctx, self._frame)
         return dispatch
 
@@ -80,13 +82,13 @@ class Dispatcher(unohelper.Base,
     # XServiceInfo
     def supportsService(self, service):
         return g_ImplementationHelper.supportsService(g_ImplementationName, service)
+
     def getImplementationName(self):
         return g_ImplementationName
+
     def getSupportedServiceNames(self):
         return g_ImplementationHelper.getSupportedServiceNames(g_ImplementationName)
-
 
 g_ImplementationHelper.addImplementation(Dispatcher,                      # UNO object class
                                          g_ImplementationName,            # Implementation name
                                          g_ServiceNames)                  # List of implemented services
-

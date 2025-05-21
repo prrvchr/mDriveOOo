@@ -28,7 +28,7 @@ Rem ╚════════════════════════�
 Sub SaveRemote
     Set oDispatch = CreateUnoService(&quot;com.sun.star.frame.DispatchHelper&quot;)
     Dim args(0) As New com.sun.star.beans.PropertyValue
-    oDispatch.executeDispatch(StarDesktop.ActiveFrame, &quot;mdrive:SaveAs&quot;, &quot;&quot;, 0, args)
+    oDispatch.executeDispatch(StarDesktop.ActiveFrame, &quot;vnd-microsoft:SaveAs&quot;, &quot;&quot;, 0, args)
 End Sub
 
 </script:module>
