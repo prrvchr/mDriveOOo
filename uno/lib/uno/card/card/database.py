@@ -105,7 +105,7 @@ class DataBase():
         return checkVersion(self._version, g_version)
 
     def getConnection(self, user='', password=''):
-        return getDataSourceConnection(self._ctx, self._url, user, password, False)
+        return getDataSourceConnection(self._ctx, self._url, user, password)
 
     def dispose(self):
         if self._statement is not None:
