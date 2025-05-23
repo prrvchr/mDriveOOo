@@ -29,7 +29,7 @@
 
 **L'utilisation de ce logiciel vous soumet à nos [Conditions d'utilisation][4] et à notre [Politique de protection des données][5].**
 
-# version [1.2.1][6]
+# version [1.3.0][6]
 
 ## Introduction:
 
@@ -330,7 +330,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [3]: <https://prrvchr.github.io/mDriveOOo>
 [4]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_fr>
 [5]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_fr>
-[6]: <https://prrvchr.github.io/mDriveOOo/README_fr#ce-qui-a-%C3%A9t%C3%A9-fait-pour-la-version-121>
+[6]: <https://prrvchr.github.io/mDriveOOo/README_fr#ce-qui-a-%C3%A9t%C3%A9-fait-pour-la-version-130>
 [7]: <https://prrvchr.github.io/README_fr>
 [8]: <https://fr.libreoffice.org/download/telecharger-libreoffice/>
 [9]: <https://www.openoffice.org/fr/Telecharger/>
@@ -350,7 +350,7 @@ Bien que cette fonctionnalité ne soit nécessaire que pour gDriveOOo, elle est 
 [24]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
 [25]: <img/mDriveOOo.svg#middle>
 [26]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.2.1#right>
+[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.3.0#right>
 [28]: <https://github.com/LibreOffice/loeclipse>
 [29]: <https://adoptium.net/temurin/releases/?version=8&package=jdk>
 [30]: <https://ant.apache.org/manual/install.html>

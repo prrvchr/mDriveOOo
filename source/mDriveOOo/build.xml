@@ -78,6 +78,10 @@
         <delete file="${project.files}"/>
         <delete file="${project.zip}"/>
 
+        <!-- create the build and dist directory if not exist -->
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+
         <!-- clean the build and dist directory without deleting it -->
         <delete includeemptydirs="true">
             <fileset dir="${build.dir}" includes="**/idl/,**/classes/"/>
@@ -87,8 +91,6 @@
         </delete>
 
         <!-- create a few empty directories -->
-        <mkdir dir="${build.dir}"/>
-        <mkdir dir="${dist.dir}"/>
         <mkdir dir="${idl.out}"/>
         <mkdir dir="${idl.out.urd}"/>
         <mkdir dir="${idl.out.rdb}"/>
