@@ -1,2 +1,10 @@
 title,cwe,description,cvss,cvss_v4,finding,stream,kind,where,snippet,method
-Summary: No vulnerabilities were found in your targets.
+063. Lack of data validation - Path Traversal,CWE-22,Use of setuptools at version >=75.3.2 with ['CVE-2025-47273'] in mDriveOOo/source/mDriveOOo/requirements.txt,CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N/E:U/RL:O/RC:C,CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N/E:U,https://help.fluidattacks.com/portal/en/kb/articles/criteria-vulnerabilities-063,skims,SCA,4,"
+  1 | python-dateutil>=2.9.0.post0
+  2 | ijson>=3.3.0
+  3 | packaging>=25.0
+> 4 | setuptools>=75.3.2
+  5 | six>=1.17.0
+    ^ Col 0
+",pip.pip_requirements_txt
+Summary: 1 vulnerabilities were found in your targets.
