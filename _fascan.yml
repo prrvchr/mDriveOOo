@@ -1,14 +1,22 @@
 namespace: mDriveOOo
+
 output:
   file_path: ./Fluid-Attacks-Results.csv
   format: CSV
+
 working_dir: .
+
 sast:
   include:
     - glob(source/mDriveOOo/service/*.py)
     - glob(source/mDriveOOo/service/pythonpath/mdrive/*)
+
 sca:
+  exclude:
+    - dependency_name: setuptools
+      reason: False Positive
   include:
     - .
+
 language: EN
 strict: true
