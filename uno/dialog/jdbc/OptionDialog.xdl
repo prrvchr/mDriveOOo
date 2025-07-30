@@ -31,27 +31,33 @@
   </dlg:styles>
   <dlg:bulletinboard>
     <dlg:fixedline dlg:style-id="0" dlg:id="FixedLine1" dlg:tab-index="0" dlg:left="6" dlg:top="63" dlg:width="244" dlg:height="15" dlg:help-text="&amp;OptionDialog.FixedLine1.HelpText" dlg:value="&amp;OptionDialog.FixedLine1.Label"/>
-    <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:left="10" dlg:top="80" dlg:width="35" dlg:height="15" dlg:help-text="&amp;OptionDialog.Label1.HelpText" dlg:value="&amp;OptionDialog.Label1.Label" dlg:valign="center"/>
+    <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:left="10" dlg:top="80" dlg:width="70" dlg:height="15" dlg:help-text="&amp;OptionDialog.Label1.HelpText" dlg:value="&amp;OptionDialog.Label1.Label" dlg:valign="center"/>
     <dlg:radiogroup>
-      <dlg:radio dlg:id="OptionButton1" dlg:tab-index="2" dlg:left="50" dlg:top="80" dlg:width="65" dlg:height="15" dlg:help-text="&amp;OptionDialog.OptionButton1.HelpText" dlg:value="&amp;OptionDialog.OptionButton1.Label" dlg:valign="center">
+      <dlg:radio dlg:id="OptionButton1" dlg:tab-index="2" dlg:left="85" dlg:top="80" dlg:width="45" dlg:height="15" dlg:help-text="&amp;OptionDialog.OptionButton1.HelpText" dlg:value="&amp;OptionDialog.OptionButton1.Label" dlg:valign="center">
         <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:Level0" script:language="UNO"/>
       </dlg:radio>
-      <dlg:radio dlg:id="OptionButton2" dlg:tab-index="3" dlg:left="120" dlg:top="80" dlg:width="65" dlg:height="15" dlg:help-text="&amp;OptionDialog.OptionButton2.HelpText" dlg:value="&amp;OptionDialog.OptionButton2.Label" dlg:valign="center">
+      <dlg:radio dlg:id="OptionButton2" dlg:tab-index="3" dlg:left="145" dlg:top="80" dlg:width="50" dlg:height="15" dlg:help-text="&amp;OptionDialog.OptionButton2.HelpText" dlg:value="&amp;OptionDialog.OptionButton2.Label" dlg:valign="center">
         <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:Level1" script:language="UNO"/>
       </dlg:radio>
-      <dlg:radio dlg:id="OptionButton3" dlg:tab-index="4" dlg:left="190" dlg:top="80" dlg:width="65" dlg:height="15" dlg:help-text="&amp;OptionDialog.OptionButton3.HelpText" dlg:value="&amp;OptionDialog.OptionButton3.Label" dlg:valign="center">
+      <dlg:radio dlg:id="OptionButton3" dlg:tab-index="4" dlg:left="205" dlg:top="80" dlg:width="45" dlg:height="15" dlg:help-text="&amp;OptionDialog.OptionButton3.HelpText" dlg:value="&amp;OptionDialog.OptionButton3.Label" dlg:valign="center">
         <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:Level2" script:language="UNO"/>
       </dlg:radio>
     </dlg:radiogroup>
-    <dlg:checkbox dlg:id="CheckBox1" dlg:tab-index="5" dlg:left="10" dlg:top="100" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionDialog.CheckBox1.HelpText" dlg:value="&amp;OptionDialog.CheckBox1.Label" dlg:valign="center" dlg:checked="false">
+    <dlg:text dlg:id="Label2" dlg:tab-index="5" dlg:left="10" dlg:top="100" dlg:width="70" dlg:height="15" dlg:help-text="&amp;OptionDialog.Label2.HelpText" dlg:value="&amp;OptionDialog.Label2.Label" dlg:valign="center"/>
+    <dlg:radiogroup>
+      <dlg:radio dlg:id="OptionButton4" dlg:tab-index="6" dlg:left="85" dlg:top="100" dlg:width="45" dlg:height="15" dlg:help-text="&amp;OptionDialog.OptionButton4.HelpText" dlg:value="&amp;OptionDialog.OptionButton4.Label" dlg:valign="center">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:RowSet0" script:language="UNO"/>
+      </dlg:radio>
+      <dlg:radio dlg:id="OptionButton5" dlg:tab-index="7" dlg:left="145" dlg:top="100" dlg:width="50" dlg:height="15" dlg:help-text="&amp;OptionDialog.OptionButton5.HelpText" dlg:value="&amp;OptionDialog.OptionButton5.Label" dlg:valign="center">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:RowSet1" script:language="UNO"/>
+      </dlg:radio>
+      <dlg:radio dlg:id="OptionButton6" dlg:tab-index="8" dlg:left="205" dlg:top="100" dlg:width="45" dlg:height="15" dlg:help-text="&amp;OptionDialog.OptionButton6.HelpText" dlg:value="&amp;OptionDialog.OptionButton6.Label" dlg:valign="center">
+        <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:RowSet2" script:language="UNO"/>
+      </dlg:radio>
+    </dlg:radiogroup>
+    <dlg:checkbox dlg:id="CheckBox1" dlg:tab-index="9" dlg:left="10" dlg:top="120" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionDialog.CheckBox1.HelpText" dlg:value="&amp;OptionDialog.CheckBox1.Label" dlg:valign="center" dlg:checked="false">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:SystemTable" script:language="UNO"/>
     </dlg:checkbox>
-    <dlg:checkbox dlg:id="CheckBox2" dlg:tab-index="6" dlg:left="95" dlg:top="100" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionDialog.CheckBox2.HelpText" dlg:value="&amp;OptionDialog.CheckBox2.Label" dlg:valign="center" dlg:checked="true">
-      <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:UseBookmark" script:language="UNO"/>
-    </dlg:checkbox>
-    <dlg:checkbox dlg:id="CheckBox3" dlg:tab-index="7" dlg:left="180" dlg:top="100" dlg:width="75" dlg:height="15" dlg:help-text="&amp;OptionDialog.CheckBox3.HelpText" dlg:value="&amp;OptionDialog.CheckBox3.Label" dlg:valign="center" dlg:checked="false">
-      <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:SQLMode" script:language="UNO"/>
-    </dlg:checkbox>
-    <dlg:text dlg:style-id="0" dlg:id="Label2" dlg:tab-index="8" dlg:left="10" dlg:top="185" dlg:width="240" dlg:height="15" dlg:help-text="&amp;OptionDialog.Label2.HelpText" dlg:value="&amp;OptionDialog.Label2.Label" dlg:align="center" dlg:valign="center"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label3" dlg:tab-index="10" dlg:left="10" dlg:top="185" dlg:width="240" dlg:height="15" dlg:help-text="&amp;OptionDialog.Label3.HelpText" dlg:value="&amp;OptionDialog.Label3.Label" dlg:align="center" dlg:valign="center"/>
   </dlg:bulletinboard>
 </dlg:window>

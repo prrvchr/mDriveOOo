@@ -5,7 +5,7 @@
     <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
   </dlg:styles>
   <dlg:bulletinboard>
-    <dlg:text dlg:id="Label1" dlg:left="10" dlg:top="120" dlg:width="60" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label1.HelpText" dlg:value="&amp;OptionsDialog.Label1.Label" dlg:valign="center"/>
-    <dlg:text dlg:id="Label2" dlg:left="140" dlg:top="120" dlg:width="110" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label2.HelpText" dlg:value="&amp;OptionsDialog.Label2.Label" dlg:align="right" dlg:valign="center"/>
+    <dlg:text dlg:id="Label1" dlg:left="10" dlg:top="140" dlg:width="60" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label1.HelpText" dlg:value="&amp;OptionsDialog.Label1.Label" dlg:valign="center"/>
+    <dlg:text dlg:id="Label2" dlg:left="140" dlg:top="140" dlg:width="110" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label2.HelpText" dlg:value="&amp;OptionsDialog.Label2.Label" dlg:align="right" dlg:valign="center"/>
   </dlg:bulletinboard>
 </dlg:window>

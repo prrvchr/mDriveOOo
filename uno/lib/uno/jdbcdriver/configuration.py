@@ -31,7 +31,7 @@
 g_extension = 'jdbcDriverOOo'
 g_identifier = 'io.github.prrvchr.%s' % g_extension
 g_service = '%s.Driver' % g_identifier
-g_services = {'com.sun.star.sdb': 'io.github.prrvchr.jdbcdriver.sdb.Driver',
-              'com.sun.star.sdbc': 'io.github.prrvchr.jdbcdriver.sdbc.Driver',
-              'com.sun.star.sdbcx': 'io.github.prrvchr.jdbcdriver.sdbcx.Driver'}
-g_version = '1.5.0'
+g_services = ('io.github.prrvchr.jdbcdriver.sdbc.Driver',
+              'io.github.prrvchr.jdbcdriver.sdbcx.Driver',
+              'io.github.prrvchr.jdbcdriver.sdb.Driver')
+g_version = '1.5.4'

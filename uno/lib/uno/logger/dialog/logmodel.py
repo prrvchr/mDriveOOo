@@ -56,6 +56,7 @@ from ...configuration import g_basename
 
 from packaging.requirements import Requirement
 from importlib import metadata
+import distutils.sysconfig as ds
 import pkg_resources as pkgr
 import os, sys
 import traceback
@@ -139,7 +140,9 @@ class LogModel():
         else:
             msg = self._resolver.resolveString(123).format(sys.executable)
         self._logger.logp(level, clazz, method, msg)
-        msg = self._resolver.resolveString(124).format(os.pathsep.join(sys.path))
+        msg = self._resolver.resolveString(124).format(ds.get_config_var('EXT_SUFFIX'))
+        self._logger.logp(level, clazz, method, msg)
+        msg = self._resolver.resolveString(125).format(os.pathsep.join(sys.path))
         self._logger.logp(level, clazz, method, msg)
         # If a requirements file exists at the extension root,
         # then we check if the requirements are met

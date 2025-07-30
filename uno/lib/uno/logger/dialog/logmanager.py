@@ -112,8 +112,8 @@ class LogManager():
         listener = LoggerListener(self)
         self._model.addLoggerListener(listener)
         self._dialog.execute()
-        self._dialog.dispose()
         self._model.removeLoggerListener(listener)
+        self._dialog.dispose()
         self._dialog = None
 
     # LogManager setter methods called by DialogHandler

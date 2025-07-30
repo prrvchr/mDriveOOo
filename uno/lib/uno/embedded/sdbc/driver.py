@@ -35,6 +35,6 @@ import traceback
 class Driver(DriverBase):
 
     def __init__(self, ctx, lock, logger, service, implementation):
-        services = (implementation, 'com.sun.star.sdbc.Driver')
+        services = ('com.sun.star.sdbc.Driver', )
         DriverBase.__init__(self, ctx, lock, logger, service, implementation, services)
 

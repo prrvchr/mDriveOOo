@@ -28,12 +28,12 @@
              xmlns:d="http://openoffice.org/extensions/description/2006"
              xmlns:l="http://libreoffice.org/extensions/description/2011"
              xmlns:xlink="http://www.w3.org/1999/xlink">
-  <version value="1.3.0"/>
+  <version value="1.3.1"/>
   <identifier value="io.github.prrvchr.mDriveOOo"/>
   <platform value="all"/>
   <dependencies>
-    <OpenOffice.org-minimal-version value="LibreOffice 6.0" d:name="LibreOffice 6.0"/>
-    <l:LibreOffice-minimal-version value="6.0" d:name="LibreOffice 6.0"/>
+    <d:OpenOffice.org-minimal-version value="6.0" d:name="LibreOffice 6.0"/>
+    <l:LibreOffice-minimal-version value="6.0" l:name="LibreOffice 6.0"/>
   </dependencies>
   <update-information>
     <src xlink:href="https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.update.xml"/>

@@ -122,10 +122,10 @@ class Driver(unohelper.Base,
                 self._logger.logprb(INFO, 'Driver', 'getPropertyInfo()', 142, info.Name, info.Value)
             return drvinfo
         except SQLException as e:
-            self._logger.logp(SEVERE, 'Driver', 'getPropertyInfo()', e.Message)
+            self._logger.logp(SEVERE, 'Driver', 'getPropertyInfo()', 143, e.Message)
             raise e
         except Exception as e:
-            self._logger.logprb(SEVERE, 'Driver', 'getPropertyInfo()', 143, e, traceback.format_exc())
+            self._logger.logprb(SEVERE, 'Driver', 'getPropertyInfo()', 144, e, traceback.format_exc())
             raise e
 
     def getMajorVersion(self):
@@ -145,15 +145,9 @@ class Driver(unohelper.Base,
     def _getConnectionInfo(self, infos):
         document = storage = url = None
         config = getConfiguration(self._ctx, g_identifier)
-        level = config.getByName('ApiLevel')
+        rowset = config.getByName('CachedRowSet')
         system = config.getByName('ShowSystemTable')
-        bookmark = config.getByName('UseBookmark')
-        mode = config.getByName('SQLMode')
-        newinfos = {'Url': g_url,
-                    'ApiLevel': level,
-                    'ShowSystemTable': system,
-                    'UseBookmark': bookmark,
-                    'SQLMode': mode}
+        newinfos = {'Url': g_url, 'CachedRowSet': rowset, 'ShowSystemTable': system}
         if g_user:
             newinfos['user'] = g_user
         if g_driver:
