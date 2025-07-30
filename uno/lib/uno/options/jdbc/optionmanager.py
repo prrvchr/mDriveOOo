@@ -37,10 +37,10 @@ import traceback
 
 
 class OptionManager():
-    def __init__(self, ctx, window, restart, offset, logger, *loggers):
+    def __init__(self, ctx, window, options, restart, offset, logger, *loggers):
         self._logmanager = LogManager(ctx, window, 'requirements.txt', logger, *loggers)
         self._model = OptionModel(ctx)
-        self._view = OptionWindow(ctx, window, WindowHandler(self), restart, offset)
+        self._view = OptionWindow(ctx, window, WindowHandler(self), options, restart, offset)
 
 # OptionManager setter methods
     def initView(self):
@@ -55,13 +55,10 @@ class OptionManager():
     def getConfigApiLevel(self):
         return self._model.getConfigApiLevel()
 
-    def getApiLevel(self):
-        return self._model.getApiLevel()
-
 # OptionManager setter methods
     def saveSetting(self):
         saved = self._logmanager.saveSetting()
-        saved |= self._model.saveSetting(*self._view.getOptions())
+        saved |= self._model.saveSetting()
         return saved
 
     def setRestart(self, state):
@@ -72,19 +69,15 @@ class OptionManager():
         self._initView()
 
     def setApiLevel(self, level):
-        self._view.enableOptions(*self._model.setApiLevel(level))
+        self._view.enableCachedRowSet(self._model.setApiLevel(level))
+
+    def setCachedRowSet(self, level):
+        self._model.setCachedRowSet(level)
 
     def setSystemTable(self, state):
         self._model.setSystemTable(state)
 
-    def setBookmark(self, state):
-        self._view.enableSQLMode(*self._model.setBookmark(state))
-
-    def setSQLMode(self, state):
-        self._model.setSQLMode(state)
-
 # OptionManager private methods
     def _initView(self):
-        level, system, bookmark, mode = self._model.getViewData()
-        self._view.setApiLevel(level, system, bookmark, mode)
+        self._view.initView(*self._model.getViewData())
 

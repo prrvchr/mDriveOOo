@@ -64,7 +64,8 @@ interface XRequestResponse: com::sun::star::uno::XInterface
                                                       [in] boolean DecodeUnicode,
                                                       [in] string Delimiter);
 
-    com::sun::star::io::XInputStream getInputStream([in] long Chunk);
+    com::sun::star::io::XInputStream getInputStream([in] long ChunkSize,
+                                                    [in] boolean DecodeUnicode);
 
 
     [attribute] string Encoding;

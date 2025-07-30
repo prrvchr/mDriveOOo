@@ -45,23 +45,27 @@ class Driver(DriverBase,
              XDropCatalog):
 
     def __init__(self, ctx, lock, logger, service, implementation):
-        services = (implementation, 'com.sun.star.sdbc.Driver', 'com.sun.star.sdbcx.Driver')
+        services = ('com.sun.star.sdbc.Driver', 'com.sun.star.sdbcx.Driver')
         DriverBase.__init__(self, ctx, lock, logger, service, implementation, services)
 
     # XDataDefinitionSupplier
     def getDataDefinitionByConnection(self, connection):
         try:
             self._logger.logprb(INFO, 'Driver', 'getDataDefinitionByConnection()', 151)
-            driver = self._getDriver()
-            return driver.getDataDefinitionByConnection(connection)
+            data = None
+            if connection.supportsService("com.sun.star.sdbcx.DatabaseDefinition"):
+                data = connection
+            return data
         except SQLException as e:
-            raise e
-        except Exception as e:
             self._logger.logprb(SEVERE, 'Driver', 'getDataDefinitionByConnection()', 152, e, traceback.format_exc())
+            raise e
 
     def getDataDefinitionByURL(self, url, infos):
         self._logger.logprb(INFO, 'Driver', 'getDataDefinitionByURL()', 161, url)
-        return self.getDataDefinitionByConnection(connect(url, infos))
+        data = None
+        if self.acceptsURL(url):
+            data = self.getDataDefinitionByConnection(self.connect(url, infos))
+        return data
 
     # XCreateCatalog
     def createCatalog(self, info):

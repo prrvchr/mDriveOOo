@@ -52,14 +52,17 @@ class WindowHandler(unohelper.Base,
             elif method == 'Level2':
                 self._manager.setApiLevel(2)
                 handled = True
+            elif method == 'RowSet0':
+                self._manager.setCachedRowSet(0)
+                handled = True
+            elif method == 'RowSet1':
+                self._manager.setCachedRowSet(1)
+                handled = True
+            elif method == 'RowSet2':
+                self._manager.setCachedRowSet(2)
+                handled = True
             elif method == 'SystemTable':
                 self._manager.setSystemTable(event.Source.State)
-                handled = True
-            elif method == 'UseBookmark':
-                self._manager.setBookmark(event.Source.State)
-                handled = True
-            elif method == 'SQLMode':
-                self._manager.setSQLMode(event.Source.State)
                 handled = True
             return handled
         except Exception as e:
@@ -69,7 +72,8 @@ class WindowHandler(unohelper.Base,
         return ('Level0',
                 'Level1',
                 'Level2',
-                'SystemTable',
-                'UseBookmark',
-                'SQLMode')
+                'RowSet0',
+                'RowSet1',
+                'RowSet2',
+                'SystemTable')
 
