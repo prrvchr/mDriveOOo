@@ -34,4 +34,4 @@ g_service = '%s.Driver' % g_identifier
 g_services = ('io.github.prrvchr.jdbcdriver.sdbc.Driver',
               'io.github.prrvchr.jdbcdriver.sdbcx.Driver',
               'io.github.prrvchr.jdbcdriver.sdb.Driver')
-g_version = '1.5.4'
+g_version = '1.5.7'
