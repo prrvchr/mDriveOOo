@@ -41,7 +41,8 @@ import traceback
 class OptionsManager():
     def __init__(self, ctx, logger, window, options, url=None):
         self._model = OptionsModel(ctx, logger, url)
-        self._manager = OptionManager(ctx, window, options, OptionsManager._restart, 20, g_defaultlog)
+        instrumented = self._model.isInstrumented()
+        self._manager = OptionManager(ctx, window, options, instrumented, OptionsManager._restart, 20, g_defaultlog)
         self._view = OptionsView(window)
         window.addEventListener(OptionsListener(self))
         self._manager.initView()

@@ -37,9 +37,9 @@ import traceback
 
 
 class OptionManager():
-    def __init__(self, ctx, window, options, restart, offset, logger, *loggers):
+    def __init__(self, ctx, window, options, instrumented, restart, offset, logger, *loggers):
         self._logmanager = LogManager(ctx, window, 'requirements.txt', logger, *loggers)
-        self._model = OptionModel(ctx)
+        self._model = OptionModel(ctx, instrumented)
         self._view = OptionWindow(ctx, window, WindowHandler(self), options, restart, offset)
 
 # OptionManager setter methods
@@ -79,5 +79,6 @@ class OptionManager():
 
 # OptionManager private methods
     def _initView(self):
-        self._view.initView(*self._model.getViewData())
+        instrumented = self._model.isInstrumented()
+        self._view.initView(instrumented, *self._model.getViewData())
 

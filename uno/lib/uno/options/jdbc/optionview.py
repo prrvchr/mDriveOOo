@@ -47,10 +47,13 @@ class OptionWindow():
     def dispose(self):
         self._window.dispose()
 
-    def initView(self, level, crs, system, enabled):
+    def initView(self, instrumented, level, crs, system, enabled):
         self._getApiLevel(level).State = 1
-        self._getCachedRowSet(crs).State = 1
-        self.enableCachedRowSet(enabled)
+        if instrumented:
+            self._getCachedRowSet(crs).State = 1
+        else:
+            self._getCachedRowSet(0).State = 1
+        self.enableCachedRowSet(instrumented and enabled)
         self._getSytemTable().State = int(system)
 
     def enableCachedRowSet(self, enabled):

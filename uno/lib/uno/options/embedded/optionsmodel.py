@@ -35,6 +35,7 @@ from com.sun.star.uno import Exception as UnoException
 from ..unotool import createService
 
 from ..jdbcdriver import g_service as jdbc
+from ..jdbcdriver import isInstrumented
 
 from ..configuration import g_service as embedded
 
@@ -45,10 +46,14 @@ class OptionsModel():
     def __init__(self, ctx, logger, url=None):
         self._ctx = ctx
         self._url = url
+        self._instrumented = isInstrumented(ctx, 'xdbc:jdbc')
         self._logger = logger
         self._logger.logprb(INFO, 'OptionsModel', '__init__', 401)
 
 # OptionsModel getter methods
+    def isInstrumented(self):
+        return self._instrumented
+
     def getDriverVersion(self, apilevel):
         driver = None
         version = 'N/A'

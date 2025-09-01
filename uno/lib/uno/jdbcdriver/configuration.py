@@ -35,3 +35,11 @@ g_services = ('io.github.prrvchr.jdbcdriver.sdbc.Driver',
               'io.github.prrvchr.jdbcdriver.sdbcx.Driver',
               'io.github.prrvchr.jdbcdriver.sdb.Driver')
 g_version = '1.5.7'
+g_instrumented = 'SupportsInstrumentationAgent'
+
+# jdbcDriverOOo special configuration
+g_resource = 'resource'
+g_basename = 'Driver'
+g_defaultlog = 'Driver'
+g_errorlog = 'jdbcDriverError'
+
