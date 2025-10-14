@@ -31,6 +31,8 @@ from com.sun.star.ucb.SynchronizePolicy import SERVER_IS_MASTER
 from com.sun.star.ucb.SynchronizePolicy import CLIENT_IS_MASTER
 from com.sun.star.ucb.SynchronizePolicy import NONE_IS_MASTER
 
+from ..jdbctool import isInstrumented
+
 from ..unotool import getConfiguration
 from ..unotool import getResourceLocation
 from ..unotool import getSimpleFile
@@ -50,6 +52,7 @@ class OptionsModel():
     def __init__(self, ctx):
         self._config = getConfiguration(ctx, g_identifier, True)
         self._common = getConfiguration(ctx, 'org.openoffice.Office.Common', True)
+        self._instrumented = isInstrumented(ctx, 'hsqldb')
         self._url = getResourceLocation(ctx, g_identifier)
         self._policies = {'SERVER_IS_MASTER': 1, 'CLIENT_IS_MASTER': 2, 'NONE_IS_MASTER': 3}
         self._factors = {'Timeout': 60, 'Chunk': 1024}
@@ -57,8 +60,8 @@ class OptionsModel():
         self._hasdatabase = sf.exists(self.getDatasourceUrl())
         self._hasfile = sf.exists(self.getFileUrl())
         self._resolver = getStringResource(ctx, g_identifier, 'dialogs', 'OptionsDialog')
-        self._resources = {'Link': 'OptionsDialog.Hyperlink1.Link'}
-
+        self._resources = {'Link': 'OptionsDialog.Hyperlink1.Url',
+                           'Url': 'OptionsDialog.Hyperlink2.Url'}
 
     @property
     def _ResetSync(self):
@@ -95,15 +98,18 @@ class OptionsModel():
 # OptionsModel getter methods
     def getInitData(self):
         resumable = self._config.getByName('ResumableUpload')
-        return self._hasdatabase, self._hasfile, resumable, self._getLink()
+        return self._getUrl(), self._instrumented, self._hasdatabase, self._hasfile, resumable, self._getLink()
+
+    def isInstrumented(self):
+        return self._instrumented
 
     def hasDataBase(self):
         return self._hasdatabase
 
-    def getViewData(self, restart):
-        return (self._hasdatabase, self._ResetSync, self._SupportShare,
-                self._IsShared, self._ShareName, self._Policy,
-                self._Timeout, self._Download, self._Upload, self._Macro, restart)
+    def getViewData(self):
+        return (self._instrumented, self._hasdatabase, self._ResetSync,
+                self._SupportShare, self._IsShared, self._ShareName,
+                self._Policy, self._Timeout, self._Download, self._Upload, self._Macro)
 
     def getDatasourceUrl(self):
         folder = g_ucbseparator + g_folder + g_ucbseparator + g_scheme
@@ -187,6 +193,10 @@ class OptionsModel():
     def _setMacro(self, enabled):
         if enabled != self._Macro:
             self._common.replaceByHierarchicalName('Misc/UseSystemFileDialog', enabled)
+
+    def _getUrl(self):
+        resource = self._resources.get('Url')
+        return self._resolver.resolveString(resource)
 
     def _getLink(self):
         resource = self._resources.get('Link')

@@ -24,6 +24,7 @@
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 -->
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
 <dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="OptionsDialog" dlg:page="1" dlg:left="0" dlg:top="0" dlg:width="260" dlg:height="240" dlg:help-text="&amp;OptionsDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;OptionsDialog.Title" dlg:withtitlebar="false">
   <dlg:styles>
     <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
@@ -54,7 +55,7 @@
     </dlg:checkbox>
     <dlg:checkbox dlg:id="CheckBox2" dlg:tab-index="6" dlg:left="130" dlg:top="120" dlg:width="50" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CheckBox2.HelpText" dlg:value="&amp;OptionsDialog.CheckBox2.Label" dlg:valign="center" dlg:checked="false"/>
     <dlg:text dlg:id="Label3" dlg:left="185" dlg:top="120" dlg:width="40" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label3.HelpText" dlg:value="&amp;OptionsDialog.Label3.Label" dlg:valign="center" dlg:align="right"/>
-    <dlg:numericfield dlg:id="NumericField1" dlg:tab-index="7" dlg:left="230" dlg:top="120" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField1.HelpText" dlg:decimal-accuracy="0" dlg:value-min="5" dlg:value-max="1440" dlg:align="center"/>
+    <dlg:numericfield dlg:id="NumericField1" dlg:tab-index="7" dlg:left="230" dlg:top="120" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField1.HelpText" dlg:decimal-accuracy="0" dlg:value-min="5" dlg:value-max="1440"/>
     <dlg:text dlg:id="Label4" dlg:left="10" dlg:top="140" dlg:width="50" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label4.HelpText" dlg:value="&amp;OptionsDialog.Label4.Label" dlg:valign="center"/>
     <dlg:radiogroup>
       <dlg:radio dlg:id="OptionButton4" dlg:tab-index="8" dlg:left="65" dlg:top="140" dlg:width="75" dlg:height="15" dlg:help-text="&amp;OptionsDialog.OptionButton4.HelpText" dlg:value="&amp;OptionsDialog.OptionButton4.Label" dlg:valign="center" dlg:checked="true">
@@ -65,8 +66,8 @@
       </dlg:radio>
     </dlg:radiogroup>
     <dlg:text dlg:id="Label5" dlg:left="65" dlg:top="160" dlg:width="30" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label5.HelpText" dlg:value="&amp;OptionsDialog.Label5.Label" dlg:valign="center"/>
-    <dlg:numericfield dlg:id="NumericField2" dlg:tab-index="10" dlg:page="1" dlg:left="100" dlg:top="160" dlg:width="30" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField2.HelpText" dlg:readonly="true" dlg:strict-format="true" dlg:decimal-accuracy="0" dlg:value-min="256" dlg:value-max="4096" dlg:align="center"/>
-    <dlg:numericfield dlg:id="NumericField3" dlg:tab-index="11" dlg:page="2" dlg:left="100" dlg:top="160" dlg:width="30" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField3.HelpText" dlg:readonly="true" dlg:strict-format="true" dlg:decimal-accuracy="0" dlg:value-min="256" dlg:value-max="4096" dlg:align="center"/>
+    <dlg:numericfield dlg:id="NumericField2" dlg:tab-index="10" dlg:page="1" dlg:left="100" dlg:top="160" dlg:width="30" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField2.HelpText" dlg:readonly="true" dlg:strict-format="true" dlg:decimal-accuracy="0" dlg:value-min="256" dlg:value-max="4096"/>
+    <dlg:numericfield dlg:id="NumericField3" dlg:tab-index="11" dlg:page="2" dlg:left="100" dlg:top="160" dlg:width="30" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField3.HelpText" dlg:readonly="true" dlg:strict-format="true" dlg:decimal-accuracy="0" dlg:value-min="256" dlg:value-max="4096"/>
     <dlg:button dlg:id="CommandButton3" dlg:tab-index="12" dlg:page="1" dlg:left="130" dlg:top="160" dlg:width="7" dlg:height="7" dlg:help-text="&amp;OptionsDialog.CommandButton3.HelpText" dlg:value="&amp;OptionsDialog.CommandButton3.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:SpinUp1" script:language="UNO"/>
     </dlg:button>
@@ -80,22 +81,24 @@
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:SpinDown2" script:language="UNO"/>
     </dlg:button>
     <dlg:text dlg:id="Label6" dlg:left="145" dlg:top="160" dlg:width="25" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label6.HelpText" dlg:value="&amp;OptionsDialog.Label6.Label" dlg:align="right" dlg:valign="center"/>
-    <dlg:numericfield dlg:id="NumericField4" dlg:tab-index="16" dlg:page="1" dlg:left="175" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField4.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="900" dlg:align="center"/>
-    <dlg:numericfield dlg:id="NumericField5" dlg:tab-index="17" dlg:page="2" dlg:left="175" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField5.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="900" dlg:align="center"/>
+    <dlg:numericfield dlg:id="NumericField4" dlg:tab-index="16" dlg:page="1" dlg:left="175" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField4.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="900"/>
+    <dlg:numericfield dlg:id="NumericField5" dlg:tab-index="17" dlg:page="2" dlg:left="175" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField5.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="900"/>
     <dlg:text dlg:id="Label7" dlg:left="200" dlg:top="160" dlg:width="25" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label7.HelpText" dlg:value="&amp;OptionsDialog.Label7.Label" dlg:align="right" dlg:valign="center"/>
-    <dlg:numericfield dlg:id="NumericField6" dlg:tab-index="18" dlg:page="1" dlg:left="230" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField6.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="10" dlg:align="center"/>
-    <dlg:numericfield dlg:id="NumericField7" dlg:tab-index="19" dlg:page="2" dlg:left="230" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField7.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="10" dlg:align="center"/>
+    <dlg:numericfield dlg:id="NumericField6" dlg:tab-index="18" dlg:page="1" dlg:left="230" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField6.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="10"/>
+    <dlg:numericfield dlg:id="NumericField7" dlg:tab-index="19" dlg:page="2" dlg:left="230" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionsDialog.NumericField7.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="10"/>
     <dlg:checkbox dlg:id="CheckBox3" dlg:tab-index="20" dlg:left="10" dlg:top="180" dlg:width="150" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CheckBox3.HelpText" dlg:value="&amp;OptionsDialog.CheckBox3.Label" dlg:valign="center" dlg:checked="false">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableShare" script:language="UNO"/>
     </dlg:checkbox>
-    <dlg:textfield dlg:id="TextField1" dlg:tab-index="21" dlg:left="160" dlg:top="180" dlg:width="90" dlg:height="15" dlg:help-text="&amp;OptionsDialog.TextField1.HelpText" dlg:valign="center" dlg:value="&amp;OptionsDialog.TextField1.Text"/>
+    <dlg:textfield dlg:id="TextField1" dlg:tab-index="21" dlg:left="160" dlg:top="180" dlg:width="90" dlg:height="15" dlg:help-text="&amp;OptionsDialog.TextField1.HelpText" dlg:value="&amp;OptionsDialog.TextField1.Text"/>
     <dlg:checkbox dlg:id="CheckBox4" dlg:tab-index="22" dlg:left="10" dlg:top="200" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CheckBox4.HelpText" dlg:value="&amp;OptionsDialog.CheckBox4.Label" dlg:valign="center" dlg:checked="false">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableMacro" script:language="UNO"/>
     </dlg:checkbox>
-    <dlg:linklabel dlg:id="Hyperlink1" dlg:tab-index="23" dlg:left="105" dlg:top="200" dlg:width="80" dlg:height="15" dlg:help-text="" dlg:help-url="" dlg:value="&amp;OptionsDialog.Hyperlink1.Label" dlg:url="" dlg:valign="center" dlg:align="center"/>
+    <dlg:linklabel dlg:id="Hyperlink1" dlg:tab-index="23" dlg:left="105" dlg:top="200" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Hyperlink1.HelpText" dlg:value="&amp;OptionsDialog.Hyperlink1.Label" dlg:valign="center" dlg:align="center"/>
     <dlg:button dlg:id="CommandButton7" dlg:tab-index="24" dlg:left="195" dlg:top="200" dlg:width="55" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton7.HelpText" dlg:value="&amp;OptionsDialog.CommandButton7.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Customize" script:language="UNO"/>
     </dlg:button>
     <dlg:text dlg:style-id="0" dlg:id="Label8" dlg:left="10" dlg:top="220" dlg:width="240" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label8.HelpText" dlg:value="&amp;OptionsDialog.Label8.Label" dlg:align="center" dlg:valign="center"/>
+    <dlg:linklabel dlg:style-id="0" dlg:id="Hyperlink2" dlg:tab-index="25" dlg:left="10" dlg:top="220" dlg:width="240" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Hyperlink2.HelpText" dlg:value="&amp;OptionsDialog.Hyperlink2.Label" dlg:align="center" dlg:valign="center"/>
   </dlg:bulletinboard>
 </dlg:window>
+
