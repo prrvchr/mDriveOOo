@@ -24,6 +24,7 @@
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 -->
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
 <dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="LogWindow" dlg:left="0" dlg:top="0" dlg:width="260" dlg:height="60" dlg:help-text="&amp;LogWindow.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;LogWindow.Title" dlg:withtitlebar="false">
   <dlg:styles>
     <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
@@ -31,7 +32,7 @@
   <dlg:bulletinboard>
     <dlg:fixedline dlg:style-id="0" dlg:id="FixedLine1" dlg:tab-index="0" dlg:left="6" dlg:top="3" dlg:width="244" dlg:height="15" dlg:help-text="&amp;LogWindow.FixedLine1.HelpText" dlg:value="&amp;LogWindow.FixedLine1.Label"/>
     <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:left="10" dlg:top="20" dlg:width="70" dlg:height="15" dlg:help-text="&amp;LogWindow.Label1.HelpText" dlg:value="&amp;LogWindow.Label1.Label" dlg:valign="center"/>
-    <dlg:menulist dlg:id="ListBox1" dlg:tab-index="2" dlg:left="85" dlg:top="20" dlg:width="85" dlg:height="15" dlg:help-text="&amp;LogWindow.ListBox1.HelpText" dlg:value="&amp;LogWindow.ListBox1.Text" dlg:spin="true">
+    <dlg:menulist dlg:id="ListBox1" dlg:tab-index="2" dlg:left="85" dlg:top="20" dlg:width="85" dlg:height="15" dlg:help-text="&amp;LogWindow.ListBox1.HelpText" dlg:spin="true">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:SetLogger" script:language="UNO"/>
     </dlg:menulist>
     <dlg:checkbox dlg:id="CheckBox1" dlg:tab-index="3" dlg:left="180" dlg:top="20" dlg:width="70" dlg:height="15" dlg:help-text="&amp;LogWindow.CheckBox1.HelpText" dlg:value="&amp;LogWindow.CheckBox1.Label" dlg:valign="center" dlg:checked="false">
@@ -51,7 +52,6 @@
     </dlg:button>
     <dlg:text dlg:id="Label3" dlg:tab-index="8" dlg:left="180" dlg:top="40" dlg:width="20" dlg:height="15" dlg:help-text="&amp;LogWindow.Label3.HelpText" dlg:value="&amp;LogWindow.Label3.Label" dlg:valign="center"/>
     <dlg:menulist dlg:id="ListBox2" dlg:tab-index="9" dlg:left="205" dlg:top="40" dlg:width="45" dlg:height="15" dlg:help-text="&amp;LogWindow.ListBox2.HelpText" dlg:spin="true">
-      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:SetLevel" script:language="UNO"/>
       <dlg:menupopup>
         <dlg:menuitem dlg:value="&amp;LogWindow.ListBox2.StringItemList.0"/>
         <dlg:menuitem dlg:value="&amp;LogWindow.ListBox2.StringItemList.1"/>
@@ -62,6 +62,8 @@
         <dlg:menuitem dlg:value="&amp;LogWindow.ListBox2.StringItemList.6"/>
         <dlg:menuitem dlg:value="&amp;LogWindow.ListBox2.StringItemList.7"/>
       </dlg:menupopup>
+      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:SetLevel" script:language="UNO"/>
     </dlg:menulist>
   </dlg:bulletinboard>
 </dlg:window>
+

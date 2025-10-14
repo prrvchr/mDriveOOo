@@ -30,9 +30,10 @@
 import uno
 import unohelper
 
-from ..unotool import getStringResource
+from ...unotool import getStringResource
+from ...unotool import hasInterface
 
-from ..configuration import g_identifier
+from ...configuration import g_identifier
 
 import traceback
 
@@ -45,6 +46,12 @@ class WizardModel(unohelper.Base):
         self._roadmap = None
         self._resolver = getStringResource(ctx, g_identifier, 'dialogs', 'Wizard')
         self._resources = {'Roadmap': 'Wizard.Roadmap.Text'}
+
+    def dispose(self):
+        interface = 'com.sun.star.lang.XComponent'
+        for page in self._pages.values():
+            if page and hasInterface(page, interface):
+                page.dispose()
 
     def setRoadmapModel(self, model):
         self._roadmap = model

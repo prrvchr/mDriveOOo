@@ -32,7 +32,7 @@ import unohelper
 
 from com.sun.star.awt.grid import XMutableGridDataModel
 
-from ..unotool import hasInterface
+from ...unotool import hasInterface
 
 import traceback
 
@@ -113,6 +113,7 @@ class GridModel(unohelper.Base,
 
 # XComponent
     def dispose(self):
+        print("GridModel.dispose() 1")
         event = uno.createUnoStruct('com.sun.star.lang.EventObject')
         event.Source = self
         for listener in self._events:

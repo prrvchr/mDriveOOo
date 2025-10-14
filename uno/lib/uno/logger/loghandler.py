@@ -108,6 +108,10 @@ class RollerHandler(unohelper.Base,
         if listener in self._listeners:
             self._listeners.remove(listener)
 
+    def clearLogger(self):
+        if self._sf.exists(self._url):
+            self._sf.kill(self._url)
+
     def _publishRecord(self, record):
         if not self._sf.exists(self._url):
             msg = self._formatter.getHead()

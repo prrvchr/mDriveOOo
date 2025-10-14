@@ -29,8 +29,11 @@
 
 import unohelper
 
+from com.sun.star.awt import XContainerWindowEventHandler
 from com.sun.star.awt import XDialogEventHandler
 from com.sun.star.awt import XItemListener
+
+from com.sun.star.util import XCloseListener
 
 import traceback
 
@@ -41,6 +44,42 @@ class DialogHandler(unohelper.Base,
         self._manager = manager
 
 # XDialogEventHandler
+    def callHandlerMethod(self, dialog, event, method):
+        try:
+            handled = False
+            if method == 'Help':
+                handled = True
+            elif method == 'Previous':
+                self._manager.travelPrevious()
+                handled = True
+            elif method == 'Next':
+                self._manager.travelNext()
+                handled = True
+            elif method == 'Finish':
+                self._manager.doFinish()
+                handled = True
+            elif method == 'Cancel':
+                self._manager.doCancel()
+                handled = True
+            return handled
+        except Exception as e:
+            msg = "Error: %s" % traceback.format_exc()
+            print(msg)
+
+    def getSupportedMethodNames(self):
+        return ('Help',
+                'Previous',
+                'Next',
+                'Finish',
+                'Cancel')
+
+
+class WindowHandler(unohelper.Base,
+                    XContainerWindowEventHandler):
+    def __init__(self, manager):
+        self._manager = manager
+
+# XContainerWindowEventHandler
     def callHandlerMethod(self, dialog, event, method):
         try:
             handled = False
@@ -86,3 +125,20 @@ class ItemListener(unohelper.Base,
 
     def disposing(self, event):
         pass
+
+
+class CloseListener(unohelper.Base,
+                    XCloseListener):
+    def __init__(self, manager):
+        self._manager = manager
+
+    # XCloseListener
+    def queryClosing(self, event, ownership):
+        self._manager.queryClosing(event.Source, ownership)
+
+    def notifyClosing(self, event):
+        self._manager.notifyClosing(event.Source)
+
+    def disposing(self, event):
+        pass
+

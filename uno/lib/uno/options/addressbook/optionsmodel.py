@@ -27,14 +27,14 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from ..unotool import createService
-from ..unotool import getConfiguration
-from ..unotool import getSimpleFile
+from ...unotool import createService
+from ...unotool import getConfiguration
+from ...unotool import getSimpleFile
 
-from ..helper import getDataBaseUrl
+from ...helper import getDataBaseUrl
 
-from ..configuration import g_identifier
-from ..configuration import g_implementation
+from ...configuration import g_identifier
+from ...configuration import g_implementation
 
 
 class OptionsModel():
@@ -64,7 +64,6 @@ class OptionsModel():
 
     def getDatasourceUrl(self):
         return self._url
-
 
 # OptionsModel setter methods
     def loadDriver(self):

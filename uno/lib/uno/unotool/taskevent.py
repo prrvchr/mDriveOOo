@@ -27,52 +27,31 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from ..unotool import getContainerWindow
+import unohelper
 
-from ..configuration import g_identifier
+from com.sun.star.task import XTaskEvent
 
-import traceback
+from threading import Event
 
 
-class OptionWindow():
-    def __init__(self, ctx, window, handler, options, restart, offset):
-        self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'OptionDialog')
-        self._window.setVisible(True)
-        for crs in options:
-            self._getCachedRowSet(crs).Model.Enabled = False
-        self.setRestart(restart)
-        self._getRestart().Model.PositionY += offset
+class TaskEvent(unohelper.Base,
+                XTaskEvent):
+    def __init__(self, set=False):
+        self._event = Event()
+        if set:
+            self._event.set()
 
-# OptionWindow setter methods
-    def dispose(self):
-        self._window.dispose()
+    def isSet(self):
+        return self._event.is_set()
 
-    def initView(self, instrumented, level, crs, system, enabled):
-        self._getApiLevel(level).State = 1
-        if instrumented:
-            self._getCachedRowSet(crs).State = 1
-        else:
-            self._getCachedRowSet(0).State = 1
-        self.enableCachedRowSet(instrumented and enabled)
-        self._getSytemTable().State = int(system)
+    def set(self):
+        self._event.set()
 
-    def enableCachedRowSet(self, enabled):
-        for crs in range(3):
-            self._getCachedRowSet(crs).Model.Enabled = enabled
+    def clear(self):
+        return self._event.clear()
 
-    def setRestart(self, enabled):
-        self._getRestart().setVisible(enabled)
-
-# OptionWindow private control methods
-    def _getApiLevel(self, index):
-        return self._window.getControl('OptionButton%s' % (index + 1))
-
-    def _getCachedRowSet(self, index):
-        return self._window.getControl('OptionButton%s' % (index + 4))
-
-    def _getSytemTable(self):
-        return self._window.getControl('CheckBox1')
-
-    def _getRestart(self):
-        return self._window.getControl('Label3')
+    def wait(self, timeout):
+        if not timeout > 0:
+            timeout = None
+        return self._event.wait(timeout)
 

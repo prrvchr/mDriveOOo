@@ -1,7 +1,5 @@
-#!
-# -*- coding: utf-8 -*-
-
-"""
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
 ╔════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                    ║
 ║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
@@ -25,75 +23,25 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
-"""
+-->
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="WizardTop" dlg:left="0" dlg:top="0" dlg:width="385" dlg:height="205" dlg:help-text="&amp;Wizard.HelpText" dlg:closeable="false" dlg:moveable="true" dlg:title="&amp;Wizard.Title" dlg:withtitlebar="false">
+  <dlg:bulletinboard>
+    <dlg:button dlg:id="CommandButton5" dlg:tab-index="1" dlg:disabled="true" dlg:left="5" dlg:top="186" dlg:width="50" dlg:height="15" dlg:help-text="&amp;Wizard.CommandButton5.HelpText" dlg:value="&amp;Wizard.CommandButton5.Label">
+      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Help" script:language="UNO"/>
+    </dlg:button>
+    <dlg:button dlg:id="CommandButton4" dlg:tab-index="2" dlg:disabled="true" dlg:left="165" dlg:top="186" dlg:width="50" dlg:height="15" dlg:help-text="&amp;Wizard.CommandButton4.HelpText" dlg:value="&amp;Wizard.CommandButton4.Label">
+      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Previous" script:language="UNO"/>
+    </dlg:button>
+    <dlg:button dlg:id="CommandButton3" dlg:tab-index="3" dlg:disabled="true" dlg:left="220" dlg:top="186" dlg:width="50" dlg:height="15" dlg:help-text="&amp;Wizard.CommandButton3.HelpText" dlg:value="&amp;Wizard.CommandButton3.Label">
+      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Next" script:language="UNO"/>
+    </dlg:button>
+    <dlg:button dlg:id="CommandButton2" dlg:tab-index="4" dlg:disabled="true" dlg:left="275" dlg:top="186" dlg:width="50" dlg:height="15" dlg:help-text="&amp;Wizard.CommandButton2.HelpText" dlg:value="&amp;Wizard.CommandButton2.Label">
+      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Finish" script:language="UNO"/>
+    </dlg:button>
+    <dlg:button dlg:id="CommandButton1" dlg:tab-index="5" dlg:disabled="false" dlg:left="330" dlg:top="186" dlg:width="50" dlg:height="15" dlg:help-text="&amp;Wizard.CommandButton1.HelpText" dlg:value="&amp;Wizard.CommandButton1.Label">
+      <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Cancel" script:language="UNO"/>
+    </dlg:button>
+  </dlg:bulletinboard>
+</dlg:window>
 
-from com.sun.star.logging.LogLevel import INFO
-
-from ..unotool import getConfiguration
-
-from ..logger import getLogger
-
-from ..jdbcdriver import g_services
-
-from ..configuration import g_identifier
-from ..configuration import g_basename
-
-import traceback
-
-
-class OptionModel():
-    def __init__(self, ctx, instrumented):
-        self._rebootkeys = ('ApiLevel', 'CachedRowSet')
-        configkeys = ('ShowSystemTable', )
-        self._keys = self._rebootkeys + configkeys
-        self._config = getConfiguration(ctx, g_identifier, True)
-        self._settings = self._getSettings()
-        self._instrumented = instrumented
-
-# OptionModel getter methods
-    def isInstrumented(self):
-        return self._instrumented
-
-    def getConfigApiLevel(self):
-        return self._config.getByName('ApiLevel')
-
-    def getViewData(self):
-        self._settings = self._getSettings()
-        level = self._settings.get('ApiLevel')
-        crs = self._settings.get('CachedRowSet')
-        system = self._settings.get('ShowSystemTable')
-        return level, crs, system, self._isRowSetEnabled(level)
-
-# OptionModel setter methods
-    def setApiLevel(self, level):
-        self._settings['ApiLevel'] = level
-        return self._instrumented and self._isRowSetEnabled(level)
-
-    def setCachedRowSet(self, level):
-        self._settings['CachedRowSet'] = level
-
-    def setSystemTable(self, state):
-        self._settings['ShowSystemTable'] = bool(state)
-
-    def saveSetting(self):
-        reboot = False
-        for key in self._keys:
-            if key != 'CachedRowSet' or self._instrumented:
-                value = self._settings.get(key)
-                if value != self._config.getByName(key):
-                    self._config.replaceByName(key, value)
-                    if key in self._rebootkeys:
-                        reboot = True
-        if self._config.hasPendingChanges():
-            self._config.commitChanges()
-        return reboot
-
-# OptionModel private methods
-    def _getSettings(self):
-        settings = {}
-        for key in self._keys:
-            settings[key] = self._config.getByName(key)
-        return settings
-
-    def _isRowSetEnabled(self, level):
-        return level != 0

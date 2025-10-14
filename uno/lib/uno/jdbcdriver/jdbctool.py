@@ -37,8 +37,11 @@ from .configuration import g_service
 def isInstrumented(ctx, url):
     support = False
     driver = createService(ctx, g_service)
-    for info in driver.getPropertyInfo(url, getPropertyValueSet({g_instrumented: True})):
-        if (info.Name == g_instrumented):
-            support = info.Value != 'false'
+    if driver:
+        properties = getPropertyValueSet({g_instrumented: True})
+        for info in driver.getPropertyInfo(url, properties):
+            if info.Name == g_instrumented:
+                support = info.Value != 'false'
+                break
     return support
 

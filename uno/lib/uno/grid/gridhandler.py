@@ -30,6 +30,7 @@
 import unohelper
 
 from com.sun.star.awt import XContainerWindowEventHandler
+from com.sun.star.awt.grid import XGridDataListener
 from com.sun.star.awt.grid import XGridSelectionListener
 
 import traceback
@@ -60,8 +61,40 @@ class WindowHandler(unohelper.Base,
                 'SetColumn')
 
 
-class GridListener(unohelper.Base,
-                   XGridSelectionListener):
+class GridDataListener(unohelper.Base,
+                       XGridDataListener):
+    def __init__(self, manager):
+        self._manager = manager
+
+    # XGridDataListener
+    def rowsInserted(self, event):
+        try:
+            print("GridDataListener.dataChanged()")
+            self._manager.dataGridChanged()
+        except Exception as e:
+            msg = "Error: %s" % traceback.format_exc()
+            print(msg)
+
+    def rowsRemoved(self, event):
+        try:
+            print("GridDataListener.dataChanged()")
+            self._manager.dataGridChanged()
+        except Exception as e:
+            msg = "Error: %s" % traceback.format_exc()
+            print(msg)
+
+    def dataChanged(self, event):
+        pass
+
+    def rowHeadingChanged(self, event):
+        pass
+
+    def disposing(self, event):
+        pass
+
+
+class GridSelectionListener(unohelper.Base,
+                            XGridSelectionListener):
     def __init__(self, manager, grid=1):
         self._manager = manager
         self._grid = grid

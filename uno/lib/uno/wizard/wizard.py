@@ -30,16 +30,15 @@
 import uno
 import unohelper
 
-from com.sun.star.logging.LogLevel import SEVERE
+from com.sun.star.container import NoSuchElementException
 
-from com.sun.star.ui.dialogs import XWizard
-
+from com.sun.star.lang import XComponent
 from com.sun.star.lang import XInitialization
 from com.sun.star.lang import IllegalArgumentException
 
-from com.sun.star.util import InvalidStateException
+from com.sun.star.logging.LogLevel import SEVERE
 
-from com.sun.star.container import NoSuchElementException
+from com.sun.star.ui.dialogs import XWizard
 
 from com.sun.star.ui.dialogs.ExecutableDialogResults import CANCEL
 from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
@@ -48,24 +47,31 @@ from com.sun.star.ui.dialogs.WizardTravelType import FORWARD
 from com.sun.star.ui.dialogs.WizardTravelType import BACKWARD
 from com.sun.star.ui.dialogs.WizardTravelType import FINISH
 
+from com.sun.star.util import CloseVetoException
+from com.sun.star.util import InvalidStateException
+
 from .wizardmodel import WizardModel
+
 from .wizardview import WizardView
+
+from .wizardhandler import CloseListener
 from .wizardhandler import DialogHandler
 from .wizardhandler import ItemListener
+from .wizardhandler import WindowHandler
 
-from ..logger import getLogger
+from ...logger import getLogger
 
-from ..unotool import hasInterface
+from ...unotool import hasInterface
 
-from ..configuration import g_extension
+from ...configuration import g_extension
 
 import traceback
 
 
 class Wizard(unohelper.Base,
              XWizard,
-             XInitialization):
-    def __init__(self, ctx, auto=-1, resize=False, parent=None):
+             XComponent):
+    def __init__(self, ctx, auto=-1, resize=False, parent=None, name=None, point=None):
         self._ctx = ctx
         self._helpUrl = ''
         self._auto = auto
@@ -74,11 +80,51 @@ class Wizard(unohelper.Base,
         self._currentPath = -1
         self._multiPaths = False
         self._controller = None
+        self._listeners = []
+        self._closed = False
+        self._disposed = False
         self._model = WizardModel(ctx)
         title = self._model.getRoadmapTitle()
-        self._view = WizardView(ctx, DialogHandler(self), ItemListener(self), parent, title)
+        if name:
+            handler, self._listener = WindowHandler(self), CloseListener(self)
+        else:
+            handler, self._listener = DialogHandler(self), None
+        self._view = WizardView(ctx, handler, self._listener, ItemListener(self), parent, name, title, resize, point)
         roadmap = self._view.getRoadmapModel()
         self._model.setRoadmapModel(roadmap)
+
+# XCloseListener
+    def queryClosing(self, source, ownership):
+        self._queryClosing(ownership)
+
+    def notifyClosing(self, source):
+        if self._listener:
+            source.removeCloseListener(self._listener)
+        self.dispose()
+
+# XComponent
+    def dispose(self):
+        self._disposed = True
+        event = self._getEventObject()
+        for listener in self._listeners:
+            listener.disposing(event)
+        interface = 'com.sun.star.lang.XComponent'
+        if self._controller and hasInterface(self._controller, interface):
+            self._controller.dispose()
+        self._model.dispose()
+        self._view.dispose()
+
+    def addEventListener(self, listener):
+        interface = 'com.sun.star.lang.XEventListener'
+        if hasInterface(listener, interface):
+            if self._disposed:
+                listener.disposing(self._getEventObject())
+            else:
+                self._listeners.append(listener)
+
+    def removeEventListener(self, listener):
+        if not self._disposed and listener in self._listeners:
+            self._listeners.remove(listener)
 
 # XWizard
     # XWizard Attributes
@@ -93,7 +139,7 @@ class Wizard(unohelper.Base,
 
     @property
     def DialogWindow(self):
-        return self._view.getDialog()
+        return self._view.getDialogWindow()
 
     # XWizard Methods
     def getCurrentPage(self):
@@ -194,10 +240,16 @@ class Wizard(unohelper.Base,
             reason = self._getCommitReason()
             if self._model.doFinish(reason):
                 if self._controller.confirmFinish():
-                    self._view.endDialog(OK)
+                    if self._view.isModal():
+                        self._view.endDialog(OK)
+                    else:
+                        self._tryToClose()
 
     def doCancel(self):
-        self._view.endDialog(CANCEL)
+        if self._view.isModal():
+            self._view.endDialog(CANCEL)
+        else:
+            self._tryToClose()
 
 # Wizard private getter methods
     def _isComplete(self):
@@ -343,6 +395,20 @@ class Wizard(unohelper.Base,
         return init
 
 # Wizard private setter methods
+    def _tryToClose(self):
+        try:
+            self._queryClosing()
+        except CloseVetoException as e:
+            pass
+        else:
+            self._view.close()
+
+    def _queryClosing(self, ownership=False):
+        if not ownership:
+            interface = 'com.sun.star.util.XCloseable'
+            if self._controller and hasInterface(self._controller, interface):
+                self._controller.close(ownership)
+
     def _initPath(self, index, final):
         complete, paths = self._getPath(index, final)
         self._model.initRoadmap(self._controller, paths, complete)
@@ -384,6 +450,9 @@ class Wizard(unohelper.Base,
         self._view.updateButtonFinish(enabled)
 
 # Private Exception getter methods
+    def _getEventObject(self):
+        return uno.createUnoStruct('com.sun.star.lang.EventObject', self)
+
     def _getIllegalArgumentException(self, position, code, method):
         e = IllegalArgumentException()
         e.ArgumentPosition = position

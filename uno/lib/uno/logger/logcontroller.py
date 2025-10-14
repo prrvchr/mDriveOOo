@@ -27,6 +27,8 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+import uno
+
 from com.sun.star.logging.LogLevel import SEVERE
 
 from .logwrapper import LogWrapper
@@ -50,7 +52,8 @@ class LogController(LogWrapper):
         self._listener = listener
         self._setting = None
         self._config = LogConfig(ctx)
-        if listener is not None:
+        self._handler = None
+        if listener:
             self._logger.addModifyListener(listener)
 
     # Public getter method
@@ -62,17 +65,26 @@ class LogController(LogWrapper):
         if self._listener is not None:
             self._logger.removeModifyListener(self._listener)
 
+    def addRollerHandler(self, handler=None):
+        if handler is None:
+            handler = RollerHandler(self._ctx, self.Name)
+        super().addRollerHandler(handler)
+        self._handler = handler
+        if self._listener:
+            event = uno.createUnoStruct('com.sun.star.lang.EventObject', self._logger)
+            self._listener.modified(event)
+
+    def removeRollerHandler(self, handler=None):
+        if handler is None:
+            handler = self._handler
+        super().removeRollerHandler(handler)
+
     def clearLogger(self):
-        url = getRollerHandlerUrl(self._ctx, self.Name)
-        sf = getSimpleFile(self._ctx)
-        if sf.exists(url):
-            sf.kill(url)
+        if self._handler:
+            self._handler.clearLogger()
             resolver = getStringResourceWithLocation(self._ctx, self._url, 'Logger')
             msg = resolver.resolveString(111)
-            handler = RollerHandler(self._ctx, self.Name)
-            self.addRollerHandler(handler)
             self._logger.logp(SEVERE, 'Logger', 'clearLogger', msg)
-            self.removeRollerHandler(handler)
 
     def addModifyListener(self, listener):
         self._logger.addModifyListener(listener)

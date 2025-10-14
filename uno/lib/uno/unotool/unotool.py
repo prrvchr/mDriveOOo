@@ -29,13 +29,27 @@
 
 import uno
 
+from com.sun.star.awt import Point
 from com.sun.star.awt import Rectangle
+from com.sun.star.awt import Size
+
+from com.sun.star.awt.WindowAttribute import SHOW
+from com.sun.star.awt.WindowAttribute import MINSIZE
+from com.sun.star.awt.WindowAttribute import BORDER
+from com.sun.star.awt.WindowAttribute import MOVEABLE
+from com.sun.star.awt.WindowAttribute import CLOSEABLE
+from com.sun.star.awt.WindowAttribute import NODECORATION
+
+from com.sun.star.awt.WindowClass import TOP
+from com.sun.star.awt.WindowClass import CONTAINER
 
 from com.sun.star.beans.PropertyState import DIRECT_VALUE
 
 from com.sun.star.connection import NoConnectException
 
 from com.sun.star.document.MacroExecMode import ALWAYS_EXECUTE_NO_WARN
+
+from com.sun.star.frame.FrameSearchFlag import GLOBAL
 
 from com.sun.star.lang import WrappedTargetRuntimeException
 
@@ -44,6 +58,8 @@ from com.sun.star.ucb.ConnectionMode import OFFLINE
 
 from com.sun.star.ui.dialogs.ExecutableDialogResults import OK
 
+from com.sun.star.util.MeasureUnit import APPFONT
+
 import binascii
 import datetime
 from packaging import version
@@ -51,15 +67,21 @@ import traceback
 
 
 def getConnectionMode(ctx, host, port=80):
-    connector = createService(ctx, 'com.sun.star.connection.Connector')
+    connector = getConnector(ctx)
     try:
         connection = connector.connect('socket,host=%s,port=%s' % (host, port))
     except NoConnectException:
         mode = OFFLINE
     else:
-        connection.close()
+        try:
+            connection.close()
+        except:
+            pass
         mode = ONLINE
     return mode
+
+def getConnector(ctx):
+    return createService(ctx, 'com.sun.star.connection.Connector')
 
 def getDesktop(ctx):
     return createService(ctx, 'com.sun.star.frame.Desktop')
@@ -94,6 +116,15 @@ def getUrlTransformer(ctx):
 def getInteractionHandler(ctx):
     return createService(ctx, 'com.sun.star.task.InteractionHandler')
 
+def getMailMerge(ctx):
+    return createService(ctx, 'com.sun.star.text.MailMerge')
+
+def getMri(ctx):
+    return createService(ctx, 'mytools.Mri')
+
+def getCallBack(ctx):
+    return createService(ctx, 'com.sun.star.awt.AsyncCallback')
+
 def getSequenceInputStream(ctx, sequence):
     service = 'com.sun.star.io.SequenceInputStream'
     return createService(ctx, service, sequence)
@@ -119,11 +150,14 @@ def parseUrl(transformer, location, protocol=None):
         success, url = transformer.parseSmart(url, protocol)
     return url if success else None
 
-def getDocument(ctx, url):
-    properties = {'Hidden': True,
-                  'OpenNewView': True,
-                  'MacroExecutionMode': ALWAYS_EXECUTE_NO_WARN}
-    descriptor = getPropertyValueSet(properties)
+def getDocument(ctx, url, readonly=True):
+    # XXX: ReadOnly: documents opened for mailing are opened readonly because they must
+    # XXX: be opened as a new document and this document could be open already
+    # XXX: OpenNewView: always open a new document because it must be disposed afterwards.
+    # XXX: Hidden: mailing is done in a hidden view
+    # XXX: Silence: load document for mailing without user interaction
+    arguments = {'ReadOnly': readonly, 'OpenNewView': True, 'Hidden': True, 'Silence': True}
+    descriptor = getPropertyValueSet(arguments)
     document = getDesktop(ctx).loadComponentFromURL(url, '_blank', 0, descriptor)
     return document
 
@@ -218,6 +252,12 @@ def getExtensionVersion(ctx, extension):
             return version
     return None
 
+def getLastNamedParts(name, sep='.'):
+    part1, sep, part2 = name.rpartition(sep)
+    if not sep:
+        part1, part2 = part2, None
+    return part1, part2
+
 def getLibreOfficeInfo(ctx):
     config = getConfiguration(ctx, '/org.openoffice.Setup/Product')
     name = config.getByName('ooName')
@@ -279,6 +319,10 @@ def getStringResourceWithLocation(ctx, url, filename, locale=None):
 def generateUuid():
     return binascii.hexlify(uno.generateUuid().value).decode('utf-8')
 
+def setProgress(callback, caller, value):
+    data = {'call': 'progress', 'value': value}
+    callback.addCallback(caller, getNamedValueSet(data))
+
 def getDialog(ctx, identifier, xdl, handler=None, window=None):
     dialog = None
     provider = createService(ctx, 'com.sun.star.awt.DialogProvider2')
@@ -295,6 +339,53 @@ def getDialog(ctx, identifier, xdl, handler=None, window=None):
         args = getNamedValueSet({'ParentWindow': window, 'EventHandler': handler})
         dialog = provider.createDialogWithArguments(url, args)
     return dialog
+
+def findFrame(ctx, name, flags=GLOBAL):
+    return getDesktop(ctx).findFrame(name, flags)
+
+def getDialogPosSize(ctx, extension, xdl, point=None, unit=APPFONT):
+    dialog = getDialog(ctx, extension, xdl, None, None)
+    size = dialog.convertSizeToPixel(Size(dialog.Model.Width, dialog.Model.Height), unit)
+    if point:
+        position = dialog.convertPointToPixel(point, unit)
+    else:
+        position = Point(0, 0)
+    dialog.dispose()
+    return Rectangle(position.X, position.Y, size.Width, size.Height)
+
+def getTopWindow(ctx, name, rectangle=None, parent=None, modal=TOP, attrs=BORDER | MOVEABLE | CLOSEABLE | NODECORATION):
+    service = 'com.sun.star.frame.TaskCreator'
+    arguments = {'FrameName': name}
+    descriptor = uno.createUnoStruct('com.sun.star.awt.WindowDescriptor')
+    descriptor.Type = modal
+    descriptor.WindowServiceName = 'window'
+    if parent:
+        descriptor.Parent = parent
+    else:
+        descriptor.ParentIndex = -1
+    if rectangle:
+        attrs |= SHOW
+        descriptor.Bounds = rectangle
+    descriptor.WindowAttributes = attrs
+    arguments['ContainerWindow'] = getToolKit(ctx).createWindow(descriptor)
+    #if rectangle:
+    #    arguments['PosSize'] = rectangle
+    frame = createService(ctx, service).createInstanceWithArguments(getNamedValueSet(arguments))
+    desktop = getDesktop(ctx)
+    frame.setCreator(desktop)
+    desktop.getFrames().append(frame)
+    return frame
+
+def getTopWindowPosition(window):
+    size = window.getPosSize()
+    point = uno.createUnoStruct('com.sun.star.awt.Point', size.X, size.Y)
+    return window.convertPointToLogic(point, APPFONT)
+
+def saveTopWindowPosition(config, position, property):
+    if config.hasByName(property):
+        any = uno.Any('[]long', (position.X, position.Y))
+        uno.invoke(config, 'replaceByName', (property, any))
+        config.commitChanges()
 
 def getContainerWindow(ctx, parent, handler, identifier, xdl):
     service = 'com.sun.star.awt.ContainerWindowProvider'
@@ -337,6 +428,11 @@ def executeDispatch(ctx, url, /, **args):
     frame = getDesktop(ctx).getCurrentFrame()
     arguments = getPropertyValueSet(args)
     getDispatcher(ctx).executeDispatch(frame, url, '', 0, arguments)
+
+def executeDesktopDispatch(ctx, url, listener=None, /, **args):
+    frame = getDesktop(ctx).getCurrentFrame()
+    properties = getPropertyValueSet(args)
+    executeFrameDispatch(ctx, frame, url, listener, *properties)
 
 def executeFrameDispatch(ctx, frame, url, listener=None, /, *properties):
     url = getUrl(ctx, url)
@@ -429,7 +525,6 @@ def _getUniqueName(frames, name):
     if count > 0:
         name = '%s - %s' % (name, (count +1))
     return name
-
 
 def getParentWindow(ctx):
     desktop = getDesktop(ctx)

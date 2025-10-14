@@ -27,22 +27,31 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from .taskevent import TaskEvent
+
+from .statusindicator import StatusIndicator
+
 from .unotool import checkVersion
 from .unotool import createMessageBox
 from .unotool import createService
 from .unotool import createWindow
+from .unotool import executeDesktopDispatch
 from .unotool import executeDispatch
 from .unotool import executeFrameDispatch
 from .unotool import executeShell
+from .unotool import findFrame
 from .unotool import generateUuid
 from .unotool import getArgumentSet
+from .unotool import getCallBack
 from .unotool import getConfiguration
 from .unotool import getConnectionMode
+from .unotool import getConnector
 from .unotool import getContainerWindow
 from .unotool import getCurrentLocale
 from .unotool import getDateTime
 from .unotool import getDefaultPropertyValueSet
 from .unotool import getDesktop
+from .unotool import getDialogPosSize
 from .unotool import getDispatcher
 from .unotool import getDialog
 from .unotool import getDialogUrl
@@ -55,10 +64,13 @@ from .unotool import getFileUrl
 from .unotool import getInteractionHandler
 from .unotool import getInterfaceNames
 from .unotool import getInterfaceTypes
+from .unotool import getLastNamedParts
 from .unotool import getLibreOfficeInfo
 from .unotool import getLibreOfficeVersion
+from .unotool import getMailMerge
 from .unotool import getMessageBox
 from .unotool import getMimeTypeFactory
+from .unotool import getMri
 from .unotool import getNamedValue
 from .unotool import getNamedValueSet
 from .unotool import getParentWindow
@@ -75,6 +87,8 @@ from .unotool import getStringResource
 from .unotool import getStringResourceWithLocation
 from .unotool import getTempFile
 from .unotool import getToolKit
+from .unotool import getTopWindow
+from .unotool import getTopWindowPosition
 from .unotool import getTypeDetection
 from .unotool import getUriFactory
 from .unotool import getUrl
@@ -84,5 +98,7 @@ from .unotool import hasInterface
 from .unotool import hasService
 from .unotool import parseDateTime
 from .unotool import parseUrl
+from .unotool import saveTopWindowPosition
+from .unotool import setProgress
 from .unotool import unparseDateTime
 from .unotool import unparseTimeStamp

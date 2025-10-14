@@ -31,7 +31,7 @@ from .optionsmodel import OptionsModel
 from .optionsview import OptionsView
 from .optionshandler import OptionsListener
 
-from ..option import OptionManager
+from .options import OptionsManager as Manager
 
 from ..configuration import g_defaultlog
 
@@ -41,9 +41,9 @@ import traceback
 class OptionsManager():
     def __init__(self, ctx, logger, window, options, url=None):
         self._model = OptionsModel(ctx, logger, url)
-        instrumented = self._model.isInstrumented()
-        self._manager = OptionManager(ctx, window, options, instrumented, OptionsManager._restart, 20, g_defaultlog)
-        self._view = OptionsView(window)
+        link, instrumented = self._model.getDriverInfo()
+        self._manager = Manager(ctx, window, instrumented, options, g_defaultlog)
+        self._view = OptionsView(window, OptionsManager._restart, link, instrumented)
         window.addEventListener(OptionsListener(self))
         self._manager.initView()
         self._initView()
@@ -57,13 +57,11 @@ class OptionsManager():
     def saveSetting(self):
         if self._manager.saveSetting():
             OptionsManager._restart = True
-            self._manager.setRestart(True)
-
+            self._view.setWarning(True, self._model.isInstrumented())
 
     def loadSetting(self):
         self._manager.loadSetting()
-        version = self._model.getDriverVersion(self._getConfigApiLevel())
-        self._view.setDriverVersion(version)
+        self._initView()
 
 # OptionsManager private getter methods
     def _getConfigApiLevel(self):
