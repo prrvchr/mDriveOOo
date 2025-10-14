@@ -31,7 +31,7 @@ from com.sun.star.ucb.SynchronizePolicy import SERVER_IS_MASTER
 from com.sun.star.ucb.SynchronizePolicy import CLIENT_IS_MASTER
 from com.sun.star.ucb.SynchronizePolicy import NONE_IS_MASTER
 
-from ..jdbctool import isInstrumented
+from ..jdbcdriver import isInstrumented
 
 from ..unotool import getConfiguration
 from ..unotool import getResourceLocation
@@ -52,7 +52,7 @@ class OptionsModel():
     def __init__(self, ctx):
         self._config = getConfiguration(ctx, g_identifier, True)
         self._common = getConfiguration(ctx, 'org.openoffice.Office.Common', True)
-        self._instrumented = isInstrumented(ctx, 'hsqldb')
+        self._instrumented = isInstrumented(ctx, 'xdbc:hsqldb:')
         self._url = getResourceLocation(ctx, g_identifier)
         self._policies = {'SERVER_IS_MASTER': 1, 'CLIENT_IS_MASTER': 2, 'NONE_IS_MASTER': 3}
         self._factors = {'Timeout': 60, 'Chunk': 1024}

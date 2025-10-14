@@ -93,7 +93,7 @@
     <dlg:checkbox dlg:id="CheckBox4" dlg:tab-index="22" dlg:left="10" dlg:top="200" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CheckBox4.HelpText" dlg:value="&amp;OptionsDialog.CheckBox4.Label" dlg:valign="center" dlg:checked="false">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableMacro" script:language="UNO"/>
     </dlg:checkbox>
-    <dlg:linklabel dlg:id="Hyperlink1" dlg:tab-index="23" dlg:left="105" dlg:top="200" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Hyperlink1.HelpText" dlg:value="&amp;OptionsDialog.Hyperlink1.Label" dlg:valign="center" dlg:align="center"/>
+    <dlg:linklabel dlg:style-id="0" dlg:id="Hyperlink1" dlg:tab-index="23" dlg:left="105" dlg:top="200" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Hyperlink1.HelpText" dlg:value="&amp;OptionsDialog.Hyperlink1.Label" dlg:valign="center" dlg:align="center"/>
     <dlg:button dlg:id="CommandButton7" dlg:tab-index="24" dlg:left="195" dlg:top="200" dlg:width="55" dlg:height="15" dlg:help-text="&amp;OptionsDialog.CommandButton7.HelpText" dlg:value="&amp;OptionsDialog.CommandButton7.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Customize" script:language="UNO"/>
     </dlg:button>
