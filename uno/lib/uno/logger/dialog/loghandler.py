@@ -123,7 +123,6 @@ class PoolListener(unohelper.Base,
     # XModifyListener
     def modified(self, event):
         try:
-            print("PoolListener.modified()")
             self._manager.updateLoggers()
         except Exception as e:
             msg = f"Error: {traceback.format_exc()}"

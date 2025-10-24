@@ -53,8 +53,7 @@ class WindowHandler(unohelper.Base,
                 handled = True
             return handled
         except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+            print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
         return ('ShowColumns',
@@ -69,19 +68,15 @@ class GridDataListener(unohelper.Base,
     # XGridDataListener
     def rowsInserted(self, event):
         try:
-            print("GridDataListener.dataChanged()")
             self._manager.dataGridChanged()
         except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+            print("GridDataListener.rowsInserted() ERROR: %s" % traceback.format_exc())
 
     def rowsRemoved(self, event):
         try:
-            print("GridDataListener.dataChanged()")
             self._manager.dataGridChanged()
         except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+            print("GridDataListener.rowsRemoved() ERROR: %s" % traceback.format_exc())
 
     def dataChanged(self, event):
         pass
@@ -106,8 +101,7 @@ class GridSelectionListener(unohelper.Base,
             index = control.getSelectedRows()[-1] if control.hasSelectedRows() else -1
             self._manager.changeGridSelection(index, self._grid)
         except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+            print("GridSelectionListener.selectionChanged() ERROR: %s" % traceback.format_exc())
 
     def disposing(self, event):
         pass

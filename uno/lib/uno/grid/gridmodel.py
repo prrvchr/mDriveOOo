@@ -113,7 +113,6 @@ class GridModel(unohelper.Base,
 
 # XComponent
     def dispose(self):
-        print("GridModel.dispose() 1")
         event = uno.createUnoStruct('com.sun.star.lang.EventObject')
         event.Source = self
         for listener in self._events:
