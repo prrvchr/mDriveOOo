@@ -333,6 +333,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 
 ### What has been done for version 1.4.0:
 
+- If the jdbcDriverOOo extension works without Java instrumentation, a warning message will be displayed in the extension options.
 - Requires the **jdbcDriverOOo extension at least version 1.6.0**.
 - Requires the **OAuth2OOo extension at least version 1.6.0**.
 - Has been tested with LibreOfficeDev 26.2.
