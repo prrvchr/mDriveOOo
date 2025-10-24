@@ -32,6 +32,7 @@ import unohelper
 from com.sun.star.task import XTaskEvent
 
 from threading import Event
+import traceback
 
 
 class TaskEvent(unohelper.Base,
@@ -51,7 +52,7 @@ class TaskEvent(unohelper.Base,
         return self._event.clear()
 
     def wait(self, timeout):
-        if not timeout > 0:
+        if timeout <= 0:
             timeout = None
         return self._event.wait(timeout)
 

@@ -55,7 +55,7 @@ class WizardView(unohelper.Base):
     def __init__(self, ctx, handler, listener, listener1, parent, name, title, resize, point):
         self._name = 'Roadmap1'
         if name:
-            # XXX: We use a TOP XWindow
+            # XXX: With a frame name we use a TOP XWindow
             self._frame = getTopWindow(ctx, name)
             peer = self._frame.getContainerWindow()
             self._dialog = getContainerWindow(ctx, peer, handler, g_identifier, 'WizardTop')
@@ -63,7 +63,7 @@ class WizardView(unohelper.Base):
             self._frame.setComponent(self._dialog, None)
             self._frame.addCloseListener(listener)
         else:
-            # XXX: We use a MODAL XDialog
+            # XXX: Without frame name we use a MODAL XDialog
             self._frame = None
             self._dialog = getDialog(ctx, g_identifier, 'Wizard', handler, parent)
         self._point = point

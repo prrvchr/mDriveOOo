@@ -216,6 +216,11 @@ def hasInterface(component, interface):
             return True
     return False
 
+def hasFrameInterface(component):
+    frame = 'com.sun.star.frame.XFrame2'
+    desktop = 'com.sun.star.frame.XDesktop2'
+    return hasInterface(component, frame) or hasInterface(component, desktop)
+
 def hasService(ctx, name):
     service = createService(ctx, name)
     return service is not None
@@ -424,15 +429,22 @@ def executeShell(ctx, url, option=''):
     shell = createService(ctx, 'com.sun.star.system.SystemShellExecute')
     shell.execute(url, option, 0)
 
-def executeDispatch(ctx, url, /, **args):
-    frame = getDesktop(ctx).getCurrentFrame()
-    arguments = getPropertyValueSet(args)
-    getDispatcher(ctx).executeDispatch(frame, url, '', 0, arguments)
+def executeDispatch(ctx, url, /, **kwargs):
+    frame = _getCurrentFrame(ctx)
+    properties = getPropertyValueSet(kwargs)
+    getDispatcher(ctx).executeDispatch(frame, url, '', 0, properties)
 
-def executeDesktopDispatch(ctx, url, listener=None, /, **args):
-    frame = getDesktop(ctx).getCurrentFrame()
-    properties = getPropertyValueSet(args)
+def executeDesktopDispatch(ctx, url, listener=None, /, **kwargs):
+    frame = _getCurrentFrame(ctx)
+    properties = getPropertyValueSet(kwargs)
     executeFrameDispatch(ctx, frame, url, listener, *properties)
+
+def _getCurrentFrame(ctx):
+    desktop = getDesktop(ctx)
+    frame = desktop.getCurrentFrame()
+    if frame is None:
+        frame = desktop
+    return frame
 
 def executeFrameDispatch(ctx, frame, url, listener=None, /, *properties):
     url = getUrl(ctx, url)

@@ -49,8 +49,7 @@ import traceback
 
 
 class GridManager():
-    def __init__(self, ctx, url, model, window, quote, setting, selection, resources=None, maxi=None, multi=False, factor=5):
-        self._quote = quote
+    def __init__(self, ctx, url, model, window, setting, selection, resources=None, maxi=None, multi=False, factor=5):
         self._factor = factor
         self._datasource = None
         self._table = None
@@ -119,10 +118,10 @@ class GridManager():
                 values.append(self._getRowValue(identifier, self.getUnsortedIndex(row)))
         return tuple(values)
 
-    def getGridData(self, columns, default=None):
+    def getGridData(self, columns, quote, default=None):
         values = {}
         for row in (range(self._model.RowCount)):
-            filter = self._getRowFilter(row)
+            filter = self._getRowFilter(row, quote)
             for column in columns:
                 if column in self._headers:
                     value = self._getColumnValue(row, column, default)
@@ -130,12 +129,6 @@ class GridManager():
                         values[filter] = value
                         break
         return values
-
-    def getGridFilters(self):
-        filters = []
-        for row in (range(self._model.RowCount)):
-            filters.append(self._getRowFilter(row))
-        return tuple(filters)
 
     def getSelectedStructuredFilters(self):
         filters = []
@@ -155,10 +148,10 @@ class GridManager():
             value = self._model.getCellData(keys.index(column), self.getUnsortedIndex(row))
         return value
 
-    def _getRowFilter(self, row):
+    def _getRowFilter(self, row, quote):
         filters = []
         for identifier in self._indexes:
-            column = self._getQuotedIdentifier(identifier)
+            column = self._getQuotedIdentifier(identifier, quote)
             value = self._getQuotedValue(identifier, row)
             filter = '%s = %s' % (column, value)
             filters.append(filter)
@@ -181,8 +174,8 @@ class GridManager():
             value = "%s" % value
         return value
 
-    def _getQuotedIdentifier(self, identifier):
-        return "%s%s%s" % (self._quote, identifier, self._quote)
+    def _getQuotedIdentifier(self, identifier, quote):
+        return quote + identifier + quote
 
     def _getRowValue(self, identifier, row):
         return self._model.getCellData(self._indexes[identifier], row)

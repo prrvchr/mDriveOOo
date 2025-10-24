@@ -94,6 +94,7 @@ from .unotool import getUriFactory
 from .unotool import getUrl
 from .unotool import getUrlPresentation
 from .unotool import getUrlTransformer
+from .unotool import hasFrameInterface
 from .unotool import hasInterface
 from .unotool import hasService
 from .unotool import parseDateTime

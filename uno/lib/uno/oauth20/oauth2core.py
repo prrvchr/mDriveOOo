@@ -27,23 +27,28 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from ..unotool import getPropertyValueSet
 from ..unotool import getInteractionHandler
 
 from .oauth2lib import InteractionRequest
 
 
-def getOAuth2UserName(ctx, source, url, message=''):
+def getOAuth2UserName(ctx, source, url, message='', parent=None, context=''):
     username = ''
     handler = getInteractionHandler(ctx)
+    if parent:
+        handler.initialize(getPropertyValueSet({'Parent': parent, 'Context': context}))
     interaction = InteractionRequest(source, url, '', '', message)
     if handler.handleInteractionRequest(interaction):
         continuation = interaction.getContinuations()[-1]
         username = continuation.getUserName()
     return username
 
-def getOAuth2Token(ctx, source, url, user, format=''):
+def getOAuth2Token(ctx, source, url, user, format='', parent=None, context=''):
     token = ''
     handler = getInteractionHandler(ctx)
+    if parent:
+        handler.initialize(getPropertyValueSet({'Parent': parent, 'Context': context}))
     interaction = InteractionRequest(source, url, user, format, '')
     if handler.handleInteractionRequest(interaction):
         continuation = interaction.getContinuations()[-1]
