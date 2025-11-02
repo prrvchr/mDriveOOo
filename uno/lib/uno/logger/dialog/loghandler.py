@@ -65,8 +65,8 @@ class WindowHandler(unohelper.Base,
                 self._manager.setLevel(event.Source.getSelectedItemPos())
                 handled = True
             return handled
-        except Exception as e:
-            print("ERROR: %s - %s" % (e, traceback.format_exc()))
+        except:
+            print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
         return ('SetLogger',
@@ -90,9 +90,8 @@ class DialogHandler(unohelper.Base,
                 self._manager.logInfos()
                 handled = True
             return handled
-        except Exception as e:
-            msg = f"Error: {traceback.format_exc()}"
-            print(msg)
+        except:
+            print("DialogHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
         return ('LogInfo', )
@@ -107,9 +106,8 @@ class LoggerListener(unohelper.Base,
     def modified(self, event):
         try:
             self._manager.updateLogger()
-        except Exception as e:
-            msg = f"Error: {traceback.format_exc()}"
-            print(msg)
+        except:
+            print("LoggerListener.modified() ERROR: %s" % traceback.format_exc())
 
     def disposing(self, event):
         pass
@@ -124,9 +122,8 @@ class PoolListener(unohelper.Base,
     def modified(self, event):
         try:
             self._manager.updateLoggers()
-        except Exception as e:
-            msg = f"Error: {traceback.format_exc()}"
-            print(msg)
+        except:
+            print("PoolListener.modified() ERROR: %s" % traceback.format_exc())
 
     def disposing(self, event):
         pass

@@ -344,7 +344,7 @@ def parse_quoted_string(s, start=0):
     """Parses a quoted string.
 
     Returns a tuple (string, chars_consumed).  The quote marks will
-    have been removed and all \-escapes will have been replaced with
+    have been removed and all \\-escapes will have been replaced with
     the characters they represent.
 
     """
@@ -356,7 +356,7 @@ def parse_token_or_quoted_string(s, start=0, allow_quoted=True, allow_token=True
 
     's' is the string to parse, while start is the position within the
     string where parsing should begin.  It will returns a tuple
-    (token, chars_consumed), with all \-escapes and quotation already
+    (token, chars_consumed), with all \\-escapes and quotation already
     processed.
 
     Syntax is according to BNF rules in RFC 2161 section 2.2,
@@ -522,7 +522,7 @@ def parse_comment(s, start=0):
     nested comments will still have their parentheses and whitespace
     left intact.
 
-    All \-escaped quoted pairs will have been replaced with the actual
+    All \\-escaped quoted pairs will have been replaced with the actual
     characters they represent, even within the inner nested comments.
 
     You should note that only a few HTTP headers, such as User-Agent

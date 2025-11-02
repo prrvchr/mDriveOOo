@@ -65,8 +65,8 @@ class WindowHandler(unohelper.Base,
                 self._manager.setSystemTable(event.Source.State)
                 handled = True
             return handled
-        except Exception as e:
-            print("ERROR: %s - %s" % (e, traceback.format_exc()))
+        except:
+            print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
         return ('Level0',

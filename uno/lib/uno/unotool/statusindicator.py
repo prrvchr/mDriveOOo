@@ -36,51 +36,40 @@ from com.sun.star.task import XStatusIndicator
 
 from com.sun.star.util.MeasureUnit import APPFONT
 
-from .unotool import findFrame
-
 from threading import Lock
 import traceback
 
 
 class StatusIndicator(unohelper.Base,
                       XStatusIndicator):
-    def __init__(self, ctx, name, offset=10):
-        frame = findFrame(ctx, name)
-        if frame:
-            self._window = frame.getContainerWindow()
-            self._progress = frame.createStatusIndicator()
-            self._point = uno.createUnoStruct('com.sun.star.awt.Point', 0, offset)
-            self._lock = Lock()
-        else:
-            self._window = self._progress = self._point = self._lock = None
+    def __init__(self, frame, offset=10):
+        self._window = frame.getContainerWindow()
+        self._progress = frame.createStatusIndicator()
+        self._point = uno.createUnoStruct('com.sun.star.awt.Point', 0, offset)
+        self._lock = Lock()
         self._value = 0
 
     def start(self, text, value):
-        if self._progress:
-            self._setValue(0)
-            self._setWindowHeight()
-            self._progress.start(text, value)
+        self._setValue(0)
+        self._setWindowHeight()
+        self._progress.start(text, value)
 
     def setText(self, text):
-        if self._progress:
-            self._setText(text)
+        self._setText(text)
 
     def setValue(self, value):
-        if self._progress:
-            # XXX: In order to be able to progress in the loops it is necessary
-            # XXX: to be able to add value to the current progression value.
-            # XXX: This is what is done here thanks to a negative value
-            self._setValue(value)
+        # XXX: In order to be able to progress in the loops it is necessary
+        # XXX: to be able to add value to the current progression value.
+        # XXX: This is what is done here thanks to a negative value
+        self._setValue(value)
 
     def end(self):
-        if self._progress:
-            self._progress.end()
-            self._setWindowHeight(-1)
+        self._progress.end()
+        self._setWindowHeight(-1)
 
     def reset(self):
-        if self._progress:
-            self._setValue(0)
-            self._progress.reset()
+        self._setValue(0)
+        self._progress.reset()
 
     def _setText(self, text):
         with self._lock:

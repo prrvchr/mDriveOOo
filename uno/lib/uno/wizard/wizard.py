@@ -69,9 +69,8 @@ import traceback
 
 
 class Wizard(unohelper.Base,
-             XWizard,
-             XComponent):
-    def __init__(self, ctx, auto=-1, resize=False, parent=None, name=None, point=None):
+             XWizard):
+    def __init__(self, ctx, auto=-1, name=None, point=None, parent=None, resize=True):
         self._ctx = ctx
         self._helpUrl = ''
         self._auto = auto
@@ -80,9 +79,7 @@ class Wizard(unohelper.Base,
         self._currentPath = -1
         self._multiPaths = False
         self._controller = None
-        self._listeners = []
         self._closed = False
-        self._disposed = False
         self._model = WizardModel(ctx)
         title = self._model.getRoadmapTitle()
         if name:
@@ -100,31 +97,7 @@ class Wizard(unohelper.Base,
     def notifyClosing(self, source):
         if self._listener:
             source.removeCloseListener(self._listener)
-        self.dispose()
-
-# XComponent
-    def dispose(self):
-        self._disposed = True
-        event = self._getEventObject()
-        for listener in self._listeners:
-            listener.disposing(event)
-        interface = 'com.sun.star.lang.XComponent'
-        if self._controller and hasInterface(self._controller, interface):
-            self._controller.dispose()
-        self._model.dispose()
-        self._view.dispose()
-
-    def addEventListener(self, listener):
-        interface = 'com.sun.star.lang.XEventListener'
-        if hasInterface(listener, interface):
-            if self._disposed:
-                listener.disposing(self._getEventObject())
-            else:
-                self._listeners.append(listener)
-
-    def removeEventListener(self, listener):
-        if not self._disposed and listener in self._listeners:
-            self._listeners.remove(listener)
+        self._dispose()
 
 # XWizard
     # XWizard Attributes
@@ -211,7 +184,12 @@ class Wizard(unohelper.Base,
         if not self._isCurrentPathSet():
             self._initPath(0, False)
         self._initPage()
-        return self._view.execute()
+        if self._view.isModal():
+            status = self._view.execute()
+            self._dispose()
+        else:
+            status = OK
+        return status
 
 # XInitialization
     def initialize(self, arguments):
@@ -355,7 +333,7 @@ class Wizard(unohelper.Base,
         if page is None:
             nextindex = self._getFirstPageId()
         else:
-            nextindex = self._getCurrentPath().index(page) +1
+            nextindex = self._getCurrentPath().index(page) + 1
         return nextindex < self._auto
 
     def _getPath(self, index, final):
@@ -395,6 +373,13 @@ class Wizard(unohelper.Base,
         return init
 
 # Wizard private setter methods
+    def _dispose(self):
+        interface = 'com.sun.star.lang.XComponent'
+        if self._controller and hasInterface(self._controller, interface):
+            self._controller.dispose()
+        self._model.dispose()
+        self._view.dispose()
+
     def _tryToClose(self):
         try:
             self._queryClosing()

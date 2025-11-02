@@ -118,7 +118,7 @@ class WizardView(unohelper.Base):
 
     def setDialogSize(self, page):
         button = self._getButton(HELP).Model
-        button.PositionY  = page.Height + self._spacer
+        button.PositionY = page.Height + self._spacer
         dialog = self._dialog.Model
         dialog.Height = button.PositionY + button.Height + self._spacer
         dialog.Width = page.PositionX + page.Width

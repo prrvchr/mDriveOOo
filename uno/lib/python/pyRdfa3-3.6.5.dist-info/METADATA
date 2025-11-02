@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: pyRdfa3
-Version: 3.6.4
+Version: 3.6.5
 Summary: pyRdfa distiller/parser library
 Author-email: Ivan Herman & prrvchr <prrvchr@gmail.com>
 Project-URL: Homepage, https://prrvchr.github.io/pyrdfa3/
@@ -11,9 +11,9 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: requests >=2.32.3
-Requires-Dist: rdflib >=7.0.0
-Requires-Dist: html5lib >=1.1
+Requires-Dist: requests (>=2.32.3)
+Requires-Dist: rdflib (>=7.0.0)
+Requires-Dist: html5lib (>=1.1)
 
 
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.14547.svg)](http://dx.doi.org/10.5281/zenodo.14547)
@@ -21,7 +21,7 @@ Requires-Dist: html5lib >=1.1
 > **Note:** since I retired a few months ago I do not really maintain this package any more. I would be more than happy if an interested party was interested to take over. In the meantime, I have "archived" the repository to clearly signal that there is no maintenance. I would be happy to unarchive it and transfer ownership if someone is interested.    
 > [@iherman](https://github.com/iherman)
 
-> **This new version 3.6.4 is now built and maintained on [prrvchr.github.io/pyrdfa3][1]**
+> **This new version 3.6.5 is now built and maintained on [prrvchr.github.io/pyrdfa3][1]**
 
 The package can be installed from [PyPI][2] with command:  
 

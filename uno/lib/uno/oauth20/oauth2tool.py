@@ -51,13 +51,6 @@ def getRequest(ctx, url=None, name=None):
         request = createService(ctx, g_service)
     return request
 
-def getOAuth2(ctx, url='', name=''):
-    if url and name:
-        oauth2 = createService(ctx, g_service, url, name)
-    else:
-        oauth2 = createService(ctx, g_service)
-    return oauth2
-
 def getOAuth2Version(ctx):
     version = getExtensionVersion(ctx, g_identifier)
     return version
