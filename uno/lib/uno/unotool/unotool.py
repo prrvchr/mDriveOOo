@@ -33,6 +33,8 @@ from com.sun.star.awt import Point
 from com.sun.star.awt import Rectangle
 from com.sun.star.awt import Size
 
+from com.sun.star.awt.MessageBoxType import ERRORBOX
+
 from com.sun.star.awt.WindowAttribute import SHOW
 from com.sun.star.awt.WindowAttribute import MINSIZE
 from com.sun.star.awt.WindowAttribute import BORDER
@@ -443,9 +445,11 @@ def executeFrameDispatch(ctx, frame, url, listener=None, /, *properties):
         else:
             dispatcher.dispatch(url, properties)
 
-def createMessageBox(ctx, box, button, title, message):
+def createMessageBox(ctx, title, message, box=ERRORBOX, button=1, parent=None):
     toolkit = getToolKit(ctx)
-    return toolkit.createMessageBox(toolkit.getDesktopWindow(), box, button, title, message)
+    if parent is None:
+        parent = toolkit.getDesktopWindow()
+    return toolkit.createMessageBox(parent, box, button, title, message)
 
 def createService(ctx, name, *args, **kwargs):
     if args:
@@ -457,10 +461,13 @@ def createService(ctx, name, *args, **kwargs):
         service = ctx.ServiceManager.createInstanceWithContext(name, ctx)
     return service
 
-def getArgumentSet(properties):
+def getArgumentSet(properties, lower=True):
     arguments = {}
     for property in properties:
-        arguments[property.Name] = property.Value
+        name = property.Name
+        if lower:
+            name = name.lower()
+        arguments[name] = property.Value
     return arguments
 
 def getDefaultPropertyValueSet(args, default):
@@ -501,19 +508,6 @@ def getPropertySetInfoChangeEvent(source, name, reason, handle=-1):
     event.Name = name
     event.Handle = handle
     event.Reason = reason
-
-def createWindow(ctx, extension, xdl, name):
-    dialog = getDialog(ctx, extension, xdl, None, None)
-    possize = Rectangle(dialog.Model.PositionX, dialog.Model.PositionY, dialog.Model.Width, dialog.Model.Height)
-    dialog.dispose()
-    desktop = getDesktop(ctx)
-    args = getNamedValueSet({'FrameName': name, 'PosSize': possize})
-    frame = createService(ctx, 'com.sun.star.frame.TaskCreator').createInstanceWithArguments(args)
-    frames = desktop.getFrames()
-    frame.setTitle(_getUniqueName(frames, name))
-    frame.setCreator(desktop)
-    frames.append(frame)
-    return frame.getContainerWindow()
 
 def _getUniqueName(frames, name):
     count = 0

@@ -124,7 +124,7 @@ class DataSource():
                 name = uri.getAuthority()
             else:
                 title, msg = self._getExceptionMessage(322, url)
-                showWarning(self._ctx, msg, title)
+                showWarning(self._ctx, title, msg)
                 raise IllegalIdentifierException(msg, source)
         elif self._default:
             name = self._default
@@ -138,7 +138,7 @@ class DataSource():
                 # XXX: The user's OAuth2 configuration has been deleted and
                 # XXX: the OAuth2 configuration wizard has been canceled.
                 title, msg = self._getExceptionMessage(324, name)
-                showWarning(self._ctx, msg, title)
+                showWarning(self._ctx, title, msg)
                 raise IllegalIdentifierException(msg, source)
         else:
             user = User(self._ctx, source, self._logger, self.DataBase,
@@ -153,11 +153,11 @@ class DataSource():
     def _getUserName(self, source, url):
         try:
             name = getOAuth2UserName(self._ctx, source, self._provider.Scheme)
-        except Exception as e:
-            print("DataSource._getUserName() ERROR: %s - %s" % (e, traceback.format_exc()))
+        except:
+            print("DataSource._getUserName() ERROR: %s" % traceback.format_exc())
         if not name:
             title, msg = self._getExceptionMessage(331, url)
-            showWarning(self._ctx, msg, title)
+            showWarning(self._ctx, title, msg)
             raise IllegalIdentifierException(msg, source)
         return name
 

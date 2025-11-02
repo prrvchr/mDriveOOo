@@ -34,7 +34,6 @@ from .statusindicator import StatusIndicator
 from .unotool import checkVersion
 from .unotool import createMessageBox
 from .unotool import createService
-from .unotool import createWindow
 from .unotool import executeDesktopDispatch
 from .unotool import executeDispatch
 from .unotool import executeFrameDispatch
