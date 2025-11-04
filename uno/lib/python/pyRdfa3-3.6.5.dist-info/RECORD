@@ -9,7 +9,7 @@ pyRdfa/state.py,sha256=gbD41iGy-zJ7edkLmYFAPCAwC0VeUez38eXGF-RIQoM,24502
 pyRdfa/termorcurie.py,sha256=M0ocu76xb1fTG6xGR5GAlfmK5aulVzBViBIIUUUzCBc,23387
 pyRdfa/utils.py,sha256=apkz3UBF9zyObsnIadl2i6sm6ORzZA7xnuBSCCQBcPc,10229
 pyRdfa/extras/__init__.py,sha256=ewApVDdXUYUQJiq-fpZBZ0ZO6OCIifz4kThymF8sCKs,105
-pyRdfa/extras/httpheader.py,sha256=D8DzCGmv6wEufJs1yg1d7ubDY2NY7rxF4XIeaUN8_g8,70183
+pyRdfa/extras/httpheader.py,sha256=fdn_P1zdAGLPR43VZ9rxeVxC1UVz2qDHBmlQ-jN1bsk,70186
 pyRdfa/host/__init__.py,sha256=M0YxNcG3LGmj6aUf8QyCbbFi61UddyitcqYV9BmwvZY,10493
 pyRdfa/host/atom.py,sha256=eO3kHFL3sIELeMp1EGZGbhhY9D45R9WfoFlyEQvBg0w,1141
 pyRdfa/host/html5.py,sha256=aso2SDUvcOaCEM1wK1n-TRZB0YvwKx5jscbYKv1a94A,8241
@@ -22,8 +22,8 @@ pyRdfa/transform/__init__.py,sha256=rdLhZQSfv5K8zt4km8p1x7WIrjfcgJ6dqyGgIabgVRc,
 pyRdfa/transform/lite.py,sha256=0dI11FWNOJo7gYFwEDNuegXg9UZexuA5IoRCmXw2K1s,3478
 pyRdfa/transform/metaname.py,sha256=3zB5M3jSyyQx1D3n_AUdVsFyjYShy938PzKVOFR3rIM,1153
 pyRdfa/transform/prototype.py,sha256=eH8Bub1iIZ1SUu9FsskHmKtGKDJy0wWq3B9WhxqIevY,1328
-pyRdfa3-3.6.4.dist-info/LICENSE,sha256=GOjCqSTUS9_c4wVdtwvU3n-tfx1g3ylFh1WmS8sEdm8,1901
-pyRdfa3-3.6.4.dist-info/METADATA,sha256=dSqs6Fbnl9oggoWS5UVWCgxpGwEWe2UTh2K4FMt7IXk,3369
-pyRdfa3-3.6.4.dist-info/WHEEL,sha256=Wyh-_nZ0DJYolHNn1_hMa4lM7uDedD_RGVwbmTjyItk,91
-pyRdfa3-3.6.4.dist-info/top_level.txt,sha256=NhGN9_N-teibyYvfbpX1aDUW7al6WiIPLTdEjpWUII4,7
-pyRdfa3-3.6.4.dist-info/RECORD,,
+pyRdfa3-3.6.5.dist-info/LICENSE,sha256=GOjCqSTUS9_c4wVdtwvU3n-tfx1g3ylFh1WmS8sEdm8,1901
+pyRdfa3-3.6.5.dist-info/METADATA,sha256=P2PhrqeYHeGPp26cr-RG8tof1UWoSjReXiBOQgjL80s,3375
+pyRdfa3-3.6.5.dist-info/WHEEL,sha256=P9jw-gEje8ByB7_hXoICnHtVCrEwMQh-630tKvQWehc,91
+pyRdfa3-3.6.5.dist-info/top_level.txt,sha256=NhGN9_N-teibyYvfbpX1aDUW7al6WiIPLTdEjpWUII4,7
+pyRdfa3-3.6.5.dist-info/RECORD,,

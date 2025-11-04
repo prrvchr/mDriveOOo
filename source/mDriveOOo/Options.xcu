@@ -24,11 +24,13 @@
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 -->
-<oor:component-data oor:name="mDriveOOo" oor:package="io.github.prrvchr"
-  xsi:schemaLocation="http://openoffice.org/2001/registry/component-update.xsd"
-  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+<!DOCTYPE oor:component-data SYSTEM "component-update.dtd">
+<oor:component-data
+  xmlns:install="http://openoffice.org/2004/installation"
   xmlns:oor="http://openoffice.org/2001/registry"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  oor:package="io.github.prrvchr"
+  oor:name="mDriveOOo">
   <prop oor:name="ResetSync">
     <value>0</value>
   </prop>
@@ -76,3 +78,4 @@
     </node>
   </node>
 </oor:component-data>
+

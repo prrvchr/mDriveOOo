@@ -61,6 +61,7 @@ from .dbtool import getDateTimeInTZToString
 from .dbtool import getDateTimeFromString
 from .dbtool import getDateTimeToString
 from .dbtool import getDictFromResult
+from .dbtool import getDictSequenceFromResult
 from .dbtool import getDriverInfos
 from .dbtool import getDriverPropertyInfo
 from .dbtool import getDriverPropertyInfos

@@ -32,7 +32,7 @@ import unohelper
 
 from com.sun.star.awt.grid import XMutableGridDataModel
 
-from ..unotool import hasInterface
+from ...unotool import hasInterface
 
 import traceback
 

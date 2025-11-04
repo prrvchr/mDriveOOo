@@ -41,10 +41,7 @@ from com.sun.star.frame.DispatchResultState import SUCCESS
 from com.sun.star.frame.DispatchResultState import FAILURE
 
 from .unotool import createService
-from .unotool import getArgumentSet
 from .unotool import getDesktop
-from .unotool import getMessageBox
-from .unotool import getToolKit
 
 import traceback
 
@@ -79,8 +76,6 @@ class Dispatch(unohelper.Base,
         elif url.Path == 'SaveAs':
             document = self._frame.getController().getModel()
             state = self._saveAs(document)
-        elif url.Path == 'ShowWarning':
-            state = self._showWarning(arguments)
         return state, result
 
     def addStatusListener(self, listener, url):
@@ -95,6 +90,7 @@ class Dispatch(unohelper.Base,
         if listener in self._listeners:
             self._listeners.remove(listener)
 
+# Private methods
     def _open(self):
         state = FAILURE
         fp = createService(self._ctx, self._service, FILEOPEN_SIMPLE)
@@ -126,11 +122,3 @@ class Dispatch(unohelper.Base,
         fp.dispose()
         return state
 
-    def _showWarning(self, arguments):
-        toolkit = getToolKit(self._ctx)
-        peer = toolkit.getActiveTopWindow()
-        args = getArgumentSet(arguments)
-        msgbox = getMessageBox(toolkit, peer, args['Box'], args['Button'], args['Title'], args['Message'])
-        msgbox.execute()
-        msgbox.dispose()
-        return SUCCESS

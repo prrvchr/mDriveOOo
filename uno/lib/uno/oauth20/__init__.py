@@ -32,7 +32,6 @@ from .oauth2lib import InteractionRequest
 from .oauth2lib import NoOAuth2
 from .oauth2lib import OAuth2OOo
 
-from .oauth2tool import getOAuth2
 from .oauth2tool import getOAuth2Version
 from .oauth2tool import getParserItems
 from .oauth2tool import getRequest

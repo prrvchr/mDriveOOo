@@ -27,49 +27,64 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from ..unotool import getContainerWindow
+import uno
+import unohelper
 
-from ..configuration import g_identifier
+from com.sun.star.awt.PosSize import SIZE
 
+from com.sun.star.task import XStatusIndicator
+
+from com.sun.star.util.MeasureUnit import APPFONT
+
+from threading import Lock
 import traceback
 
 
-class OptionWindow():
-    def __init__(self, ctx, window, handler, options, restart, offset):
-        self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'OptionDialog')
-        self._window.setVisible(True)
-        for crs in options:
-            self._getCachedRowSet(crs).Model.Enabled = False
-        self.setRestart(restart)
-        self._getRestart().Model.PositionY += offset
+class StatusIndicator(unohelper.Base,
+                      XStatusIndicator):
+    def __init__(self, frame, offset=10):
+        self._window = frame.getContainerWindow()
+        self._progress = frame.createStatusIndicator()
+        self._point = uno.createUnoStruct('com.sun.star.awt.Point', 0, offset)
+        self._lock = Lock()
+        self._value = 0
 
-# OptionWindow setter methods
-    def dispose(self):
-        self._window.dispose()
+    def start(self, text, value):
+        self._setValue(0)
+        self._setWindowHeight()
+        self._progress.start(text, value)
 
-    def initView(self, level, crs, system, enabled):
-        self._getApiLevel(level).State = 1
-        self._getCachedRowSet(crs).State = 1
-        self.enableCachedRowSet(enabled)
-        self._getSytemTable().State = int(system)
+    def setText(self, text):
+        self._setText(text)
 
-    def enableCachedRowSet(self, enabled):
-        for crs in range(3):
-            self._getCachedRowSet(crs).Model.Enabled = enabled
+    def setValue(self, value):
+        # XXX: In order to be able to progress in the loops it is necessary
+        # XXX: to be able to add value to the current progression value.
+        # XXX: This is what is done here thanks to a negative value
+        self._setValue(value)
 
-    def setRestart(self, enabled):
-        self._getRestart().setVisible(enabled)
+    def end(self):
+        self._progress.end()
+        self._setWindowHeight(-1)
 
-# OptionWindow private control methods
-    def _getApiLevel(self, index):
-        return self._window.getControl('OptionButton%s' % (index + 1))
+    def reset(self):
+        self._setValue(0)
+        self._progress.reset()
 
-    def _getCachedRowSet(self, index):
-        return self._window.getControl('OptionButton%s' % (index + 4))
+    def _setText(self, text):
+        with self._lock:
+            self._progress.setText(text)
 
-    def _getSytemTable(self):
-        return self._window.getControl('CheckBox1')
+    def _setValue(self, value):
+        with self._lock:
+            if value < 0:
+                self._value += abs(value)
+            else:
+                self._value = value
+            self._progress.setValue(self._value)
 
-    def _getRestart(self):
-        return self._window.getControl('Label3')
+    def _setWindowHeight(self, factor=1):
+        size = self._window.getPosSize()
+        offset = self._window.convertPointToPixel(self._point, APPFONT).Y * factor
+        self._window.setPosSize(0, 0, size.Width, size.Height + offset, SIZE)
 

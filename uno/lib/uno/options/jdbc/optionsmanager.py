@@ -1,0 +1,82 @@
+#!
+# -*- coding: utf-8 -*-
+
+"""
+╔════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                    ║
+║   Copyright (c) 2020-25 https://prrvchr.github.io                                  ║
+║                                                                                    ║
+║   Permission is hereby granted, free of charge, to any person obtaining            ║
+║   a copy of this software and associated documentation files (the "Software"),     ║
+║   to deal in the Software without restriction, including without limitation        ║
+║   the rights to use, copy, modify, merge, publish, distribute, sublicense,         ║
+║   and/or sell copies of the Software, and to permit persons to whom the Software   ║
+║   is furnished to do so, subject to the following conditions:                      ║
+║                                                                                    ║
+║   The above copyright notice and this permission notice shall be included in       ║
+║   all copies or substantial portions of the Software.                              ║
+║                                                                                    ║
+║   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                  ║
+║   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                  ║
+║   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.        ║
+║   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY             ║
+║   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,             ║
+║   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE       ║
+║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
+║                                                                                    ║
+╚════════════════════════════════════════════════════════════════════════════════════╝
+"""
+
+from .optionsmodel import OptionsModel
+
+from .optionsview import OptionsWindow
+
+from .optionshandler import WindowHandler
+
+from ...logger import LogManager
+
+import traceback
+
+
+class OptionsManager():
+    def __init__(self, ctx, window, instrumented, options, logger, *loggers):
+        self._logmanager = LogManager(ctx, window, 'requirements.txt', logger, *loggers)
+        self._model = OptionsModel(ctx, instrumented)
+        self._view = OptionsWindow(ctx, window, WindowHandler(self), options)
+
+# OptionManager setter methods
+    def initView(self):
+        self._logmanager.initView()
+        self._initView()
+
+    def dispose(self):
+        self._logmanager.dispose()
+        self._view.dispose()
+
+# OptionManager getter methods
+    def getConfigApiLevel(self):
+        return self._model.getConfigApiLevel()
+
+# OptionManager setter methods
+    def saveSetting(self):
+        saved = self._logmanager.saveSetting()
+        saved |= self._model.saveSetting()
+        return saved
+
+    def loadSetting(self):
+        self._logmanager.loadSetting()
+        self._initView()
+
+    def setApiLevel(self, level):
+        self._view.enableCachedRowSet(self._model.setApiLevel(level))
+
+    def setCachedRowSet(self, level):
+        self._model.setCachedRowSet(level)
+
+    def setSystemTable(self, state):
+        self._model.setSystemTable(state)
+
+# OptionManager private methods
+    def _initView(self):
+        self._view.initView(*self._model.getViewData())
+

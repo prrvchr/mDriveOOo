@@ -31,7 +31,7 @@ import traceback
 
 
 class OptionsView():
-    def __init__(self, window, exist, hasfile, resumable, link):
+    def __init__(self, window, restart, url, instrumented, exist, hasfile, resumable, link):
         self._window = window
         if exist:
             self._disableShare()
@@ -41,6 +41,9 @@ class OptionsView():
         self._getFile().Model.Enabled = hasfile
         self._getUpload().Model.Enabled = resumable
         self._getLink().URL = link
+        control = self._getWarning()
+        control.URL = url
+        self._setWarning(control, restart, instrumented)
 
 # OptionsView getter methods
     def getViewData(self):
@@ -59,13 +62,16 @@ class OptionsView():
         return int(self._getChunk(index).Value)
 
 # OptionsView setter methods
-    def setStep(self, step, restart):
+    def setWarning(self, restart, instrumented):
+        self._setWarning(self._getWarning(), restart, instrumented)
+
+    def setStep(self, step, restart, instrumented):
         self._window.Model.Step = step
         # XXX: If we change the step, we have to restore the visibility of the controls
         # XXX: because it was lost (ie: after setting the new step everything is visible).
-        self.setRestart(restart)
+        self.setWarning(restart, instrumented)
 
-    def setViewData(self, exist, reset, support, share, name, index, timeout, download, upload, macro, restart):
+    def setViewData(self, restart, instrumented, exist, reset, support, share, name, index, timeout, download, upload, macro):
         self._getResetSync().State = int(reset != 0)
         self._getResetFile().State = int(reset == 2)
         self.enableResetFile(reset != 0)
@@ -80,22 +86,22 @@ class OptionsView():
             self._getShareName().Text = name
             self.enableShare(False)
         self._getOption(index).State = 1
-        self.enableSync(index != 3, restart, exist)
+        self.enableSync(restart, instrumented, index != 3, exist)
         self._getTimeout().Value = timeout
         self._setSetting(download, 0)
         self._setSetting(upload, 1)
         self._getMacro().State = int(macro)
         self.enableCustomize(macro)
-        self.setRestart(restart)
+        self.setWarning(restart, instrumented)
 
     def enableShare(self, enabled):
         self._getShareName().Model.Enabled = enabled
 
-    def enableSync(self, enabled, restart, exist):
+    def enableSync(self, restart, instrumented, enabled, exist):
         self._getResetSync().Model.Enabled = enabled and exist
         self._getTimeoutLabel().Model.Enabled = enabled
         self._getTimeout().Model.Enabled = enabled
-        self._enableUpload(enabled, restart)
+        self._enableUpload(restart, instrumented, enabled)
 
     def enableResetFile(self, enabled):
         self._getResetFile().Model.Enabled = enabled
@@ -105,9 +111,6 @@ class OptionsView():
     def enableCustomize(self, enabled):
         self._getLink().Model.Enabled = enabled
         self._getCustomize().Model.Enabled = enabled
-
-    def setRestart(self, enabled):
-        self._getRestart().setVisible(enabled)
 
     def setChunk(self, index, chunk):
         control = self._getChunk(index)
@@ -130,6 +133,14 @@ class OptionsView():
                 'Retry': int(self._getRetry(index).Value)}
 
 # OptionsView private setter methods
+    def _setWarning(self, control, restart, instrumented):
+        if restart:
+            control.setVisible(False)
+            self._getRestart().setVisible(True)
+        else:
+            self._getRestart().setVisible(False)
+            control.setVisible(not instrumented)
+
     def _disableShare(self):
         self._getShare().Model.Enabled = False
         self._getShareName().Model.Enabled = False
@@ -139,11 +150,11 @@ class OptionsView():
         self._getDelay(index).Value = setting.get('Delay')
         self._getRetry(index).Value = setting.get('Retry')
 
-    def _enableUpload(self, enabled, restart):
+    def _enableUpload(self, restart, instrumented, enabled):
         control = self._getUpload()
         if not enabled and control.State:
             self._getDownload().State = 1
-            self.setStep(1, restart)
+            self.setStep(1, restart, instrumented)
         control.Model.Enabled = enabled
 
 # OptionsView private control methods
@@ -200,9 +211,6 @@ class OptionsView():
         index += 6
         return self._window.getControl('NumericField%s' % index)
 
-    def _getRestart(self):
-        return self._window.getControl('Label8')
-
     def _getMacro(self):
         return self._window.getControl('CheckBox4')
 
@@ -211,4 +219,10 @@ class OptionsView():
 
     def _getCustomize(self):
         return self._window.getControl('CommandButton7')
+
+    def _getRestart(self):
+        return self._window.getControl('Label8')
+
+    def _getWarning(self):
+        return self._window.getControl('Hyperlink2')
 

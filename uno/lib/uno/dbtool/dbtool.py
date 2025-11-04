@@ -303,6 +303,14 @@ def getRowDict(result, default=None, count=None):
         row[name] = value
     return row
 
+def getDictSequenceFromResult(result, default=None):
+    sequence = []
+    count = result.MetaData.ColumnCount +1
+    while result.next():
+        data = getRowDict(result, default, count)
+        sequence.append(data)
+    return tuple(sequence)
+
 def getObjectFromResult(result, default=None, count=None):
     obj = Object()
     if count is None:

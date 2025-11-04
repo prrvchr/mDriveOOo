@@ -55,10 +55,10 @@ class OptionsManager():
         self._ctx = ctx
         self._logger = logger
         self._model = OptionsModel(ctx)
-        self._view = OptionsView(window, *self._model.getInitData())
+        self._view = OptionsView(window, OptionsManager._restart, *self._model.getInitData())
         self._logmanager = LogManager(ctx, window, 'requirements.txt', g_defaultlog, g_synclog)
         self._logmanager.initView()
-        self._view.setViewData(*self._model.getViewData(OptionsManager._restart))
+        self._view.setViewData(OptionsManager._restart, *self._model.getViewData())
         self._logger.logprb(INFO, 'OptionsManager', '__init__', 151)
         try:
             url = getDataBaseUrl(ctx)
@@ -71,7 +71,7 @@ class OptionsManager():
     _restart = False
 
     def loadSetting(self):
-        self._view.setViewData(*self._model.getViewData(OptionsManager._restart))
+        self._view.setViewData(OptionsManager._restart, *self._model.getViewData())
         self._logmanager.loadSetting()
         self._logger.logprb(INFO, 'OptionsManager', 'loadSetting', 161)
 
@@ -80,14 +80,14 @@ class OptionsManager():
         changed = self._logmanager.saveSetting()
         if changed:
             OptionsManager._restart = True
-            self._view.setRestart(True)
+            self._view.setWarning(True, self._model.isInstrumented())
         self._logger.logprb(INFO, 'OptionsManager', 'saveSetting', 171, option, changed)
 
     def enableShare(self, enabled):
         self._view.enableShare(enabled)
 
     def enableSync(self, enabled):
-        self._view.enableSync(enabled, OptionsManager._restart, self._model.hasDataBase())
+        self._view.enableSync(OptionsManager._restart, self._model.isInstrumented(), enabled, self._model.hasDataBase())
 
     def setReset(self, enabled):
         self._view.enableResetFile(enabled)
@@ -103,10 +103,10 @@ class OptionsManager():
         fp.dispose()
 
     def download(self):
-        self._view.setStep(1, OptionsManager._restart)
+        self._view.setStep(1, OptionsManager._restart, self._model.isInstrumented())
 
     def upload(self):
-        self._view.setStep(2, OptionsManager._restart)
+        self._view.setStep(2, OptionsManager._restart, self._model.isInstrumented())
 
     def spinUp(self, index):
         self._view.setChunk(index, self._view.getChunk(index) * 2)

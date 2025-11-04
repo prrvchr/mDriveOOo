@@ -31,8 +31,9 @@
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:ShowColumns" script:language="UNO"/>
     </dlg:button>
     <dlg:text dlg:id="Label1" dlg:tab-index="1" dlg:page="2" dlg:left="30" dlg:top="0" dlg:width="60" dlg:height="15" dlg:help-text="&amp;GridWindow.Label1.HelpText" dlg:value="&amp;GridWindow.Label1.Label" dlg:valign="center"/>
-    <dlg:menulist dlg:id="ListBox1" dlg:tab-index="2" dlg:page="2" dlg:left="145" dlg:top="0" dlg:width="100" dlg:height="15" dlg:help-text="&amp;GridWindow.ListBox1.HelpText" dlg:value="&amp;GridWindow.ListBox1.Text" dlg:spin="true">
+    <dlg:menulist dlg:id="ListBox1" dlg:tab-index="2" dlg:page="2" dlg:left="145" dlg:top="0" dlg:width="100" dlg:height="15" dlg:help-text="&amp;GridWindow.ListBox1.HelpText" dlg:spin="true">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:SetColumn" script:language="UNO"/>
     </dlg:menulist>
   </dlg:bulletinboard>
 </dlg:window>
+

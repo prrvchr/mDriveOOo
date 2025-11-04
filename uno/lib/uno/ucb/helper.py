@@ -29,11 +29,6 @@
 
 import uno
 
-from com.sun.star.connection import NoConnectException
-
-from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
-
 from com.sun.star.ucb.ContentAction import INSERTED
 from com.sun.star.ucb.ContentAction import REMOVED
 from com.sun.star.ucb.ContentAction import DELETED
@@ -41,9 +36,6 @@ from com.sun.star.ucb.ContentAction import EXCHANGED
 
 from com.sun.star.ucb import IllegalIdentifierException
 from com.sun.star.ucb import InteractiveAugmentedIOException
-
-from com.sun.star.ucb.ConnectionMode import ONLINE
-from com.sun.star.ucb.ConnectionMode import OFFLINE
 
 from com.sun.star.sdb import ParametersRequest
 
@@ -53,17 +45,10 @@ from .dbtool import getDriverInfos
 
 from .unotool import checkVersion
 from .unotool import createMessageBox
-from .unotool import createService
-from .unotool import executeDispatch
 from .unotool import hasInterface
-from .unotool import getDesktop
-from .unotool import getDispatcher
 from .unotool import getExtensionVersion
-from .unotool import getNamedValueSet
-from .unotool import getParentWindow
 from .unotool import getProperty
 from .unotool import getPropertyValue
-from .unotool import getPropertyValueSet
 from .unotool import getSimpleFile
 from .unotool import parseUrl
 
@@ -85,6 +70,8 @@ from .configuration import g_extension
 from .configuration import g_scheme
 
 from .ucp import g_ucbseparator
+
+import traceback
 
 
 def getPresentationUrl(transformer, url):
@@ -218,10 +205,10 @@ def getExceptionMessage(logger, code, extension, *args):
     message = logger.resolveString(code + 1, *args)
     return title, message
 
-def showWarning(ctx, message, title):
-    box = uno.Enum('com.sun.star.awt.MessageBoxType', 'ERRORBOX')
-    args = {'Box': box, 'Button': 1, 'Title': title, 'Message': message}
-    executeDispatch(ctx, '%s:ShowWarning' % g_scheme, **args)
+def showWarning(ctx, title, message):
+    msgbox = createMessageBox(ctx, title, message)
+    msgbox.execute()
+    msgbox.dispose()
 
 # Private method
 def _checkConfiguration(ctx, source, logger, warn):
@@ -230,22 +217,22 @@ def _checkConfiguration(ctx, source, logger, warn):
     if oauth2 is None:
         title, msg = getExceptionMessage(logger, 801, g_oauth2ext, g_oauth2ext, g_extension)
         if warn:
-            showWarning(ctx, msg, title)
+            showWarning(ctx, title, msg)
         raise IllegalIdentifierException(msg, source)
     if not checkVersion(oauth2, g_oauth2ver):
         title, msg = getExceptionMessage(logger, 803, g_oauth2ext, oauth2, g_oauth2ext, g_oauth2ver)
         if warn:
-            showWarning(ctx, msg, title)
+            showWarning(ctx, title, msg)
         raise IllegalIdentifierException(msg, source)
     if driver is None:
         title, msg = getExceptionMessage(logger, 801, g_jdbcext, g_jdbcext, g_extension)
         if warn:
-            showWarning(ctx, msg, title)
+            showWarning(ctx, title, msg)
         raise IllegalIdentifierException(msg, source)
     if not checkVersion(driver, g_jdbcver):
         title, msg = getExceptionMessage(logger, 803, g_jdbcext, driver, g_jdbcext, g_jdbcver)
         if warn:
-            showWarning(ctx, msg, title)
+            showWarning(ctx, title, msg)
         raise IllegalIdentifierException(msg, source)
 
 def _getDataSourceConnection(ctx, url, new, infos=None):
@@ -259,7 +246,7 @@ def _checkConnection(ctx, source, connection, logger, new, warn):
         connection.close()
         title, msg = getExceptionMessage(logger, 811, g_jdbcext, version, g_version)
         if warn:
-            showWarning(ctx, msg, title)
+            showWarning(ctx, title, msg)
         raise IllegalIdentifierException(msg, source)
     service = 'com.sun.star.sdb.Connection'
     interface = 'com.sun.star.sdbcx.XGroupsSupplier'
@@ -267,7 +254,7 @@ def _checkConnection(ctx, source, connection, logger, new, warn):
         connection.close()
         title, msg = getExceptionMessage(logger, 813, g_jdbcext, service, interface)
         if warn:
-            showWarning(ctx, msg, title)
+            showWarning(ctx, title, msg)
         raise IllegalIdentifierException(msg, source)
 
 def _checkConnectionApi(connection, service, interface):

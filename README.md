@@ -29,7 +29,7 @@
 
 **The use of this software subjects you to our [Terms Of Use][4] and [Data Protection Policy][5].**
 
-# version [1.3.1][6]
+# version [1.4.0][6]
 
 ## Introduction:
 
@@ -43,6 +43,7 @@ Being free software I encourage you:
 - To duplicate its [source code][12].
 - To make changes, corrections, improvements.
 - To open [issue][13] if needed.
+- To [participate in the costs][14] of [CASA certification][15].
 
 In short, to participate in the development of this extension.
 Because it is together that we can make Free Software smarter.
@@ -52,10 +53,10 @@ ___
 ## Requirement:
 
 The mDriveOOo extension uses the OAuth2OOo extension to work.  
-It must therefore meet the [requirement of the OAuth2OOo extension][14].
+It must therefore meet the [requirement of the OAuth2OOo extension][16].
 
 The mDriveOOo extension uses the jdbcDriverOOo extension to work.  
-It must therefore meet the [requirement of the jdbcDriverOOo extension][15].  
+It must therefore meet the [requirement of the jdbcDriverOOo extension][17].  
 Additionally, mDriveOOo requires the jdbcDriverOOo extension to be configured to provide `com.sun.star.sdb` as the API level, which is the default configuration.
 
 ___
@@ -65,15 +66,15 @@ ___
 It seems important that the file was not renamed when it was downloaded.  
 If necessary, rename it before installing it.
 
-- [![OAuth2OOo logo][17]][18] Install **[OAuth2OOo.oxt][19]** extension [![Version][20]][19]
+- [![OAuth2OOo logo][18]][19] Install **[OAuth2OOo.oxt][20]** extension [![Version][21]][20]
 
     You must first install this extension, if it is not already installed.
 
-- [![jdbcDriverOOo logo][21]][22] Install **[jdbcDriverOOo.oxt][23]** extension [![Version][24]][23]
+- [![jdbcDriverOOo logo][22]][23] Install **[jdbcDriverOOo.oxt][24]** extension [![Version][25]][24]
 
     You must install this extension, if it is not already installed.
 
-- ![mDriveOOo logo][25] Install **[mDriveOOo.oxt][26]** extension [![Version][27]][26]
+- ![mDriveOOo logo][26] Install **[mDriveOOo.oxt][27]** extension [![Version][28]][27]
 
 Restart LibreOffice after installation.  
 **Be careful, restarting LibreOffice may not be enough.**
@@ -100,7 +101,7 @@ If you don't give **your_email@your_provider**, you will be asked for...
 
 Anonymous Urls allow you to remain anonymous (your account does not appear in the Url) while named Urls allow you to access several accounts simultaneously.
 
-After authorizing the [OAuth2OOo][18] application to access your Microsoft OneDrive files, your OneDrive files should appear!!! normally  :wink:
+After authorizing the [OAuth2OOo][19] application to access your Microsoft OneDrive files, your OneDrive files should appear!!! normally  :wink:
 
 ___
 
@@ -118,12 +119,12 @@ ___
 
 ## How to build the extension:
 
-Normally, the extension is created with Eclipse for Java and [LOEclipse][28]. To work around Eclipse, I modified LOEclipse to allow the extension to be created with Apache Ant.  
+Normally, the extension is created with Eclipse for Java and [LOEclipse][29]. To work around Eclipse, I modified LOEclipse to allow the extension to be created with Apache Ant.  
 To create the mDriveOOo extension with the help of Apache Ant, you need to:
-- Install the [Java SDK][29] version 8 or higher.
-- Install [Apache Ant][30] version 1.10.0 or higher.
-- Install [LibreOffice and its SDK][31] version 7.x or higher.
-- Clone the [mDriveOOo][32] repository on GitHub into a folder.
+- Install the [Java SDK][30] version 8 or higher.
+- Install [Apache Ant][31] version 1.10.0 or higher.
+- Install [LibreOffice and its SDK][32] version 7.x or higher.
+- Clone the [mDriveOOo][33] repository on GitHub into a folder.
 - From this folder, move to the directory: `source/mDriveOOo/`
 - In this directory, edit the file: `build.properties` so that the `office.install.dir` and `sdk.dir` properties point to the folders where LibreOffice and its SDK were installed, respectively.
 - Start the archive creation process using the command: `ant`
@@ -141,7 +142,7 @@ ___
 
 * LibreOffice 24.8.0.3 (x86_64) - Windows 10(x64) - Python version 3.9.19 (under Lubuntu 22.04 / VirtualBox 6.1.38)
 
-* **Does not work with OpenOffice** see [bug 128569][33]. Having no solution, I encourage you to install **LibreOffice**.
+* **Does not work with OpenOffice** see [bug 128569][34]. Having no solution, I encourage you to install **LibreOffice**.
 
 I encourage you in case of problem :confused:  
 to create an [issue][13]  
@@ -155,7 +156,7 @@ ___
 
 - Integration and use of the new Hsqldb v2.5.1 system versioning.
 
-- Writing of a new [Replicator][34] interface, launched in the background (python Thread) responsible for:
+- Writing of a new [Replicator][35] interface, launched in the background (python Thread) responsible for:
 
     - Perform the necessary procedures when creating a new user (initial Pull).
 
@@ -163,37 +164,37 @@ ___
 
     - Replicate on demand all changes to the hsqldb 2.5.1 database using system versioning (Push all changes).
 
-- Writing of a new [DataBase][35] interface, responsible for making all calls to the database.
+- Writing of a new [DataBase][36] interface, responsible for making all calls to the database.
 
-- Setting up a cache on the Identifiers, see method: [_getUser()][36], allowing access to a Content (file or folder) without access to the database for subsequent calls.
+- Setting up a cache on the Identifiers, see method: [_getUser()][37], allowing access to a Content (file or folder) without access to the database for subsequent calls.
 
-- Management of duplicate file/folder names by [SQL Views][37]: Child, Twin, Uri, and Title generating unique names if duplicates names exist.  
+- Management of duplicate file/folder names by [SQL Views][38]: Child, Twin, Uri, and Title generating unique names if duplicates names exist.  
 Although this functionality is only needed for gDriveOOo, it is implemented globally...
 
 - Many other fix...
 
 ### What has been done for version 0.0.6:
 
-- Using new scheme: **vnd-microsoft://** as claimed by [draft-king-vnd-urlscheme-03.txt][38]
+- Using new scheme: **vnd-microsoft://** as claimed by [draft-king-vnd-urlscheme-03.txt][39]
 
 - Achievement of handling duplicate file/folder names by SQL views in HsqlDB:
-  - A [**Twin**][39] view grouping all the duplicates by parent folder and ordering them by creation date, modification date.
-  - A [**Uri**][40] view generating unique indexes for each duplicate.
-  - A [**Title**][41] view generating unique names for each duplicate.
-  - A recursive view [**Path**][42] to generate a unique path for each file / folder.
+  - A [**Twin**][40] view grouping all the duplicates by parent folder and ordering them by creation date, modification date.
+  - A [**Uri**][41] view generating unique indexes for each duplicate.
+  - A [**Title**][42] view generating unique names for each duplicate.
+  - A recursive view [**Path**][43] to generate a unique path for each file / folder.
 
-- Creation of a [Provider][43] able to respond to the two types of Urls supported (named and anonymous).  
-  Regular expressions (regex), declared in the [UCB configuration file][44], are now used by OpenOffice/LibreOffice to send URLs to the appropriate ContentProvider.
+- Creation of a [Provider][44] able to respond to the two types of Urls supported (named and anonymous).  
+  Regular expressions (regex), declared in the [UCB configuration file][45], are now used by OpenOffice/LibreOffice to send URLs to the appropriate ContentProvider.
 
-- Use of the new UNO struct [DateTimeWithTimezone][45] provided by the extension [jdbcDriverOOo][22] since its version 0.0.4.  
-  Although this struct already exists in LibreOffice, its creation was necessary in order to remain compatible with OpenOffice (see [Enhancement Request 128560][46]).
+- Use of the new UNO struct [DateTimeWithTimezone][46] provided by the extension [jdbcDriverOOo][23] since its version 0.0.4.  
+  Although this struct already exists in LibreOffice, its creation was necessary in order to remain compatible with OpenOffice (see [Enhancement Request 128560][47]).
 
-- Modification of the [Replicator][34] interface, in order to allow:
+- Modification of the [Replicator][35] interface, in order to allow:
   - To choose the data synchronization order (local first then remote or vice versa).
   - Synchronization of local changes by atomic operations performed in chronological order to fully support offline work.  
-  To do this, three SQL procedures [GetPushItems][47], [GetPushProperties][48] and [UpdatePushItems][49] are used for each user who has accessed his files / folders.
+  To do this, three SQL procedures [GetPushItems][48], [GetPushProperties][49] and [UpdatePushItems][50] are used for each user who has accessed his files / folders.
 
-- Rewrite of the [options window][50] accessible by: **Tools -> Options -> Internet -> mDriveOOo** in order to allow:
+- Rewrite of the [options window][51] accessible by: **Tools -> Options -> Internet -> mDriveOOo** in order to allow:
   - Access to the two log files concerning the activities of the UCP and the data replicator.
   - Choice of synchronization order.
   - The modification of the interval between two synchronizations.
@@ -209,7 +210,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 
 ### What has been done for version 1.0.1:
 
-- Implementation of the management of shared files as requested in the request for improvement, see [issue 9][51].
+- Implementation of the management of shared files as requested in the request for improvement, see [issue 9][52].
 
 - The name of the shared folder can be defined before any connection in: **Tools -> Options -> Internet -> mDriveOOo -> Handle shared documents in folder:**
 
@@ -231,7 +232,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 
 ### What has been done for version 1.0.5:
 
-- Support for version **1.2.3** of the **OAuth2OOo** extension. Fixed [issue #12][52].
+- Support for version **1.2.3** of the **OAuth2OOo** extension. Fixed [issue #12][53].
 
 ### What has been done for version 1.0.6:
 
@@ -243,35 +244,35 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 
 ### What has been done for version 1.1.0:
 
-- All Python packages necessary for the extension are now recorded in a [requirements.txt][53] file following [PEP 508][54].
+- All Python packages necessary for the extension are now recorded in a [requirements.txt][54] file following [PEP 508][55].
 - Now if you are not on Windows then the Python packages necessary for the extension can be easily installed with the command:  
   `pip install requirements.txt`
-- Modification of the [Requirement][55] section.
+- Modification of the [Requirement][56] section.
 
 ### What has been done for version 1.1.1:
 
 - Fixed a regression preventing the creation of new files.
-- Integration of a fix to workaround the [issue #159988][56].
+- Integration of a fix to workaround the [issue #159988][57].
 
 ### What has been done for version 1.1.2:
 
-- The creation of the database, during the first connection, uses the UNO API offered by the jdbcDriverOOo extension since version 1.3.2. This makes it possible to record all the information necessary for creating the database in 6 text tables which are in fact [6 csv files][57].
-- Rewriting the [SQL views][58] necessary for managing duplicates. Now a folder or file's path is calculated by a recursive view that supports duplicates.
+- The creation of the database, during the first connection, uses the UNO API offered by the jdbcDriverOOo extension since version 1.3.2. This makes it possible to record all the information necessary for creating the database in 6 text tables which are in fact [6 csv files][58].
+- Rewriting the [SQL views][59] necessary for managing duplicates. Now a folder or file's path is calculated by a recursive view that supports duplicates.
 - Installing the extension will disable the option to create a backup copy (ie: .bak file) in LibreOffice. If this option is validated then the extension is no longer capable of saving files.
 - The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.3.4 and 1.3.2 respectively minimum.
 - Many fixes.
 
 ### What has been done for version 1.1.3:
 
-- Updated the [Python python-dateutil][59] package to version 2.9.0.post0.
-- Updated the [Python ijson][60] package to version 3.3.0.
-- Updated the [Python packaging][61] package to version 24.1.
-- Updated the [Python setuptools][62] package to version 72.1.0 in order to respond to the [Dependabot security alert][63].
+- Updated the [Python python-dateutil][60] package to version 2.9.0.post0.
+- Updated the [Python ijson][61] package to version 3.3.0.
+- Updated the [Python packaging][62] package to version 24.1.
+- Updated the [Python setuptools][63] package to version 72.1.0 in order to respond to the [Dependabot security alert][64].
 - The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.3.6 and 1.4.2 respectively minimum.
 
 ### What has been done for version 1.1.4:
 
-- Updated the [Python setuptools][62] package to version 73.0.1.
+- Updated the [Python setuptools][63] package to version 73.0.1.
 - The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.3.7 and 1.4.5 respectively minimum.
 - Changes to extension options that require a restart of LibreOffice will result in a message being displayed.
 - Support for LibreOffice version 24.8.x.
@@ -294,28 +295,28 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 ### What has been done for version 1.2.0:
 
 - The extension will ask you to install the OAuth2OOo and jdbcDriverOOo extensions in versions 1.4.0 and 1.4.6 respectively minimum.
-- It is possible to build the extension archive (ie: the oxt file) with the [Apache Ant][30] utility and the [build.xml][64] script file.
+- It is possible to build the extension archive (ie: the oxt file) with the [Apache Ant][31] utility and the [build.xml][65] script file.
 - The extension will refuse to install under OpenOffice regardless of version or LibreOffice other than 7.x or higher.
 - Added binaries needed for Python libraries to work on Linux and LibreOffice 24.8 (ie: Python 3.9).
 - The ability to not specify the user's account name in the URL is working again.
 
 ### What has been done for version 1.2.1:
 
-- Updated the [Python packaging][61] package to version 24.2.
-- Updated the [Python setuptools][62] package to version 75.8.0.
-- Updated the [Python six][65] package to version 1.17.0.
+- Updated the [Python packaging][62] package to version 24.2.
+- Updated the [Python setuptools][63] package to version 75.8.0.
+- Updated the [Python six][66] package to version 1.17.0.
 - Support for Python version 3.13.
 
 ### What has been done for version 1.3.0:
 
-- Updated the [Python packaging][61] package to version 25.0.
-- Downgrade the [Python setuptools][62] package to version 75.3.2. to ensure support for Python 3.8.
-- Passive registration deployment that allows for much faster installation of extensions and differentiation of registered UNO services from those provided by a Java or Python implementation. This passive registration is provided by the [LOEclipse][28] extension via [PR#152][66] and [PR#157][67].
-- Modified [LOEclipse][28] to support the new `rdb` file format produced by the `unoidl-write` compilation utility. `idl` files have been updated to support both available compilation tools: idlc and unoidl-write.
-- It is now possible to build the oxt file of the mDriveOOo extension only with the help of Apache Ant and a copy of the GitHub repository. The [How to build the extension][68] section has been added to the documentation.
-- Implemented [PEP 570][69] in [logging][70] to support unique multiple arguments.
+- Updated the [Python packaging][62] package to version 25.0.
+- Downgrade the [Python setuptools][63] package to version 75.3.2. to ensure support for Python 3.8.
+- Passive registration deployment that allows for much faster installation of extensions and differentiation of registered UNO services from those provided by a Java or Python implementation. This passive registration is provided by the [LOEclipse][29] extension via [PR#152][67] and [PR#157][68].
+- Modified [LOEclipse][29] to support the new `rdb` file format produced by the `unoidl-write` compilation utility. `idl` files have been updated to support both available compilation tools: idlc and unoidl-write.
+- It is now possible to build the oxt file of the mDriveOOo extension only with the help of Apache Ant and a copy of the GitHub repository. The [How to build the extension][69] section has been added to the documentation.
+- Implemented [PEP 570][70] in [logging][71] to support unique multiple arguments.
 - To ensure the correct creation of the mDriveOOo database, it will be checked that the jdbcDriverOOo extension has `com.sun.star.sdb` as API level.
-- Wrote two macros `OpenRemote` and `SaveRemote` to create custom menus and be able to keep the system dialog window for opening and saving files in LibreOffice. To make it easier to create these custom menus, the section [How to customize LibreOffice menus][71] has been added to the documentation.
+- Wrote two macros `OpenRemote` and `SaveRemote` to create custom menus and be able to keep the system dialog window for opening and saving files in LibreOffice. To make it easier to create these custom menus, the section [How to customize LibreOffice menus][72] has been added to the documentation.
 - Requires the **jdbcDriverOOo extension at least version 1.5.0**.
 - Requires the **OAuth2OOo extension at least version 1.5.0**.
 
@@ -325,7 +326,20 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 - Requires the **jdbcDriverOOo extension at least version 1.5.4**.
 - Requires the **OAuth2OOo extension at least version 1.5.2**.
 
-### What remains to be done for version 1.3.1:
+### What has been done for version 1.3.2:
+
+- Requires the **jdbcDriverOOo extension at least version 1.5.7**.
+- Requires the **OAuth2OOo extension at least version 1.5.3**.
+
+### What has been done for version 1.4.0:
+
+- If the jdbcDriverOOo extension works without Java instrumentation, a warning message will be displayed in the extension options.
+- All modal windows now open correctly in modal mode.
+- Requires the **jdbcDriverOOo extension at least version 1.6.1**.
+- Requires the **OAuth2OOo extension at least version 1.6.1**.
+- Has been tested with LibreOfficeDev 26.2.
+
+### What remains to be done for version 1.4.0:
 
 - Add new language for internationalization...
 
@@ -336,7 +350,7 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [3]: <https://prrvchr.github.io/mDriveOOo/README_fr>
 [4]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/TermsOfUse_en>
 [5]: <https://prrvchr.github.io/mDriveOOo/source/mDriveOOo/registration/PrivacyPolicy_en>
-[6]: <https://prrvchr.github.io/mDriveOOo#what-has-been-done-for-version-131>
+[6]: <https://prrvchr.github.io/mDriveOOo#what-has-been-done-for-version-140>
 [7]: <https://prrvchr.github.io/>
 [8]: <https://www.libreoffice.org/download/download/>
 [9]: <https://www.openoffice.org/download/index.html>
@@ -344,60 +358,62 @@ Although this functionality is only needed for gDriveOOo, it is implemented glob
 [11]: <https://wiki.openoffice.org/wiki/Documentation/DevGuide/UCB/Content_Providers>
 [12]: <https://github.com/prrvchr/mDriveOOo>
 [13]: <https://github.com/prrvchr/mDriveOOo/issues/new>
-[14]: <https://prrvchr.github.io/OAuth2OOo/#requirement>
-[15]: <https://prrvchr.github.io/jdbcDriverOOo/#requirement>
-[17]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.svg#middle>
-[18]: <https://prrvchr.github.io/OAuth2OOo>
-[19]: <https://github.com/prrvchr/OAuth2OOo/releases/latest/download/OAuth2OOo.oxt>
-[20]: <https://img.shields.io/github/v/tag/prrvchr/OAuth2OOo?label=latest#right>
-[21]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.svg#middle>
-[22]: <https://prrvchr.github.io/jdbcDriverOOo>
-[23]: <https://github.com/prrvchr/jdbcDriverOOo/releases/latest/download/jdbcDriverOOo.oxt>
-[24]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
-[25]: <img/mDriveOOo.svg#middle>
-[26]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
-[27]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.3.1#right>
-[28]: <https://github.com/LibreOffice/loeclipse>
-[29]: <https://adoptium.net/temurin/releases/?version=8&package=jdk>
-[30]: <https://ant.apache.org/manual/install.html>
-[31]: <https://downloadarchive.documentfoundation.org/libreoffice/old/7.6.7.2/>
-[32]: <https://github.com/prrvchr/mDriveOOo.git>
-[33]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
-[34]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
-[35]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
-[36]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py#L127>
-[37]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L154>
-[38]: <https://datatracker.ietf.org/doc/html/draft-king-vnd-urlscheme-03>
-[39]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L163>
-[40]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L173>
-[41]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L193>
-[42]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L213>
-[43]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/ucp/provider.py>
-[44]: <https://github.com/prrvchr/mDriveOOo/blob/master/source/mDriveOOo/mDriveOOo.xcu#L42>
-[45]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/rdb/idl/io/github/prrvchr/css/util/DateTimeWithTimezone.idl>
-[46]: <https://bz.apache.org/ooo/show_bug.cgi?id=128560>
-[47]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L512>
-[48]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L557>
-[49]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L494>
-[50]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/options/ucb>
-[51]: <https://github.com/prrvchr/mDriveOOo/issues/9>
-[52]: <https://github.com/prrvchr/gDriveOOo/issues/12>
-[53]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/requirements.txt>
-[54]: <https://peps.python.org/pep-0508/>
-[55]: <https://prrvchr.github.io/mDriveOOo/#requirement>
-[56]: <https://bugs.documentfoundation.org/show_bug.cgi?id=159988>
-[57]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/ucb/hsqldb>
-[58]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L111>
-[59]: <https://pypi.org/project/python-dateutil/>
-[60]: <https://pypi.org/project/ijson/>
-[61]: <https://pypi.org/project/packaging/>
-[62]: <https://pypi.org/project/setuptools/>
-[63]: <https://github.com/prrvchr/mDriveOOo/security/dependabot/1>
-[64]: <https://github.com/prrvchr/mDriveOOo/blob/master/source/mDriveOOo/build.xml>
-[65]: <https://pypi.org/project/six/>
-[66]: <https://github.com/LibreOffice/loeclipse/pull/152>
-[67]: <https://github.com/LibreOffice/loeclipse/pull/157>
-[68]: <https://prrvchr.github.io/mDriveOOo/#how-to-build-the-extension>
-[69]: <https://peps.python.org/pep-0570/>
-[70]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/logger/logwrapper.py#L109>
-[71]: <https://prrvchr.github.io/mDriveOOo/#how-to-customize-libreoffice-menus>
+[14]: <https://github.com/sponsors/prrvchr>
+[15]: <https://appdefensealliance.dev/casa>
+[16]: <https://prrvchr.github.io/OAuth2OOo/#requirement>
+[17]: <https://prrvchr.github.io/jdbcDriverOOo/#requirement>
+[18]: <https://prrvchr.github.io/OAuth2OOo/img/OAuth2OOo.svg#middle>
+[19]: <https://prrvchr.github.io/OAuth2OOo>
+[20]: <https://github.com/prrvchr/OAuth2OOo/releases/latest/download/OAuth2OOo.oxt>
+[21]: <https://img.shields.io/github/v/tag/prrvchr/OAuth2OOo?label=latest#right>
+[22]: <https://prrvchr.github.io/jdbcDriverOOo/img/jdbcDriverOOo.svg#middle>
+[23]: <https://prrvchr.github.io/jdbcDriverOOo>
+[24]: <https://github.com/prrvchr/jdbcDriverOOo/releases/latest/download/jdbcDriverOOo.oxt>
+[25]: <https://img.shields.io/github/v/tag/prrvchr/jdbcDriverOOo?label=latest#right>
+[26]: <img/mDriveOOo.svg#middle>
+[27]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/mDriveOOo.oxt>
+[28]: <https://img.shields.io/github/downloads/prrvchr/mDriveOOo/latest/total?label=v1.4.0#right>
+[29]: <https://github.com/LibreOffice/loeclipse>
+[30]: <https://adoptium.net/temurin/releases/?version=8&package=jdk>
+[31]: <https://ant.apache.org/manual/install.html>
+[32]: <https://downloadarchive.documentfoundation.org/libreoffice/old/7.6.7.2/>
+[33]: <https://github.com/prrvchr/mDriveOOo.git>
+[34]: <https://bz.apache.org/ooo/show_bug.cgi?id=128569>
+[35]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/replicator.py>
+[36]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/database.py>
+[37]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/datasource.py#L127>
+[38]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L154>
+[39]: <https://datatracker.ietf.org/doc/html/draft-king-vnd-urlscheme-03>
+[40]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L163>
+[41]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L173>
+[42]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L193>
+[43]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L213>
+[44]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/ucp/provider.py>
+[45]: <https://github.com/prrvchr/mDriveOOo/blob/master/source/mDriveOOo/mDriveOOo.xcu#L42>
+[46]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/rdb/idl/io/github/prrvchr/css/util/DateTimeWithTimezone.idl>
+[47]: <https://bz.apache.org/ooo/show_bug.cgi?id=128560>
+[48]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L512>
+[49]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L557>
+[50]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L494>
+[51]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/options/ucb>
+[52]: <https://github.com/prrvchr/mDriveOOo/issues/9>
+[53]: <https://github.com/prrvchr/gDriveOOo/issues/12>
+[54]: <https://github.com/prrvchr/mDriveOOo/releases/latest/download/requirements.txt>
+[55]: <https://peps.python.org/pep-0508/>
+[56]: <https://prrvchr.github.io/mDriveOOo/#requirement>
+[57]: <https://bugs.documentfoundation.org/show_bug.cgi?id=159988>
+[58]: <https://github.com/prrvchr/mDriveOOo/tree/master/uno/lib/uno/ucb/hsqldb>
+[59]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/ucb/dbqueries.py#L111>
+[60]: <https://pypi.org/project/python-dateutil/>
+[61]: <https://pypi.org/project/ijson/>
+[62]: <https://pypi.org/project/packaging/>
+[63]: <https://pypi.org/project/setuptools/>
+[64]: <https://github.com/prrvchr/mDriveOOo/security/dependabot/1>
+[65]: <https://github.com/prrvchr/mDriveOOo/blob/master/source/mDriveOOo/build.xml>
+[66]: <https://pypi.org/project/six/>
+[67]: <https://github.com/LibreOffice/loeclipse/pull/152>
+[68]: <https://github.com/LibreOffice/loeclipse/pull/157>
+[69]: <https://prrvchr.github.io/mDriveOOo/#how-to-build-the-extension>
+[70]: <https://peps.python.org/pep-0570/>
+[71]: <https://github.com/prrvchr/mDriveOOo/blob/master/uno/lib/uno/logger/logwrapper.py#L109>
+[72]: <https://prrvchr.github.io/mDriveOOo/#how-to-customize-libreoffice-menus>

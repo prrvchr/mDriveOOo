@@ -30,6 +30,7 @@
 import unohelper
 
 from com.sun.star.awt import XContainerWindowEventHandler
+from com.sun.star.awt.grid import XGridDataListener
 from com.sun.star.awt.grid import XGridSelectionListener
 
 import traceback
@@ -51,17 +52,44 @@ class WindowHandler(unohelper.Base,
                 self._manager.setColumn(event.Source.getSelectedItemPos())
                 handled = True
             return handled
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+        except:
+            print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
         return ('ShowColumns',
                 'SetColumn')
 
 
-class GridListener(unohelper.Base,
-                   XGridSelectionListener):
+class GridDataListener(unohelper.Base,
+                       XGridDataListener):
+    def __init__(self, manager):
+        self._manager = manager
+
+    # XGridDataListener
+    def rowsInserted(self, event):
+        try:
+            self._manager.dataGridChanged()
+        except:
+            print("GridDataListener.rowsInserted() ERROR: %s" % traceback.format_exc())
+
+    def rowsRemoved(self, event):
+        try:
+            self._manager.dataGridChanged()
+        except:
+            print("GridDataListener.rowsRemoved() ERROR: %s" % traceback.format_exc())
+
+    def dataChanged(self, event):
+        pass
+
+    def rowHeadingChanged(self, event):
+        pass
+
+    def disposing(self, event):
+        pass
+
+
+class GridSelectionListener(unohelper.Base,
+                            XGridSelectionListener):
     def __init__(self, manager, grid=1):
         self._manager = manager
         self._grid = grid
@@ -72,9 +100,8 @@ class GridListener(unohelper.Base,
             control = event.Source
             index = control.getSelectedRows()[-1] if control.hasSelectedRows() else -1
             self._manager.changeGridSelection(index, self._grid)
-        except Exception as e:
-            msg = "Error: %s" % traceback.format_exc()
-            print(msg)
+        except:
+            print("GridSelectionListener.selectionChanged() ERROR: %s" % traceback.format_exc())
 
     def disposing(self, event):
         pass

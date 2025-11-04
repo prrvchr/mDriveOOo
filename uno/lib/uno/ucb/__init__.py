@@ -33,7 +33,7 @@ from .options import OptionsManager
 
 from .dispatch import Dispatch
 
-from .unotool import hasInterface
+from .unotool import hasFrameInterface
 
 from .logger import getLogger
 

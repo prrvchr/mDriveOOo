@@ -37,11 +37,11 @@ from .gridview import GridView
 
 from .gridhandler import WindowHandler
 
-from ..unotool import createService
-from ..unotool import getConfiguration
-from ..unotool import getPropertyValue
+from ...unotool import createService
+from ...unotool import getConfiguration
+from ...unotool import getPropertyValue
 
-from ..configuration import g_identifier
+from ...configuration import g_identifier
 
 import json
 from collections import OrderedDict
@@ -49,8 +49,7 @@ import traceback
 
 
 class GridManager():
-    def __init__(self, ctx, url, model, window, quote, setting, selection, resources=None, maxi=None, multi=False, factor=5):
-        self._quote = quote
+    def __init__(self, ctx, url, model, window, setting, selection, resources=None, maxi=None, multi=False, factor=5):
         self._factor = factor
         self._datasource = None
         self._table = None
@@ -101,10 +100,9 @@ class GridManager():
 
     def getSelectedColumn(self, column):
         value = None
-        if self._view.hasSelectedRows() and column in self._headers:
-            index = tuple(self._headers.keys()).index(column)
-            row = self.getUnsortedIndex(self._view.getSelectedRow())
-            value = self._model.getCellData(index, row)
+        if self._view.hasSelectedRows():
+            row = self._view.getSelectedRow()
+            value = self._getColumnValue(row, column)
         return value
 
     def getSelectedIdentifier(self, identifier):
@@ -113,11 +111,24 @@ class GridManager():
             value = self._getRowValue(identifier, self.getUnsortedIndex(self._view.getSelectedRow()))
         return value
 
-    def getGridFilters(self):
-        filters = []
+    def getSelectedIdentifiers(self, identifier):
+        values = []
+        if self._view.hasSelectedRows():
+            for row in self._view.getSelectedRows():
+                values.append(self._getRowValue(identifier, self.getUnsortedIndex(row)))
+        return tuple(values)
+
+    def getGridData(self, columns, quote, default=None):
+        values = {}
         for row in (range(self._model.RowCount)):
-            filters.append(self._getRowFilter(row))
-        return tuple(filters)
+            filter = self._getRowFilter(row, quote)
+            for column in columns:
+                if column in self._headers:
+                    value = self._getColumnValue(row, column, default)
+                    if value:
+                        values[filter] = value
+                        break
+        return values
 
     def getSelectedStructuredFilters(self):
         filters = []
@@ -125,10 +136,22 @@ class GridManager():
             filters.append(self._getRowStructuredFilter(row))
         return tuple(filters)
 
-    def _getRowFilter(self, row):
+    def getRowPredicates(self, row):
+        predicates = []
+        for identifier in self._indexes:
+            predicates.append(self._getRowValue(identifier, row))
+        return tuple(predicates)
+
+    def _getColumnValue(self, row, column, value=None):
+        if column in self._headers:
+            keys = tuple(self._headers.keys())
+            value = self._model.getCellData(keys.index(column), self.getUnsortedIndex(row))
+        return value
+
+    def _getRowFilter(self, row, quote):
         filters = []
         for identifier in self._indexes:
-            column = self._getQuotedIdentifier(identifier)
+            column = self._getQuotedIdentifier(identifier, quote)
             value = self._getQuotedValue(identifier, row)
             filter = '%s = %s' % (column, value)
             filters.append(filter)
@@ -151,15 +174,14 @@ class GridManager():
             value = "%s" % value
         return value
 
-    def _getQuotedIdentifier(self, identifier):
-        return "%s%s%s" % (self._quote, identifier, self._quote)
+    def _getQuotedIdentifier(self, identifier, quote):
+        return quote + identifier + quote
 
     def _getRowValue(self, identifier, row):
         return self._model.getCellData(self._indexes[identifier], row)
 
 # GridManager setter methods
     def dispose(self):
-        self.saveColumnSettings()
         self.Column.dispose()
         self.Model.dispose()
 
@@ -171,6 +193,12 @@ class GridManager():
 
     def removeSelectionListener(self, listener):
         self._view.getGrid().removeSelectionListener(listener)
+
+    def addGridDataListener(self, listener):
+        self._model.addGridDataListener(listener)
+
+    def removeGridDataListener(self, listener):
+        self._model.removeGridDataListener(listener)
 
     def showColumns(self, state):
         self._view.showColumns(state)

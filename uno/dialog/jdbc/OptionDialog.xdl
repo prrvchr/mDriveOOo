@@ -25,7 +25,7 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 -->
 <!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
-<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="OptionDialog" dlg:left="0" dlg:top="0" dlg:width="260" dlg:height="225" dlg:help-text="&amp;OptionDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;OptionDialog.Title" dlg:withtitlebar="false">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="OptionDialog" dlg:left="0" dlg:top="0" dlg:width="260" dlg:height="200" dlg:help-text="&amp;OptionDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;OptionDialog.Title" dlg:withtitlebar="false">
   <dlg:styles>
     <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
   </dlg:styles>
@@ -58,6 +58,6 @@
     <dlg:checkbox dlg:id="CheckBox1" dlg:tab-index="9" dlg:left="10" dlg:top="120" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionDialog.CheckBox1.HelpText" dlg:value="&amp;OptionDialog.CheckBox1.Label" dlg:valign="center" dlg:checked="false">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:SystemTable" script:language="UNO"/>
     </dlg:checkbox>
-    <dlg:text dlg:style-id="0" dlg:id="Label3" dlg:tab-index="10" dlg:left="10" dlg:top="185" dlg:width="240" dlg:height="15" dlg:help-text="&amp;OptionDialog.Label3.HelpText" dlg:value="&amp;OptionDialog.Label3.Label" dlg:align="center" dlg:valign="center"/>
   </dlg:bulletinboard>
 </dlg:window>
+

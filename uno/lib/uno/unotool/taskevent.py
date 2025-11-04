@@ -27,68 +27,32 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from com.sun.star.logging.LogLevel import INFO
+import unohelper
 
-from ..unotool import getConfiguration
+from com.sun.star.task import XTaskEvent
 
-from ..logger import getLogger
-
-from ..jdbcdriver import g_services
-
-from ..configuration import g_identifier
-from ..configuration import g_basename
-
+from threading import Event
 import traceback
 
 
-class OptionModel():
-    def __init__(self, ctx):
-        self._rebootkeys = ('ApiLevel', 'CachedRowSet')
-        configkeys = ('ShowSystemTable', )
-        self._keys = self._rebootkeys + configkeys
-        self._config = getConfiguration(ctx, g_identifier, True)
-        self._settings = self._getSettings()
+class TaskEvent(unohelper.Base,
+                XTaskEvent):
+    def __init__(self, set=False):
+        self._event = Event()
+        if set:
+            self._event.set()
 
-# OptionModel getter methods
-    def getConfigApiLevel(self):
-        return self._config.getByName('ApiLevel')
+    def isSet(self):
+        return self._event.is_set()
 
-    def getViewData(self):
-        self._settings = self._getSettings()
-        level = self._settings.get('ApiLevel')
-        crs = self._settings.get('CachedRowSet')
-        system = self._settings.get('ShowSystemTable')
-        return level, crs, system, self._isRowSetEnabled(level)
+    def set(self):
+        self._event.set()
 
-# OptionModel setter methods
-    def setApiLevel(self, level):
-        self._settings['ApiLevel'] = level
-        return self._isRowSetEnabled(level)
+    def clear(self):
+        return self._event.clear()
 
-    def setCachedRowSet(self, level):
-        self._settings['CachedRowSet'] = level
+    def wait(self, timeout):
+        if timeout <= 0:
+            timeout = None
+        return self._event.wait(timeout)
 
-    def setSystemTable(self, state):
-        self._settings['ShowSystemTable'] = bool(state)
-
-    def saveSetting(self):
-        reboot = False
-        for key in self._keys:
-            value = self._settings.get(key)
-            if value != self._config.getByName(key):
-                self._config.replaceByName(key, value)
-                if key in self._rebootkeys:
-                    reboot = True
-        if self._config.hasPendingChanges():
-            self._config.commitChanges()
-        return reboot
-
-# OptionModel private methods
-    def _getSettings(self):
-        settings = {}
-        for key in self._keys:
-            settings[key] = self._config.getByName(key)
-        return settings
-
-    def _isRowSetEnabled(self, level):
-        return level != 0

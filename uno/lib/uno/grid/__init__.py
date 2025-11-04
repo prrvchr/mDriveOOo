@@ -31,5 +31,6 @@ from .gridmanager import GridManager
 
 from .gridmodel import GridModel
 
-from .gridhandler import GridListener
+from .gridhandler import GridDataListener
+from .gridhandler import GridSelectionListener
 

@@ -30,6 +30,8 @@
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
+from com.sun.star.uno import Exception as UnoException
+
 from .database import DataBase
 
 from .provider import Provider
@@ -45,6 +47,7 @@ from .unotool import getDesktop
 
 from .helper import getSqlException
 
+from .configuration import g_extension
 
 from threading import Event
 
@@ -87,22 +90,29 @@ class DataSource():
 
 # Procedures called by Driver
     def getConnection(self, source, logger, url, scheme, server, account, password=''):
+        mtd = 'getConnection'
         uri = self._provider.getUserUri(server, account)
         if uri in self._maps:
             name = self._maps.get(uri)
             user = self._users.get(name)
             if not user.Request.isAuthorized():
-                cls, mtd = 'DataSource', 'getConnection()'
-                raise getSqlException(self._ctx, source, 1002, 1401, cls, mtd, name)
+                raise getSqlException(self._ctx, source, 1002, 1401, self._cls, mtd, name, g_extension)
         else:
             user = User(self._ctx, source, logger, self._database,
                         self._provider, url, scheme, server, account, password)
             name = user.getName()
+        if user.isOnLine():
+            try:
+                self._provider.initAddressbooks(self._database, user)
+            except UnoException as ex:
+                e = getSqlException(self._ctx, source, 1001, 1402, self._cls, mtd, name, g_extension)
+                e.NextException = ex
+                raise e
+        connection = self._database.getConnection(name, user.getPassword())
+        # XXX: New users are cached only if the connection is successful.
+        if not uri in self._maps:
             self._users[name] = user
             self._maps[uri] = name
-        if user.isOnLine():
-            self._provider.initAddressbooks(self._database, user)
-        connection = self._database.getConnection(name, user.getPassword())
         user.addSession(self._database.getSessionId(connection))
         # User and/or AddressBooks has been initialized and the connection to the database is done...
         # We can start the database replication in a background task.
