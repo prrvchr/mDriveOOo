@@ -34,7 +34,6 @@ from .options import OptionsManager
 
 from .setup import SetupManager
 
-from .helper import checkConfiguration
 from .helper import getExtensions
 
 from .unotool import getConfiguration

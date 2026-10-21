@@ -27,37 +27,17 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from com.sun.star.logging.LogLevel import SEVERE
-
 from com.sun.star.sdbc import SQLException
-
-from .unotool import checkVersion
-from .unotool import getExtensionVersion
-from .unotool import getLibreOfficeInfo
 
 from .jdbcdriver import g_extension as g_extension1
 from .jdbcdriver import g_identifier as g_identifier1
 from .jdbcdriver import g_version as g_version1
-
-from .configuration import g_dbname
-from .configuration import g_extension
-from .configuration import g_lover
 
 import traceback
 
 
 def getExtensions():
     return {g_identifier1: (g_extension1, g_version1)}
-
-def checkConfiguration(ctx, logger):
-    name, version = getLibreOfficeInfo(ctx)
-    if not checkVersion(version, g_lover):
-        raise _getException(logger, 1001, 122, 123, name, version, name, g_lover)
-    version = getExtensionVersion(ctx, g_identifier1)
-    if version is None:
-        raise _getException(logger, 1001, 121, 124, g_extension1, g_extension)
-    if not checkVersion(version, g_version1):
-        raise _getException(logger, 1001, 122, 125, version, g_extension1, g_version1)
 
 def getException(logger, source, code, exc, state, resource, *args):
     error = SQLException()
@@ -67,7 +47,4 @@ def getException(logger, source, code, exc, state, resource, *args):
     error.Message = logger.resolveString(resource, *args)
     error.Context = source
     return error
-
-def _getException(logger, code, state, resource, *args):
-    return getException(logger, None, code, None, state, resource, *args)
 
