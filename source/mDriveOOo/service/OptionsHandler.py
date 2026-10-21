@@ -72,47 +72,8 @@ class OptionsHandler(unohelper.Base,
                 elif event == 'back':
                     self._manager.loadSetting()
                     handled = True
-            elif method == 'EnableShare':
-                self._manager.enableShare(bool(event.Source.State))
-                handled = True
-            elif method == 'EnableSync':
-                self._manager.enableSync(True)
-                handled = True
-            elif method == 'DisableSync':
-                self._manager.enableSync(False)
-                handled = True
-            elif method == 'Reset':
-                self._manager.setReset(bool(event.Source.State))
-                handled = True
-            elif method == 'ViewData':
-                self._manager.viewData()
-                handled = True
-            elif method == 'ViewFile':
-                self._manager.viewFile()
-                handled = True
-            elif method == 'Download':
-                self._manager.download()
-                handled = True
-            elif method == 'Upload':
-                self._manager.upload()
-                handled = True
-            elif method == 'SpinUp1':
-                self._manager.spinUp(0)
-                handled = True
-            elif method == 'SpinDown1':
-                self._manager.spinDown(0)
-                handled = True
-            elif method == 'SpinUp2':
-                self._manager.spinUp(1)
-                handled = True
-            elif method == 'SpinDown2':
-                self._manager.spinDown(1)
-                handled = True
-            elif method == 'EnableMacro':
-                self._manager.enableMacro(bool(event.Source.State))
-                handled = True
-            elif method == 'Customize':
-                self._manager.customizeMenu()
+            elif method == 'ShowSetup':
+                self._manager.showSetup()
                 handled = True
             return handled
         except Exception as e:
@@ -121,20 +82,7 @@ class OptionsHandler(unohelper.Base,
 
     def getSupportedMethodNames(self):
         return ('external_event',
-                'EnableShare',
-                'EnableSync',
-                'DisableSync',
-                'Reset',
-                'ViewData',
-                'ViewFile',
-                'Download',
-                'Upload',
-                'SpinUp1',
-                'SpinDown1',
-                'SpinUp2',
-                'SpinDown2',
-                'EnableMacro',
-                'Customize')
+                'ShowSetup')
 
     # XServiceInfo
     def supportsService(self, service):

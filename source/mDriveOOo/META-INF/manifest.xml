@@ -23,7 +23,8 @@
 ║   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                    ║
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
---><manifest:manifest xmlns:manifest="http://openoffice.org/2001/manifest">
+-->
+<manifest:manifest xmlns:manifest="http://openoffice.org/2001/manifest">
   <manifest:file-entry manifest:full-path="types.rdb" manifest:media-type="application/vnd.sun.star.uno-typelibrary;type=RDB"/>
   <manifest:file-entry manifest:full-path="mDriveOOo/" manifest:media-type="application/vnd.sun.star.basic-library"/>
   <manifest:file-entry manifest:full-path="OptionsDialog.xcu" manifest:media-type="application/vnd.sun.star.configuration-data"/>
@@ -33,5 +34,9 @@
   <manifest:file-entry manifest:full-path="Options.xcs" manifest:media-type="application/vnd.sun.star.configuration-schema"/>
   <manifest:file-entry manifest:full-path="Options.xcu" manifest:media-type="application/vnd.sun.star.configuration-data"/>
   <manifest:file-entry manifest:full-path="Common.xcu" manifest:media-type="application/vnd.sun.star.configuration-data"/>
+  <manifest:file-entry manifest:full-path="Jobs.xcu" manifest:media-type="application/vnd.sun.star.configuration-data"/>
+  <manifest:file-entry manifest:full-path="mDriveOOo/JavaInfo/parcel-descriptor.xml" manifest:media-type="text/xml"/>
+  <manifest:file-entry manifest:full-path="mDriveOOo/JavaInfo/JavaInfo.jar" manifest:media-type="application/binary"/>
+  <manifest:file-entry manifest:full-path="mDriveOOo/JavaInfo/" manifest:media-type="application/vnd.sun.star.framework-script"/>
   <manifest:file-entry manifest:full-path="package.components" manifest:media-type="application/vnd.sun.star.uno-components"/>
 </manifest:manifest>

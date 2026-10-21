@@ -34,15 +34,15 @@ g_identifier = 'io.github.prrvchr.%s' % g_extension
 
 g_provider = 'Microsoft'
 g_host = 'graph.microsoft.com'
-g_version = 'beta' # v1.0 or beta
+g_version = 'beta'  # v1.0 or beta
 g_url = 'https://%s/%s' % (g_host, g_version)
 g_upload = '%s/me/drive/items/%%s:/%%s:/createUploadSession' % g_url
 
-g_userkeys = ('id','userPrincipalName','displayName')
+g_userkeys = ('id', 'userPrincipalName', 'displayName')
 g_userfields = ','.join(g_userkeys)
-g_drivekeys = ('id','createdDateTime','lastModifiedDateTime','name')
+g_drivekeys = ('id', 'createdDateTime', 'lastModifiedDateTime', 'name')
 g_drivefields = ','.join(g_drivekeys)
-g_itemkeys = ('file','size','parentReference')
+g_itemkeys = ('file', 'size', 'parentReference')
 g_itemfields = '%s,%s' % (g_drivefields, ','.join(g_itemkeys))
 g_pages = 100
 
@@ -50,7 +50,7 @@ g_pages = 100
 g_chunk = 320 * 1024
 
 g_ucpfolder = 'application/vnd.microsoft-apps.folder'
-g_ucplink   = 'application/vnd.microsoft-apps.link'
+g_ucplink = 'application/vnd.microsoft-apps.link'
 
 g_doc_map = {'application/vnd.microsoft-apps.document':     'application/vnd.oasis.opendocument.text',
              'application/vnd.microsoft-apps.spreadsheet':  'application/vnd.oasis.opendocument.spreadsheet',
@@ -66,3 +66,15 @@ g_errorlog = 'mDriveError'
 # Logging global variable
 g_synclog = 'mDriveSync'
 
+g_sep = '/'
+g_offset = 11
+
+# Setup frame and Job name
+g_setup = '%s.Setup' % g_extension
+
+# Replicator frame and Job name
+g_replicator = '%s.Replicator' % g_extension
+
+
+class State:
+    restart = False
