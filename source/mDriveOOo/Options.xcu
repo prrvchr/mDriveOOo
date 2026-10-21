@@ -53,6 +53,12 @@
   <prop oor:name="ResumableUpload">
     <value>true</value>
   </prop>
+  <prop oor:name="SetupPosition" oor:op="fuse">
+    <value>-1 -1</value>
+  </prop>
+  <prop oor:name="SetupUpdate">
+    <value>0</value>
+  </prop>
   <node oor:name="Settings">
     <node oor:name="Download" oor:op="fuse">
       <prop oor:name="Chunk">

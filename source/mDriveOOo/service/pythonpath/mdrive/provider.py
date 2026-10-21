@@ -44,6 +44,7 @@ from .dbtool import currentUnoDateTime
 
 from .unotool import generateUuid
 
+from .configuration import State
 from .configuration import g_identifier
 from .configuration import g_scheme
 from .configuration import g_provider
@@ -58,7 +59,10 @@ from .configuration import g_pages
 from .configuration import g_ucpfolder
 from .configuration import g_doc_map
 
-import ijson
+try:
+    import ijson
+except ImportError as e:
+    State.restart = True
 import traceback
 
 

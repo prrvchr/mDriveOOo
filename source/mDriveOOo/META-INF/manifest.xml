@@ -33,5 +33,9 @@
   <manifest:file-entry manifest:full-path="Options.xcs" manifest:media-type="application/vnd.sun.star.configuration-schema"/>
   <manifest:file-entry manifest:full-path="Options.xcu" manifest:media-type="application/vnd.sun.star.configuration-data"/>
   <manifest:file-entry manifest:full-path="Common.xcu" manifest:media-type="application/vnd.sun.star.configuration-data"/>
+  <manifest:file-entry manifest:full-path="Jobs.xcu" manifest:media-type="application/vnd.sun.star.configuration-data"/>
+  <manifest:file-entry manifest:full-path="JavaInfo/" manifest:media-type="application/vnd.sun.star.framework-script"/>
+  <manifest:file-entry manifest:full-path="JavaInfo/parcel-descriptor.xml" manifest:media-type="text/xml"/>
+  <manifest:file-entry manifest:full-path="JavaInfo/JavaInfo.jar" manifest:media-type="application/binary"/>
   <manifest:file-entry manifest:full-path="package.components" manifest:media-type="application/vnd.sun.star.uno-components"/>
 </manifest:manifest>

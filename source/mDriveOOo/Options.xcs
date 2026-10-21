@@ -46,6 +46,8 @@
     <prop oor:name="ReplicateTimeout" oor:type="xs:short"/>
     <prop oor:name="SynchronizePolicy" oor:type="xs:string"/>
     <prop oor:name="ResumableUpload" oor:type="xs:boolean"/>
+    <prop oor:name="SetupPosition" oor:type="oor:int-list"/>
+    <prop oor:name="SetupUpdate" oor:type="xs:short"/>
     <set oor:name="Settings" oor:node-type="SettingSet"/>
   </component>
 </oor:component-schema>
