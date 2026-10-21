@@ -76,11 +76,13 @@ from com.sun.star.logging.LogLevel import SEVERE
 
 from .object import Object
 
+from ..unotool import checkVersion
 from ..unotool import createService
 from ..unotool import getDefaultPropertyValueSet
 from ..unotool import getPropertyValueSet
 from ..unotool import getResourceLocation
 from ..unotool import getUrlPresentation
+from ..unotool import hasInterface
 
 from ..dbqueries import getSqlQuery
 
@@ -106,12 +108,21 @@ def getConnectionUrl(ctx, path):
     location = getResourceLocation(ctx, g_identifier, path)
     return getUrlPresentation(ctx, location)
 
-def getDataSourceConnection(ctx, url, name='', password='', create=False, infos=None, isolated=True):
-    if create:
+def checkConnection(connection, version, minimum, new):
+    if not checkVersion(version, minimum):
+        return False
+    service = 'com.sun.star.sdb.Connection'
+    interface = 'com.sun.star.sdbcx.XGroupsSupplier'
+    if new and not _checkConnectionApi(connection, service, interface):
+        return False
+    return True
+
+def getDataSourceConnection(ctx, path, name='', password='', url=None, infos=None, isolated=True):
+    if url:
         # XXX: The connection infos must be given to the creation
         datasource = createDataSource(ctx, url, infos)
     else:
-        datasource = getDataSource(ctx, url)
+        datasource = getDataSource(ctx, path)
     if isolated:
         connection = datasource.getIsolatedConnection(name, password)
     else:
@@ -128,10 +139,9 @@ def createDataSource(ctx, url, infos=None):
     return datasource
 
 def getDataSource(ctx, url):
-    location = '%s.odb' % url
     service = 'com.sun.star.sdb.DatabaseContext'
     dbcontext = createService(ctx, service)
-    datasource = dbcontext.getByName(location)
+    datasource = dbcontext.getByName(url)
     return datasource
 
 def getDataBaseConnection(ctx, url, info):
@@ -572,9 +582,14 @@ def createViews(views, items):
         views.appendByDescriptor(view)
 
 def createTables(tables, items):
+    count = 0
+    names = []
     for name, item in items:
+        count += 1
         catalog = item.get('CatalogName')
         schema = item.get('SchemaName')
+        if tables.hasByName(f'{catalog}.{schema}.{name}'):
+            continue
         table = tables.createDataDescriptor()
         table.setPropertyValue('Name', name)
         table.setPropertyValue('CatalogName', catalog)
@@ -585,6 +600,8 @@ def createTables(tables, items):
         if primarykeys is not None:
             _createPrimaryKey(table, primarykeys)
         tables.appendByDescriptor(table)
+        names.append(name)
+    return count == len(names), tuple(names)
 
 def createIndexes(tables, items):
     i = 1
@@ -847,4 +864,7 @@ def _addRole(groups, role):
         group = groups.createDataDescriptor()
         group.setPropertyValue('Name', role)
         groups.appendByDescriptor(group)
+
+def _checkConnectionApi(connection, service, interface):
+    return connection.supportsService(service) and hasInterface(connection, interface)
 

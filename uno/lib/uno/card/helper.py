@@ -51,6 +51,15 @@ from .dbconfig  import g_folder
 
 from .logger import getLogger
 
+from .oauth20 import g_identifier as g_identifier1
+from .oauth20 import g_extension as g_extension1
+from .oauth20 import g_version as g_version1
+from .oauth20 import getOAuth2Version
+
+from .jdbcdriver import g_identifier as g_identifier2
+from .jdbcdriver import g_extension as g_extension2
+from .jdbcdriver import g_version as g_version2
+
 from .configuration import g_extension
 from .configuration import g_identifier
 from .configuration import g_basename
@@ -58,6 +67,11 @@ from .configuration import g_defaultlog
 from .configuration import g_host
 
 g_memdb = 'xdbc:hsqldb:mem:db'
+
+
+def getExtensions():
+    return {g_identifier1: (g_extension1, g_version1),
+            g_identifier2: (g_extension2, g_version2)}
 
 def getUserId(metadata):
     return metadata.get('User')

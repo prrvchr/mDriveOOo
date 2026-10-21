@@ -45,16 +45,12 @@ from .datasource import DataSource
 
 from .helper import getLogException
 
-from .dbtool import getConnectionUrl
 from .dbtool import getDriverPropertyInfos
 
 from .logger import getLogger
 
-from .dbconfig import g_folder
-from .dbconfig import g_version
+from .dbinit import getDataSourceUrl
 
-from .configuration import g_defaultlog
-from .configuration import g_identifier
 from .configuration import g_protocol
 from .configuration import g_scheme
 from .configuration import g_scope
@@ -82,7 +78,7 @@ class Driver(unohelper.Base,
     @property
     def DataSource(self):
         if self._datasource is None:
-            url = getConnectionUrl(self._ctx, g_folder + '/' + g_host)
+            url = getDataSourceUrl(self._ctx)
             self._datasource = DataSource(self._ctx, self, self._logger, url)
         return self._datasource
 
@@ -109,9 +105,8 @@ class Driver(unohelper.Base,
             if not validators.email(username):
                 raise getLogException(self._logger, self, 1001, 1114, self._cls, mtd, username)
             connection = self.DataSource.getConnection(self, self._logger, g_scope, g_scheme, g_host, username)
-            version = self.DataSource.DataBase.Version
-            name = connection.getMetaData().getUserName()
-            self._logger.logprb(INFO, self._cls, mtd, 1115, version, name)
+            metadata = connection.getMetaData()
+            self._logger.logprb(INFO, self._cls, mtd, 1115, metadata.getDriverVersion(), metadata.getUserName())
             return connection
         except SQLException as e:
             raise e

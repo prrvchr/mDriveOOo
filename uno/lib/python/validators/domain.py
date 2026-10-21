@@ -16,6 +16,7 @@ class _IanaTLD:
     _full_cache: Optional[Set[str]] = None
     # source: https://www.statista.com/statistics/265677
     _popular_cache = {"COM", "ORG", "RU", "DE", "NET", "BR", "UK", "JP", "FR", "IT"}
+    _popular_cache.add("ONION")
 
     @classmethod
     def _retrieve(cls):
@@ -44,12 +45,12 @@ def domain(
 
     Examples:
         >>> domain('example.com')
-        # Output: True
+        True
         >>> domain('example.com/')
-        # Output: ValidationError(func=domain, ...)
+        ValidationError(func=domain, args={'value': 'example.com/'})
         >>> # Supports IDN domains as well::
         >>> domain('xn----gtbspbbmkef.xn--p1ai')
-        # Output: True
+        True
 
     Args:
         value:
@@ -79,7 +80,6 @@ def domain(
         return False
 
     try:
-
         service_record = r"_" if rfc_2782 else ""
         trailing_dot = r"\.?$" if rfc_1034 else r"$"
 

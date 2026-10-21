@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from base64 import b64encode
 from collections.abc import Mapping, MutableMapping, Sequence
-from typing import Any, Union, overload
+from io import BytesIO
+from typing import Any, TypeAlias, overload
 
-from w3lib._types import StrOrBytes
-from w3lib.util import to_bytes, to_unicode
+from w3lib._util import to_unicode
 
-HeadersDictInput = Mapping[bytes, Union[Any, Sequence[bytes]]]
-HeadersDictOutput = MutableMapping[bytes, list[bytes]]
+HeadersDictInput: TypeAlias = Mapping[bytes, Any | Sequence[bytes]]
+HeadersDictOutput: TypeAlias = MutableMapping[bytes, list[bytes]]
 
 
 @overload
@@ -45,21 +45,23 @@ def headers_raw_to_dict(headers_raw: bytes | None) -> HeadersDictOutput | None:
 
     if headers_raw is None:
         return None
-    headers = headers_raw.splitlines()
-    headers_tuples = [header.split(b":", 1) for header in headers]
+
+    if not headers_raw:
+        return {}
 
     result_dict: HeadersDictOutput = {}
-    for header_item in headers_tuples:
-        if not len(header_item) == 2:
+
+    for header in BytesIO(headers_raw):
+        key, sep, value = header.partition(b":")
+        if not sep:
             continue
 
-        item_key = header_item[0].strip()
-        item_value = header_item[1].strip()
+        key, value = key.strip(), value.strip()
 
-        if item_key in result_dict:
-            result_dict[item_key].append(item_value)
+        if key in result_dict:
+            result_dict[key].append(value)
         else:
-            result_dict[item_key] = [item_value]
+            result_dict[key] = [value]
 
     return result_dict
 
@@ -94,32 +96,43 @@ def headers_dict_to_raw(headers_dict: HeadersDictInput | None) -> bytes | None:
 
     if headers_dict is None:
         return None
-    raw_lines = []
+
+    if not headers_dict:
+        return b""
+
+    parts = bytearray()
+
     for key, value in headers_dict.items():
         if isinstance(value, bytes):
-            raw_lines.append(b": ".join([key, value]))
+            if parts:
+                parts.extend(b"\r\n")
+            parts.extend(key + b": " + value)
+
         elif isinstance(value, (list, tuple)):
             for v in value:
-                raw_lines.append(b": ".join([key, v]))
-    return b"\r\n".join(raw_lines)
+                if parts:
+                    parts.extend(b"\r\n")
+                parts.extend(key + b": " + v)
+
+    return bytes(parts)
 
 
 def basic_auth_header(
-    username: StrOrBytes, password: StrOrBytes, encoding: str = "ISO-8859-1"
+    username: str | bytes, password: str | bytes, encoding: str = "ISO-8859-1"
 ) -> bytes:
     """
     Return an `Authorization` header field value for `HTTP Basic Access Authentication (RFC 2617)`_
 
     >>> import w3lib.http
     >>> w3lib.http.basic_auth_header('someuser', 'somepass')
-    'Basic c29tZXVzZXI6c29tZXBhc3M='
+    b'Basic c29tZXVzZXI6c29tZXBhc3M='
 
     .. _HTTP Basic Access Authentication (RFC 2617): http://www.ietf.org/rfc/rfc2617.txt
 
     """
 
     auth = f"{to_unicode(username)}:{to_unicode(password)}"
-    # XXX: RFC 2617 doesn't define encoding, but ISO-8859-1
-    # seems to be the most widely used encoding here. See also:
+    # RFC 2617 doesn't define encoding, but ISO-8859-1 seems to be the
+    # most widely used encoding here. See also:
     # http://greenbytes.de/tech/webdav/draft-ietf-httpauth-basicauth-enc-latest.html
-    return b"Basic " + b64encode(to_bytes(auth, encoding=encoding))
+    return b"Basic " + b64encode(auth.encode(encoding=encoding))

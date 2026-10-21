@@ -42,12 +42,9 @@ cdef class _BaseContext:
     cdef _ExceptionContext _exc
     cdef _ErrorLog _error_log
 
-    def __cinit__(self):
-        self._xpathCtxt = NULL
-
     def __init__(self, namespaces, extensions, error_log, enable_regexp,
                  build_smart_strings):
-        cdef _ExsltRegExp _regexp 
+        cdef _ExsltRegExp _regexp
         cdef dict new_extensions
         cdef list ns
         self._utf_refs = {}
@@ -213,11 +210,11 @@ cdef class _BaseContext:
                 xpath.xmlXPathRegisterNs(self._xpathCtxt,
                                          _xcstr(prefix_utf), NULL)
             del self._global_namespaces[:]
-    
+
     cdef void _unregisterNamespace(self, prefix_utf) noexcept:
         xpath.xmlXPathRegisterNs(self._xpathCtxt,
                                  _xcstr(prefix_utf), NULL)
-    
+
     # extension functions
 
     cdef int _addLocalExtensionFunction(self, ns_utf, name_utf, function) except -1:
@@ -662,6 +659,8 @@ cdef _unpackNodeSetEntry(list results, xmlNode* c_node, _Document doc,
             #        -> we store Python refs to these, so that is OK
             # XSLT: can it leak when merging trees from multiple sources?
             c_node = tree.xmlDocCopyNode(c_node, doc._c_doc, 1)
+            if not c_node:
+                raise MemoryError()
             # FIXME: call _instantiateElementFromXPath() instead?
         results.append(
             _fakeDocElementFactory(doc, c_node))
@@ -709,6 +708,8 @@ cdef _Element _instantiateElementFromXPath(xmlNode* c_node, _Document doc,
             # not from a known document at all! => can only make a
             # safety copy here
             c_node = tree.xmlDocCopyNode(c_node, doc._c_doc, 1)
+            if not c_node:
+                raise MemoryError()
         else:
             doc = node_doc
     return _fakeDocElementFactory(doc, c_node)
@@ -752,6 +753,8 @@ cdef object _buildElementStringResult(_Document doc, xmlNode* c_node,
         attrname = _namespacedName(c_node)
         is_tail = 0
         s = tree.xmlNodeGetContent(c_node)
+        if s is NULL:
+            raise MemoryError()
         try:
             value = funicode(s)
         finally:
@@ -793,8 +796,10 @@ cdef void _extension_function_call(_BaseContext context, function,
         args = []
         for i in range(nargs):
             obj = xpath.valuePop(ctxt)
-            o = _unwrapXPathObject(obj, doc, context)
-            _freeXPathObject(obj)
+            try:
+                o = _unwrapXPathObject(obj, doc, context)
+            finally:
+                _freeXPathObject(obj)
             args.append(o)
         args.reverse()
 

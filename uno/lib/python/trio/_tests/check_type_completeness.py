@@ -7,6 +7,7 @@
 
 If this check is giving you false alarms, you can ignore them by adding logic to `has_docstring_at_runtime`, in the main loop in `check_type`, or by updating the json file.
 """
+
 from __future__ import annotations
 
 # this file is not run as part of the tests, instead it's run standalone from check.sh
@@ -32,7 +33,7 @@ def run_pyright(platform: str) -> subprocess.CompletedProcess[bytes]:
             "pyright",
             # Specify a platform and version to keep imported modules consistent.
             f"--pythonplatform={platform}",
-            "--pythonversion=3.9",
+            "--pythonversion=3.10",
             "--verifytypes=trio",
             "--outputjson",
             "--ignoreexternal",
@@ -49,7 +50,7 @@ def has_docstring_at_runtime(name: str) -> bool:
     """
     # This assert is solely for stopping isort from removing our imports of trio & trio.testing
     # It could also be done with isort:skip, but that'd also disable import sorting and the like.
-    assert trio.testing
+    assert trio.testing is not None
 
     # figure out what part of the name is the module, so we can "import" it
     name_parts = name.split(".")
@@ -116,7 +117,7 @@ def check_type(
     expected_errors: list[object],
 ) -> list[object]:
     # convince isort we use the trio import
-    assert trio
+    assert trio is not None
 
     # run pyright, load output into json
     res = run_pyright(platform)

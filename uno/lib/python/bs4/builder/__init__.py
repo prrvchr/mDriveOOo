@@ -136,7 +136,7 @@ class TreeBuilderRegistry(object):
                 if candidates is None:
                     candidates = we_have_the_feature
                     candidate_set = set(candidates)
-                else:
+                elif candidate_set is not None:
                     # Eliminate any candidates that don't have this feature.
                     candidate_set = candidate_set.intersection(set(we_have_the_feature))
 
@@ -260,7 +260,7 @@ class TreeBuilder(object):
 
     #: The textual contents of tags with these names should be
     #: instantiated with some class other than `bs4.element.NavigableString`.
-    DEFAULT_STRING_CONTAINERS: Dict[str, Type[bs4.element.NavigableString]] = {}
+    DEFAULT_STRING_CONTAINERS: Dict[str, Type[bs4.element.NavigableString]] = {} # type:ignore
 
     #: By default, tags are treated as empty-element tags if they have
     #: no contents--that is, using XML rules. HTMLTreeBuilder
@@ -508,7 +508,7 @@ class HTMLTreeBuilder(TreeBuilder):
 
     #: Some HTML tags are defined as having no contents. Beautiful Soup
     #: treats these specially.
-    DEFAULT_EMPTY_ELEMENT_TAGS: Set[str] = set(
+    DEFAULT_EMPTY_ELEMENT_TAGS: Optional[Set[str]] = set(
         [
             # These are from HTML5.
             "area",
@@ -599,7 +599,7 @@ class HTMLTreeBuilder(TreeBuilder):
     #:
     #: TODO: Arguably <noscript> could go here but it seems
     #: qualitatively different from the other tags.
-    DEFAULT_STRING_CONTAINERS: Dict[str, Type[bs4.element.NavigableString]] = {
+    DEFAULT_STRING_CONTAINERS: Dict[str, Type[bs4.element.NavigableString]] = { # type:ignore
         "rt": RubyTextString,
         "rp": RubyParenthesisString,
         "style": Stylesheet,

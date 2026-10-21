@@ -27,6 +27,7 @@ from bs4.element import (
 from bs4._typing import (
     _AtMostOneElement,
     _AttributeValue,
+    _NullableStringMatchFunction,
     _OneElement,
     _PageElementMatchFunction,
     _QueryResults,
@@ -117,8 +118,8 @@ class ElementFilter(object):
         the constructor.
 
         :param _known_rules: Defined for compatibility with
-        SoupStrainer._match(). Used more for consistency than because
-        we need the performance optimization.
+            SoupStrainer._match(). Used more for consistency than because
+            we need the performance optimization.
         """
         if not _known_rules and self.includes_everything:
             return True
@@ -135,8 +136,7 @@ class ElementFilter(object):
         # If there are no rules at all, don't bother filtering. Let
         # anything through.
         if self.includes_everything:
-            for i in generator:
-                yield i
+            yield from generator
         while True:
             try:
                 i = next(generator)
@@ -144,7 +144,7 @@ class ElementFilter(object):
                 break
             if i:
                 if self.match(i, _known_rules=True):
-                    yield cast("_OneElement", i)
+                    yield i
 
     def find(self, generator: Iterator[PageElement]) -> _AtMostOneElement:
         """A lower-level equivalent of :py:meth:`Tag.find`.
@@ -174,12 +174,12 @@ class ElementFilter(object):
 
         :param limit: Stop looking after finding this many results.
         """
-        results: _QueryResults = ResultSet(self)
+        results = []
         for match in self.filter(generator):
             results.append(match)
             if limit is not None and len(results) >= limit:
                 break
-        return results
+        return ResultSet(self, results)
 
     def allow_tag_creation(
         self, nsprefix: Optional[str], name: str, attrs: Optional[_RawAttributeValues]
@@ -334,7 +334,7 @@ class TagNameMatchRule(MatchRule):
 class AttributeValueMatchRule(MatchRule):
     """A MatchRule implementing the rules for matches against attribute value."""
 
-    function: Optional[_StringMatchFunction]
+    function: Optional[_NullableStringMatchFunction]
 
 
 class StringMatchRule(MatchRule):
@@ -378,7 +378,7 @@ class SoupStrainer(ElementFilter):
     def __init__(
         self,
         name: Optional[_StrainableElement] = None,
-        attrs: Dict[str, _StrainableAttribute] = {},
+        attrs: Optional[Dict[str, _StrainableAttribute]] = None,
         string: Optional[_StrainableString] = None,
         **kwargs: _StrainableAttribute,
     ):
@@ -396,11 +396,13 @@ class SoupStrainer(ElementFilter):
             # that matches all Tags, and only Tags.
             self.name_rules = [TagNameMatchRule(present=True)]
         else:
-                self.name_rules = cast(
-                    List[TagNameMatchRule], list(self._make_match_rules(name, TagNameMatchRule))
-                )
+            self.name_rules = cast(
+                List[TagNameMatchRule], list(self._make_match_rules(name, TagNameMatchRule))
+            )
         self.attribute_rules = defaultdict(list)
 
+        if attrs is None:
+            attrs = {}
         if not isinstance(attrs, dict):
             # Passing something other than a dictionary as attrs is
             # sugar for matching that thing against the 'class'
@@ -582,8 +584,12 @@ class SoupStrainer(ElementFilter):
                 #     [f"{k}={v}" for k, v in sorted(tag.attrs.items())]
                 # )
                 # print(f"Testing <{tag.name} {attrs}>{tag.string}</{tag.name}> against {rule}")
+
+                # If the rule contains a function, the function will be called
+                # with `tag`. It will not be called a second time with
+                # `prefixed_name`.
                 if rule.matches_tag(tag) or (
-                    prefixed_name is not None and rule.matches_string(prefixed_name)
+                        not rule.function and prefixed_name is not None and rule.matches_string(prefixed_name)
                 ):
                     name_matches = True
                     break
@@ -628,18 +634,21 @@ class SoupStrainer(ElementFilter):
             return False
 
         this_attr_match = _match_attribute_value_helper(attr_values)
-        if not this_attr_match and len(attr_values) > 1:
+        if not this_attr_match and len(attr_values) != 1:
+            # Try again but treat the attribute value as a single
+            # string instead of a list. The result can only be
+            # different if the list of values contains more or less
+            # than one item.
+
             # This cast converts Optional[str] to plain str.
             #
-            # We know if there's more than one value, there can't be
-            # any None in the list, because Beautiful Soup never uses
-            # None as a value of a multi-valued attribute, and if None
-            # is passed in as attr_value, it's turned into a list with
-            # a single element (thus len(attr_values) > 1 fails).
+            # We know there can't be any None in the list. Beautiful
+            # Soup never uses None as a value of a multi-valued
+            # attribute, and if None is passed in as attr_value, it's
+            # turned into a list with 1 element, which was excluded by
+            # the if statement above.
             attr_values = cast(Sequence[str], attr_values)
 
-            # Try again but treat the attribute value
-            # as a single string.
             joined_attr_value = " ".join(attr_values)
             this_attr_match = _match_attribute_value_helper([joined_attr_value])
         return this_attr_match

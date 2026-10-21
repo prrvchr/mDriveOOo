@@ -233,6 +233,20 @@ cdef int _setNodeNamespaces(xmlNode* c_node, _Document doc,
                     c_ns.href is NULL or \
                     tree.xmlStrcmp(c_ns.href, c_href) != 0:
                 c_ns = tree.xmlNewNs(c_node, c_href, c_prefix)
+                if c_ns is NULL:
+                    # libxml2 has two error conditions: "out of memory" and "prefix exists already".
+                    # We ignore the latter for compatibility reasons. It currently only appears
+                    # during namespace cleanup.
+                    c_ns = c_node.nsDef
+                    while c_ns is not NULL:
+                        if c_prefix is NULL:
+                            if c_ns.prefix is NULL:
+                                break
+                        elif tree.xmlStrcmp(c_ns.prefix, c_prefix) == 0:
+                            break
+                        c_ns = c_ns.next
+                    else:
+                        raise MemoryError()
             if href_utf == node_ns_utf:
                 tree.xmlSetNs(c_node, c_ns)
                 node_ns_utf = None
@@ -275,8 +289,7 @@ cdef _iter_nsmap(nsmap):
         return nsmap.items()
     if len(nsmap) <= 1:
         return nsmap.items()
-    # nsmap will usually be a plain unordered dict => avoid type checking overhead
-    if type(nsmap) is not dict and isinstance(nsmap, OrderedDict):
+    if isinstance(nsmap, OrderedDict):
         return nsmap.items()  # keep existing order
     if None not in nsmap:
         return sorted(nsmap.items())
@@ -335,12 +348,13 @@ cdef int _addAttributeToNode(xmlNode* c_node, _Document doc, bint is_html,
         _attributeValidOrRaise(name_utf)
     value_utf = _utf8(value)
     if ns_utf is None:
-        tree.xmlNewProp(c_node, _xcstr(name_utf), _xcstr(value_utf))
+        new_attr = tree.xmlNewProp(c_node, _xcstr(name_utf), _xcstr(value_utf))
     else:
         _uriValidOrRaise(ns_utf)
         c_ns = doc._findOrBuildNodeNs(c_node, _xcstr(ns_utf), NULL, 1)
-        tree.xmlNewNsProp(c_node, c_ns,
-                          _xcstr(name_utf), _xcstr(value_utf))
+        new_attr = tree.xmlNewNsProp(c_node, c_ns, _xcstr(name_utf), _xcstr(value_utf))
+    if new_attr is NULL:
+        raise MemoryError()
     return 0
 
 
@@ -439,7 +453,7 @@ cdef int _removeUnusedNamespaceDeclarations(xmlNode* c_element, set prefixes_to_
                 c_nsdef = c_nsdef.next
             c_nsdef.next = c_nsdef.next.next
         tree.xmlFreeNs(c_ns_list[i].ns)
-    
+
     if c_ns_list is not NULL:
         python.lxml_free(c_ns_list)
     return 0
@@ -685,7 +699,7 @@ cdef unicode _collectText(xmlNode* c_node):
     """Collect all text nodes and return them as a unicode string.
 
     Start collecting at c_node.
-    
+
     If there was no text to collect, return None
     """
     cdef Py_ssize_t scount
@@ -786,6 +800,7 @@ cdef inline Py_ssize_t _countElements(xmlNode* c_node) noexcept:
         c_node = c_node.next
     return count
 
+
 cdef int _findChildSlice(
     slice sliceobject, xmlNode* c_parent,
     xmlNode** c_start_node, Py_ssize_t* c_step, Py_ssize_t* c_length) except -1:
@@ -804,13 +819,16 @@ cdef int _findChildSlice(
         else:
             python._PyEval_SliceIndex(sliceobject.step, c_step)
         return 0
+
     python.PySlice_GetIndicesEx(
         sliceobject, childcount, &start, &stop, c_step, c_length)
+
     if start > childcount // 2:
         c_start_node[0] = _findChildBackwards(c_parent, childcount - start - 1)
     else:
         c_start_node[0] = _findChild(c_parent, start)
     return 0
+
 
 cdef bint _isFullSlice(slice sliceobject) except -1:
     """Conservative guess if this slice is a full slice as in ``s[:]``.
@@ -845,7 +863,7 @@ cdef inline xmlNode* _findChild(xmlNode* c_node, Py_ssize_t index) noexcept:
         return _findChildBackwards(c_node, -index - 1)
     else:
         return _findChildForwards(c_node, index)
-    
+
 cdef inline xmlNode* _findChildForwards(xmlNode* c_node, Py_ssize_t index) noexcept:
     """Return child element of c_node with index, or return NULL if not found.
     """
@@ -876,7 +894,7 @@ cdef inline xmlNode* _findChildBackwards(xmlNode* c_node, Py_ssize_t index) noex
             c += 1
         c_child = c_child.prev
     return NULL
-    
+
 cdef inline xmlNode* _textNodeOrSkip(xmlNode* c_node) noexcept nogil:
     """Return the node if it's a text node.  Skip over ignorable nodes in a
     series of text nodes.  Return NULL if a non-ignorable node is found.
@@ -1031,23 +1049,31 @@ cdef Py_ssize_t _mapTagsToQnameMatchArray(xmlDoc* c_doc, list ns_tags,
     Note that each qname struct in the array owns its href byte string object
     if it is not NULL.
     """
-    cdef Py_ssize_t count = 0, i
+    cdef Py_ssize_t count = 0, i, c_tag_len
     cdef bytes ns, tag
+    cdef const_xmlChar* c_tag
+
     for ns, tag in ns_tags:
         if tag is None:
-            c_tag = <const_xmlChar*>NULL
-        elif force_into_dict:
-            c_tag = tree.xmlDictLookup(c_doc.dict, _xcstr(tag), len(tag))
-            if c_tag is NULL:
-                # clean up before raising the error
-                for i in xrange(count):
-                    cpython.ref.Py_XDECREF(c_ns_tags[i].href)
-                raise MemoryError()
+            c_tag = <const_xmlChar*> NULL
         else:
-            c_tag = tree.xmlDictExists(c_doc.dict, _xcstr(tag), len(tag))
-            if c_tag is NULL:
-                # not in the dict => not in the document
+            c_tag_len = len(tag)
+            if c_tag_len > limits.INT_MAX:
+                # too long, not in the dict => not in the document
                 continue
+            elif force_into_dict:
+                c_tag = tree.xmlDictLookup(c_doc.dict, _xcstr(tag), <int> c_tag_len)
+                if c_tag is NULL:
+                    # clean up before raising the error
+                    for i in xrange(count):
+                        cpython.ref.Py_XDECREF(c_ns_tags[i].href)
+                    raise MemoryError()
+            else:
+                c_tag = tree.xmlDictExists(c_doc.dict, _xcstr(tag), <int> c_tag_len)
+                if c_tag is NULL:
+                    # not in the dict => not in the document
+                    continue
+
         c_ns_tags[count].c_name = c_tag
         if ns is None:
             c_ns_tags[count].href = NULL
@@ -1095,7 +1121,7 @@ cdef int _removeSiblings(xmlNode* c_element, tree.xmlElementType node_type, bint
 
 cdef void _moveTail(xmlNode* c_tail, xmlNode* c_target) noexcept:
     cdef xmlNode* c_next
-    # tail support: look for any text nodes trailing this node and 
+    # tail support: look for any text nodes trailing this node and
     # move them too
     c_tail = _textNodeOrSkip(c_tail)
     while c_tail is not NULL:
@@ -1162,7 +1188,7 @@ cdef int _deleteSlice(_Document doc, xmlNode* c_node,
     if step > 0:
         next_element = _nextElement
     else:
-        step = -step
+        step = -step if step != python.PY_SSIZE_T_MIN else python.PY_SSIZE_T_MAX
         next_element = _previousElement
     # now start deleting nodes
     c = 0
@@ -1192,7 +1218,7 @@ cdef int _replaceSlice(_Element parent, xmlNode* c_node,
     cdef _Element element
     cdef Py_ssize_t seqlength, i, c
     cdef _node_to_node_function next_element
-    assert step > 0
+    assert step > 0, step
     if left_to_right:
         next_element = _nextElement
     else:
@@ -1415,15 +1441,6 @@ cdef int _addSibling(_Element element, _Element sibling, bint as_next) except -1
     # parent element has moved; change them too..
     moveNodeToDocument(element._doc, c_source_doc, c_node)
     return 0
-
-cdef inline bint isutf8(const_xmlChar* s) noexcept:
-    cdef xmlChar c = s[0]
-    while c != c'\0':
-        if c & 0x80:
-            return True
-        s += 1
-        c = s[0]
-    return False
 
 cdef bint isutf8l(const_xmlChar* s, size_t length) noexcept:
     """

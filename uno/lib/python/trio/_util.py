@@ -6,11 +6,9 @@ import inspect
 import signal
 from abc import ABCMeta
 from collections.abc import Awaitable, Callable, Sequence
-from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     NoReturn,
     TypeVar,
     final as std_final,
@@ -26,11 +24,14 @@ T = TypeVar("T")
 RetT = TypeVar("RetT")
 
 if TYPE_CHECKING:
+    import sys
     from types import AsyncGeneratorType, TracebackType
 
-    from typing_extensions import ParamSpec, Self, TypeVarTuple, Unpack
+    from typing_extensions import TypeVarTuple, Unpack
 
-    ArgsT = ParamSpec("ArgsT")
+    if sys.version_info < (3, 11):
+        from exceptiongroup import BaseExceptionGroup
+
     PosArgsT = TypeVarTuple("PosArgsT")
 
 
@@ -227,40 +228,6 @@ def fixup_module_metadata(
             fix_one(objname, objname, obj)
 
 
-# We need ParamSpec to type this "properly", but that requires a runtime typing_extensions import
-# to use as a class base. This is only used at runtime and isn't correct for type checkers anyway,
-# so don't bother.
-class generic_function(Generic[RetT]):
-    """Decorator that makes a function indexable, to communicate
-    non-inferable generic type parameters to a static type checker.
-
-    If you write::
-
-        @generic_function
-        def open_memory_channel(max_buffer_size: int) -> Tuple[
-            SendChannel[T], ReceiveChannel[T]
-        ]: ...
-
-    it is valid at runtime to say ``open_memory_channel[bytes](5)``.
-    This behaves identically to ``open_memory_channel(5)`` at runtime,
-    and currently won't type-check without a mypy plugin or clever stubs,
-    but at least it becomes possible to write those.
-    """
-
-    def __init__(  # type: ignore[explicit-any]
-        self,
-        fn: Callable[..., RetT],
-    ) -> None:
-        update_wrapper(self, fn)
-        self._fn = fn
-
-    def __call__(self, *args: object, **kwargs: object) -> RetT:
-        return self._fn(*args, **kwargs)
-
-    def __getitem__(self, subscript: object) -> Self:
-        return self
-
-
 def _init_final_cls(cls: type[object]) -> NoReturn:
     """Raises an exception when a final class is subclassed."""
     raise TypeError(f"{cls.__module__}.{cls.__qualname__} does not support subclassing")
@@ -331,7 +298,8 @@ def name_asyncgen(agen: AsyncGeneratorType[object, NoReturn]) -> str:
     if not hasattr(agen, "ag_code"):  # pragma: no cover
         return repr(agen)
     try:
-        module = agen.ag_frame.f_globals["__name__"]
+        # `agen.ag_frame` can be None, but we catch AttributeError.
+        module = agen.ag_frame.f_globals["__name__"]  # type: ignore[union-attr]
     except (AttributeError, KeyError):
         module = f"<{agen.ag_code.co_filename}>"
     try:
@@ -353,3 +321,66 @@ if TYPE_CHECKING:
 
 else:
     from functools import wraps  # noqa: F401  # this is re-exported
+
+
+def raise_saving_context(exc: BaseException) -> NoReturn:
+    """This helper allows re-raising an exception without __context__ being set."""
+    # cause does not need special handling, we simply avoid using `raise .. from ..`
+    # __suppress_context__ also does not need handling, it's only set if modifying cause
+    __tracebackhide__ = True
+    context = exc.__context__
+    try:
+        raise exc
+    finally:
+        exc.__context__ = context
+        del exc, context
+
+
+class MultipleExceptionError(Exception):
+    """Raised by raise_single_exception_from_group if encountering multiple
+    non-cancelled exceptions."""
+
+
+def raise_single_exception_from_group(
+    eg: BaseExceptionGroup[BaseException],
+) -> NoReturn:
+    """This function takes an exception group that is assumed to have at most
+    one non-cancelled exception, which it reraises as a standalone exception.
+
+    This exception may be an exceptiongroup itself, in which case it will not be unwrapped.
+
+    If a :exc:`KeyboardInterrupt` is encountered, a new KeyboardInterrupt is immediately
+    raised with the entire group as cause.
+
+    If the group only contains :exc:`Cancelled` it reraises the first one encountered.
+
+    It will retain context and cause of the contained exception, and entirely discard
+    the cause/context of the group(s).
+
+    If multiple non-cancelled exceptions are encountered, it raises
+    :exc:`AssertionError`.
+    """
+    # immediately bail out if there's any KI or SystemExit
+    for e in eg.exceptions:
+        if isinstance(e, (KeyboardInterrupt, SystemExit)):
+            raise type(e)(*e.args) from eg
+
+    cancelled_exception: trio.Cancelled | None = None
+    noncancelled_exception: BaseException | None = None
+
+    for e in eg.exceptions:
+        if isinstance(e, trio.Cancelled):
+            if cancelled_exception is None:
+                cancelled_exception = e
+        elif noncancelled_exception is None:
+            noncancelled_exception = e
+        else:
+            raise MultipleExceptionError(
+                "Attempted to unwrap exceptiongroup with multiple non-cancelled exceptions. This is often caused by a bug in the caller."
+            ) from eg
+
+    if noncancelled_exception is not None:
+        raise_saving_context(noncancelled_exception)
+
+    assert cancelled_exception is not None, "group can't be empty"
+    raise_saving_context(cancelled_exception)

@@ -21,8 +21,6 @@ baseDecl.iri
 
 Comp lets you set an evalFn that is bound to the eval method of
 the resulting CompValue
-
-
 """
 
 from __future__ import annotations
@@ -41,9 +39,11 @@ from typing import (
     Union,
 )
 
-from pyparsing import ParserElement, ParseResults, TokenConverter, originalTextFor
+from pyparsing import ParserElement, ParseResults, TokenConverter
 
 from rdflib.term import BNode, Identifier, Variable
+
+from .pyparsing_compat import original_text_for
 
 if TYPE_CHECKING:
     from rdflib.plugins.sparql.sparql import FrozenBindings
@@ -60,8 +60,7 @@ def value(
     variables: bool = False,
     errors: bool = False,
 ) -> Any:
-    """
-    utility function for evaluating something...
+    """Utility function for evaluating something...
 
     Variables will be looked up in the context
     Normally, non-bound vars is an error,
@@ -69,7 +68,6 @@ def value(
 
     Normally, an error raises the error,
     set errors=True to return error
-
     """
 
     if isinstance(val, Expr):
@@ -130,8 +128,8 @@ class Param(TokenConverter):
     def __init__(self, name: str, expr, isList: bool = False):
         self.isList = isList
         TokenConverter.__init__(self, expr)
-        self.setName(name)
-        self.addParseAction(self.postParse2)
+        self.set_name(name)
+        self.add_parse_action(self.postParse2)
 
     def postParse2(self, tokenList: Union[List[Any], ParseResults]) -> ParamValue:
         return ParamValue(self.name, tokenList, self.isList)
@@ -154,7 +152,6 @@ class CompValue(OrderedDict):
     The result of parsing a Comp
     Any included Params are available as Dict keys
     or as attributes
-
     """
 
     def __init__(self, name: str, **values):
@@ -241,7 +238,7 @@ class Comp(TokenConverter):
     def __init__(self, name: str, expr: ParserElement):
         self.expr = expr
         TokenConverter.__init__(self, expr)
-        self.setName(name)
+        self.set_name(name)
         self.evalfn: Optional[Callable[[Any, Any], Any]] = None
 
     def postParse(
@@ -257,8 +254,8 @@ class Comp(TokenConverter):
                 # Then this must be a service graph pattern and have
                 # already matched.
                 # lets assume there is one, for now, then test for two later.
-                sgp = originalTextFor(self.expr)
-                service_string = sgp.searchString(instring)[0][0]
+                sgp = original_text_for(self.expr)
+                service_string = sgp.search_string(instring)[0][0]
                 res["service_string"] = service_string
 
         for t in tokenList:
@@ -281,7 +278,7 @@ class Comp(TokenConverter):
 
 def prettify_parsetree(t: ParseResults, indent: str = "", depth: int = 0) -> str:
     out: List[str] = []
-    for e in t.asList():
+    for e in t.as_list():
         out.append(_prettify_sub_parsetree(e, indent, depth + 1))
     for k, v in sorted(t.items()):
         out.append("%s%s- %s:\n" % (indent, "  " * depth, k))

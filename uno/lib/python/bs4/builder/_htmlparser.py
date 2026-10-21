@@ -10,6 +10,7 @@ __all__ = [
 ]
 
 from html.parser import HTMLParser
+import re
 
 from typing import (
     Any,
@@ -125,7 +126,7 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
         raise ParserRejectedMarkup(message)
 
     def handle_startendtag(
-        self, name: str, attrs: List[Tuple[str, Optional[str]]]
+        self, tag: str, attrs: List[Tuple[str, Optional[str]]]
     ) -> None:
         """Handle an incoming empty-element tag.
 
@@ -136,12 +137,17 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
         # just because its name matches a known empty-element tag. We
         # know that this is an empty-element tag, and we want to call
         # handle_endtag ourselves.
-        self.handle_starttag(name, attrs, handle_empty_element=False)
-        self.handle_endtag(name)
+        self.handle_starttag(tag, attrs, handle_empty_element=False)
+
+        # Similarly, we set `check_already_closed` when calling
+        # handle_endtag. Since we know the start event is identical to
+        # the end event, we don't want handle_endtag() to cross off
+        # any previous end events for tags of this name.
+        self.handle_endtag(tag, check_already_closed=False)
 
     def handle_starttag(
         self,
-        name: str,
+        tag: str,
         attrs: List[Tuple[str, Optional[str]]],
         handle_empty_element: bool = True,
     ) -> None:
@@ -172,17 +178,17 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
                     on_dupe(attr_dict, key, value)
             else:
                 attr_dict[key] = value
-        # print("START", name)
+        # print("START", tag)
         sourceline: Optional[int]
         sourcepos: Optional[int]
         if self.soup.builder.store_line_numbers:
             sourceline, sourcepos = self.getpos()
         else:
             sourceline = sourcepos = None
-        tag = self.soup.handle_starttag(
-            name, None, None, attr_dict, sourceline=sourceline, sourcepos=sourcepos
+        tagObj = self.soup.handle_starttag(
+            tag, None, None, attr_dict, sourceline=sourceline, sourcepos=sourcepos
         )
-        if tag and tag.is_empty_element and handle_empty_element:
+        if tagObj is not None and tagObj.is_empty_element and handle_empty_element:
             # Unlike other parsers, html.parser doesn't send separate end tag
             # events for empty-element tags. (It's handled in
             # handle_startendtag, but only if the original markup looked like
@@ -192,36 +198,94 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
             # know the start event is identical to the end event, we
             # don't want handle_endtag() to cross off any previous end
             # events for tags of this name.
-            self.handle_endtag(name, check_already_closed=False)
+            self.handle_endtag(tag, check_already_closed=False)
 
             # But we might encounter an explicit closing tag for this tag
             # later on. If so, we want to ignore it.
-            self.already_closed_empty_element.append(name)
+            self.already_closed_empty_element.append(tag)
 
         if self._root_tag_name is None:
-            self._root_tag_encountered(name)
+            self._root_tag_encountered(tag)
 
-    def handle_endtag(self, name: str, check_already_closed: bool = True) -> None:
+    def handle_endtag(self, tag: str, check_already_closed: bool = True) -> None:
         """Handle a closing tag, e.g. '</tag>'
 
-        :param name: A tag name.
+        :param tag: A tag name.
         :param check_already_closed: True if this tag is expected to
            be the closing portion of an empty-element tag,
            e.g. '<tag></tag>'.
         """
-        # print("END", name)
-        if check_already_closed and name in self.already_closed_empty_element:
+        # print("END", tag)
+        if check_already_closed and tag in self.already_closed_empty_element:
             # This is a redundant end tag for an empty-element tag.
             # We've already called handle_endtag() for it, so just
             # check it off the list.
-            # print("ALREADY CLOSED", name)
-            self.already_closed_empty_element.remove(name)
+            # print("ALREADY CLOSED", tag)
+            self.already_closed_empty_element.remove(tag)
         else:
-            self.soup.handle_endtag(name)
+            self.soup.handle_endtag(tag)
 
     def handle_data(self, data: str) -> None:
         """Handle some textual data that shows up between tags."""
         self.soup.handle_data(data)
+
+    _DECIMAL_REFERENCE_WITH_FOLLOWING_DATA = re.compile("^([0-9]+)(.*)")
+    _HEX_REFERENCE_WITH_FOLLOWING_DATA = re.compile("^([0-9a-f]+)(.*)")
+
+    @classmethod
+    def _dereference_numeric_character_reference(cls, name:str) -> Tuple[str, bool, str]:
+        """Convert a numeric character reference into an actual character.
+
+        :param name: The number of the character reference, as
+          obtained by html.parser
+
+        :return: A 3-tuple (dereferenced, replacement_added,
+          extra_data). `dereferenced` is the dereferenced character
+          reference, or the empty string if there was no
+          reference. `replacement_added` is True if the reference
+          could only be dereferenced by replacing content with U+FFFD
+          REPLACEMENT CHARACTER. `extra_data` is a portion of data
+          following the character reference, which was deemed to be
+          normal data and not part of the reference at all.
+        """
+        dereferenced:str = ""
+        replacement_added:bool = False
+        extra_data:str = ""
+
+        base:int = 10
+        reg = cls._DECIMAL_REFERENCE_WITH_FOLLOWING_DATA
+        if name.startswith("x") or name.startswith("X"):
+            # Hex reference
+            name = name[1:]
+            base = 16
+            reg = cls._HEX_REFERENCE_WITH_FOLLOWING_DATA
+
+        real_name:Optional[int] = None
+        try:
+            real_name = int(name, base)
+        except ValueError:
+            # This is either bad data that starts with what looks like
+            # a numeric character reference, or a real numeric
+            # reference that wasn't terminated by a semicolon.
+            #
+            # The fix to https://bugs.python.org/issue13633 made it
+            # our responsibility to handle the extra data.
+            #
+            # To preserve the old behavior, we extract the numeric
+            # portion of the incoming "reference" and treat that as a
+            # numeric reference. All subsequent data will be processed
+            # as string data.
+            match = reg.search(name)
+            if match is not None:
+                real_name = int(match.groups()[0], base)
+                extra_data = match.groups()[1]
+
+        if real_name is None:
+            dereferenced = ""
+            extra_data = name
+        else:
+            dereferenced, replacement_added = UnicodeDammit.numeric_character_reference(real_name)
+        return dereferenced, replacement_added, extra_data
 
     def handle_charref(self, name: str) -> None:
         """Handle a numeric character reference by converting it to the
@@ -230,38 +294,13 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
 
         :param name: Character number, possibly in hexadecimal.
         """
-        # TODO: This was originally a workaround for a bug in
-        # HTMLParser. (http://bugs.python.org/issue13633) The bug has
-        # been fixed, but removing this code still makes some
-        # Beautiful Soup tests fail. This needs investigation.
-        if name.startswith("x"):
-            real_name = int(name.lstrip("x"), 16)
-        elif name.startswith("X"):
-            real_name = int(name.lstrip("X"), 16)
-        else:
-            real_name = int(name)
-
-        data = None
-        if real_name < 256:
-            # HTML numeric entities are supposed to reference Unicode
-            # code points, but sometimes they reference code points in
-            # some other encoding (ahem, Windows-1252). E.g. &#147;
-            # instead of &#201; for LEFT DOUBLE QUOTATION MARK. This
-            # code tries to detect this situation and compensate.
-            for encoding in (self.soup.original_encoding, "windows-1252"):
-                if not encoding:
-                    continue
-                try:
-                    data = bytearray([real_name]).decode(encoding)
-                except UnicodeDecodeError:
-                    pass
-        if not data:
-            try:
-                data = chr(real_name)
-            except (ValueError, OverflowError):
-                pass
-        data = data or "\N{REPLACEMENT CHARACTER}"
-        self.handle_data(data)
+        dereferenced, replacement_added, extra_data = self._dereference_numeric_character_reference(name)
+        if replacement_added:
+            self.soup.contains_replacement_characters = True
+        if dereferenced is not None:
+            self.handle_data(dereferenced)
+        if extra_data is not None:
+            self.handle_data(extra_data)
 
     def handle_entityref(self, name: str) -> None:
         """Handle a named entity reference by converting it to the
@@ -291,14 +330,14 @@ class BeautifulSoupHTMLParser(HTMLParser, DetectsXMLParsedAsHTML):
         self.soup.handle_data(data)
         self.soup.endData(Comment)
 
-    def handle_decl(self, data: str) -> None:
+    def handle_decl(self, decl: str) -> None:
         """Handle a DOCTYPE declaration.
 
         :param data: The text of the declaration.
         """
         self.soup.endData()
-        data = data[len("DOCTYPE ") :]
-        self.soup.handle_data(data)
+        decl = decl[len("DOCTYPE ") :]
+        self.soup.handle_data(decl)
         self.soup.endData(Doctype)
 
     def unknown_decl(self, data: str) -> None:
@@ -446,7 +485,11 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
                 dammit.contains_replacement_characters,
             )
 
-    def feed(self, markup: _RawMarkup) -> None:
+    def feed(self, markup: _RawMarkup, _parser_class:type[BeautifulSoupHTMLParser] =BeautifulSoupHTMLParser) -> None:
+        """
+        :param markup: The markup to feed into the parser.
+        :param _parser_class: An HTMLParser subclass to use. This is only intended for use in unit tests.
+        """
         args, kwargs = self.parser_args
 
         # HTMLParser.feed will only handle str, but
@@ -461,7 +504,7 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
         # before calling feed(), so we can assume self.soup
         # is set.
         assert self.soup is not None
-        parser = BeautifulSoupHTMLParser(self.soup, *args, **kwargs)
+        parser = _parser_class(self.soup, *args, **kwargs)
 
         try:
             parser.feed(markup)

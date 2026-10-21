@@ -3,7 +3,7 @@
 # standard
 from functools import lru_cache
 import re
-from typing import Optional
+from typing import Callable, Optional
 from urllib.parse import parse_qs, unquote, urlsplit
 
 # local
@@ -46,9 +46,18 @@ def _validate_scheme(value: str):
         value
         # fmt: off
         in {
-            "ftp", "ftps", "git", "http", "https",
-            "irc", "rtmp", "rtmps", "rtsp", "sftp",
-            "ssh", "telnet",
+            "ftp",
+            "ftps",
+            "git",
+            "http",
+            "https",
+            "irc",
+            "rtmp",
+            "rtmps",
+            "rtsp",
+            "sftp",
+            "ssh",
+            "telnet",
         }
         # fmt: on
         if value
@@ -144,8 +153,9 @@ def _validate_optionals(path: str, query: str, fragment: str, strict_query: bool
             optional_segments &= True
     if fragment:
         # See RFC3986 Section 3.5 Fragment for allowed characters
+        # Adding "#", see https://github.com/python-validators/validators/issues/403
         optional_segments &= bool(
-            re.fullmatch(r"[0-9a-z?/:@\-._~%!$&'()*+,;=]*", fragment, re.IGNORECASE)
+            re.fullmatch(r"[0-9a-z?/:@\-._~%!$&'()*+,;=#]*", fragment, re.IGNORECASE)
         )
     return optional_segments
 
@@ -164,6 +174,7 @@ def url(
     private: Optional[bool] = None,  # only for ip-addresses
     rfc_1034: bool = False,
     rfc_2782: bool = False,
+    validate_scheme: Callable[[str], bool] = _validate_scheme,
 ):
     r"""Return whether or not given value is a valid URL.
 
@@ -181,13 +192,13 @@ def url(
 
     Examples:
         >>> url('http://duck.com')
-        # Output: True
+        True
         >>> url('ftp://foobar.dk')
-        # Output: True
+        True
         >>> url('http://10.0.0.1')
-        # Output: True
+        True
         >>> url('http://example.com/">user@example.com')
-        # Output: ValidationError(func=url, ...)
+        ValidationError(func=url, args={'value': 'http://example.com/">user@example.com'})
 
     Args:
         value:
@@ -212,6 +223,8 @@ def url(
         rfc_2782:
             Domain/Host name is of type service record.
             Ref: [RFC 2782](https://www.rfc-editor.org/rfc/rfc2782).
+        validate_scheme:
+            Function that validates URL scheme.
 
     Returns:
         (Literal[True]): If `value` is a valid url.
@@ -228,7 +241,7 @@ def url(
         return False
 
     return (
-        _validate_scheme(scheme)
+        validate_scheme(scheme)
         and _validate_netloc(
             netloc,
             skip_ipv6_addr,

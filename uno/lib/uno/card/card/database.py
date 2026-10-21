@@ -61,7 +61,6 @@ from ..dbconfig import g_schema
 from ..dbconfig import g_version
 
 from ..dbinit import getDataBaseConnection
-from ..dbinit import createDataBase
 
 from collections import OrderedDict
 import json
@@ -77,15 +76,6 @@ class DataBase():
         self._fieldsMap = {}
         self._batchedCalls = OrderedDict()
         self._url = url
-        odb = url + '.odb'
-        new = not getSimpleFile(ctx).exists(odb)
-        connection = getDataBaseConnection(ctx, url, user, pwd, new)
-        self._version = connection.getMetaData().getDriverVersion()
-        if new and self.isUptoDate():
-            logger.logprb(INFO, self._cls, mtd, 1251)
-            createDataBase(ctx, connection, odb)
-            logger.logprb(INFO, self._cls, mtd, 1252)
-        connection.close()
 
     @property
     def Connection(self):

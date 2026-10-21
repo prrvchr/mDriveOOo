@@ -37,10 +37,10 @@ from .logview import LogDialog
 
 from .loghandler import WindowHandler
 from .loghandler import DialogHandler
-from .loghandler import LoggerListener
-from .loghandler import PoolListener
 
-from ..loghelper import getLoggerName
+from ...logger import LoggerListener
+
+from ...logger import getLoggerName
 
 
 class LogManager():
@@ -50,7 +50,7 @@ class LogManager():
         self._view = LogWindow(ctx, window, WindowHandler(self))
         self._requirements = requirements
         self._dialog = None
-        self._model.addPoolListener(PoolListener(self))
+        self._model.addPoolListener(LoggerListener(self.updateLoggers))
         self._update = True
 
 # LogManager setter methods
@@ -109,7 +109,7 @@ class LogManager():
         parent = self._view.getParent()
         data = self._model.getLoggerData()
         self._dialog = LogDialog(self._ctx, handler, parent, *data)
-        listener = LoggerListener(self)
+        listener = LoggerListener(self.updateLogger)
         self._model.addLoggerListener(listener)
         self._dialog.execute()
         self._model.removeLoggerListener(listener)

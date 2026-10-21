@@ -176,7 +176,7 @@ def attrib(
     type: None = ...,
     converter: None = ...,
     factory: None = ...,
-    kw_only: bool = ...,
+    kw_only: bool | None = ...,
     eq: _EqOrderType | None = ...,
     order: _EqOrderType | None = ...,
     on_setattr: _OnSetAttrArgType | None = ...,
@@ -200,7 +200,7 @@ def attrib(
     | tuple[_ConverterType]
     | None = ...,
     factory: Callable[[], _T] | None = ...,
-    kw_only: bool = ...,
+    kw_only: bool | None = ...,
     eq: _EqOrderType | None = ...,
     order: _EqOrderType | None = ...,
     on_setattr: _OnSetAttrArgType | None = ...,
@@ -223,7 +223,7 @@ def attrib(
     | tuple[_ConverterType]
     | None = ...,
     factory: Callable[[], _T] | None = ...,
-    kw_only: bool = ...,
+    kw_only: bool | None = ...,
     eq: _EqOrderType | None = ...,
     order: _EqOrderType | None = ...,
     on_setattr: _OnSetAttrArgType | None = ...,
@@ -246,7 +246,7 @@ def attrib(
     | tuple[_ConverterType]
     | None = ...,
     factory: Callable[[], _T] | None = ...,
-    kw_only: bool = ...,
+    kw_only: bool | None = ...,
     eq: _EqOrderType | None = ...,
     order: _EqOrderType | None = ...,
     on_setattr: _OnSetAttrArgType | None = ...,
@@ -308,7 +308,7 @@ def attrs(
     match_args: bool = ...,
     unsafe_hash: bool | None = ...,
 ) -> Callable[[_C], _C]: ...
-def fields(cls: type[AttrsInstance]) -> Any: ...
+def fields(cls: type[AttrsInstance] | AttrsInstance) -> Any: ...
 def fields_dict(cls: type[AttrsInstance]) -> dict[str, Attribute[Any]]: ...
 def validate(inst: AttrsInstance) -> None: ...
 def resolve_types(

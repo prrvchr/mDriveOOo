@@ -37,14 +37,11 @@ SETUP_ATTRS = {
     'data_files': [("data", [os.path.join("d", "e.dat")])],
 }
 
-SETUP_PY = (
-    """\
+SETUP_PY = f"""\
 from setuptools import setup
 
-setup(**%r)
+setup(**{SETUP_ATTRS!r})
 """
-    % SETUP_ATTRS
-)
 
 EXTENSION = Extension(
     name="sdist_test.f",
@@ -258,20 +255,16 @@ class TestSdistTest:
             assert path not in manifest
 
     _INVALID_PATHS = {
-        "must be relative": lambda: (
-            os.path.abspath(os.path.join("sdist_test", "f.h"))
+        "must be relative": lambda: os.path.abspath(os.path.join("sdist_test", "f.h")),
+        "can't have `..` segments": lambda: os.path.join(
+            "sdist_test", "..", "sdist_test", "f.h"
         ),
-        "can't have `..` segments": lambda: (
-            os.path.join("sdist_test", "..", "sdist_test", "f.h")
+        "doesn't exist": lambda: os.path.join(
+            "sdist_test", "this_file_does_not_exist.h"
         ),
-        "doesn't exist": lambda: (
-            os.path.join("sdist_test", "this_file_does_not_exist.h")
-        ),
-        "must be inside the project root": lambda: (
-            symlink_or_skip_test(
-                touch(os.path.join("..", "outside_of_project_root.h")),
-                "symlink.h",
-            )
+        "must be inside the project root": lambda: symlink_or_skip_test(
+            touch(os.path.join("..", "outside_of_project_root.h")),
+            "symlink.h",
         ),
     }
 
@@ -711,12 +704,21 @@ class TestSdistTest:
             [project]
             name = "testing"
             readme = "USAGE.rst"
-            license = {file = "DOWHATYOUWANT"}
+            license-files = ["DOWHATYOUWANT"]
             dynamic = ["version"]
             [tool.setuptools.dynamic]
             version = {file = ["src/VERSION.txt"]}
             """,
         "pyproject.toml - directive with str instead of list": """
+            [project]
+            name = "testing"
+            readme = "USAGE.rst"
+            license-files = ["DOWHATYOUWANT"]
+            dynamic = ["version"]
+            [tool.setuptools.dynamic]
+            version = {file = "src/VERSION.txt"}
+            """,
+        "pyproject.toml - deprecated license table with file entry": """
             [project]
             name = "testing"
             readme = "USAGE.rst"
@@ -728,6 +730,9 @@ class TestSdistTest:
     }
 
     @pytest.mark.parametrize("config", _EXAMPLE_DIRECTIVES.keys())
+    @pytest.mark.filterwarnings(
+        "ignore:.project.license. as a TOML table is deprecated"
+    )
     def test_add_files_referenced_by_config_directives(self, source_dir, config):
         config_file, _, _ = config.partition(" - ")
         config_text = self._EXAMPLE_DIRECTIVES[config]

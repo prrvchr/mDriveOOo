@@ -2,7 +2,7 @@
 
 # local
 from .between import between
-from .card import amex, card_number, diners, discover, jcb, mastercard, unionpay, visa
+from .card import amex, card_number, diners, discover, jcb, mastercard, mir, unionpay, visa
 from .country import calling_code, country_code, currency
 from .cron import cron
 from .crypto_addresses import bsc_address, btc_address, eth_address, trx_address
@@ -23,6 +23,7 @@ from .i18n import (
     fr_ssn,
     ind_aadhar,
     ind_pan,
+    ru_inn,
 )
 from .iban import iban
 from .ip_address import ipv4, ipv6
@@ -48,8 +49,9 @@ __all__ = (
     "discover",
     "jcb",
     "mastercard",
-    "visa",
     "unionpay",
+    "visa",
+    "mir",
     # country
     "calling_code",
     "country_code",
@@ -89,6 +91,7 @@ __all__ = (
     "fr_ssn",
     "ind_aadhar",
     "ind_pan",
+    "ru_inn",
     # ...
     "iban",
     # ip_addresses
@@ -109,4 +112,4 @@ __all__ = (
     "validator",
 )
 
-__version__ = "0.34.0"
+__version__ = "0.35.0"

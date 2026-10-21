@@ -39,11 +39,8 @@ from com.sun.star.sdbc import SQLException
 
 from .documenthandler import DocumentHandler
 
-from .unotool import checkVersion
 from .unotool import createService
 from .unotool import getConfiguration
-from .unotool import getExtensionVersion
-from .unotool import getLibreOfficeInfo
 from .unotool import getPropertyValueSet
 from .unotool import getResourceLocation
 
@@ -51,19 +48,11 @@ from .helper import getException
 
 from .logger import getLogger
 
-from .jdbcdriver import g_extension as g_jdbcext
-from .jdbcdriver import g_identifier as g_jdbcid
-from .jdbcdriver import g_version as g_jdbcver
-
 from .configuration import g_dbname
-from .configuration import g_extension
 from .configuration import g_identifier
-from .configuration import g_defaultlog
-from .configuration import g_basename
 from .configuration import g_protocol
 from .configuration import g_url
 from .configuration import g_user
-from .configuration import g_lover
 from .configuration import g_driver
 
 import traceback
@@ -77,6 +66,7 @@ class Driver(unohelper.Base,
         self._ctx = ctx
         self._lock = lock
         self._driver = createService(ctx, service)
+        self._config = getConfiguration(ctx, g_identifier)
         self._implementation = implementation
         self._services = services
         self._logger = logger
@@ -144,10 +134,10 @@ class Driver(unohelper.Base,
     # Driver private getter methods
     def _getConnectionInfo(self, infos):
         document = storage = url = None
-        config = getConfiguration(self._ctx, g_identifier)
-        rowset = config.getByName('CachedRowSet')
-        system = config.getByName('ShowSystemTable')
-        newinfos = {'Url': g_url, 'CachedRowSet': rowset, 'ShowSystemTable': system}
+        crs = self._config.getByName('UseCachedRowSet')
+        rstype = self._config.getByName('ResultSetType')
+        system = self._config.getByName('ShowSystemTable')
+        newinfos = {'Url': g_url, 'UseCachedRowSet': crs, 'ResultSetType': rstype, 'ShowSystemTable': system}
         if g_user:
             newinfos['user'] = g_user
         if g_driver:

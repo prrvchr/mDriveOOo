@@ -1,26 +1,16 @@
-from __future__ import annotations
+import warnings
 
-from w3lib._types import StrOrBytes
+from ._util import to_unicode as to_unicode
 
-
-def to_unicode(
-    text: StrOrBytes, encoding: str | None = None, errors: str = "strict"
-) -> str:
-    """Return the unicode representation of a bytes object `text`. If `text`
-    is already an unicode object, return it as-is."""
-    if isinstance(text, str):
-        return text
-    if not isinstance(text, (bytes, str)):
-        raise TypeError(
-            f"to_unicode must receive bytes or str, got {type(text).__name__}"
-        )
-    if encoding is None:
-        encoding = "utf-8"
-    return text.decode(encoding, errors)
+warnings.warn(
+    "The w3lib.util module is deprecated.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 def to_bytes(
-    text: StrOrBytes, encoding: str | None = None, errors: str = "strict"
+    text: str | bytes, encoding: str | None = None, errors: str = "strict"
 ) -> bytes:
     """Return the binary representation of `text`. If `text`
     is already a bytes object, return it as-is."""

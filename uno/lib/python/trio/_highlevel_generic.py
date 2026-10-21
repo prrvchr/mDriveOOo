@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import Generic, TypeGuard, TypeVar
 
 import attrs
 
@@ -8,10 +8,6 @@ import trio
 from trio._util import final
 
 from .abc import AsyncResource, HalfCloseableStream, ReceiveStream, SendStream
-
-if TYPE_CHECKING:
-    from typing_extensions import TypeGuard
-
 
 SendStreamT = TypeVar("SendStreamT", bound=SendStream)
 ReceiveStreamT = TypeVar("ReceiveStreamT", bound=ReceiveStream)
@@ -43,7 +39,7 @@ async def aclose_forcefully(resource: AsyncResource) -> None:
 
     """
     with trio.CancelScope() as cs:
-        cs.cancel()
+        cs.cancel(reason="cancelled during aclose_forcefully")
         await resource.aclose()
 
 
@@ -117,7 +113,7 @@ class StapledStream(
             return await stream.aclose()
 
     # we intentionally accept more types from the caller than we support returning
-    async def receive_some(self, max_bytes: int | None = None) -> bytes:
+    async def receive_some(self, max_bytes: int | None = None) -> bytes | bytearray:
         """Calls ``self.receive_stream.receive_some``."""
         return await self.receive_stream.receive_some(max_bytes)
 

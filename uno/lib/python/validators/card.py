@@ -17,9 +17,9 @@ def card_number(value: str, /):
 
     Examples:
         >>> card_number('4242424242424242')
-        # Output: True
+        True
         >>> card_number('4242424242424241')
-        # Output: ValidationError(func=card_number, args={'value': '4242424242424241'})
+        ValidationError(func=card_number, args={'value': '4242424242424241'})
 
     Args:
         value:
@@ -46,9 +46,9 @@ def visa(value: str, /):
 
     Examples:
         >>> visa('4242424242424242')
-        # Output: True
+        True
         >>> visa('2223003122003222')
-        # Output: ValidationError(func=visa, args={'value': '2223003122003222'})
+        ValidationError(func=visa, args={'value': '2223003122003222'})
 
     Args:
         value:
@@ -68,9 +68,9 @@ def mastercard(value: str, /):
 
     Examples:
         >>> mastercard('5555555555554444')
-        # Output: True
+        True
         >>> mastercard('4242424242424242')
-        # Output: ValidationError(func=mastercard, args={'value': '4242424242424242'})
+        ValidationError(func=mastercard, args={'value': '4242424242424242'})
 
     Args:
         value:
@@ -90,9 +90,9 @@ def amex(value: str, /):
 
     Examples:
         >>> amex('378282246310005')
-        # Output: True
+        True
         >>> amex('4242424242424242')
-        # Output: ValidationError(func=amex, args={'value': '4242424242424242'})
+        ValidationError(func=amex, args={'value': '4242424242424242'})
 
     Args:
         value:
@@ -112,9 +112,9 @@ def unionpay(value: str, /):
 
     Examples:
         >>> unionpay('6200000000000005')
-        # Output: True
+        True
         >>> unionpay('4242424242424242')
-        # Output: ValidationError(func=unionpay, args={'value': '4242424242424242'})
+        ValidationError(func=unionpay, args={'value': '4242424242424242'})
 
     Args:
         value:
@@ -134,9 +134,9 @@ def diners(value: str, /):
 
     Examples:
         >>> diners('3056930009020004')
-        # Output: True
+        True
         >>> diners('4242424242424242')
-        # Output: ValidationError(func=diners, args={'value': '4242424242424242'})
+        ValidationError(func=diners, args={'value': '4242424242424242'})
 
     Args:
         value:
@@ -156,9 +156,9 @@ def jcb(value: str, /):
 
     Examples:
         >>> jcb('3566002020360505')
-        # Output: True
+        True
         >>> jcb('4242424242424242')
-        # Output: ValidationError(func=jcb, args={'value': '4242424242424242'})
+        ValidationError(func=jcb, args={'value': '4242424242424242'})
 
     Args:
         value:
@@ -178,9 +178,9 @@ def discover(value: str, /):
 
     Examples:
         >>> discover('6011111111111117')
-        # Output: True
+        True
         >>> discover('4242424242424242')
-        # Output: ValidationError(func=discover, args={'value': '4242424242424242'})
+        ValidationError(func=discover, args={'value': '4242424242424242'})
 
     Args:
         value:
@@ -191,4 +191,26 @@ def discover(value: str, /):
         (ValidationError): If `value` is an invalid Discover card number.
     """
     pattern = re.compile(r"^(60|64|65)")
+    return card_number(value) and len(value) == 16 and pattern.match(value)
+
+
+@validator
+def mir(value: str, /):
+    """Return whether or not given value is a valid Mir card number.
+
+    Examples:
+        >>> mir('2200123456789019')
+        True
+        >>> mir('4242424242424242')
+        ValidationError(func=mir, args={'value': '4242424242424242'})
+
+    Args:
+        value:
+            Mir card number string to validate.
+
+    Returns:
+        (Literal[True]): If `value` is a valid Mir card number.
+        (ValidationError): If `value` is an invalid Mir card number.
+    """
+    pattern = re.compile(r"^(220[0-4])")
     return card_number(value) and len(value) == 16 and pattern.match(value)

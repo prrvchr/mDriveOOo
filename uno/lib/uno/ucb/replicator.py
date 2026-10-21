@@ -44,7 +44,6 @@ from com.sun.star.ucb.ContentProperties import TRASHED
 from .unotool import getConfiguration
 
 from .dbtool import currentDateTimeInTZ
-from .dbtool import getDataSourceConnection
 from .dbtool import getDateTimeToString
 
 from .database import DataBase
@@ -75,8 +74,7 @@ class Replicator(Thread):
             self._provider = provider
             self._config = getConfiguration(ctx, g_identifier, False)
             self._logger = getLogger(ctx, g_synclog, g_cls)
-            connection = getDataSourceConnection(ctx, url)
-            self._database = DataBase(ctx, connection, url)
+            self._database = DataBase(ctx, url)
             sync.clear()
             self.start()
         except Exception as e:

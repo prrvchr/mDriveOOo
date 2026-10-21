@@ -5,13 +5,7 @@ import sys
 from abc import ABC, abstractmethod
 from re import Pattern
 from textwrap import indent
-from typing import (
-    TYPE_CHECKING,
-    Generic,
-    Literal,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Generic, Literal, TypeGuard, cast, overload
 
 from trio._util import final
 
@@ -24,7 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from _pytest._code.code import ExceptionChainRepr, ReprExceptionInfo, Traceback
-    from typing_extensions import TypeGuard, TypeVar
+    from typing_extensions import TypeVar
 
     # this conditional definition is because we want to allow a TypeVar default
     MatchE = TypeVar(
@@ -270,7 +264,7 @@ class Matcher(AbstractMatcher[MatchE]):
 
     Examples::
 
-        with RaisesGroups(Matcher(ValueError, match="string"))
+        with RaisesGroups(Matcher(ValueError, match="string")):
             ...
         with RaisesGroups(Matcher(check=lambda x: x.args == (3, "hello"))):
             ...
@@ -326,7 +320,7 @@ class Matcher(AbstractMatcher[MatchE]):
 
         Examples::
 
-            assert Matcher(ValueError).matches(my_exception):
+            assert Matcher(ValueError).matches(my_exception)
             # is equivalent to
             assert isinstance(my_exception, ValueError)
 
@@ -336,7 +330,7 @@ class Matcher(AbstractMatcher[MatchE]):
             assert Matcher(SyntaxError, match="foo").matches(excinfo.value.__cause__)
             # above line is equivalent to
             assert isinstance(excinfo.value.__cause__, SyntaxError)
-            assert re.search("foo", str(excinfo.value.__cause__)
+            assert re.search("foo", str(excinfo.value.__cause__))
 
         """
         if not self._check_type(exception):
@@ -549,7 +543,7 @@ class RaisesGroup(AbstractMatcher[BaseExceptionGroup[BaseExcT_co]]):
         )
         self.allow_unwrapped = allow_unwrapped
         self.flatten_subgroups: bool = flatten_subgroups
-        self.is_baseexceptiongroup = False
+        self.is_baseexceptiongroup: bool = False
 
         if allow_unwrapped and other_exceptions:
             raise ValueError(

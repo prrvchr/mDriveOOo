@@ -31,35 +31,22 @@ import traceback
 
 
 class OptionsView():
-    def __init__(self, window, restart, url, instrumented):
+    def __init__(self, window, links):
         self._window = window
-        control = self._getWarning()
-        control.URL = url
-        self._setWarning(control, restart, instrumented)
+        for i, link in enumerate(links, start=1):
+            self._getLink(i).URL = link
 
 # OptionsView setter methods
-    def setWarning(self, restart, instrumented):
-        self._setWarning(self._getWarning(), restart, instrumented)
+    def refreshView(self, state):
+        self._window.Model.Step = state.step
 
     def setDriverVersion(self, version):
         self._getVersion().Text = version
-
-# OptionsView private methods
-    def _setWarning(self, control, restart, instrumented):
-        if restart:
-            control.setVisible(False)
-            self._getRestart().setVisible(True)
-        else:
-            self._getRestart().setVisible(False)
-            control.setVisible(not instrumented)
 
 # OptionsView private control methods
     def _getVersion(self):
         return self._window.getControl('Label2')
 
-    def _getRestart(self):
-        return self._window.getControl('Label3')
-
-    def _getWarning(self):
-        return self._window.getControl('Hyperlink1')
+    def _getLink(self, index):
+        return self._window.getControl(f'Hyperlink{index}')
 

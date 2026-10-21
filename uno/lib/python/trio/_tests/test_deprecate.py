@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import warnings
+from types import ModuleType
 
 import pytest
 
@@ -199,50 +200,40 @@ def docstring_test4() -> None:  # pragma: no cover
 
 
 def test_deprecated_docstring_munging() -> None:
-    assert (
-        docstring_test1.__doc__
-        == """Hello!
+    assert docstring_test1.__doc__ == """Hello!
 
 .. deprecated:: 2.1
    Use hi instead.
    For details, see `issue #1 <https://github.com/python-trio/trio/issues/1>`__.
 
 """
-    )
 
-    assert (
-        docstring_test2.__doc__
-        == """Hello!
+    assert docstring_test2.__doc__ == """Hello!
 
 .. deprecated:: 2.1
    Use hi instead.
 
 """
-    )
 
-    assert (
-        docstring_test3.__doc__
-        == """Hello!
+    assert docstring_test3.__doc__ == """Hello!
 
 .. deprecated:: 2.1
    For details, see `issue #1 <https://github.com/python-trio/trio/issues/1>`__.
 
 """
-    )
 
-    assert (
-        docstring_test4.__doc__
-        == """Hello!
+    assert docstring_test4.__doc__ == """Hello!
 
 .. deprecated:: 2.1
 
 """
-    )
 
 
 def test_module_with_deprecations(recwarn_always: pytest.WarningsRecorder) -> None:
     assert module_with_deprecations.regular == "hi"
     assert len(recwarn_always) == 0
+
+    assert type(module_with_deprecations) is ModuleType
 
     filename, lineno = _here()
     assert module_with_deprecations.dep1 == "value1"  # type: ignore[attr-defined]

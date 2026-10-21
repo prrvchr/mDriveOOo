@@ -8,23 +8,14 @@ import threading
 from contextlib import asynccontextmanager, contextmanager, suppress
 from functools import partial
 from ssl import SSLContext
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    NoReturn,
-)
+from typing import TYPE_CHECKING, Any, NoReturn, TypeAlias
 
 import pytest
 
 from trio import StapledStream
 from trio._tests.pytest_plugin import skip_if_optional_else_raise
 from trio.abc import ReceiveStream, SendStream
-from trio.testing import (
-    Matcher,
-    MemoryReceiveStream,
-    MemorySendStream,
-    RaisesGroup,
-)
+from trio.testing import MemoryReceiveStream, MemorySendStream
 
 try:
     import trustme
@@ -53,8 +44,6 @@ from ..testing import (
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-
-    from typing_extensions import TypeAlias
 
     from trio._core import MockClock
     from trio._ssl import T_Stream
@@ -263,17 +252,18 @@ class PyOpenSSLEchoStream(Stream):
             await _core.checkpoint()
             await self.sleeper("wait_send_all_might_not_block")
 
-    async def send_all(self, data: bytes) -> None:
+    async def send_all(self, data: bytes | bytearray | memoryview[int]) -> None:
         print("  --> transport_stream.send_all")
+        data_ = bytes(data)
         with self._send_all_conflict_detector:
             await _core.checkpoint()
             await _core.checkpoint()
             await self.sleeper("send_all")
-            self._conn.bio_write(data)
+            self._conn.bio_write(data_)
             while True:
                 await self.sleeper("send_all")
                 try:
-                    data = self._conn.recv(1)
+                    data_ = self._conn.recv(1)
                 except SSL.ZeroReturnError:
                     self._conn.shutdown()
                     print("renegotiations:", self._conn.total_renegotiations())
@@ -281,7 +271,7 @@ class PyOpenSSLEchoStream(Stream):
                 except SSL.WantReadError:
                     break
                 else:
-                    self._pending_cleartext += data
+                    self._pending_cleartext += data_
             self._lot.unpark_all()
             await self.sleeper("send_all")
             print("  <-- transport_stream.send_all finished")
@@ -356,7 +346,9 @@ async def test_PyOpenSSLEchoStream_gives_resource_busy_errors() -> None:
         args2: tuple[object, ...],
     ) -> None:
         s = PyOpenSSLEchoStream()
-        with RaisesGroup(Matcher(_core.BusyResourceError, "simultaneous")):
+        with pytest.RaisesGroup(
+            pytest.RaisesExc(_core.BusyResourceError, match="simultaneous")
+        ):
             async with _core.open_nursery() as nursery:
                 nursery.start_soon(getattr(s, func1), *args1)
                 nursery.start_soon(getattr(s, func2), *args2)
@@ -780,7 +772,9 @@ async def test_resource_busy_errors(client_ctx: SSLContext) -> None:
         func2: Callable[[S], Awaitable[None]],
     ) -> None:
         s, _ = ssl_lockstep_stream_pair(client_ctx)
-        with RaisesGroup(Matcher(_core.BusyResourceError, "another task")):
+        with pytest.RaisesGroup(
+            pytest.RaisesExc(_core.BusyResourceError, match="another task")
+        ):
             async with _core.open_nursery() as nursery:
                 nursery.start_soon(func1, s)
                 nursery.start_soon(func2, s)

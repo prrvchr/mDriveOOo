@@ -1,14 +1,21 @@
+from __future__ import annotations
+
 import re
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 
 from lxml import etree
 from w3lib.html import HTML5_WHITESPACE
+
+from .selector import _compile_xpath
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 regex = f"[{HTML5_WHITESPACE}]+"
 replace_html5_whitespaces = re.compile(regex).sub
 
 
-def set_xpathfunc(fname: str, func: Optional[Callable]) -> None:  # type: ignore[type-arg]
+def set_xpathfunc(fname: str, func: Callable | None) -> None:  # type: ignore[type-arg]
     """Register a custom extension function to use in XPath expressions.
 
     The function ``func`` registered under ``fname`` identifier will be called
@@ -27,6 +34,9 @@ def set_xpathfunc(fname: str, func: Optional[Callable]) -> None:  # type: ignore
         ns_fns[fname] = func
     else:
         del ns_fns[fname]
+        # Compiled expressions keep resolving functions that were registered
+        # when they were first evaluated.
+        _compile_xpath.cache_clear()
 
 
 def setup() -> None:
@@ -52,7 +62,4 @@ def has_class(context: Any, *classes: str) -> bool:
         return False
     node_cls = " " + node_cls + " "
     node_cls = replace_html5_whitespaces(" ", node_cls)
-    for cls in classes:
-        if " " + cls + " " not in node_cls:
-            return False
-    return True
+    return all(" " + cls + " " in node_cls for cls in classes)

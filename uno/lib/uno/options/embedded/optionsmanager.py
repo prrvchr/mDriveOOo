@@ -28,10 +28,27 @@
 """
 
 from .optionsmodel import OptionsModel
+
 from .optionsview import OptionsView
+
 from .optionshandler import OptionsListener
 
-from .options import OptionsManager as Manager
+from .option import OptionManager as Manager
+
+from ..runner import DispatchListener
+
+from ..setup import SetupCheck
+
+from ..helper import getExtensions
+
+from ..jdbcdriver import g_agent
+from ..jdbcdriver import g_java
+from ..jdbcdriver import g_protocol
+from ..jdbcdriver import g_script
+from ..jdbcdriver import g_service
+
+from ..configuration import State
+from ..configuration import g_extension
 
 from ..configuration import g_defaultlog
 
@@ -39,35 +56,56 @@ import traceback
 
 
 class OptionsManager():
-    def __init__(self, ctx, logger, window, options, url=None):
+    def __init__(self, ctx, logger, window, url=None):
+        self._ctx = ctx
+        self._disposed = False
+        self._java = g_extension, g_java, g_script
+        self._agent = g_service, g_protocol, g_agent
+        self._extensions = getExtensions()
         self._model = OptionsModel(ctx, logger, url)
-        link, instrumented = self._model.getDriverInfo()
-        self._manager = Manager(ctx, window, instrumented, options, g_defaultlog)
-        self._view = OptionsView(window, OptionsManager._restart, link, instrumented)
+        self._manager = Manager(ctx, window, DispatchListener(self), g_defaultlog)
+        self._view = OptionsView(window, self._model.getViewData())
         window.addEventListener(OptionsListener(self))
-        self._manager.initView()
-        self._initView()
+        self._loadView(self.init)
 
-    _restart = False
+    def init(self, state):
+        if not self._disposed:
+            self._manager.init(state)
+            self._view.refreshView(state)
+            if state.java:
+                version = self._model.getDriverVersion(self._getConfigApiLevel())
+                self._view.setDriverVersion(version)
+
+    def refresh(self, state):
+        if not self._disposed:
+            self._manager.refresh(state)
+            self._view.refreshView(state)
 
     def dispose(self):
+        self._disposed = True
         self._manager.dispose()
 
 # OptionsManager setter methods
     def saveSetting(self):
         if self._manager.saveSetting():
-            OptionsManager._restart = True
-            self._view.setWarning(True, self._model.isInstrumented())
+            State.restart = True
+            self._loadView(self.refresh)
 
     def loadSetting(self):
         self._manager.loadSetting()
-        self._initView()
+        self._loadView(self.init)
+
+    def dispatchFinished(self, notification):
+        if not self._disposed:
+            self._loadView(self.refresh)
 
 # OptionsManager private getter methods
     def _getConfigApiLevel(self):
         return self._manager.getConfigApiLevel()
 
 # OptionsManager private setter methods
-    def _initView(self):
-        version = self._model.getDriverVersion(self._getConfigApiLevel())
-        self._view.setDriverVersion(version)
+    def _loadView(self, callback):
+        mode = self._manager.getSetupMode()
+        setup = SetupCheck(self._ctx, callback, java=self._java, agent=self._agent, python=True, extensions=self._extensions, mode=mode)
+        setup.start()
+

@@ -150,9 +150,14 @@ _PageElementMatchFunction: TypeAlias = Callable[["PageElement"], bool]
 #: going to pass it a function.
 _TagMatchFunction: TypeAlias = Callable[["Tag"], bool]
 
-#: A function that takes a single string and returns a yes-or-no
+#: A function that takes a string (or None) and returns a yes-or-no
 #: answer. An `AttributeValueMatchRule` expects this kind of function, if
-#: you're going to pass it a function. So does a `StringMatchRule`.
+#: you're going to pass it a function.
+_NullableStringMatchFunction: TypeAlias = Callable[[Optional[str]], bool]
+
+#: A function that takes a string and returns a yes-or-no answer.  A
+# `StringMatchRule` expects this kind of function, if you're going to
+# pass it a function.
 _StringMatchFunction: TypeAlias = Callable[[str], bool]
 
 #: Either a tag name, an attribute value or a string can be matched
@@ -163,10 +168,10 @@ _BaseStrainable: TypeAlias = Union[str, bytes, Pattern[str], bool]
 #: using a function that takes the `Tag` as its sole argument.
 _BaseStrainableElement: TypeAlias = Union[_BaseStrainable, _TagMatchFunction]
 
-#: A tag's attribute vgalue can be matched either with the
+#: A tag's attribute value can be matched either with the
 #: `_BaseStrainable` options, or using a function that takes that
 #: value as its sole argument.
-_BaseStrainableAttribute: TypeAlias = Union[_BaseStrainable, _StringMatchFunction]
+_BaseStrainableAttribute: TypeAlias = Union[_BaseStrainable, _NullableStringMatchFunction]
 
 #: A tag can be matched using either a single criterion or a list of
 #: criteria.
@@ -193,4 +198,8 @@ _StrainableAttributes: TypeAlias = Dict[str, _StrainableAttribute]
 #: are available on the objects they're dealing with.
 _OneElement: TypeAlias = Union["PageElement", "Tag", "NavigableString"]
 _AtMostOneElement: TypeAlias = Optional[_OneElement]
+_AtMostOneTag: TypeAlias = Optional["Tag"]
+_AtMostOneNavigableString: TypeAlias = Optional["NavigableString"]
 _QueryResults: TypeAlias = "ResultSet[_OneElement]"
+_SomeTags: TypeAlias = "ResultSet[Tag]"
+_SomeNavigableStrings: TypeAlias = "ResultSet[NavigableString]"

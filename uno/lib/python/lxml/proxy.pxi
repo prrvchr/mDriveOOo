@@ -71,7 +71,9 @@ cdef xmlDoc* _plainFakeRootDoc(xmlDoc* c_base_doc, xmlNode* c_node,
             return c_base_doc
 
     c_doc  = _copyDoc(c_base_doc, 0)                   # non recursive!
-    c_new_root = tree.xmlDocCopyNode(c_node, c_doc, 2) # non recursive!
+    c_new_root = tree.xmlDocCopyNode(c_node, c_doc, 2) if c_doc is not NULL else NULL # non recursive!
+    if c_new_root is NULL:
+        raise MemoryError()
     tree.xmlDocSetRootElement(c_doc, c_new_root)
     _copyParentNamespaces(c_node, c_new_root)
 
@@ -574,7 +576,10 @@ cdef void fixThreadDictNamesForDtd(tree.xmlDtd* c_dtd,
                 _fixThreadDictPtr(&c_element.content.prefix, c_src_dict, c_dict)
             c_attribute = c_element.attributes
             while c_attribute:
-                _fixThreadDictPtr(&c_attribute.defaultValue, c_src_dict, c_dict)
+                if tree.LIBXML_VERSION < 21500:
+                    # libxml2 2.15 no longer stores default values in the dict.
+                    # See https://gitlab.gnome.org/GNOME/libxml2/-/commit/24628f25
+                    _fixThreadDictPtr(<const_xmlChar**>&c_attribute.defaultValue, c_src_dict, c_dict)
                 _fixThreadDictPtr(&c_attribute.name, c_src_dict, c_dict)
                 _fixThreadDictPtr(&c_attribute.prefix, c_src_dict, c_dict)
                 _fixThreadDictPtr(&c_attribute.elem, c_src_dict, c_dict)

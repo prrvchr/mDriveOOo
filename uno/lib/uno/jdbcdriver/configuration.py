@@ -34,8 +34,11 @@ g_service = '%s.Driver' % g_identifier
 g_services = ('io.github.prrvchr.jdbcdriver.sdbc.Driver',
               'io.github.prrvchr.jdbcdriver.sdbcx.Driver',
               'io.github.prrvchr.jdbcdriver.sdb.Driver')
-g_version = '1.6.1'
-g_instrumented = 'SupportsInstrumentationAgent'
+g_version = '1.7.1'
+g_agent = 'SupportsInstrumentationAgent'
+g_protocol = 'juda:jdbc'
+g_java = '17'
+g_script = 'JavaInfo.io.github.prrvchr.java.info.JavaInfo.getVersion'
 
 # jdbcDriverOOo special configuration
 g_resource = 'resource'
@@ -43,3 +46,5 @@ g_basename = 'Driver'
 g_defaultlog = 'Driver'
 g_errorlog = 'jdbcDriverError'
 
+class State:
+    restart = False

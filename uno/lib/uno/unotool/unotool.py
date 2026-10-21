@@ -33,6 +33,9 @@ from com.sun.star.awt import Point
 from com.sun.star.awt import Rectangle
 from com.sun.star.awt import Size
 
+from com.sun.star.awt.PosSize import POSSIZE
+from com.sun.star.awt.PosSize import SIZE
+
 from com.sun.star.awt.MessageBoxType import ERRORBOX
 
 from com.sun.star.awt.WindowAttribute import SHOW
@@ -52,6 +55,7 @@ from com.sun.star.connection import NoConnectException
 from com.sun.star.document.MacroExecMode import ALWAYS_EXECUTE_NO_WARN
 
 from com.sun.star.frame.FrameSearchFlag import GLOBAL
+from com.sun.star.frame.DispatchResultState import SUCCESS
 
 from com.sun.star.lang import WrappedTargetRuntimeException
 
@@ -64,9 +68,28 @@ from com.sun.star.util.MeasureUnit import APPFONT
 
 import binascii
 import datetime
-from packaging import version
+import operator
+from packaging.version import Version
+import socket
 import traceback
 
+
+def checkInternet(host="8.8.8.8", port=53, timeout=3):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(timeout)
+            s.connect((host, port))
+        return True
+    except (OSError, socket.timeout):
+        return False
+
+def checkVersion(version, minimum, op=operator.ge):
+    if not version or not minimum:
+        return False
+    try:
+        return op(Version(version), Version(minimum))
+    except InvalidVersion:
+        return False
 
 def getConnectionMode(ctx, host, port=80):
     connector = getConnector(ctx)
@@ -84,6 +107,9 @@ def getConnectionMode(ctx, host, port=80):
 
 def getConnector(ctx):
     return createService(ctx, 'com.sun.star.connection.Connector')
+
+def getDriverManager(ctx):
+    return createService(ctx, 'com.sun.star.sdbc.DriverManager')
 
 def getDesktop(ctx):
     return createService(ctx, 'com.sun.star.frame.Desktop')
@@ -115,6 +141,9 @@ def getPathSettings(ctx):
 def getUrlTransformer(ctx):
     return createService(ctx, 'com.sun.star.util.URLTransformer')
 
+def getSystemClipboard(ctx):
+    return createService(ctx, 'com.sun.star.datatransfer.clipboard.SystemClipboard')
+
 def getInteractionHandler(ctx):
     return createService(ctx, 'com.sun.star.task.InteractionHandler')
 
@@ -126,6 +155,9 @@ def getMri(ctx):
 
 def getCallBack(ctx):
     return createService(ctx, 'com.sun.star.awt.AsyncCallback')
+
+def getRowSet(ctx):
+    return createService(ctx, 'com.sun.star.sdb.RowSet')
 
 def getSequenceInputStream(ctx, sequence):
     service = 'com.sun.star.io.SequenceInputStream'
@@ -162,6 +194,22 @@ def getDocument(ctx, url, readonly=True):
     descriptor = getPropertyValueSet(arguments)
     document = getDesktop(ctx).loadComponentFromURL(url, '_blank', 0, descriptor)
     return document
+
+def hasStartupJob(ctx, job):
+    config = getConfiguration(ctx, '/org.openoffice.Office.Jobs/Events/OnStartApp/JobList')
+    return config.hasByName(job)
+
+def registerStartupJob(ctx, job):
+    config = getConfiguration(ctx, '/org.openoffice.Office.Jobs/Events/OnStartApp/JobList', True)
+    if not config.hasByName(job):
+        config.insertByName(job, config.createInstance())
+        config.commitChanges()
+
+def deregisterStartupJob(ctx, job):
+    config = getConfiguration(ctx, '/org.openoffice.Office.Jobs/Events/OnStartApp/JobList', True)
+    if config.hasByName(job):
+        config.removeByName(job)
+        config.commitChanges()
 
 def getExceptionMessage(exception):
     messages = []
@@ -208,9 +256,6 @@ def getStreamSequence(stream, chunk=64*1024):
         sequence += buffer
     stream.closeInput()
     return sequence
-
-def checkVersion(ver, minimum):
-    return version.parse(ver) >= version.parse(minimum)
 
 def hasInterface(component, interface):
     for t in getComponentTypes(component):
@@ -377,15 +422,73 @@ def getTopWindow(ctx, name, rectangle=None, parent=None, modal=TOP, attrs=BORDER
     getDesktop(ctx).getFrames().append(frame)
     return frame
 
-def getTopWindowPosition(window):
+def getDialogPosition(dialog, window):
     size = window.getPosSize()
-    return Point(size.X, size.Y)
+    pos = dialog.convertPointToLogic(Point(size.X, size.Y), APPFONT)
+    x = dialog.Model.PositionX + pos.X
+    y = dialog.Model.PositionY + pos.Y
+    return Point(x, y)
 
-def saveTopWindowPosition(config, position, property):
+def setDialogPosition(ctx, dialog, window, point, titlebar=9):
+    x, y = _getPosition(ctx, dialog, point)
+    size = window.getPosSize()
+    pos = dialog.convertPointToLogic(Point(size.X, size.Y), APPFONT)
+    dialog.Model.PositionX = x - pos.X
+    dialog.Model.PositionY = y - pos.Y - titlebar
+
+def getWindowPosition(window):
+    size = window.getPosSize()
+    return window.convertPointToLogic(Point(size.X, size.Y), APPFONT)
+
+def setWindowPosition(ctx, window, dialog, point, title):
+    x, y = _getPosition(ctx, dialog, point)
+    size = dialog.convertSizeToPixel(Size(dialog.Model.Width, dialog.Model.Height), APPFONT)
+    point = dialog.convertPointToPixel(Point(x, y), APPFONT)
+    window.getContainerWindow().setPosSize(point.X, point.Y, size.Width, size.Height, POSSIZE)
+    window.setTitle(title)
+    # FIXME: If the window loads before the desktop, it should not be made visible.
+    if getDesktop(ctx).getCurrentFrame() is not None:
+        window.getContainerWindow().setVisible(True)
+    dialog.setVisible(True)
+
+def _getPosition(ctx, dialog, point):
+    area = getToolKit(ctx).getWorkArea()
+    size = dialog.convertSizeToLogic(Size(area.Width, area.Height), APPFONT)
+    width = dialog.Model.Width
+    height = dialog.Model.Height
+    if 0 <= point.X <= (size.Width - width) and 0 <= point.Y <= (size.Height - height):
+        x = point.X
+        y = point.Y
+    else:
+        x = (size.Width - width) // 2
+        y = (size.Height - height) // 2
+    x = max(0, min(x, size.Width - width))
+    y = max(0, min(y, size.Height - height))
+    return x, y
+
+def getDialogSize(ctx, extension, xdl, point=None, unit=APPFONT):
+    dialog = getDialog(ctx, extension, xdl)
+    size = dialog.convertSizeToPixel(Size(dialog.Model.Width, dialog.Model.Height), unit)
+    dialog.dispose()
+    if point is None:
+        point = Point(0, 0)
+    return Rectangle(point.X, point.Y, size.Width, size.Height)
+
+def saveWindowPosition(config, position, property):
     if config.hasByName(property):
         any = uno.Any('[]long', (position.X, position.Y))
         uno.invoke(config, 'replaceByName', (property, any))
         config.commitChanges()
+
+def getWindowHeight(window, offset):
+    size = window.getPosSize()
+    point = window.convertPointToPixel(Point(0, offset), APPFONT)
+    return Point(size.Height, size.Height + point.Y)
+
+def setWindowHeight(frame, height):
+    window = frame.getContainerWindow()
+    size = window.getPosSize()
+    window.setPosSize(0, 0, size.Width, height, SIZE)
 
 def getContainerWindow(ctx, parent, handler, identifier, xdl):
     service = 'com.sun.star.awt.ContainerWindowProvider'
@@ -428,6 +531,28 @@ def executeDesktopDispatch(ctx, url, listener=None, /, **kwargs):
     frame = _getCurrentFrame(ctx)
     properties = getPropertyValueSet(kwargs)
     executeFrameDispatch(ctx, frame, url, listener, *properties)
+
+def getJobArguments(arguments):
+    kwargs = {}
+    for argument in arguments:
+        if (argument.Name == 'DynamicData'):
+            for arg in argument.Value:
+                kwargs[arg.Name.lower()] = arg.Value
+    return kwargs
+
+def getJobArgument(kwargs, key='dispatch'):
+    argument = None
+    for name in kwargs:
+        if (name == key):
+            argument = kwargs[name]
+            break
+    return argument
+
+def notifyDispatch(source, listener, result=SUCCESS, value=None):
+    if listener is not None:
+        struct = 'com.sun.star.frame.DispatchResultEvent'
+        notification = uno.createUnoStruct(struct, source, result, value)
+        listener.dispatchFinished(notification)
 
 def _getCurrentFrame(ctx):
     desktop = getDesktop(ctx)

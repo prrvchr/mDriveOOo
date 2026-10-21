@@ -27,48 +27,80 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
-
 from .optionsmodel import OptionsModel
 
 from .optionsview import OptionsView
 
-from .optionshandler import WindowHandler
+from .optionshandler import OptionsListener
 
-from ...unotool import getDesktop
+from .option import OptionManager
 
-from ...logger import LogManager
+from ..runner import DispatchListener
 
-from ...configuration import g_defaultlog
-from ...configuration import g_synclog
+from ..setup import SetupCheck
+
+from ..setup import showSetup
+
+from ..helper import getExtensions
+
+from ..jdbcdriver import g_agent
+from ..jdbcdriver import g_java
+from ..jdbcdriver import g_protocol
+from ..jdbcdriver import g_script
+from ..jdbcdriver import g_service
+
+from ..configuration import State
+from ..configuration import g_extension
+from ..configuration import g_identifier
+
+import traceback
 
 
 class OptionsManager():
     def __init__(self, ctx, logger, window):
         self._ctx = ctx
+        self._disposed = False
+        self._java = g_extension, g_java, g_script
+        self._agent = g_service, g_protocol, g_agent
         self._model = OptionsModel(ctx)
-        self._view = OptionsView(ctx, window, WindowHandler(self), *self._model.getViewData())
-        self._logmanager = LogManager(ctx, self._view.getWindow(), 'requirements.txt', g_defaultlog, g_synclog)
-        self._logmanager.initView()
-        self._logger = logger
-        self._logger.logprb(INFO, 'OptionsManager', '__init__()', 301)
-        self._model.loadDriver()
+        self._view = OptionsView(window, *self._model.getViewData())
+        self._manager = OptionManager(ctx, logger, window, self._model.getConfig())
+        window.addEventListener(OptionsListener(self))
+        self._loadView(self.init)
 
-    def loadSetting(self):
-        self._view.setTimeout(self._model.getTimeout())
-        self._view.setViewName(self._model.getViewName())
-        self._logmanager.loadSetting()
-        self._logger.logprb(INFO, 'OptionsManager', 'loadSetting()', 311)
+    def init(self, state):
+        if not self._disposed:
+            self._manager.init(state)
+            self._view.initView(*self._model.getInitData(state))
+
+    def refresh(self, state):
+        if not self._disposed:
+            self._manager.refresh(state)
+            self._view.refreshView(state)
 
     def saveSetting(self):
-        timeout, view = self._view.getViewData()
-        option = self._model.setViewData(timeout, view)
-        saved = self._logmanager.saveSetting()
-        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting()', 321, option, saved)
-        return saved
+        self._model.saveData(self._view.getData())
+        if self._manager.saveSetting():
+            State.restart = True
+            self._loadView(self.refresh)
 
-    def viewData(self):
-        url = self._model.getDatasourceUrl()
-        getDesktop(self._ctx).loadComponentFromURL(url, '_default', 0, ())
+    def loadSetting(self):
+        self._loadView(self.init)
+
+    def dispose(self):
+        self._disposed = True
+
+    def showSetup(self):
+        mode = self._view.getSetup()
+        showSetup(self._ctx, g_identifier, Dispatch=DispatchListener(self), Mode=mode)
+
+    def dispatchFinished(self, notification):
+        if not self._disposed:
+            self._loadView(self.refresh)
+
+    def _loadView(self, callback):
+        mode = self._view.getSetup()
+        database = self._manager.getDataSourceUrl()
+        setup = SetupCheck(self._ctx, callback, database=database, java=self._java, agent=self._agent, python=True, extensions=getExtensions(), mode=mode)
+        setup.start()
 

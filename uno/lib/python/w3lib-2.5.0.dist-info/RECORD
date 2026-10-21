@@ -1,0 +1,15 @@
+w3lib/__init__.py,sha256=jCOIaOvKV3_YZVJDBFMyUI_aJsALTI3Kiq4lMfZWzOA,105
+w3lib/_infra.py,sha256=KTo21pBS1IJwAhKWh-cnTeRoP792Hz977LEGG_bUzAQ,469
+w3lib/_types.py,sha256=rgSkg0stfmJJfftQ3LEfu1v2tHCYncZ_UBhKrMSJ354,206
+w3lib/_url.py,sha256=qh_cDAY6mg63U7yMrgdTAspKgJum1A8pwFtDzOZbNmo,24607
+w3lib/_util.py,sha256=8j-Se_5QOsaSLoMeiKdg5-m4I_4h-rMRFhYFX-lLueI,3278
+w3lib/encoding.py,sha256=tyeWWsffvhM68JW7eWKONYlK0p9DXAJpbP8xMyt6Zg4,15355
+w3lib/html.py,sha256=GZmqVSQTDioqDrCPRSTAMOeCMu3j4AgR010qYqSosrY,24363
+w3lib/http.py,sha256=jBNHiz5H-6KqWG7LH70z4iCYOrsFmvx4Dq5IkGbNMCE,3531
+w3lib/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+w3lib/url.py,sha256=94DlzIO4yXfYukfLqDNppmUOPxUooPlkYnfb-2sNlUE,28417
+w3lib/util.py,sha256=o6Mfn9CC4ZyzV08RyBWngNaVZOgiHq5T4CzSb_GoeFE,671
+w3lib-2.5.0.dist-info/METADATA,sha256=EsVsBOcqW5IUjrGDIieZUC7HemltMUUlhMEcM1JoNeI,2305
+w3lib-2.5.0.dist-info/WHEEL,sha256=W3fkpkm7-wf9vBI5Z-7s0eWkeM-spu78I8Neb98DeEg,87
+w3lib-2.5.0.dist-info/licenses/LICENSE,sha256=1oU5ewPhpT1-OnTtSn5Rb9r5ocGOZbZm-e-w6xARxiQ,1525
+w3lib-2.5.0.dist-info/RECORD,,

@@ -46,6 +46,7 @@ from .dbtool import createUser
 from .dbtool import currentDateTimeInTZ
 from .dbtool import currentUnoDateTime
 from .dbtool import getDataSourceCall
+from .dbtool import getDataSourceConnection
 from .dbtool import getDataFromResult
 
 from .logger import getLogger
@@ -59,10 +60,10 @@ import traceback
 
 
 class DataBase():
-    def __init__(self, ctx, connection, url):
+    def __init__(self, ctx, url, user='', pwd=''):
         self._ctx = ctx
         self._url = url
-        print("DataBase.__init__() url: %s" % self._url)
+        connection = getDataSourceConnection(ctx, url, user, pwd)
         self._statement = connection.createStatement()
 
     @property

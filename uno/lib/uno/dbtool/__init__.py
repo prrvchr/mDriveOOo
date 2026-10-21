@@ -27,6 +27,12 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+
+from .array import Array
+
+from .dbcheck import DBCheck
+
+from .dbtool import checkConnection
 from .dbtool import checkDataBase
 from .dbtool import createDataSource
 from .dbtool import createTables
@@ -87,5 +93,3 @@ from .dbinit import getTables
 from .dbinit import getIndexes
 from .dbinit import getForeignKeys
 from .dbinit import getPrivileges
-
-from .array import Array

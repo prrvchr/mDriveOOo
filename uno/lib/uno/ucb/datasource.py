@@ -34,20 +34,23 @@ from com.sun.star.ucb import IllegalIdentifierException
 
 from .database import DataBase
 
-from .oauth20 import getOAuth2UserName
-
-from .unotool import getUriFactory
-
-from .ucp import User
-
-from .helper import getExceptionMessage
-from .helper import showWarning
+from .listener import CloseListener
 
 from .provider import Provider
 
 from .replicator import Replicator
 
-from .listener import CloseListener
+from .ucp import User
+
+from .oauth20 import getOAuth2UserName
+
+from .dbinit import getDataBaseUrl
+from .dbinit import getDataSourceUrl
+
+from .helper import getExceptionMessage
+from .helper import showWarning
+
+from .unotool import getUriFactory
 
 from .configuration import g_extension
 
@@ -57,7 +60,7 @@ import traceback
 
 
 class DataSource():
-    def __init__(self, ctx, logger, connection, url):
+    def __init__(self, ctx, logger):
         cls, mtd = 'DataSource', '__init__'
         logger.logprb(INFO, cls, mtd, 301)
         self._ctx = ctx
@@ -66,7 +69,8 @@ class DataSource():
         self._sync = Event()
         self._lock = Lock()
         self._urifactory = getUriFactory(ctx)
-        self._database = DataBase(ctx, connection, url)
+        url = getDataSourceUrl(ctx)
+        self._database = DataBase(ctx, url)
         self._provider = Provider(ctx, logger)
         self._replicator = Replicator(ctx, url, self._provider, self._users, self._sync, self._lock)
         self._logger = logger

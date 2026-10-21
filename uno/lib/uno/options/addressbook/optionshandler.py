@@ -29,27 +29,20 @@
 
 import unohelper
 
-from com.sun.star.awt import XContainerWindowEventHandler
+from com.sun.star.lang import XEventListener
 
 import traceback
 
 
-class WindowHandler(unohelper.Base,
-                    XContainerWindowEventHandler):
+class OptionsListener(unohelper.Base,
+                      XEventListener):
     def __init__(self, manager):
         self._manager = manager
 
-    # XContainerWindowEventHandler
-    def callHandlerMethod(self, window, event, method):
+# com.sun.star.lang.XEventListener
+    def disposing(self, source):
         try:
-            handled = False
-            if method == 'ViewData':
-                self._manager.viewData()
-                handled = True
-            return handled
-        except:
-            print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
-
-    def getSupportedMethodNames(self):
-        return ('ViewData', )
+            self._manager.dispose()
+        except Exception as e:
+            print("ERROR: %s - %s" % (e, traceback.format_exc()))
 

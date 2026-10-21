@@ -27,5 +27,5 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .optionsmanager import OptionsManager
+from .optionmanager import OptionManager
 

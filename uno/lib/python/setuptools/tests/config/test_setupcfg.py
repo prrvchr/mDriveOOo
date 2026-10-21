@@ -1,6 +1,8 @@
 import configparser
 import contextlib
 import inspect
+import re
+import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -14,6 +16,8 @@ from setuptools.warnings import SetuptoolsDeprecationWarning
 from ..textwrap import DALS
 
 from distutils.errors import DistutilsFileError, DistutilsOptionError
+
+IS_PYPY = '__pypy__' in sys.builtin_module_names
 
 
 class ErrConfigHandler(ConfigHandler[Target]):
@@ -87,14 +91,14 @@ class TestConfigurationReader:
             '[options]\n'
             'scripts = bin/a.py, bin/b.py\n',
         )
-        config_dict = read_configuration('%s' % config)
+        config_dict = read_configuration(str(config))
         assert config_dict['metadata']['version'] == '10.1.1'
         assert config_dict['metadata']['keywords'] == ['one', 'two']
         assert config_dict['options']['scripts'] == ['bin/a.py', 'bin/b.py']
 
     def test_no_config(self, tmpdir):
         with pytest.raises(DistutilsFileError):
-            read_configuration('%s' % tmpdir.join('setup.cfg'))
+            read_configuration(str(tmpdir.join('setup.cfg')))
 
     def test_ignore_errors(self, tmpdir):
         _, config = fake_env(
@@ -102,9 +106,9 @@ class TestConfigurationReader:
             '[metadata]\nversion = attr: none.VERSION\nkeywords = one, two\n',
         )
         with pytest.raises(ImportError):
-            read_configuration('%s' % config)
+            read_configuration(str(config))
 
-        config_dict = read_configuration('%s' % config, ignore_option_errors=True)
+        config_dict = read_configuration(str(config), ignore_option_errors=True)
 
         assert config_dict['metadata']['keywords'] == ['one', 'two']
         assert 'version' not in config_dict['metadata']
@@ -288,9 +292,7 @@ class TestMetadata:
             assert dist.metadata.version == '2016.11.26'
 
     def test_version_file(self, tmpdir):
-        _, config = fake_env(
-            tmpdir, '[metadata]\nversion = file: fake_package/version.txt\n'
-        )
+        fake_env(tmpdir, '[metadata]\nversion = file: fake_package/version.txt\n')
         tmpdir.join('fake_package', 'version.txt').write('1.2.3\n')
 
         with get_dist(tmpdir) as dist:
@@ -302,7 +304,7 @@ class TestMetadata:
                 dist.metadata.version
 
     def test_version_with_package_dir_simple(self, tmpdir):
-        _, config = fake_env(
+        fake_env(
             tmpdir,
             '[metadata]\n'
             'version = attr: fake_package_simple.VERSION\n'
@@ -316,7 +318,7 @@ class TestMetadata:
             assert dist.metadata.version == '1.2.3'
 
     def test_version_with_package_dir_rename(self, tmpdir):
-        _, config = fake_env(
+        fake_env(
             tmpdir,
             '[metadata]\n'
             'version = attr: fake_package_rename.VERSION\n'
@@ -330,7 +332,7 @@ class TestMetadata:
             assert dist.metadata.version == '1.2.3'
 
     def test_version_with_package_dir_complex(self, tmpdir):
-        _, config = fake_env(
+        fake_env(
             tmpdir,
             '[metadata]\n'
             'version = attr: fake_package_complex.VERSION\n'
@@ -422,36 +424,48 @@ class TestMetadata:
             with get_dist(tmpdir):
                 pass
 
-    @pytest.mark.xfail(reason="#4864")
-    def test_warn_dash_deprecation(self, tmpdir):
-        # warn_dash_deprecation() is a method in setuptools.dist
-        # remove this test and the method when no longer needed
-        fake_env(
-            tmpdir,
-            '[metadata]\n'
-            'author-email = test@test.com\n'
-            'maintainer_email = foo@foo.com\n',
-        )
-        msg = "Usage of dash-separated 'author-email' will not be supported"
-        with pytest.warns(SetuptoolsDeprecationWarning, match=msg):
-            with get_dist(tmpdir) as dist:
-                metadata = dist.metadata
+    @pytest.mark.parametrize(
+        ("error_msg", "config", "invalid"),
+        [
+            (
+                "Invalid dash-separated key 'author-email' in 'metadata' (setup.cfg)",
+                DALS(
+                    """
+                    [metadata]
+                    author-email = test@test.com
+                    maintainer_email = foo@foo.com
+                    """
+                ),
+                {"author-email": "test@test.com"},
+            ),
+            (
+                "Invalid uppercase key 'Name' in 'metadata' (setup.cfg)",
+                DALS(
+                    """
+                    [metadata]
+                    Name = foo
+                    description = Some description
+                    """
+                ),
+                {"Name": "foo"},
+            ),
+        ],
+    )
+    def test_invalid_options_previously_deprecated(
+        self, tmpdir, error_msg, config, invalid
+    ):
+        # This test and related methods can be removed when no longer needed.
+        # Deprecation postponed due to push-back from the community in
+        # https://github.com/pypa/setuptools/issues/4910
+        fake_env(tmpdir, config)
+        with pytest.warns(SetuptoolsDeprecationWarning, match=re.escape(error_msg)):
+            dist = get_dist(tmpdir).__enter__()
 
-        assert metadata.author_email == 'test@test.com'
-        assert metadata.maintainer_email == 'foo@foo.com'
+        tmpdir.join('setup.cfg').remove()
 
-    @pytest.mark.xfail(reason="#4864")
-    def test_make_option_lowercase(self, tmpdir):
-        # remove this test and the method make_option_lowercase() in setuptools.dist
-        # when no longer needed
-        fake_env(tmpdir, '[metadata]\nName = foo\ndescription = Some description\n')
-        msg = "Usage of uppercase key 'Name' in 'metadata' will not be supported"
-        with pytest.warns(SetuptoolsDeprecationWarning, match=msg):
-            with get_dist(tmpdir) as dist:
-                metadata = dist.metadata
-
-        assert metadata.name == 'foo'
-        assert metadata.description == 'Some description'
+        for field, value in invalid.items():
+            attr = field.replace("-", "_").lower()
+            assert getattr(dist.metadata, attr) == value
 
 
 class TestOptions:
@@ -587,8 +601,8 @@ class TestOptions:
     def test_find_directive(self, tmpdir):
         dir_package, config = fake_env(tmpdir, '[options]\npackages = find:\n')
 
-        dir_sub_one, _ = make_package_dir('sub_one', dir_package)
-        dir_sub_two, _ = make_package_dir('sub_two', dir_package)
+        make_package_dir('sub_one', dir_package)
+        make_package_dir('sub_two', dir_package)
 
         with get_dist(tmpdir) as dist:
             assert set(dist.packages) == set([
@@ -626,8 +640,8 @@ class TestOptions:
             tmpdir, '[options]\npackages = find_namespace:\n'
         )
 
-        dir_sub_one, _ = make_package_dir('sub_one', dir_package)
-        dir_sub_two, _ = make_package_dir('sub_two', dir_package, ns=True)
+        make_package_dir('sub_one', dir_package)
+        make_package_dir('sub_two', dir_package, ns=True)
 
         with get_dist(tmpdir) as dist:
             assert set(dist.packages) == {
@@ -690,6 +704,8 @@ class TestOptions:
             "[options]\ninstall_requires = bar;os_name=='linux'\n",
         ],
     )
+    @pytest.mark.xfail(IS_PYPY, reason="Exceptions missing on PyPy")
+    # TODO: investigate PyPy problem
     def test_raises_accidental_env_marker_misconfig(self, config, tmpdir):
         fake_env(tmpdir, config)
         match = (
@@ -709,6 +725,8 @@ class TestOptions:
             "[options]\ninstall_requires = bar;python_version<3\n",
         ],
     )
+    @pytest.mark.xfail(IS_PYPY, reason="Warnings missing on PyPy (minor issue)")
+    # TODO: investigate PyPy problem
     def test_warn_accidental_env_marker_misconfig(self, config, tmpdir):
         fake_env(tmpdir, config)
         match = (
@@ -781,7 +799,7 @@ class TestOptions:
             assert dist.entry_points == expected
 
     def test_case_sensitive_entry_points(self, tmpdir):
-        _, config = fake_env(
+        fake_env(
             tmpdir,
             '[options.entry_points]\n'
             'GROUP1 = point1 = pack.module:func, '

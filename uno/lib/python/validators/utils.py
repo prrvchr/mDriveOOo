@@ -22,7 +22,7 @@ class ValidationError(Exception):
         """Repr Validation Failure."""
         return (
             f"ValidationError(func={self.func.__name__}, "
-            + f"args={({k: v for (k, v) in self.__dict__.items() if k != 'func'})})"
+            + f"args={ ({k: v for (k, v) in self.__dict__.items() if k != 'func'}) })"
         )
 
     def __str__(self):
@@ -53,9 +53,9 @@ def validator(func: Callable[..., Any]):
         ... def even(value):
         ...     return not (value % 2)
         >>> even(4)
-        # Output: True
+        True
         >>> even(5)
-        # Output: ValidationError(func=even, args={'value': 5})
+        ValidationError(func=even, args={'value': 5})
 
     Args:
         func:

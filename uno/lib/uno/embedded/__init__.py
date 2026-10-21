@@ -32,17 +32,31 @@ from . import sdbcx
 
 from .options import OptionsManager
 
+from .setup import SetupManager
+
 from .helper import checkConfiguration
+from .helper import getExtensions
 
 from .unotool import getConfiguration
 
 from .logger import getLogger
 
+from .unotool import findFrame
+from .unotool import getJobArguments
+from .unotool import getJobArgument
+from .unotool import notifyDispatch
+
+from .jdbcdriver import g_agent
+from .jdbcdriver import g_java
+from .jdbcdriver import g_protocol
+from .jdbcdriver import g_script
+from .jdbcdriver import g_service
 from .jdbcdriver import g_services
 
 from .configuration import g_basename
 from .configuration import g_defaultlog
+from .configuration import g_extension
 from .configuration import g_identifier
-
-from .configuration import g_disabled
 from .configuration import g_memory
+from .configuration import g_setup
+

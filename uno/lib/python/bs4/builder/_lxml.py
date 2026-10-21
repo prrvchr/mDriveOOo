@@ -22,11 +22,13 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
-from typing_extensions import TypeAlias
 
 from io import BytesIO
 from io import StringIO
-from lxml import etree
+
+from typing_extensions import TypeAlias
+
+from lxml import etree # type:ignore
 from bs4.element import (
     AttributeDict,
     XMLAttributeDict,
@@ -79,6 +81,12 @@ class LXMLTreeBuilderForXML(TreeBuilder):
 
     is_xml: bool = True
 
+    #: Set this to true (probably by passing huge_tree=True into the :
+    #: BeautifulSoup constructor) to enable the lxml feature "disable security
+    #: restrictions and support very deep trees and very long text
+    #: content".
+    huge_tree: bool
+
     processing_instruction_class: Type[ProcessingInstruction]
 
     NAME: str = "lxml-xml"
@@ -96,7 +104,7 @@ class LXMLTreeBuilderForXML(TreeBuilder):
     DEFAULT_NSMAPS_INVERTED: _InvertedNamespaceMapping = _invert(DEFAULT_NSMAPS)
 
     nsmaps: List[Optional[_InvertedNamespaceMapping]]
-    empty_element_tags: Set[str]
+    empty_element_tags: Optional[Set[str]]
     parser: Any
     _default_parser: Optional[etree.XMLParser]
 
@@ -151,7 +159,7 @@ class LXMLTreeBuilderForXML(TreeBuilder):
         """
         if self._default_parser is not None:
             return self._default_parser
-        return self.DEFAULT_PARSER_CLASS(target=self, recover=True, encoding=encoding)
+        return self.DEFAULT_PARSER_CLASS(target=self, recover=True, huge_tree=self.huge_tree, encoding=encoding)
 
     def parser_for(self, encoding: Optional[_Encoding]) -> _LXMLParser:
         """Instantiate an appropriate parser for the given encoding.
@@ -164,14 +172,15 @@ class LXMLTreeBuilderForXML(TreeBuilder):
 
         if callable(parser):
             # Instantiate the parser with default arguments
-            parser = parser(target=self, recover=True, encoding=encoding)
+            parser = parser(target=self, recover=True, huge_tree=self.huge_tree, encoding=encoding)
         return parser
 
     def __init__(
-        self,
-        parser: Optional[etree.XMLParser] = None,
-        empty_element_tags: Optional[Set[str]] = None,
-        **kwargs: Any,
+            self,
+            parser: Optional[etree.XMLParser] = None,
+            empty_element_tags: Optional[Set[str]] = None,
+            huge_tree: bool = False,
+            **kwargs: Any,
     ):
         # TODO: Issue a warning if parser is present but not a
         # callable, since that means there's no way to create new
@@ -180,18 +189,24 @@ class LXMLTreeBuilderForXML(TreeBuilder):
         self.soup = None
         self.nsmaps = [self.DEFAULT_NSMAPS_INVERTED]
         self.active_namespace_prefixes = [dict(self.DEFAULT_NSMAPS)]
+        if self.is_xml:
+            self.processing_instruction_class = XMLProcessingInstruction
+        else:
+            self.processing_instruction_class = ProcessingInstruction
+
         if "attribute_dict_class" not in kwargs:
             kwargs["attribute_dict_class"] = XMLAttributeDict
+        self.huge_tree = huge_tree
+
         super(LXMLTreeBuilderForXML, self).__init__(**kwargs)
 
     def _getNsTag(self, tag: str) -> Tuple[Optional[str], str]:
         # Split the namespace URL out of a fully-qualified lxml tag
         # name. Copied from lxml's src/lxml/sax.py.
-        if tag[0] == "{":
+        if tag[0] == "{" and "}" in tag:
             namespace, name = tag[1:].split("}", 1)
             return (namespace, name)
-        else:
-            return (None, tag)
+        return (None, tag)
 
     def prepare_markup(
         self,
@@ -226,14 +241,10 @@ class LXMLTreeBuilderForXML(TreeBuilder):
             document to Unicode and parsing it. Each strategy will be tried
             in turn.
         """
-        is_html = not self.is_xml
-        if is_html:
-            self.processing_instruction_class = ProcessingInstruction
+        if not self.is_xml:
             # We're in HTML mode, so if we're given XML, that's worth
             # noting.
             DetectsXMLParsedAsHTML.warn_if_markup_looks_like_xml(markup, stacklevel=3)
-        else:
-            self.processing_instruction_class = XMLProcessingInstruction
 
         if isinstance(markup, str):
             # We were given Unicode. Maybe lxml can parse Unicode on
@@ -274,7 +285,7 @@ class LXMLTreeBuilderForXML(TreeBuilder):
             markup,
             known_definite_encodings=known_definite_encodings,
             user_encodings=user_encodings,
-            is_html=is_html,
+            is_html=not self.is_xml,
             exclude_encodings=exclude_encodings,
         )
         for encoding in detector.encodings:
@@ -312,7 +323,7 @@ class LXMLTreeBuilderForXML(TreeBuilder):
     def start(
         self,
         tag: str | bytes,
-        attrs: Dict[str | bytes, str | bytes],
+        attrib: Dict[str | bytes, str | bytes],
         nsmap: _NamespaceMapping = {},
     ) -> None:
         # This is called by lxml code as a result of calling
@@ -327,13 +338,13 @@ class LXMLTreeBuilderForXML(TreeBuilder):
         # need a mutable dict--lxml might send us an immutable
         # dictproxy. Third, so we can handle namespaced attribute
         # names by converting the keys to NamespacedAttributes.
-        new_attrs: Dict[Union[str, NamespacedAttribute], str] = (
+        new_attrib: Dict[Union[str, NamespacedAttribute], str] = (
             self.attribute_dict_class()
         )
-        for k, v in attrs.items():
+        for k, v in attrib.items():
             assert isinstance(k, str)
             assert isinstance(v, str)
-            new_attrs[k] = v
+            new_attrib[k] = v
 
         nsprefix: Optional[_NamespacePrefix] = None
         namespace: Optional[_NamespaceURL] = None
@@ -373,20 +384,20 @@ class LXMLTreeBuilderForXML(TreeBuilder):
                 attribute = NamespacedAttribute(
                     "xmlns", prefix, "http://www.w3.org/2000/xmlns/"
                 )
-                new_attrs[attribute] = namespace
+                new_attrib[attribute] = namespace
 
         # Namespaces are in play. Find any attributes that came in
         # from lxml with namespaces attached to their names, and
         # turn then into NamespacedAttribute objects.
-        final_attrs: AttributeDict = self.attribute_dict_class()
-        for attr, value in list(new_attrs.items()):
+        final_attrib: AttributeDict = self.attribute_dict_class()
+        for attr, value in list(new_attrib.items()):
             namespace, attr = self._getNsTag(attr)
             if namespace is None:
-                final_attrs[attr] = value
+                final_attrib[attr] = value
             else:
                 nsprefix = self._prefix_for_namespace(namespace)
                 attr = NamespacedAttribute(nsprefix, attr, namespace)
-                final_attrs[attr] = value
+                final_attrib[attr] = value
 
         namespace, tag = self._getNsTag(tag)
         nsprefix = self._prefix_for_namespace(namespace)
@@ -394,7 +405,7 @@ class LXMLTreeBuilderForXML(TreeBuilder):
             tag,
             namespace,
             nsprefix,
-            final_attrs,
+            final_attrib,
             namespaces=self.active_namespace_prefixes[-1],
         )
 
@@ -409,18 +420,18 @@ class LXMLTreeBuilderForXML(TreeBuilder):
                 return inverted_nsmap[namespace]
         return None
 
-    def end(self, name: str | bytes) -> None:
+    def end(self, tag: str | bytes) -> None:
         assert self.soup is not None
-        assert isinstance(name, str)
+        assert isinstance(tag, str)
         self.soup.endData()
-        namespace, name = self._getNsTag(name)
+        namespace, tag = self._getNsTag(tag)
         nsprefix = None
         if namespace is not None:
             for inverted_nsmap in reversed(self.nsmaps):
                 if inverted_nsmap is not None and namespace in inverted_nsmap:
                     nsprefix = inverted_nsmap[namespace]
                     break
-        self.soup.handle_endtag(name, nsprefix)
+        self.soup.handle_endtag(tag, nsprefix)
         if len(self.nsmaps) > 1:
             # This tag, or one of its parents, introduced a namespace
             # mapping, so pop it off the stack.

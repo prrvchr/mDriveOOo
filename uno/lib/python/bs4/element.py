@@ -3,6 +3,7 @@ from __future__ import annotations
 # Use of this source code is governed by the MIT license.
 __license__ = "MIT"
 
+import inspect
 import re
 import warnings
 
@@ -28,6 +29,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    MutableSequence,
     Optional,
     Pattern,
     Set,
@@ -37,6 +39,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 from typing_extensions import (
     Self,
@@ -53,16 +56,22 @@ if TYPE_CHECKING:
     )
     from bs4._typing import (
         _AtMostOneElement,
+        _AtMostOneNavigableString,
+        _AtMostOneTag,
         _AttributeValue,
         _AttributeValues,
         _Encoding,
         _InsertableElement,
         _OneElement,
         _QueryResults,
+        _RawAttributeValue,
+        _RawAttributeValues,
         _RawOrProcessedAttributeValues,
-        _StrainableElement,
+        _SomeNavigableStrings,
+        _SomeTags,
         _StrainableAttribute,
         _StrainableAttributes,
+        _StrainableElement,
         _StrainableString,
     )
 
@@ -70,7 +79,8 @@ _OneOrMoreStringTypes: TypeAlias = Union[
     Type["NavigableString"], Iterable[Type["NavigableString"]]
 ]
 
-_FindMethodName: TypeAlias = Optional[Union["_StrainableElement", "ElementFilter"]]
+_FindMethodName: TypeAlias = Union["_StrainableElement", "ElementFilter"]
+_OptionalFindMethodName: TypeAlias = Optional[_FindMethodName]
 
 # Deprecated module-level attributes.
 # See https://peps.python.org/pep-0562/
@@ -389,7 +399,7 @@ class PageElement(object):
         :param previous_element: The element parsed immediately before
             this one.
 
-        :param next_element: The element parsed immediately before
+        :param next_element: The element parsed immediately after
             this one.
 
         :param previous_sibling: The most recently encountered element
@@ -547,10 +557,13 @@ class PageElement(object):
         return separator.join([s for s in self._all_strings(strip, types=types)])
 
     getText = get_text
-    text = property(get_text)
 
-    def replace_with(self, *args: PageElement) -> Self:
-        """Replace this `PageElement` with one or more other `PageElement`,
+    @property
+    def text(self) -> str:
+        return self.get_text()
+
+    def replace_with(self, *args: _InsertableElement) -> Self:
+        """Replace this `PageElement` with one or more other elements,
         objects, keeping the rest of the tree the same.
 
         :return: This `PageElement`, no longer part of the tree.
@@ -650,6 +663,7 @@ class PageElement(object):
             next_up = e.next_element
             e.__dict__.clear()
             if isinstance(e, Tag):
+                e.name = ""
                 e.contents = []
             e._decomposed = True
             e = next_up
@@ -744,13 +758,76 @@ class PageElement(object):
 
         return results
 
+    def new_tag(
+        self,
+        name: str,
+        namespace: Optional[str] = None,
+        nsprefix: Optional[str] = None,
+        attrs: Optional[_RawAttributeValues] = None,
+        sourceline: Optional[int] = None,
+        sourcepos: Optional[int] = None,
+        string: Optional[str] = None,
+        **kwattrs: _RawAttributeValue,
+    ) -> Tag:
+        """Create a new Tag associated with the same BeautifulSoup object as this PageElement is."""
+        root = self._root_object
+        if root is None:
+            raise ValueError("Cannot call new_tag on a PageElement not contained in a BeautifulSoup object")
+        return root.new_tag(name, namespace, nsprefix, attrs, sourceline, sourcepos, string, **kwattrs)
+
+    def new_string(self, s: str, subclass: Optional[Type[NavigableString]] = None
+                   ) -> NavigableString:
+        """Create a new NavigableString associated with the same BeautifulSoup object as this PageElement is."""
+        root = self._root_object
+        if root is None:
+            raise ValueError("Cannot call new_string on a PageElement not contained in a BeautifulSoup object")
+        return root.new_string(s, subclass)
+
+    @property
+    def _root_object(self) -> Optional[BeautifulSoup]:
+        """Find the BeautifulSoup object used to create this PageElement, assuming it's still attached."""
+        parent:Optional[Tag] = self.parent
+        while parent is not None and not parent._is_root:
+            parent = parent.parent
+        if parent is None:
+            return parent
+        return cast('BeautifulSoup', parent)
+
+    @property
+    def _is_root(self) -> bool:
+        """No, this object is not the root of its parse tree; only a BeautifulSoup object can be that."""
+        return False
+
+    # No name or attrs + string -> string
+    @overload
+    def find_next(
+            self,
+            name: None = None,
+            attrs: None = None,
+            *,
+            string: _StrainableString,
+            **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneNavigableString:
+        ...
+
+    # No string -> tag
+    @overload
+    def find_next(
+            self,
+            name: _OptionalFindMethodName = None,
+            attrs: Optional[_StrainableAttributes] = None,
+            string: None=None,
+            **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneTag:
+        ...
+
     def find_next(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         string: Optional[_StrainableString] = None,
         **kwargs: _StrainableAttribute,
-    ) -> _AtMostOneElement:
+    ) -> Union[_AtMostOneTag,_AtMostOneNavigableString,_AtMostOneElement]:
         """Find the first PageElement that matches the given criteria and
         appears later in the document than this PageElement.
 
@@ -766,15 +843,39 @@ class PageElement(object):
 
     findNext = _deprecated_function_alias("findNext", "find_next", "4.0.0")
 
+    # No name or attrs + string -> strings
+    @overload
     def find_all_next(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: None = None,
+        attrs: None = None,
+        *,
+        string: _StrainableString,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeNavigableStrings:
+        ...
+
+    # No string -> tags
+    @overload
+    def find_all_next(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
+        string: None = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeTags:
+        ...
+
+    def find_all_next(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         string: Optional[_StrainableString] = None,
         limit: Optional[int] = None,
-        _stacklevel: int = 2,
         **kwargs: _StrainableAttribute,
-    ) -> _QueryResults:
+    ) -> Union[_SomeTags,_SomeNavigableStrings,_QueryResults]:
         """Find all `PageElement` objects that match the given criteria and
         appear later in the document than this `PageElement`.
 
@@ -785,7 +886,6 @@ class PageElement(object):
         :param attrs: Additional filters on attribute values.
         :param string: A filter for a NavigableString with specific text.
         :param limit: Stop looking after finding this many results.
-        :param _stacklevel: Used internally to improve warning messages.
         :kwargs: Additional filters on attribute values.
         """
         return self._find_all(
@@ -794,19 +894,41 @@ class PageElement(object):
             string,
             limit,
             self.next_elements,
-            _stacklevel=_stacklevel + 1,
             **kwargs,
         )
 
     findAllNext = _deprecated_function_alias("findAllNext", "find_all_next", "4.0.0")
 
+    # No name or attrs + string -> strings
+    @overload
     def find_next_sibling(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: None = None,
+        attrs: None = None,
+        *,
+        string: _StrainableString,
+        **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneNavigableString:
+        ...
+
+    # No string -> tags
+    @overload
+    def find_next_sibling(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
+        string: None = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneTag:
+        ...
+
+    def find_next_sibling(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         string: Optional[_StrainableString] = None,
         **kwargs: _StrainableAttribute,
-    ) -> _AtMostOneElement:
+    ) -> Union[_AtMostOneTag,_AtMostOneNavigableString,_AtMostOneElement]:
         """Find the closest sibling to this PageElement that matches the
         given criteria and appears later in the document.
 
@@ -824,15 +946,39 @@ class PageElement(object):
         "findNextSibling", "find_next_sibling", "4.0.0"
     )
 
+    # No name or attrs + string -> strings
+    @overload
     def find_next_siblings(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: None = None,
+        attrs: None = None,
+        *,
+        string: _StrainableString,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeNavigableStrings:
+        ...
+
+    # No string -> tags
+    @overload
+    def find_next_siblings(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
+        string: None = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeTags:
+        ...
+
+    def find_next_siblings(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         string: Optional[_StrainableString] = None,
         limit: Optional[int] = None,
-        _stacklevel: int = 2,
         **kwargs: _StrainableAttribute,
-    ) -> _QueryResults:
+    ) -> Union[_SomeTags,_SomeNavigableStrings,_QueryResults]:
         """Find all siblings of this `PageElement` that match the given criteria
         and appear later in the document.
 
@@ -843,7 +989,6 @@ class PageElement(object):
         :param attrs: Additional filters on attribute values.
         :param string: A filter for a `NavigableString` with specific text.
         :param limit: Stop looking after finding this many results.
-        :param _stacklevel: Used internally to improve warning messages.
         :kwargs: Additional filters on attribute values.
         """
         return self._find_all(
@@ -852,7 +997,6 @@ class PageElement(object):
             string,
             limit,
             self.next_siblings,
-            _stacklevel=_stacklevel + 1,
             **kwargs,
         )
 
@@ -863,13 +1007,36 @@ class PageElement(object):
         "fetchNextSiblings", "find_next_siblings", "3.0.0"
     )
 
+    # No name or attrs + string -> string
+    @overload
+    def find_previous(
+            self,
+            name: None = None,
+            attrs: None = None,
+            *,
+            string: _StrainableString,
+            **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneNavigableString:
+        ...
+
+    # No string -> tag
+    @overload
+    def find_previous(
+            self,
+            name: _OptionalFindMethodName = None,
+            attrs: Optional[_StrainableAttributes] = None,
+            string: None=None,
+            **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneTag:
+        ...
+
     def find_previous(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         string: Optional[_StrainableString] = None,
         **kwargs: _StrainableAttribute,
-    ) -> _AtMostOneElement:
+    ) -> Union[_AtMostOneTag,_AtMostOneNavigableString,_AtMostOneElement]:
         """Look backwards in the document from this `PageElement` and find the
         first `PageElement` that matches the given criteria.
 
@@ -885,15 +1052,39 @@ class PageElement(object):
 
     findPrevious = _deprecated_function_alias("findPrevious", "find_previous", "3.0.0")
 
+    # No name or attrs + string -> strings
+    @overload
     def find_all_previous(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: None = None,
+        attrs: None = None,
+        *,
+        string: _StrainableString,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeNavigableStrings:
+        ...
+
+    # No string -> tags
+    @overload
+    def find_all_previous(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
+        string: None = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeTags:
+        ...
+
+    def find_all_previous(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         string: Optional[_StrainableString] = None,
         limit: Optional[int] = None,
-        _stacklevel: int = 2,
         **kwargs: _StrainableAttribute,
-    ) -> _QueryResults:
+    ) -> Union[_SomeTags,_SomeNavigableStrings,_QueryResults]:
         """Look backwards in the document from this `PageElement` and find all
         `PageElement` that match the given criteria.
 
@@ -904,7 +1095,6 @@ class PageElement(object):
         :param attrs: Additional filters on attribute values.
         :param string: A filter for a `NavigableString` with specific text.
         :param limit: Stop looking after finding this many results.
-        :param _stacklevel: Used internally to improve warning messages.
         :kwargs: Additional filters on attribute values.
         """
         return self._find_all(
@@ -913,7 +1103,6 @@ class PageElement(object):
             string,
             limit,
             self.previous_elements,
-            _stacklevel=_stacklevel + 1,
             **kwargs,
         )
 
@@ -924,13 +1113,36 @@ class PageElement(object):
         "fetchAllPrevious", "find_all_previous", "3.0.0"
     )
 
+    # No name or attrs + string -> string
+    @overload
     def find_previous_sibling(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: None = None,
+        attrs: None = None,
+        *,
+        string: _StrainableString,
+        **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneNavigableString:
+        ...
+
+    # No string -> tag
+    @overload
+    def find_previous_sibling(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
+        string: None = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneTag:
+        ...
+
+    def find_previous_sibling(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         string: Optional[_StrainableString] = None,
         **kwargs: _StrainableAttribute,
-    ) -> _AtMostOneElement:
+    ) -> Union[_AtMostOneTag,_AtMostOneNavigableString,_AtMostOneElement]:
         """Returns the closest sibling to this `PageElement` that matches the
         given criteria and appears earlier in the document.
 
@@ -950,15 +1162,39 @@ class PageElement(object):
         "findPreviousSibling", "find_previous_sibling", "4.0.0"
     )
 
+    # No name or attrs + string -> strings
+    @overload
     def find_previous_siblings(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: None = None,
+        attrs: None = None,
+        *,
+        string: _StrainableString,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeNavigableStrings:
+        ...
+
+    # No string -> tags
+    @overload
+    def find_previous_siblings(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
+        string: None = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeTags:
+        ...
+
+    def find_previous_siblings(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         string: Optional[_StrainableString] = None,
         limit: Optional[int] = None,
-        _stacklevel: int = 2,
         **kwargs: _StrainableAttribute,
-    ) -> _QueryResults:
+    ) -> Union[_SomeTags,_SomeNavigableStrings,_QueryResults]:
         """Returns all siblings to this PageElement that match the
         given criteria and appear earlier in the document.
 
@@ -969,7 +1205,6 @@ class PageElement(object):
         :param attrs: Additional filters on attribute values.
         :param string: A filter for a NavigableString with specific text.
         :param limit: Stop looking after finding this many results.
-        :param _stacklevel: Used internally to improve warning messages.
         :kwargs: Additional filters on attribute values.
         """
         return self._find_all(
@@ -978,7 +1213,6 @@ class PageElement(object):
             string,
             limit,
             self.previous_siblings,
-            _stacklevel=_stacklevel + 1,
             **kwargs,
         )
 
@@ -991,10 +1225,10 @@ class PageElement(object):
 
     def find_parent(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         **kwargs: _StrainableAttribute,
-    ) -> _AtMostOneElement:
+    ) -> _AtMostOneTag:
         """Find the closest parent of this PageElement that matches the given
         criteria.
 
@@ -1011,7 +1245,7 @@ class PageElement(object):
         # set of arguments.
         r = None
         results = self.find_parents(
-            name, attrs, 1, _stacklevel=3, **kwargs
+            name, attrs, 1, **kwargs
         )
         if results:
             r = results[0]
@@ -1021,12 +1255,11 @@ class PageElement(object):
 
     def find_parents(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
         limit: Optional[int] = None,
-        _stacklevel: int = 2,
         **kwargs: _StrainableAttribute,
-    ) -> _QueryResults:
+    ) -> _SomeTags:
         """Find all parents of this `PageElement` that match the given criteria.
 
         All find_* methods take a common set of arguments. See the online
@@ -1035,13 +1268,14 @@ class PageElement(object):
         :param name: A filter on tag name.
         :param attrs: Additional filters on attribute values.
         :param limit: Stop looking after finding this many results.
-        :param _stacklevel: Used internally to improve warning messages.
         :kwargs: Additional filters on attribute values.
         """
         iterator = self.parents
-        return self._find_all(
-            name, attrs, None, limit, iterator, _stacklevel=_stacklevel + 1, **kwargs
-        )
+        # Only Tags can have children, so this ResultSet will contain
+        # nothing but Tags.
+        return cast(ResultSet[Tag], self._find_all(
+            name, attrs, None, limit, iterator, **kwargs
+        ))
 
     findParents = _deprecated_function_alias("findParents", "find_parents", "4.0.0")
     fetchParents = _deprecated_function_alias("fetchParents", "find_parents", "3.0.0")
@@ -1065,25 +1299,49 @@ class PageElement(object):
         # as callback types." - So, not sure how to get more
         # specific here.
         method: Callable,
-        name: _FindMethodName,
-        attrs: _StrainableAttributes,
+        name: _OptionalFindMethodName,
+        attrs: Optional[_StrainableAttributes],
         string: Optional[_StrainableString],
         **kwargs: _StrainableAttribute,
     ) -> _AtMostOneElement:
         r: _AtMostOneElement = None
-        results: _QueryResults = method(name, attrs, string, 1, _stacklevel=4, **kwargs)
+        results: _QueryResults = method(name, attrs, string, 1, **kwargs)
         if results:
             r = results[0]
         return r
 
+    @property
+    def _warning_stack_level(self) -> int:
+        """Find the appropriate stack level to use when issuing a warning relating to one of the find* methods."""
+        # The find* methods call each other, which makes it
+        # difficult to track how deep we are in the stack
+        # vis-a-vis the caller's entry point into the bs4.element
+        # module. However, we know that all of the find* methods
+        # are in bs4.element, and there's no code in this module
+        # that triggers the warnings we need to issue.
+        #
+        # (There is _test_ code that triggers the warnings, but that's
+        # in bs4.tests.)
+        #
+        # Therefore we can go up the stack until we leave the
+        # bs4.element module, and use the distance between here and
+        # there as the stacklevel.
+        stacklevel = 0
+        for frameinfo in inspect.stack(context=0):
+            if (frameinfo.frame is not None
+                and frameinfo.frame.f_globals is not None
+                and frameinfo.frame.f_globals.get('__name__', '') != "bs4.element"):
+                break
+            stacklevel += 1
+        return stacklevel
+
     def _find_all(
         self,
-        name: _FindMethodName,
-        attrs: _StrainableAttributes,
+        name: _OptionalFindMethodName,
+        attrs: Optional[_StrainableAttributes],
         string: Optional[_StrainableString],
         limit: Optional[int],
         generator: Iterator[PageElement],
-        _stacklevel: int = 3,
         **kwargs: _StrainableAttribute,
     ) -> _QueryResults:
         """Iterates over a generator looking for things that match."""
@@ -1093,7 +1351,7 @@ class PageElement(object):
             warnings.warn(
                 "The 'text' argument to find()-type methods is deprecated. Use 'string' instead.",
                 DeprecationWarning,
-                stacklevel=_stacklevel,
+                stacklevel=self._warning_stack_level,
             )
 
         if "_class" in kwargs:
@@ -1104,7 +1362,7 @@ class PageElement(object):
                     autocorrect="class_",
                 ),
                 AttributeResemblesVariableWarning,
-                stacklevel=_stacklevel,
+                stacklevel=self._warning_stack_level,
             )
 
         from bs4.filter import ElementFilter
@@ -1114,11 +1372,11 @@ class PageElement(object):
         else:
             matcher = SoupStrainer(name, attrs, string, **kwargs)
 
-        result: Iterable[_OneElement]
+        result: MutableSequence[_OneElement]
         if string is None and not limit and not attrs and not kwargs:
             if name is True or name is None:
                 # Optimization to find all tags.
-                result = (element for element in generator if isinstance(element, Tag))
+                result = [element for element in generator if isinstance(element, Tag)]
                 return ResultSet(matcher, result)
             elif isinstance(name, str):
                 # Optimization to find all tags with a given name.
@@ -1317,6 +1575,14 @@ class NavigableString(str, PageElement):
     def __getnewargs__(self) -> Tuple[str]:
         return (str(self),)
 
+    # TODO-TYPING This should be SupportsIndex|slice but SupportsIndex
+    # is introduced in 3.8. This can be changed once 3.7 support is dropped.
+    def __getitem__(self, key: Union[int|slice]) -> str: # type:ignore
+        """Raise an exception """
+        if isinstance(key, str):
+            raise TypeError("string indices must be integers, not '{0}'. Are you treating a NavigableString like a Tag?".format(key.__class__.__name__))
+        return super(NavigableString, self).__getitem__(key)
+
     @property
     def string(self) -> str:
         """Convenience property defined to match `Tag.string`.
@@ -1503,7 +1769,7 @@ class Doctype(PreformattedString):
 
     @classmethod
     def _string_for_name_and_ids(
-        self, name: str, pub_id: Optional[str], system_id: Optional[str]
+        cls, name: str, pub_id: Optional[str], system_id: Optional[str]
     ) -> str:
         """Generate a string to be used as the basis of a Doctype object.
 
@@ -2043,15 +2309,22 @@ class Tag(PageElement):
         ": :meta private:"
         return self.unwrap()
 
-    def append(self, tag: _InsertableElement) -> PageElement:
-        """
-        Appends the given `PageElement` to the contents of this `Tag`.
+    def append(self, tag: _InsertableElement) -> PageElement|List[PageElement]:
+        """Appends the given `PageElement` to the contents of this `Tag`.
 
-        :param tag: A PageElement.
+        :param tag: A PageElement. If this is another BeautifulSoup
+           object, all of its contents will be inserted into this
+           `Tag`, since one BeautifulSoup object can't contain another
+           one.
 
-        :return The newly appended PageElement.
+        :return: The object that was just appended, or (if `tag` was a BeautifulSoup
+           object) all such objects.
         """
-        return self.insert(len(self.contents), tag)[0]
+        inserted = self.insert(len(self.contents), tag)
+        if isinstance(tag, Tag) and tag.name == "[document]": # TODO: can't reference BeautifulSoup class in this module
+            return inserted
+        else:
+            return inserted[0]
 
     def extend(self, tags: Union[Iterable[_InsertableElement], Tag]) -> List[PageElement]:
         """Appends one or more objects to the contents of this
@@ -2086,7 +2359,12 @@ class Tag(PageElement):
 
         results: List[PageElement] = []
         for tag in tag_list:
-            results.append(self.append(tag))
+            appended = self.append(tag)
+            if isinstance(appended, list):
+                # This can happen if you pass in a mixture of Tag and BeautifulSoup objects.
+                results.extend(appended)
+            else:
+                results.append(appended)
 
         return results
 
@@ -2229,22 +2507,73 @@ class Tag(PageElement):
         "Deleting tag[key] deletes all 'key' attributes for the tag."
         self.attrs.pop(key, None)
 
+    # Since Tag.__call__ is effectively the same as PageElement.find_all, see find_all for notes
+    # on these overloads.
+
+    @overload
     def __call__(
         self,
-        name: Optional[_StrainableElement] = None,
-        attrs: _StrainableAttributes = {},
+        name: None = None,
+        attrs: None = None,
+        recursive: bool = True,
+        *,
+        string: _StrainableString,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeNavigableStrings:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        name: None = None,
+        attrs: None = None,
+        recursive: bool = True,
+        string: None = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeTags:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        name: None,
+        attrs: _StrainableAttributes,
+        recursive: bool = True,
+        string: None = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeTags:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        name: _FindMethodName,
+        attrs: Optional[_StrainableAttributes] = None,
         recursive: bool = True,
         string: Optional[_StrainableString] = None,
         limit: Optional[int] = None,
-        _stacklevel: int = 2,
         **kwargs: _StrainableAttribute,
-    ) -> _QueryResults:
+    ) -> _SomeTags:
+        ...
+
+    def __call__(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
+        recursive: bool = True,
+        string: Optional[_StrainableString] = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> Union[_SomeTags,_SomeNavigableStrings,_QueryResults]:
         """Calling a Tag like a function is the same as calling its
-        find_all() method. Eg. tag('a') returns a list of all the A tags
-        found within this tag."""
-        return self.find_all(
-            name, attrs, recursive, string, limit, _stacklevel, **kwargs
-        )
+        find_all() method.
+
+        Eg. tag('a') returns a list of all the A tags found within this tag.
+        """
+        return self._find_all(name, attrs, string, limit, self._generator_for_recursive(recursive), **kwargs)
 
     def __getattr__(self, subtag: str) -> Optional[Tag]:
         """Calling tag.subtag is the same as calling tag.find(name="subtag")"""
@@ -2267,7 +2596,7 @@ class Tag(PageElement):
             raise AttributeError(
                 "'%s' object has no attribute '%s'" % (self.__class__, subtag)
             )
-        return cast(Optional[Tag], result)
+        return result
 
     def __eq__(self, other: Any) -> bool:
         """Returns true iff this Tag has the same name, the same attributes,
@@ -2598,6 +2927,22 @@ class Tag(PageElement):
             or self.name not in self.preserve_whitespace_tags
         )
 
+    @overload
+    def prettify(
+        self,
+        encoding: None = None,
+        formatter: _FormatterOrName = "minimal",
+    ) -> str:
+        ...
+
+    @overload
+    def prettify(
+        self,
+        encoding: _Encoding,
+        formatter: _FormatterOrName = "minimal",
+    ) -> bytes:
+        ...
+
     def prettify(
         self,
         encoding: Optional[_Encoding] = None,
@@ -2680,15 +3025,89 @@ class Tag(PageElement):
         return self.encode_contents(indent_level=indentLevel, encoding=encoding)
 
     # Soup methods
+    #
 
+    # People who call these methods in a type-safe environment
+    # basically want to know whether the call is going to return
+    # NavigableStrings or Tags. It's always one or the other, never
+    # both, but spelling it out requires a number of overloads for
+    # each method.
+    #
+    # If I had it to do over again I'd design this API differently (it
+    # would look more like ElementFilter), but that's life.
+    #
+    # The overloads all look for a clue in the input which restricts
+    # the method to returning either only strings or only tags. Only
+    # the most common cases are covered.
+
+    # e.g. find(string="foo")
+    #   -> string information but no tag information
+    #     -> string
+    @overload
     def find(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: None = None,
+        attrs: None = None,
+        recursive: bool = True,
+        *,
+        string: _StrainableString,
+        **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneNavigableString:
+        ...
+
+    # e.g. find() -> default behavior -> tag
+    #      find(attr="value") -> only tags have attrs -> tag
+    @overload
+    def find(
+            self,
+            name: None = None,
+            attrs: None = None,
+            recursive: bool = True,
+            string: None = None,
+            **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneTag:
+        ...
+
+    # e.g. find(attrs=dict(attr="value"))
+    #   -> only tags have attrs
+    #      -> tag
+    @overload
+    def find(
+        self,
+        name: None,
+        attrs: _StrainableAttributes,
         recursive: bool = True,
         string: Optional[_StrainableString] = None,
         **kwargs: _StrainableAttribute,
-    ) -> _AtMostOneElement:
+    ) -> _AtMostOneTag:
+        ...
+
+    # e.g. find(name="a")) -> only tags have names -> tag
+    #
+    # The confusing and controversial case of find(name="a", string="foo")
+    # also hits this overload.
+    @overload
+    def find(
+        self,
+        name: _FindMethodName,
+        attrs: Optional[_StrainableAttributes] = None,
+        recursive: bool = True,
+        string: Optional[_StrainableString] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _AtMostOneTag:
+        ...
+
+    # Some lesser-used cases are not covered by the overrides. Those
+    # cases will hit this method directly and return a very general
+    # type which will need to be cast after the call.
+    def find(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
+        recursive: bool = True,
+        string: Optional[_StrainableString] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> Union[_AtMostOneTag,_AtMostOneNavigableString,_AtMostOneElement]:
         """Look in the children of this PageElement and find the first
         PageElement that matches the given criteria.
 
@@ -2701,27 +3120,96 @@ class Tag(PageElement):
             recursive search of this Tag's children. Otherwise,
             only the direct children will be considered.
         :param string: A filter on the `Tag.string` attribute.
-        :param limit: Stop looking after finding this many results.
         :kwargs: Additional filters on attribute values.
         """
-        r = None
-        results = self.find_all(name, attrs, recursive, string, 1, _stacklevel=3, **kwargs)
-        if results:
-            r = results[0]
-        return r
+        tags = self._find_all(name, attrs, string, 1, self._generator_for_recursive(recursive), **kwargs)
+        if tags:
+            return tags[0]
+        return None
 
     findChild = _deprecated_function_alias("findChild", "find", "3.0.0")
 
+    # e.g. find_all(string="foo")
+    #   -> string information but no tag information
+    #     -> strings
+    #
+    # Also covers unlikely cases like find_all(name=None, string="foo")
+    #
+    # "To mark parameters as keyword-only, indicating the parameters
+    #  must be passed by keyword argument, place an * in the arguments
+    #  list just before the first keyword-only parameter."
+    #
+    #    --https://peps.python.org/pep-0570/#keyword-only-arguments
+    @overload
     def find_all(
         self,
-        name: _FindMethodName = None,
-        attrs: _StrainableAttributes = {},
+        name: None = None,
+        attrs: None = None,
+        recursive: bool = True,
+        *,
+        string: _StrainableString,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeNavigableStrings:
+        ...
+
+    # e.g. find_all() -> default behavior -> tags
+    #      find_all(attr="value") -> only tags have attrs -> tags
+    @overload
+    def find_all(
+        self,
+        name: None = None,
+        attrs: None = None,
+        recursive: bool = True,
+        string: None = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeTags:
+        ...
+
+    # e.g. find_all(attrs=dict(attr="value"))
+    #   -> only tags have attrs
+    #      -> tags
+    @overload
+    def find_all(
+        self,
+        name: None,
+        attrs: _StrainableAttributes,
         recursive: bool = True,
         string: Optional[_StrainableString] = None,
         limit: Optional[int] = None,
-        _stacklevel: int = 2,
         **kwargs: _StrainableAttribute,
-    ) -> _QueryResults:
+    ) -> _SomeTags:
+        ...
+
+    # e.g. find_all(name="a")) -> only tags have names -> tags
+    #
+    # The confusing and controversial case of find_all(name="a", string="foo")
+    # also hits this overload.
+    @overload
+    def find_all(
+        self,
+        name: _FindMethodName,
+        attrs: Optional[_StrainableAttributes] = None,
+        recursive: bool = True,
+        string: Optional[_StrainableString] = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> _SomeTags:
+        ...
+
+    # Without the clues above, we don't know whether the method will
+    # return strings or tags. However every common case will trigger one
+    # of the overloads and give us the clue we need.
+    def find_all(
+        self,
+        name: _OptionalFindMethodName = None,
+        attrs: Optional[_StrainableAttributes] = None,
+        recursive: bool = True,
+        string: Optional[_StrainableString] = None,
+        limit: Optional[int] = None,
+        **kwargs: _StrainableAttribute,
+    ) -> Union[_SomeTags,_SomeNavigableStrings]:
         """Look in the children of this `PageElement` and find all
         `PageElement` objects that match the given criteria.
 
@@ -2734,15 +3222,28 @@ class Tag(PageElement):
             recursive search of this PageElement's children. Otherwise,
             only the direct children will be considered.
         :param limit: Stop looking after finding this many results.
-        :param _stacklevel: Used internally to improve warning messages.
         :kwargs: Additional filters on attribute values.
         """
-        generator = self.descendants
-        if not recursive:
-            generator = self.children
-        return self._find_all(
-            name, attrs, string, limit, generator, _stacklevel=_stacklevel + 1, **kwargs
-        )
+        generator = self._generator_for_recursive(recursive)
+
+        if string is not None and (name is not None or attrs is not None or kwargs):
+            # TODO: Using the @overload decorator to express the three ways you
+            # could get into this path is way too much code for a rarely(?) used
+            # feature.
+            return cast(ResultSet[Tag],
+                        self._find_all(name, attrs, string, limit, generator,
+                                       **kwargs))
+
+        if string is None:
+            # If string is None, we're searching for tags.
+            return cast(ResultSet[Tag], self._find_all(
+                name, attrs, None, limit, generator, **kwargs
+            ))
+
+        # Otherwise, we're searching for strings.
+        return cast(ResultSet[NavigableString], self._find_all(
+            None, None, string, limit, generator, **kwargs
+        ))
 
     findAll = _deprecated_function_alias("findAll", "find_all", "4.0.0")
     findChildren = _deprecated_function_alias("findChildren", "find_all", "3.0.0")
@@ -2777,6 +3278,16 @@ class Tag(PageElement):
             successor = current.next_element
             yield current
             current = successor
+
+    def _generator_for_recursive(self, recursive:bool) -> Iterator[PageElement]:
+        """Helper method to process the boolean `recursive` argument
+        for find* methods.
+
+        :return: the appropriate generator
+        """
+        if recursive:
+            return self.descendants
+        return self.children
 
     # CSS selector code
     def select_one(
@@ -2857,7 +3368,6 @@ class Tag(PageElement):
 
 _PageElementT = TypeVar("_PageElementT", bound=PageElement)
 
-
 class ResultSet(List[_PageElementT], Generic[_PageElementT]):
     """A ResultSet is a list of `PageElement` objects, gathered as the result
     of matching an :py:class:`ElementFilter` against a parse tree. Basically, a list of
@@ -2877,7 +3387,6 @@ class ResultSet(List[_PageElementT], Generic[_PageElementT]):
         raise AttributeError(
             f"""ResultSet object has no attribute "{key}". You're probably treating a list of elements like a single element. Did you call find_all() when you meant to call find()?"""
         )
-
 
 # Now that all the classes used by SoupStrainer have been defined,
 # import SoupStrainer itself into this module to preserve the

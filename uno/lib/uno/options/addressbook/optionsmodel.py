@@ -27,65 +27,46 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from ...unotool import createService
-from ...unotool import getConfiguration
-from ...unotool import getSimpleFile
+from ..setup import canUpdatePackages
 
-from ...helper import getDataBaseUrl
+from ..unotool import getConfiguration
+from ..unotool import getStringResource
 
-from ...configuration import g_identifier
-from ...configuration import g_implementation
+from ..configuration import g_identifier
+
+import traceback
 
 
 class OptionsModel():
     def __init__(self, ctx):
-        self._ctx = ctx
+        self._update = canUpdatePackages()
         self._config = getConfiguration(ctx, g_identifier, True)
-        self._url = getDataBaseUrl(ctx)
-        self._factor = 60
+        self._resolver = getStringResource(ctx, g_identifier, 'dialogs', 'OptionsDialog')
+        self._resources = {'Links': 'OptionsDialog.Hyperlink%s.Url'}
 
     @property
-    def _Timeout(self):
-        timeout = self._config.getByName('ReplicateTimeout')
-        return timeout // self._factor
-    @property
-    def _ViewName(self):
-        return self._config.getByName('AddressBookName')
+    def _Setup(self):
+        return self._config.getByName('SetupUpdate')
 
-# OptionsModel getter methods
+# OptionModel getter methods
     def getViewData(self):
-        return self._Timeout, self._ViewName, self._hasDatasource()
+        return self._update, self._getLinks()
 
-    def getTimeout(self):
-         return self._Timeout
+    def getInitData(self, state):
+        return self._Setup, state
 
-    def getViewName(self):
-        return self._ViewName
+    def getConfig(self):
+        return self._config
 
-    def getDatasourceUrl(self):
-        return self._url
+# OptionModel setter methods
+    def saveData(self, setup):
+        if self._update and setup != self._Setup:
+            self._config.replaceByName('SetupUpdate', setup)
 
-# OptionsModel setter methods
-    def loadDriver(self):
-        try:
-            driver = createService(self._ctx, g_implementation)
-        except:
-            # Nothing to do the error is already logged
-            pass
-
-# OptionsModel getter methods
-    def setViewData(self, timeout, view):
-        changed = False
-        if timeout != self._Timeout:
-            self._config.replaceByName('ReplicateTimeout', timeout * self._factor)
-        if view != self._ViewName:
-            self._config.replaceByName('AddressBookName', view)
-        if self._config.hasPendingChanges():
-            self._config.commitChanges()
-            changed = True
-        return changed
-
-# OptionsModel private getter methods
-    def _hasDatasource(self):
-        return getSimpleFile(self._ctx).exists(self._url)
+    def _getLinks(self):
+        links = []
+        for i in range(1, 2):
+            resource = self._resources.get('Links') % i
+            links.append(self._resolver.resolveString(resource))
+        return tuple(links)
 

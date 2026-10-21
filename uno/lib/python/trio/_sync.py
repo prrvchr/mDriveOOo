@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Literal, Protocol
 
 import attrs
 
@@ -111,6 +111,12 @@ class Event:
 
         """
         return EventStatistics(tasks_waiting=len(self._tasks))
+
+    def __bool__(self) -> Literal[True]:
+        """Raise error."""
+        raise NotImplementedError(
+            "Trio events cannot be treated as bools; consider using `event.is_set()` instead."
+        )
 
 
 class _HasAcquireRelease(Protocol):
@@ -251,8 +257,8 @@ class CapacityLimiter(AsyncContextManagerMixin):
     def total_tokens(self, new_total_tokens: int | float) -> None:  # noqa: PYI041
         if not isinstance(new_total_tokens, int) and new_total_tokens != math.inf:
             raise TypeError("total_tokens must be an int or math.inf")
-        if new_total_tokens < 1:
-            raise ValueError("total_tokens must be >= 1")
+        if new_total_tokens < 0:
+            raise ValueError("total_tokens must be >= 0")
         self._total_tokens = new_total_tokens
         self._wake_waiters()
 

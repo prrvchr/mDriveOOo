@@ -50,8 +50,6 @@ from .datasource import DataSource
 from .unotool import getUrlTransformer
 from .unotool import parseUrl
 
-from .helper import getDataBaseConnection
-from .helper import getDataBaseUrl
 from .helper import getExceptionMessage
 from .helper import getPresentationUrl
 
@@ -77,9 +75,7 @@ class ContentProvider(unohelper.Base,
     @property
     def _datasource(self):
         if ContentProvider.__datasource is None:
-            url = getDataBaseUrl(self._ctx)
-            connection = getDataBaseConnection(self._ctx, self, self._logger, url)
-            datasource = DataSource(self._ctx, self._logger, connection, url)
+            datasource = DataSource(self._ctx, self._logger)
             ContentProvider.__datasource = datasource
         return ContentProvider.__datasource
 

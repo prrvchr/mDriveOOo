@@ -5,6 +5,8 @@ See <http://www.w3.org/TeamSubmission/turtle/> for syntax specification.
 
 from __future__ import annotations
 
+import re
+import warnings
 from collections import defaultdict
 from typing import (
     IO,
@@ -17,6 +19,8 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
+    Union,
 )
 
 from rdflib.exceptions import Error
@@ -25,6 +29,8 @@ from rdflib.namespace import RDF, RDFS
 from rdflib.serializer import Serializer
 from rdflib.term import BNode, Literal, Node, URIRef
 
+_StrT = TypeVar("_StrT", bound=str)
+
 if TYPE_CHECKING:
     from rdflib.graph import _PredicateType, _SubjectType, _TripleType
 
@@ -32,11 +38,16 @@ __all__ = ["RecursiveSerializer", "TurtleSerializer"]
 
 
 class RecursiveSerializer(Serializer):
+    """Base class for recursive serializers."""
+
     topClasses = [RDFS.Class]
     predicateOrder = [RDF.type, RDFS.label]
     maxDepth = 10
     indentString = "  "
     roundtrip_prefixes: Tuple[Any, ...] = ()
+    LOCALNAME_PECRENT_CHARACTER_REQUIRING_ESCAPE_REGEX = re.compile(
+        r"%(?![0-9A-Fa-f]{2})"
+    )
 
     def __init__(self, store: Graph):
         super(RecursiveSerializer, self).__init__(store)
@@ -72,7 +83,8 @@ class RecursiveSerializer(Serializer):
 
         for classURI in self.topClasses:
             members = list(self.store.subjects(RDF.type, classURI))
-            members.sort()
+            # type error: All overload variants of "sort" of "list" require at least one argument
+            members.sort()  # type: ignore[call-overload]
 
             subjects.extend(members)
             for member in members:
@@ -139,7 +151,8 @@ class RecursiveSerializer(Serializer):
         Sort the lists of values.  Return a sorted list of properties."""
         # Sort object lists
         for prop, objects in properties.items():
-            objects.sort()
+            # type error: All overload variants of "sort" of "list" require at least one argument
+            objects.sort()  # type: ignore[call-overload]
 
         # Make sorted list of properties
         propList: List[_PredicateType] = []
@@ -149,7 +162,8 @@ class RecursiveSerializer(Serializer):
                 propList.append(prop)
                 seen[prop] = True
         props = list(properties.keys())
-        props.sort()
+        # type error: All overload variants of "sort" of "list" require at least one argument
+        props.sort()  # type: ignore[call-overload]
         for prop in props:
             if prop not in seen:
                 propList.append(prop)
@@ -169,6 +183,18 @@ class RecursiveSerializer(Serializer):
         # type error: Item "None" of "Optional[IO[bytes]]" has no attribute "write"
         self.stream.write(text.encode(self.encoding, "replace"))  # type: ignore[union-attr]
 
+    def relativize(self, uri: _StrT) -> Union[_StrT, URIRef]:
+        base = self.base
+        if (
+            base is not None
+            and uri.startswith(base)
+            and "#" not in uri.replace(base, "")
+            and "/" not in uri.replace(base, "")
+        ):
+            # type error: Incompatible types in assignment (expression has type "str", variable has type "Node")
+            uri = URIRef(uri.replace(base, "", 1))  # type: ignore[assignment]
+        return uri
+
 
 SUBJECT = 0
 VERB = 1
@@ -179,8 +205,13 @@ _SPACIOUS_OUTPUT = False
 
 
 class TurtleSerializer(RecursiveSerializer):
+    """Turtle RDF graph serializer."""
+
     short_name = "turtle"
     indentString = "    "
+    LOCALNAME_PECRENT_CHARACTER_REQUIRING_ESCAPE_REGEX = re.compile(
+        r"%(?![0-9A-Fa-f]{2})"
+    )
 
     def __init__(self, store: Graph):
         self._ns_rewrite: Dict[str, str] = {}
@@ -263,19 +294,29 @@ class TurtleSerializer(RecursiveSerializer):
     def preprocessTriple(self, triple: _TripleType) -> None:
         super(TurtleSerializer, self).preprocessTriple(triple)
         for i, node in enumerate(triple):
-            if i == VERB and node in self.keywords:
-                # predicate is a keyword
-                continue
+            if i == VERB:
+                if node in self.keywords:
+                    # predicate is a keyword
+                    continue
+                if (
+                    self.base is not None
+                    and isinstance(node, URIRef)
+                    and node.startswith(self.base)
+                    and "#" not in node.replace(self.base, "")
+                    and "/" not in node.replace(self.base, "")
+                ):
+                    # predicate corresponds to base namespace
+                    continue
             # Don't use generated prefixes for subjects and objects
-            self.getQName(node, gen_prefix=(i == VERB))
+            self.get_pname(node, gen_prefix=(i == VERB))
             if isinstance(node, Literal) and node.datatype:
-                self.getQName(node.datatype, gen_prefix=_GEN_QNAME_FOR_DT)
+                self.get_pname(node.datatype, gen_prefix=_GEN_QNAME_FOR_DT)
         p = triple[1]
         if isinstance(p, BNode):  # hmm - when is P ever a bnode?
             self._references[p] += 1
 
-    # TODO: Rename to get_pname
-    def getQName(self, uri: Node, gen_prefix: bool = True) -> Optional[str]:
+    # Refer to Productions for terminals PNAME_NS and PNAME_LN https://www.w3.org/TR/turtle/#sec-grammar-grammar
+    def get_pname(self, uri: Node, gen_prefix: bool = True) -> Optional[str]:
         if not isinstance(uri, URIRef):
             return None
 
@@ -295,15 +336,29 @@ class TurtleSerializer(RecursiveSerializer):
 
         prefix, namespace, local = parts
 
+        # To understand treatment of % character refer to Productions for terminal PLX at
+        # https://www.w3.org/TR/turtle/#grammar-production-PLX
+        # Only % NOT followed by two hex chars requires manual backslash escaping
         local = local.replace(r"(", r"\(").replace(r")", r"\)")
+        local = self.LOCALNAME_PECRENT_CHARACTER_REQUIRING_ESCAPE_REGEX.sub(
+            "\\%", local
+        )
 
-        # QName cannot end with .
+        # PName cannot end with .
         if local.endswith("."):
             return None
 
         prefix = self.addNamespace(prefix, namespace)
 
         return "%s:%s" % (prefix, local)
+
+    def getQName(self, uri: Node, gen_prefix: bool = True) -> Optional[str]:
+        warnings.warn(
+            "TurtleSerializer.getQName is deprecated, use TurtleSerializer.get_pname instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.get_pname(uri, gen_prefix)
 
     def startDocument(self) -> None:
         self._started = True
@@ -360,12 +415,12 @@ class TurtleSerializer(RecursiveSerializer):
         if isinstance(node, Literal):
             return node._literal_n3(
                 use_plain=True,
-                qname_callback=lambda dt: self.getQName(dt, _GEN_QNAME_FOR_DT),
+                qname_callback=lambda dt: self.get_pname(dt, _GEN_QNAME_FOR_DT),
             )
         else:
             node = self.relativize(node)  # type: ignore[type-var]
 
-            return self.getQName(node, position == VERB) or node.n3()
+            return self.get_pname(node, position == VERB) or node.n3()
 
     def p_squared(self, node: Node, position: int, newline: bool = False) -> bool:
         if (

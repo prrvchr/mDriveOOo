@@ -162,7 +162,7 @@ def format_host_port(host: str | bytes, port: int | str) -> str:
         return f"{host}:{port}"
 
 
-# Twisted's HostnameEndpoint has a good set of configurables:
+# Twisted's HostnameEndpoint has a good set of configurations:
 #   https://twistedmatrix.com/documents/current/api/twisted.internet.endpoints.HostnameEndpoint.html
 #
 # - per-connection timeout
@@ -336,7 +336,7 @@ async def open_tcp_stream(
                 # But on some versions of Linux, we can re-enable sharing of
                 # local ports by setting a special flag. This flag tells
                 # bind() to only bind the IP, and not the port. That way,
-                # connect() is allowed to pick the the port, and it can do a
+                # connect() is allowed to pick the port, and it can do a
                 # better job of it because it knows the remote IP/port.
                 with suppress(OSError, AttributeError):
                     sock.setsockopt(
@@ -357,7 +357,7 @@ async def open_tcp_stream(
             # Success! Save the winning socket and cancel all outstanding
             # connection attempts.
             winning_socket = sock
-            nursery.cancel_scope.cancel()
+            nursery.cancel_scope.cancel(reason="successfully found a socket")
         except OSError as exc:
             # This connection attempt failed, but the next one might
             # succeed. Save the error for later so we can report it if
@@ -374,14 +374,6 @@ async def open_tcp_stream(
                 # create an event to indicate connection failure,
                 # allowing the next target to be tried early
                 attempt_failed = trio.Event()
-
-                # workaround to check types until typing of nursery.start_soon improved
-                if TYPE_CHECKING:
-                    await attempt_connect(
-                        (address_family, socket_type, proto),
-                        addr,
-                        attempt_failed,
-                    )
 
                 nursery.start_soon(
                     attempt_connect,

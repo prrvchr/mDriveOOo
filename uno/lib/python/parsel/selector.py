@@ -1,45 +1,46 @@
 """XPath and JMESPath selectors based on the lxml and jmespath Python
 packages."""
 
+from __future__ import annotations
+
+import codecs
 import json
+import re
 import typing
 import warnings
+from functools import lru_cache
 from io import BytesIO
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Dict,
-    List,
     Literal,
-    Mapping,
-    Optional,
-    Pattern,
     SupportsIndex,
-    Tuple,
-    Type,
+    TypeAlias,
     TypedDict,
     TypeVar,
-    Union,
 )
-from warnings import warn
 
 import jmespath
 from lxml import etree, html
-from packaging.version import Version
 
 from .csstranslator import GenericTranslator, HTMLTranslator
 from .utils import extract_regex, flatten, iflatten, shorten
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from re import Pattern
+
+    # typing.Self requires Python 3.11
+    from typing_extensions import Self
+
+
 _SelectorType = TypeVar("_SelectorType", bound="Selector")
-_ParserType = Union[etree.XMLParser, etree.HTMLParser]
+_ParserType: TypeAlias = etree.XMLParser | etree.HTMLParser
 # simplified _OutputMethodArg from types-lxml
 _TostringMethodType = Literal[
     "html",
     "xml",
 ]
-
-lxml_version = Version(etree.__version__)
-lxml_huge_tree_version = Version("4.2")
-LXML_SUPPORTS_HUGE_TREE = lxml_version >= lxml_huge_tree_version
 
 
 class CannotRemoveElementWithoutRoot(Exception):
@@ -61,12 +62,12 @@ class SafeXMLParser(etree.XMLParser):
 
 
 class CTGroupValue(TypedDict):
-    _parser: Union[Type[etree.XMLParser], Type[html.HTMLParser]]
-    _csstranslator: Union[GenericTranslator, HTMLTranslator]
+    _parser: type[etree.XMLParser | html.HTMLParser]
+    _csstranslator: GenericTranslator | HTMLTranslator
     _tostring_method: _TostringMethodType
 
 
-_ctgroup: Dict[str, CTGroupValue] = {
+_ctgroup: dict[str, CTGroupValue] = {
     "html": {
         "_parser": html.HTMLParser,
         "_csstranslator": HTMLTranslator(),
@@ -80,68 +81,112 @@ _ctgroup: Dict[str, CTGroupValue] = {
 }
 
 
-def _xml_or_html(type: Optional[str]) -> str:
-    return "xml" if type == "xml" else "html"
+def _xml_or_html(type_: str | None) -> str:
+    return "xml" if type_ == "xml" else "html"
+
+
+_ENCODING_ERROR_TYPES = frozenset(
+    {etree.ErrorTypes.ERR_INVALID_CHAR, etree.ErrorTypes.ERR_INVALID_ENCODING}
+)
+
+
+def _has_encoding_error(parser: _ParserType) -> bool:
+    return any(error.type in _ENCODING_ERROR_TYPES for error in parser.error_log)
+
+
+def _root_from_decoded_body(
+    body: bytes,
+    parser_cls: type[_ParserType],
+    base_url: str | None,
+    huge_tree: bool,
+    encoding: str,
+) -> etree._Element:
+    """Create a root node from *body*, with undecodable bytes replaced."""
+    return create_root_node(
+        body.decode(encoding, errors="replace"),
+        parser_cls,
+        base_url=base_url,
+        huge_tree=huge_tree,
+    )
+
+
+_XML_DECLARATION = re.compile(r"[\s\ufeff]*<\?xml\s")
+
+
+def _detect_xml_or_html(text: str) -> str:
+    return "xml" if _XML_DECLARATION.match(text) else "html"
 
 
 def create_root_node(
     text: str,
-    parser_cls: Type[_ParserType],
-    base_url: Optional[str] = None,
-    huge_tree: bool = LXML_SUPPORTS_HUGE_TREE,
+    parser_cls: type[_ParserType],
+    base_url: str | None = None,
+    huge_tree: bool = True,
     body: bytes = b"",
     encoding: str = "utf-8",
 ) -> etree._Element:
     """Create root node for text using given parser class."""
-    if not text:
-        body = body.replace(b"\x00", b"").strip()
-    else:
+    if text:
         body = text.strip().replace("\x00", "").encode(encoding) or b"<html/>"
-
-    if huge_tree and LXML_SUPPORTS_HUGE_TREE:
-        parser = parser_cls(recover=True, encoding=encoding, huge_tree=True)
-        root = etree.fromstring(body, parser=parser, base_url=base_url)
+    elif codecs.lookup(encoding).name != "utf-8":
+        # lxml handles bytes that the declared encoding cannot decode by
+        # truncating the document there, and characters that span several
+        # bytes, as in UTF-16, are broken by the null and whitespace stripping
+        # below. Only UTF-8 bytes are passed as is, since lxml does report
+        # invalid UTF-8, and it covers most input.
+        return _root_from_decoded_body(body, parser_cls, base_url, huge_tree, encoding)
     else:
-        parser = parser_cls(recover=True, encoding=encoding)
+        body = body.replace(b"\x00", b"").strip() or b"<html/>"
+
+    parser = parser_cls(recover=True, encoding=encoding, huge_tree=huge_tree)
+    root = None
+    try:
         root = etree.fromstring(body, parser=parser, base_url=base_url)
+    except etree.XMLSyntaxError:
+        if text or not _has_encoding_error(parser):
+            raise
+    if not text and _has_encoding_error(parser):
+        # Invalid bytes reach the tree as is, and reading them raises
+        # UnicodeDecodeError from lxml.
+        return _root_from_decoded_body(body, parser_cls, base_url, huge_tree, encoding)
+    if not huge_tree:
         for error in parser.error_log:
             if "use XML_PARSE_HUGE option" in error.message:
                 warnings.warn(
-                    f"Input data is too big. Upgrade to lxml "
-                    f"{lxml_huge_tree_version} or later for huge_tree support."
+                    "Input data is too big. Set huge_tree=True for huge_tree support.",
+                    stacklevel=2,
                 )
     if root is None:
         root = etree.fromstring(b"<html/>", parser=parser, base_url=base_url)
     return root
 
 
-class SelectorList(List[_SelectorType]):
+class SelectorList(list[_SelectorType]):
     """
     The :class:`SelectorList` class is a subclass of the builtin ``list``
     class, which provides a few additional methods.
     """
 
     @typing.overload
-    def __getitem__(self, pos: "SupportsIndex") -> _SelectorType:
+    def __getitem__(self, pos: SupportsIndex) -> _SelectorType:
         pass
 
     @typing.overload
-    def __getitem__(self, pos: slice) -> "SelectorList[_SelectorType]":
+    def __getitem__(self, pos: slice) -> SelectorList[_SelectorType]:
         pass
 
     def __getitem__(
-        self, pos: Union["SupportsIndex", slice]
-    ) -> Union[_SelectorType, "SelectorList[_SelectorType]"]:
+        self, pos: SupportsIndex | slice
+    ) -> _SelectorType | SelectorList[_SelectorType]:
         o = super().__getitem__(pos)
         if isinstance(pos, slice):
             return self.__class__(typing.cast("SelectorList[_SelectorType]", o))
-        else:
-            return typing.cast(_SelectorType, o)
+        return typing.cast("_SelectorType", o)
 
     def __getstate__(self) -> None:
         raise TypeError("can't pickle SelectorList objects")
 
-    def jmespath(self, query: str, **kwargs: Any) -> "SelectorList[_SelectorType]":
+    def jmespath(self, query: str, **kwargs: Any) -> SelectorList[_SelectorType]:
         """
         Call the ``.jmespath()`` method for each element in this list and return
         their results flattened as another :class:`SelectorList`.
@@ -158,9 +203,9 @@ class SelectorList(List[_SelectorType]):
     def xpath(
         self,
         xpath: str,
-        namespaces: Optional[Mapping[str, str]] = None,
+        namespaces: Mapping[str, str] | None = None,
         **kwargs: Any,
-    ) -> "SelectorList[_SelectorType]":
+    ) -> SelectorList[_SelectorType]:
         """
         Call the ``.xpath()`` method for each element in this list and return
         their results flattened as another :class:`SelectorList`.
@@ -181,7 +226,7 @@ class SelectorList(List[_SelectorType]):
             flatten([x.xpath(xpath, namespaces=namespaces, **kwargs) for x in self])
         )
 
-    def css(self, query: str) -> "SelectorList[_SelectorType]":
+    def css(self, query: str) -> SelectorList[_SelectorType]:
         """
         Call the ``.css()`` method for each element in this list and return
         their results flattened as another :class:`SelectorList`.
@@ -190,15 +235,13 @@ class SelectorList(List[_SelectorType]):
         """
         return self.__class__(flatten([x.css(query) for x in self]))
 
-    def re(
-        self, regex: Union[str, Pattern[str]], replace_entities: bool = True
-    ) -> List[str]:
+    def re(self, regex: str | Pattern[str], replace_entities: bool = True) -> list[str]:
         """
         Call the ``.re()`` method for each element in this list and return
         their results flattened, as a list of strings.
 
         By default, character entity references are replaced by their
-        corresponding character (except for ``&amp;`` and ``&lt;``.
+        corresponding character (except for ``&amp;`` and ``&lt;``).
         Passing ``replace_entities`` as ``False`` switches off these
         replacements.
         """
@@ -207,16 +250,16 @@ class SelectorList(List[_SelectorType]):
     @typing.overload
     def re_first(
         self,
-        regex: Union[str, Pattern[str]],
+        regex: str | Pattern[str],
         default: None = None,
         replace_entities: bool = True,
-    ) -> Optional[str]:
+    ) -> str | None:
         pass
 
     @typing.overload
     def re_first(
         self,
-        regex: Union[str, Pattern[str]],
+        regex: str | Pattern[str],
         default: str,
         replace_entities: bool = True,
     ) -> str:
@@ -224,30 +267,30 @@ class SelectorList(List[_SelectorType]):
 
     def re_first(
         self,
-        regex: Union[str, Pattern[str]],
-        default: Optional[str] = None,
+        regex: str | Pattern[str],
+        default: str | None = None,
         replace_entities: bool = True,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
-        Call the ``.re()`` method for the first element in this list and
-        return the result in an string. If the list is empty or the
+        Call the ``.re()`` method for elements in this list and return the
+        first matching result as a string. If the list is empty or the
         regex doesn't match anything, return the default value (``None`` if
         the argument is not provided).
 
         By default, character entity references are replaced by their
-        corresponding character (except for ``&amp;`` and ``&lt;``.
+        corresponding character (except for ``&amp;`` and ``&lt;``).
         Passing ``replace_entities`` as ``False`` switches off these
         replacements.
         """
         for el in iflatten(
             x.re(regex, replace_entities=replace_entities) for x in self
         ):
-            return typing.cast(str, el)
+            return typing.cast("str", el)
         return default
 
-    def getall(self) -> List[str]:
+    def getall(self) -> list[str]:
         """
-        Call the ``.get()`` method for each element is this list and return
+        Call the ``.get()`` method for each element in this list and return
         their results flattened, as a list of strings.
         """
         return [x.get() for x in self]
@@ -255,14 +298,14 @@ class SelectorList(List[_SelectorType]):
     extract = getall
 
     @typing.overload
-    def get(self, default: None = None) -> Optional[str]:
+    def get(self, default: None = None) -> str | None:
         pass
 
     @typing.overload
     def get(self, default: str) -> str:
         pass
 
-    def get(self, default: Optional[str] = None) -> Any:
+    def get(self, default: str | None = None) -> Any:
         """
         Return the result of ``.get()`` for the first element in this list.
         If the list is empty, return the default value.
@@ -282,18 +325,6 @@ class SelectorList(List[_SelectorType]):
             return x.attrib
         return {}
 
-    def remove(self) -> None:  # type: ignore[override]
-        """
-        Remove matched nodes from the parent for each element in this list.
-        """
-        warn(
-            "Method parsel.selector.SelectorList.remove is deprecated, please use parsel.selector.SelectorList.drop method instead",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        for x in self:
-            x.remove()
-
     def drop(self) -> None:
         """
         Drop matched nodes from the parent for each element in this list.
@@ -305,88 +336,117 @@ class SelectorList(List[_SelectorType]):
 _NOT_SET = object()
 
 
-def _get_root_from_text(text: str, *, type: str, **lxml_kwargs: Any) -> etree._Element:
-    return create_root_node(text, _ctgroup[type]["_parser"], **lxml_kwargs)
+def _get_root_from_text(text: str, *, type_: str, **lxml_kwargs: Any) -> etree._Element:
+    return create_root_node(text, _ctgroup[type_]["_parser"], **lxml_kwargs)
 
 
 def _get_root_and_type_from_bytes(
     body: bytes,
     encoding: str,
     *,
-    input_type: Optional[str],
+    input_type: str | None,
     **lxml_kwargs: Any,
-) -> Tuple[Any, str]:
+) -> tuple[Any, str]:
     if input_type == "text":
         return body.decode(encoding), input_type
-    if encoding == "utf-8":
+    if input_type in ("json", None) and codecs.lookup(encoding).name == "utf-8":
         try:
             data = json.load(BytesIO(body))
         except ValueError:
             data = _NOT_SET
-        if data is not _NOT_SET:
+        if data is not _NOT_SET and (input_type == "json" or _is_json_document(data)):
             return data, "json"
     if input_type == "json":
         return None, "json"
     assert input_type in ("html", "xml", None)  # nosec
-    type = _xml_or_html(input_type)
+    type_ = input_type or _detect_xml_or_html(body[:256].decode(encoding, "ignore"))
     root = create_root_node(
         text="",
         body=body,
         encoding=encoding,
-        parser_cls=_ctgroup[type]["_parser"],
+        parser_cls=_ctgroup[type_]["_parser"],
         **lxml_kwargs,
     )
-    return root, type
+    return root, type_
 
 
 def _get_root_and_type_from_text(
-    text: str, *, input_type: Optional[str], **lxml_kwargs: Any
-) -> Tuple[Any, str]:
+    text: str, *, input_type: str | None, **lxml_kwargs: Any
+) -> tuple[Any, str]:
     if input_type == "text":
         return text, input_type
-    try:
-        data = json.loads(text)
-    except ValueError:
-        data = _NOT_SET
-    if data is not _NOT_SET:
-        return data, "json"
+    if input_type in ("json", None):
+        try:
+            data = json.loads(text)
+        except ValueError:
+            data = _NOT_SET
+        if data is not _NOT_SET and (input_type == "json" or _is_json_document(data)):
+            return data, "json"
     if input_type == "json":
         return None, "json"
     assert input_type in ("html", "xml", None)  # nosec
-    type = _xml_or_html(input_type)
-    root = _get_root_from_text(text, type=type, **lxml_kwargs)
-    return root, type
+    type_ = input_type or _detect_xml_or_html(text)
+    root = _get_root_from_text(text, type_=type_, **lxml_kwargs)
+    return root, type_
 
 
-def _get_root_type(root: Any, *, input_type: Optional[str]) -> str:
-    if isinstance(root, etree._Element):  # pylint: disable=protected-access
+# lxml registers the functions of these namespaces on every call of an
+# evaluator that maps them, and with libxml2 2.13+ every registration after the
+# first adds an entry to the evaluator's error log, which cannot be cleared.
+_EXSLT_NAMESPACES = frozenset(
+    f"http://exslt.org/{name}"
+    for name in ("dates-and-times", "math", "sets", "strings")
+)
+
+
+@lru_cache(maxsize=2048)
+def _compile_xpath(
+    query: str, namespaces: tuple[tuple[str, str], ...], smart_strings: bool
+) -> etree.XPath:
+    return etree.XPath(query, namespaces=dict(namespaces), smart_strings=smart_strings)
+
+
+def _get_xpath_evaluator(
+    query: str, namespaces: dict[str, str], smart_strings: bool
+) -> etree.XPath:
+    namespaces = {
+        prefix: uri
+        for prefix, uri in namespaces.items()
+        if uri not in _EXSLT_NAMESPACES
+        or not isinstance(query, str)
+        or f"{prefix}:" in query
+    }
+    if _EXSLT_NAMESPACES.intersection(namespaces.values()):
+        return etree.XPath(query, namespaces=namespaces, smart_strings=smart_strings)
+    return _compile_xpath(query, tuple(sorted(namespaces.items())), smart_strings)
+
+
+def _get_root_type(root: Any, *, input_type: str | None) -> str:
+    if isinstance(root, etree._Element):
         if input_type in {"json", "text"}:
             raise ValueError(
                 f"Selector got an lxml.etree._Element object as root, "
                 f"and {input_type!r} as type."
             )
         return _xml_or_html(input_type)
-    elif isinstance(root, (dict, list)) or _is_valid_json(root):
-        return "json"
     return input_type or "json"
 
 
-def _is_valid_json(text: str) -> bool:
+def _is_json_document(data: Any) -> bool:
+    """Return whether *data* is a JSON object or array.
+
+    Scalar JSON values are valid JSON documents as well, but they are also
+    valid text and HTML, which is what they usually are when type detection
+    gets to see them, so type detection ignores them.
+    """
+    return isinstance(data, (dict, list))
+
+
+def _load_json_or_none(text: str | None) -> Any:
     try:
-        json.loads(text)
+        return json.loads(text)  # type: ignore[arg-type]
     except (TypeError, ValueError):
-        return False
-    else:
-        return True
-
-
-def _load_json_or_none(text: str) -> Any:
-    if isinstance(text, (str, bytes, bytearray)):
-        try:
-            return json.loads(text)
-        except ValueError:
-            return None
-    return None
+        return None
 
 
 class Selector:
@@ -398,33 +458,35 @@ class Selector:
 
     ``text`` is an ``str`` object.
 
-    ``body`` is a ``bytes`` object. It can be used together with the
+    ``body`` is a ``bytes`` or ``bytearray`` object. It can be used together with the
     ``encoding`` argument instead of the ``text`` argument.
 
-    ``type`` defines the selector type. It can be ``"html"`` (default),
-    ``"json"``, or ``"xml"``.
+    ``type`` defines the selector type. It can be ``"html"``, ``"json"``,
+    ``"xml"`` or ``"text"``. If not specified, the input is handled as
+    ``"json"`` if it is a JSON object or array, as ``"xml"`` if it starts with
+    an XML declaration, and as ``"html"`` otherwise.
 
     ``base_url`` allows setting a URL for the document. This is needed when looking up external entities with relative paths.
     See the documentation for :func:`lxml.etree.fromstring` for more information.
 
     ``huge_tree`` controls the lxml/libxml2 feature that forbids parsing
     certain large documents to protect from possible memory exhaustion. The
-    argument is ``True`` by default if the installed lxml version supports it,
-    which disables the protection to allow parsing such documents. Set it to
-    ``False`` if you want to enable the protection.
-    See `this lxml FAQ entry <https://lxml.de/FAQ.html#is-lxml-vulnerable-to-xml-bombs>`_
-    for more information.
+    argument is ``True`` by default, which disables the protection to allow
+    parsing such documents. Set it to ``False`` if you want to enable the
+    protection. See `this lxml FAQ entry
+    <https://lxml.de/FAQ.html#is-lxml-vulnerable-to-xml-bombs>`_ for more
+    information.
     """
 
     __slots__ = [
-        "namespaces",
-        "type",
+        "__weakref__",
         "_expr",
         "_huge_tree",
-        "root",
         "_text",
         "body",
-        "__weakref__",
+        "namespaces",
+        "root",
+        "type",
     ]
 
     _default_namespaces = {
@@ -442,26 +504,19 @@ class Selector:
 
     def __init__(
         self,
-        text: Optional[str] = None,
-        type: Optional[str] = None,
-        body: bytes = b"",
+        text: str | None = None,
+        type: str | None = None,  # noqa: A002
+        body: bytes | bytearray = b"",
         encoding: str = "utf-8",
-        namespaces: Optional[Mapping[str, str]] = None,
-        root: Optional[Any] = _NOT_SET,
-        base_url: Optional[str] = None,
-        _expr: Optional[str] = None,
-        huge_tree: bool = LXML_SUPPORTS_HUGE_TREE,
+        namespaces: Mapping[str, str] | None = None,
+        root: Any | None = _NOT_SET,
+        base_url: str | None = None,
+        _expr: str | None = None,
+        huge_tree: bool = True,
     ) -> None:
         self.root: Any
         if type not in ("html", "json", "text", "xml", None):
             raise ValueError(f"Invalid type: {type}")
-
-        if text is None and not body and root is _NOT_SET:
-            raise ValueError("Selector needs text, body, or root arguments")
-
-        if text is not None and not isinstance(text, str):
-            msg = f"text argument should be of type str, got {text.__class__}"
-            raise TypeError(msg)
 
         if text is not None:
             if root is not _NOT_SET:
@@ -473,7 +528,7 @@ class Selector:
                 msg = f"text argument should be of type str, got {text.__class__}"
                 raise TypeError(msg)
 
-            root, type = _get_root_and_type_from_text(
+            root, type = _get_root_and_type_from_text(  # noqa: A001
                 text,
                 input_type=type,
                 base_url=base_url,
@@ -482,11 +537,11 @@ class Selector:
             self.root = root
             self.type = type
         elif body:
-            if not isinstance(body, bytes):
-                msg = f"body argument should be of type bytes, got {body.__class__}"
+            if not isinstance(body, (bytes, bytearray)):
+                msg = f"body argument should be of type bytes or bytearray, got {body.__class__}"
                 raise TypeError(msg)
-            root, type = _get_root_and_type_from_bytes(
-                body=body,
+            root, type = _get_root_and_type_from_bytes(  # noqa: A001
+                body=bytes(body),
                 encoding=encoding,
                 input_type=type,
                 base_url=base_url,
@@ -514,9 +569,9 @@ class Selector:
     def _get_root(
         self,
         text: str = "",
-        base_url: Optional[str] = None,
-        huge_tree: bool = LXML_SUPPORTS_HUGE_TREE,
-        type: Optional[str] = None,
+        base_url: str | None = None,
+        huge_tree: bool = True,
+        type_: str | None = None,
         body: bytes = b"",
         encoding: str = "utf-8",
     ) -> etree._Element:
@@ -524,16 +579,16 @@ class Selector:
             text,
             body=body,
             encoding=encoding,
-            parser_cls=_ctgroup[type or self.type]["_parser"],
+            parser_cls=_ctgroup[type_ or self.type]["_parser"],
             base_url=base_url,
             huge_tree=huge_tree,
         )
 
     def jmespath(
-        self: _SelectorType,
+        self,
         query: str,
         **kwargs: Any,
-    ) -> SelectorList[_SelectorType]:
+    ) -> SelectorList[Self]:
         """
         Find objects matching the JMESPath ``query`` and return the result as a
         :class:`SelectorList` instance with all elements flattened. List
@@ -547,12 +602,10 @@ class Selector:
 
             selector.jmespath('author.name', options=jmespath.Options(dict_cls=collections.OrderedDict))
         """
-        if self.type == "json":
-            if isinstance(self.root, str):
-                # Selector received a JSON string as root.
-                data = _load_json_or_none(self.root)
-            else:
-                data = self.root
+        if isinstance(self.root, str):
+            data = _load_json_or_none(self.root)
+        elif self.type == "json":
+            data = self.root
         else:
             assert self.type in {"html", "xml"}  # nosec
             data = _load_json_or_none(self.root.text)
@@ -563,21 +616,20 @@ class Selector:
         elif not isinstance(result, list):
             result = [result]
 
-        def make_selector(x: Any) -> _SelectorType:  # closure function
+        def make_selector(x: Any) -> Selector:  # closure function
             if isinstance(x, str):
                 return self.__class__(text=x, _expr=query, type="text")
-            else:
-                return self.__class__(root=x, _expr=query)
+            return self.__class__(root=x, _expr=query)
 
         result = [make_selector(x) for x in result]
-        return typing.cast(SelectorList[_SelectorType], self.selectorlist_cls(result))
+        return typing.cast("SelectorList[Self]", self.selectorlist_cls(result))
 
     def xpath(
-        self: _SelectorType,
+        self,
         query: str,
-        namespaces: Optional[Mapping[str, str]] = None,
+        namespaces: Mapping[str, str] | None = None,
         **kwargs: Any,
-    ) -> SelectorList[_SelectorType]:
+    ) -> SelectorList[Self]:
         """
         Find nodes matching the xpath ``query`` and return the result as a
         :class:`SelectorList` instance with all elements flattened. List
@@ -598,34 +650,36 @@ class Selector:
         if self.type not in ("html", "xml", "text"):
             raise ValueError(f"Cannot use xpath on a Selector of type {self.type!r}")
         if self.type in ("html", "xml"):
-            try:
-                xpathev = self.root.xpath
-            except AttributeError:
-                return typing.cast(
-                    SelectorList[_SelectorType], self.selectorlist_cls([])
-                )
+            root = self.root
+            if not hasattr(root, "xpath"):
+                if isinstance(root, str) and query.strip() == ".":
+                    return typing.cast(
+                        "SelectorList[Self]",
+                        self.selectorlist_cls(
+                            [
+                                self.__class__(
+                                    root=self.root,
+                                    _expr=query,
+                                    namespaces=self.namespaces,
+                                    type=self.type,
+                                )
+                            ]
+                        ),
+                    )
+                return typing.cast("SelectorList[Self]", self.selectorlist_cls([]))
         else:
-            try:
-                xpathev = self._get_root(self._text or "", type="html").xpath
-            except AttributeError:
-                return typing.cast(
-                    SelectorList[_SelectorType], self.selectorlist_cls([])
-                )
+            root = self._get_root(self._text or "", type_="html")
 
         nsp = dict(self.namespaces)
         if namespaces is not None:
             nsp.update(namespaces)
         try:
-            result = xpathev(
-                query,
-                namespaces=nsp,
-                smart_strings=self._lxml_smart_strings,
-                **kwargs,
-            )
+            xpathev = _get_xpath_evaluator(query, nsp, self._lxml_smart_strings)
+            result = xpathev(root, **kwargs)
         except etree.XPathError as exc:
             raise ValueError(f"XPath error: {exc} in {query}")
 
-        if type(result) is not list:
+        if not isinstance(result, list):
             result = [result]
 
         result = [
@@ -637,9 +691,9 @@ class Selector:
             )
             for x in result
         ]
-        return typing.cast(SelectorList[_SelectorType], self.selectorlist_cls(result))
+        return typing.cast("SelectorList[Self]", self.selectorlist_cls(result))
 
-    def css(self: _SelectorType, query: str) -> SelectorList[_SelectorType]:
+    def css(self, query: str) -> SelectorList[Self]:
         """
         Apply the given CSS selector and return a :class:`SelectorList` instance.
 
@@ -655,12 +709,10 @@ class Selector:
         return self.xpath(self._css2xpath(query))
 
     def _css2xpath(self, query: str) -> str:
-        type = _xml_or_html(self.type)
-        return _ctgroup[type]["_csstranslator"].css_to_xpath(query)
+        type_ = _xml_or_html(self.type)
+        return _ctgroup[type_]["_csstranslator"].css_to_xpath(query)
 
-    def re(
-        self, regex: Union[str, Pattern[str]], replace_entities: bool = True
-    ) -> List[str]:
+    def re(self, regex: str | Pattern[str], replace_entities: bool = True) -> list[str]:
         """
         Apply the given regex and return a list of strings with the
         matches.
@@ -679,16 +731,16 @@ class Selector:
     @typing.overload
     def re_first(
         self,
-        regex: Union[str, Pattern[str]],
+        regex: str | Pattern[str],
         default: None = None,
         replace_entities: bool = True,
-    ) -> Optional[str]:
+    ) -> str | None:
         pass
 
     @typing.overload
     def re_first(
         self,
-        regex: Union[str, Pattern[str]],
+        regex: str | Pattern[str],
         default: str,
         replace_entities: bool = True,
     ) -> str:
@@ -696,10 +748,10 @@ class Selector:
 
     def re_first(
         self,
-        regex: Union[str, Pattern[str]],
-        default: Optional[str] = None,
+        regex: str | Pattern[str],
+        default: str | None = None,
         replace_entities: bool = True,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Apply the given regex and return the first string which matches. If
         there is no match, return the default value (``None`` if the argument
@@ -719,8 +771,7 @@ class Selector:
         """
         Serialize and return the matched nodes.
 
-        For HTML and XML, the result is always a string, and percent-encoded
-        content is unquoted.
+        For HTML and XML, the result is always a string.
         """
         if self.type in ("text", "json"):
             return self.root
@@ -734,14 +785,13 @@ class Selector:
         except (AttributeError, TypeError):
             if self.root is True:
                 return "1"
-            elif self.root is False:
+            if self.root is False:
                 return "0"
-            else:
-                return str(self.root)
+            return str(self.root)
 
     extract = get
 
-    def getall(self) -> List[str]:
+    def getall(self) -> list[str]:
         """
         Serialize and return the matched node in a 1-element list of strings.
         """
@@ -759,7 +809,11 @@ class Selector:
         """
         Remove all namespaces, allowing to traverse the document using
         namespace-less xpaths. See :ref:`removing-namespaces`.
+        For JSON selectors, this method does nothing.
         """
+        if self.type == "json":
+            return
+
         for el in self.root.iter("*"):
             if el.tag.startswith("{"):
                 el.tag = el.tag.split("}", 1)[1]
@@ -769,35 +823,6 @@ class Selector:
                     el.attrib[an.split("}", 1)[1]] = el.attrib.pop(an)
         # remove namespace declarations
         etree.cleanup_namespaces(self.root)
-
-    def remove(self) -> None:
-        """
-        Remove matched nodes from the parent element.
-        """
-        warn(
-            "Method parsel.selector.Selector.remove is deprecated, please use parsel.selector.Selector.drop method instead",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        try:
-            parent = self.root.getparent()
-        except AttributeError:
-            # 'str' object has no attribute 'getparent'
-            raise CannotRemoveElementWithoutRoot(
-                "The node you're trying to remove has no root, "
-                "are you trying to remove a pseudo-element? "
-                "Try to use 'li' as a selector instead of 'li::text' or "
-                "'//li' instead of '//li/text()', for example."
-            )
-
-        try:
-            parent.remove(self.root)
-        except AttributeError:
-            # 'NoneType' object has no attribute 'remove'
-            raise CannotRemoveElementWithoutParent(
-                "The node you're trying to remove has no parent, "
-                "are you trying to remove a root element?"
-            )
 
     def drop(self) -> None:
         """
@@ -814,23 +839,38 @@ class Selector:
                 "'//li' instead of '//li/text()', for example."
             )
 
+        no_parent_message = (
+            "The node you're trying to remove has no parent, "
+            "are you trying to remove a root element?"
+        )
         try:
             if self.type == "xml":
                 if parent is None:
-                    raise ValueError("This node has no parent")
+                    raise CannotDropElementWithoutParent(no_parent_message)
+                # Unlike HtmlElement.drop_tree(), _Element.remove() also
+                # removes the tail text, so we need to preserve it manually
+                if self.root.tail:
+                    previous = self.root.getprevious()
+                    if previous is not None:
+                        previous.tail = (previous.tail or "") + self.root.tail
+                    else:
+                        parent.text = (parent.text or "") + self.root.tail
                 parent.remove(self.root)
             else:
-                typing.cast(html.HtmlElement, self.root).drop_tree()
+                typing.cast("html.HtmlElement", self.root).drop_tree()
         except (AttributeError, AssertionError):
-            # 'NoneType' object has no attribute 'drop'
-            raise CannotDropElementWithoutParent(
-                "The node you're trying to remove has no parent, "
-                "are you trying to remove a root element?"
-            )
+            # 'NoneType' object has no attribute 'drop_tree'
+            raise CannotDropElementWithoutParent(no_parent_message)
 
     @property
-    def attrib(self) -> Dict[str, str]:
-        """Return the attributes dictionary for underlying element."""
+    def attrib(self) -> dict[str, str]:
+        """
+        Return the attributes dictionary for underlying element.
+        For JSON selectors, return an empty dict.
+        """
+        if self.type == "json":
+            return {}
+
         return dict(self.root.attrib)
 
     def __bool__(self) -> bool:

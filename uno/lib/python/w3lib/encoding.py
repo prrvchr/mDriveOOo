@@ -7,13 +7,50 @@ from __future__ import annotations
 import codecs
 import encodings
 import re
-from re import Match
-from typing import Callable, cast
+from functools import lru_cache
+from typing import TYPE_CHECKING, cast
 
-import w3lib.util
-from w3lib._types import AnyUnicodeError, StrOrBytes
+from w3lib._util import iter_tag_attributes
 
-_HEADER_ENCODING_RE = re.compile(r"charset=([\w-]+)", re.I)
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from w3lib._types import AnyUnicodeError
+
+# The value ends at whitespace, ";", "," or the end of the header. Comma is
+# not parameter syntax; stopping the value at "," approximates Fetch's
+# "extract a MIME type" for comma-joined duplicate headers, keeping the first
+# charset rather than the last valid MIME type's.
+_HEADER_ENCODING_RE = re.compile(
+    r"(?:^|;)[ \t]*charset="
+    r'(?:"([\w-]+)"|([\w-]+))'
+    r"(?![^\s;,])",
+    re.IGNORECASE,
+)
+# https://mimesniff.spec.whatwg.org/commit-snapshots/39aa53511b13953d84fef8d4131d6f61d0ccbde6/#parse-a-mime-type
+# Parameters are ";"-separated name=value pairs whose value is either a token
+# or a quoted-string, and a quoted-string is opaque
+# (https://fetch.spec.whatwg.org/commit-snapshots/586cd2a44c2a865b37c166dc0740f3fb8bb220d6/#collect-an-http-quoted-string),
+# so it has to be consumed as a whole: a "charset=" written inside one belongs
+# to that value and is not a parameter of its own.
+_HEADER_PARAMETER_RE = re.compile(
+    r"(?:^|;)[ \t]*(?P<name>[^\s;=]+)="
+    r'(?:"(?P<quoted>[^"\\]*(?:\\.[^"\\]*)*)"(?![^\s;,])'
+    r"|(?P<token>[^;,\s]*))"
+)
+_ENCODING_LABEL_RE = re.compile(r"[\w-]+")
+
+
+def _quoted_aware_charset(content_type: str) -> str | None:
+    for match in _HEADER_PARAMETER_RE.finditer(content_type):
+        if match.group("name").lower() != "charset":
+            continue
+        label = match.group("quoted")
+        if label is None:
+            label = match.group("token")
+        if _ENCODING_LABEL_RE.fullmatch(label):
+            return resolve_encoding(label)
+    return None
 
 
 def http_content_type_encoding(content_type: str | None) -> str | None:
@@ -28,41 +65,83 @@ def http_content_type_encoding(content_type: str | None) -> str | None:
     if content_type:
         match = _HEADER_ENCODING_RE.search(content_type)
         if match:
-            return resolve_encoding(match.group(1))
+            # A match inside a quoted-string must be preceded by that string's
+            # opening quote, so if no '"' precedes it the fast answer is
+            # correct; only otherwise walk the parameters.
+            if content_type.find('"', 0, match.start()) < 0:
+                return resolve_encoding(match.group(1) or match.group(2))
+            return _quoted_aware_charset(content_type)
 
     return None
 
 
-# regexp for parsing HTTP meta tags
-_TEMPLATE = r"""%s\s*=\s*["']?\s*%s\s*["']?"""
-_SKIP_ATTRS = """(?:\\s+
-    [^=<>/\\s"'\x00-\x1f\x7f]+  # Attribute name
-    (?:\\s*=\\s*
-    (?:  # ' and " are entity encoded (&apos;, &quot;), so no need for \', \"
-        '[^']*'   # attr in '
-        |
-        "[^"]*"   # attr in "
-        |
-        [^'"\\s]+  # attr having no ' nor "
-    ))?
-)*?"""  # must be used with re.VERBOSE flag
-_HTTPEQUIV_RE = _TEMPLATE % ("http-equiv", "Content-Type")
-_CONTENT_RE = _TEMPLATE % ("content", r"(?P<mime>[^;]+);\s*charset=(?P<charset>[\w-]+)")
-_CONTENT2_RE = _TEMPLATE % ("charset", r"(?P<charset2>[\w-]+)")
-_XML_ENCODING_RE = _TEMPLATE % ("encoding", r"(?P<xmlcharset>[\w-]+)")
-
-# check for meta tags, or xml decl. and stop search if a body tag is encountered
-_BODY_ENCODING_PATTERN = (
-    r"<\s*(?:meta%s(?:(?:\s+%s|\s+%s){2}|\s+%s)|\?xml\s[^>]+%s|body)"
-    % (_SKIP_ATTRS, _HTTPEQUIV_RE, _CONTENT_RE, _CONTENT2_RE, _XML_ENCODING_RE)
+# Scan for the first meta tag or xml declaration, and stop the search if a
+# body tag is encountered.
+# Comments are skipped by the WHATWG prescan before it looks for a meta
+# charset, so a declaration written inside one is not honored (and a commented
+# body tag does not stop the scan): they are consumed as an alternative of the
+# scan itself, as get_base_url() does, rather than stripped out beforehand, so
+# the text on either side of a comment is never spliced into a tag.
+# A meta tag is consumed with its quoted attribute values whole, so a quoted
+# ">" does not end it and a quoted "<!--" does not start a comment.
+# Each alternative consumes every character at most once, so the scan stays
+# linear.
+_BODY_SCAN_RE = re.compile(
+    r"""
+      <!--.*?(?:-->|$)  # comment
+    | <\s*meta(?=[\s/])(?P<meta>(?:[^<>=]|=\s*(?:"[^"]*"|'[^']*')?)*)  # meta tag
+    | <\?xml\s(?P<xml>[^<>]*)  # XML declaration
+    | <\s*(?P<body>body)  # start of the body tag
+    """,
+    re.IGNORECASE | re.DOTALL | re.VERBOSE,
 )
-_BODY_ENCODING_STR_RE = re.compile(_BODY_ENCODING_PATTERN, re.I | re.VERBOSE)
-_BODY_ENCODING_BYTES_RE = re.compile(
-    _BODY_ENCODING_PATTERN.encode("ascii"), re.I | re.VERBOSE
+# The pragma attribute, however spelled (e.g. #155 has httpequiv="ContentType").
+_HTTP_EQUIV_NAMES = frozenset({"http-equiv", "http_equiv", "httpequiv"})
+# Its value must name the content-type pragma, also however spelled.
+_CONTENT_TYPE_PRAGMA_RE = re.compile(r"content[-_ ]?type", re.IGNORECASE)
+# A "charset=" wherever it occurs in a content attribute value, as in the
+# WHATWG "extract a character encoding from a meta element" algorithm.
+_CONTENT_CHARSET_RE = re.compile(
+    r"""charset\s*=\s*["']?\s*(?P<label>[\w-]+)""", re.IGNORECASE
 )
 
 
-def html_body_declared_encoding(html_body_str: StrOrBytes) -> str | None:
+def _leading_label(value: str) -> str | None:
+    match = _ENCODING_LABEL_RE.match(value.lstrip())
+    return match.group() if match else None
+
+
+def _meta_charset_label(attrs: str) -> str | None:
+    """Return the encoding label the meta tag with attribute text `attrs`
+    declares, or ``None``.
+
+    The WHATWG prescan only honors a real charset attribute, or a "charset="
+    inside a content attribute value when the tag also carries the
+    http-equiv=content-type pragma. Both the name and the value of that pragma
+    are matched loosely.
+    """
+    has_pragma = False
+    content_label = None
+    for name, value in iter_tag_attributes(attrs):
+        if name == "charset":
+            if label := _leading_label(value):
+                return label
+        elif name == "content":
+            if content_label is None and (match := _CONTENT_CHARSET_RE.search(value)):
+                content_label = match.group("label")
+        elif name in _HTTP_EQUIV_NAMES and _CONTENT_TYPE_PRAGMA_RE.search(value):
+            has_pragma = True
+    return content_label if has_pragma else None
+
+
+def _xml_encoding_label(attrs: str) -> str | None:
+    for name, value in iter_tag_attributes(attrs):
+        if name == "encoding" and (label := _leading_label(value)):
+            return label
+    return None
+
+
+def html_body_declared_encoding(html_body_str: str | bytes) -> str | None:
     '''Return the encoding specified in meta tags in the html body,
     or ``None`` if no suitable encoding was found
 
@@ -86,20 +165,25 @@ def html_body_declared_encoding(html_body_str: StrOrBytes) -> str | None:
 
     # html5 suggests the first 1024 bytes are sufficient, we allow for more
     chunk = html_body_str[:4096]
-    match: Match[bytes] | Match[str] | None
     if isinstance(chunk, bytes):
-        match = _BODY_ENCODING_BYTES_RE.search(chunk)
-    else:
-        match = _BODY_ENCODING_STR_RE.search(chunk)
-
-    if match:
-        encoding = (
-            match.group("charset")
-            or match.group("charset2")
-            or match.group("xmlcharset")
-        )
-        if encoding:
-            return resolve_encoding(w3lib.util.to_unicode(encoding))
+        # A declaration is ASCII markup and an encoding label is ASCII text.
+        chunk = chunk.decode("latin-1")
+    for match in _BODY_SCAN_RE.finditer(chunk):
+        if match.group("body") is not None:
+            break
+        if (attrs := match.group("meta")) is not None:
+            # A meta tag can only declare an encoding by spelling "charset",
+            # as an attribute name or inside a content attribute value, so the
+            # tags that cannot need no attribute walk.
+            if "charset" not in attrs.lower():
+                continue
+            label = _meta_charset_label(attrs)
+        elif match.group("xml") is not None:
+            label = _xml_encoding_label(match.group("xml"))
+        else:  # a comment
+            continue
+        if label is not None:
+            return resolve_encoding(label)
 
     return None
 
@@ -139,9 +223,10 @@ def _c18n_encoding(encoding: str) -> str:
     encoding aliases
     """
     normed = encodings.normalize_encoding(encoding).lower()
-    return cast(str, encodings.aliases.aliases.get(normed, normed))
+    return encodings.aliases.aliases.get(normed, normed)
 
 
+@lru_cache(maxsize=256)
 def resolve_encoding(encoding_alias: str) -> str | None:
     """Return the encoding that `encoding_alias` maps to, or ``None``
     if the encoding cannot be interpreted
@@ -157,9 +242,17 @@ def resolve_encoding(encoding_alias: str) -> str | None:
     c18n_encoding = _c18n_encoding(encoding_alias)
     translated = DEFAULT_ENCODING_TRANSLATION.get(c18n_encoding, c18n_encoding)
     try:
-        return codecs.lookup(translated).name
+        name = codecs.lookup(translated).name
     except LookupError:
         return None
+    # UTF-7 has no label in the WHATWG Encoding Standard this module follows and
+    # browsers dropped it. It re-spells "<", ">" and "&" using only ASCII bytes
+    # (e.g. "+ADw-" for "<"), so a response that declares charset=utf-7 lets a
+    # byte sequence a browser shows as inert text decode into live markup. Refuse
+    # it so callers fall back to a safe default instead of the smuggled encoding.
+    if name == "utf-7":
+        return None
+    return name
 
 
 _BOM_TABLE = [
@@ -180,13 +273,13 @@ def read_bom(data: bytes) -> tuple[None, None] | tuple[str, bytes]:
 
     >>> import w3lib.encoding
     >>> w3lib.encoding.read_bom(b'\xfe\xff\x6c\x34')
-    ('utf-16-be', '\xfe\xff')
+    ('utf-16-be', b'\xfe\xff')
     >>> w3lib.encoding.read_bom(b'\xff\xfe\x34\x6c')
-    ('utf-16-le', '\xff\xfe')
+    ('utf-16-le', b'\xff\xfe')
     >>> w3lib.encoding.read_bom(b'\x00\x00\xfe\xff\x00\x00\x6c\x34')
-    ('utf-32-be', '\x00\x00\xfe\xff')
+    ('utf-32-be', b'\x00\x00\xfe\xff')
     >>> w3lib.encoding.read_bom(b'\xff\xfe\x00\x00\x34\x6c\x00\x00')
-    ('utf-32-le', '\xff\xfe\x00\x00')
+    ('utf-32-le', b'\xff\xfe\x00\x00')
     >>> w3lib.encoding.read_bom(b'\x01\x02\x03\x04')
     (None, None)
     >>>
@@ -201,20 +294,33 @@ def read_bom(data: bytes) -> tuple[None, None] | tuple[str, bytes]:
     return None, None
 
 
-# Python decoder doesn't follow unicode standard when handling
-# bad utf-8 encoded strings. see http://bugs.python.org/issue8271
-codecs.register_error(
-    "w3lib_replace", lambda exc: ("\ufffd", cast(AnyUnicodeError, exc).end)
-)
+def _gb18030_replace(exc: UnicodeError) -> tuple[str, int]:
+    error = cast("AnyUnicodeError", exc)
+    if error.object[error.start] == 0x80:
+        return "\u20ac", error.start + 1
+    return "\ufffd", error.end
+
+
+# The GB18030 decoder of the Encoding Standard decodes a lead 0x80 as the euro
+# sign, for GBK compatibility, while the Python codec rejects it.
+# https://encoding.spec.whatwg.org/#gb18030-decoder
+codecs.register_error("w3lib_gb18030_replace", _gb18030_replace)
 
 
 def to_unicode(data_str: bytes, encoding: str) -> str:
-    """Convert a str object to unicode using the encoding given
+    r"""Convert a str object to unicode using the encoding given
 
-    Characters that cannot be converted will be converted to ``\\ufffd`` (the
+    Characters that cannot be converted will be converted to ``\ufffd`` (the
     unicode replacement character).
     """
-    return data_str.decode(encoding, "replace")
+    # Every name that resolves to gb18030 contains "18030", so the substring
+    # check keeps the codec lookup out of the common case.
+    errors = (
+        "w3lib_gb18030_replace"
+        if "18030" in encoding and codecs.lookup(encoding).name == "gb18030"
+        else "replace"
+    )
+    return data_str.decode(encoding, errors)
 
 
 def html_to_unicode(
@@ -260,7 +366,7 @@ def html_to_unicode(
     that the header was not present.
 
     This method will not fail, if characters cannot be converted to unicode,
-    ``\\ufffd`` (the unicode replacement character) will be inserted instead.
+    ``\ufffd`` (the unicode replacement character) will be inserted instead.
 
     Returns a tuple of ``(<encoding used>, <unicode_string>)``
 
@@ -285,18 +391,16 @@ def html_to_unicode(
 
     '''
     bom_enc, bom = read_bom(html_body_str)
-    if bom_enc is not None:
-        bom = cast(bytes, bom)
+    if bom_enc is not None and bom is not None:
         return bom_enc, to_unicode(html_body_str[len(bom) :], bom_enc)
 
     enc = http_content_type_encoding(content_type_header)
-    if enc is not None:
-        if enc in {"utf-16", "utf-32"}:
-            enc += "-be"
-        return enc, to_unicode(html_body_str, enc)
-    enc = html_body_declared_encoding(html_body_str)
-    if enc is None and (auto_detect_fun is not None):
+    if enc is None:
+        enc = html_body_declared_encoding(html_body_str)
+    if enc is None and auto_detect_fun is not None:
         enc = auto_detect_fun(html_body_str)
     if enc is None:
         enc = default_encoding
+    elif enc in {"utf-16", "utf-32"}:
+        enc += "-be"
     return enc, to_unicode(html_body_str, enc)

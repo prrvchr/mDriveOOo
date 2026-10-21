@@ -37,7 +37,7 @@ from .ucp import g_ucbfile
 from .configuration import g_ucpfolder
 
 # DataSource configuration
-g_protocol = 'xdbc:hsqldb:'
+g_protocol = 'juda:hsqldb:'
 g_folder = 'hsqldb'
 g_path = 'hsqldb'
 g_jar = 'hsqldb.jar'

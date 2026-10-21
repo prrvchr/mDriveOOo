@@ -27,25 +27,31 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
-
-from com.sun.star.uno import Exception as UnoException
-
 from .optionsmodel import OptionsModel
+
 from .optionsview import OptionsView
 
-from ..unotool import executeDispatch
-from ..unotool import getDesktop
-from ..unotool import getFilePicker
+from .optionshandler import OptionsListener
 
-from ..helper import getDataBaseConnection
-from ..helper import getDataBaseUrl
+from .option import OptionManager
 
-from ..logger import LogManager
+from ..runner import DispatchListener
 
-from ..configuration import g_defaultlog
-from ..configuration import g_synclog
+from ..setup import SetupCheck
+
+from ..helper import getExtensions
+
+from ..setup import showSetup
+
+from ..jdbcdriver import g_agent
+from ..jdbcdriver import g_java
+from ..jdbcdriver import g_protocol
+from ..jdbcdriver import g_script
+from ..jdbcdriver import g_service
+
+from ..configuration import State
+from ..configuration import g_extension
+from ..configuration import g_identifier
 
 import traceback
 
@@ -53,69 +59,47 @@ import traceback
 class OptionsManager():
     def __init__(self, ctx, source, logger, window):
         self._ctx = ctx
-        self._logger = logger
+        self._disposed = False
+        self._java = g_extension, g_java, g_script
+        self._agent = g_service, g_protocol, g_agent
         self._model = OptionsModel(ctx)
-        self._view = OptionsView(window, OptionsManager._restart, *self._model.getInitData())
-        self._logmanager = LogManager(ctx, window, 'requirements.txt', g_defaultlog, g_synclog)
-        self._logmanager.initView()
-        self._view.setViewData(OptionsManager._restart, *self._model.getViewData())
-        self._logger.logprb(INFO, 'OptionsManager', '__init__', 151)
-        try:
-            url = getDataBaseUrl(ctx)
-            connection = getDataBaseConnection(ctx, source, logger, url, False, False)
-        except UnoException as e:
-            logger.logprb(SEVERE, 'OptionsManager', '__init__', 152, e.Message)
-        else:
-            connection.close()
+        self._view = OptionsView(window, *self._model.getViewData())
+        self._manager = OptionManager(ctx, source, logger, window, self._model.getConfig())
+        window.addEventListener(OptionsListener(self))
+        self._loadView(self.init)
 
-    _restart = False
+    def init(self, state):
+        if not self._disposed:
+            self._manager.init(state)
+            self._view.initView(*self._model.getInitData(state))
+
+    def refresh(self, state):
+        if not self._disposed:
+            self._manager.refresh(state)
+            self._view.refreshView(self._model.getRefreshData(state))
 
     def loadSetting(self):
-        self._view.setViewData(OptionsManager._restart, *self._model.getViewData())
-        self._logmanager.loadSetting()
-        self._logger.logprb(INFO, 'OptionsManager', 'loadSetting', 161)
+        self._loadView(self.init)
 
     def saveSetting(self):
-        option = self._model.setViewData(*self._view.getViewData())
-        changed = self._logmanager.saveSetting()
-        if changed:
-            OptionsManager._restart = True
-            self._view.setWarning(True, self._model.isInstrumented())
-        self._logger.logprb(INFO, 'OptionsManager', 'saveSetting', 171, option, changed)
+        if self._manager.saveSetting():
+            State.restart = True
+            self._loadView(self.refresh)
 
-    def enableShare(self, enabled):
-        self._view.enableShare(enabled)
+    def dispose(self):
+        self._disposed = True
 
-    def enableSync(self, enabled):
-        self._view.enableSync(OptionsManager._restart, self._model.isInstrumented(), enabled, self._model.hasDataBase())
+    def showSetup(self):
+        mode = self._view.getSetup()
+        showSetup(self._ctx, g_identifier, Dispatch=DispatchListener(self), Mode=mode)
 
-    def setReset(self, enabled):
-        self._view.enableResetFile(enabled)
+    def dispatchFinished(self, notification):
+        if not self._disposed:
+            self._loadView(self.refresh)
 
-    def viewData(self):
-        url = self._model.getDatasourceUrl()
-        getDesktop(self._ctx).loadComponentFromURL(url, '_default', 0, ())
+    def _loadView(self, callback):
+        mode = self._view.getSetup()
+        datasource = self._manager.getDataSourceUrl()
+        setup = SetupCheck(self._ctx, callback, datasource, java=self._java, agent=self._agent, python=True, extensions=getExtensions(), mode=mode)
+        setup.start()
 
-    def viewFile(self):
-        fp = getFilePicker(self._ctx)
-        fp.setDisplayDirectory(self._model.getFileUrl())
-        fp.execute()
-        fp.dispose()
-
-    def download(self):
-        self._view.setStep(1, OptionsManager._restart, self._model.isInstrumented())
-
-    def upload(self):
-        self._view.setStep(2, OptionsManager._restart, self._model.isInstrumented())
-
-    def spinUp(self, index):
-        self._view.setChunk(index, self._view.getChunk(index) * 2)
-
-    def spinDown(self, index):
-        self._view.setChunk(index, self._view.getChunk(index) / 2)
-
-    def enableMacro(self, enabled):
-        self._view.enableCustomize(enabled)
-
-    def customizeMenu(self):
-        executeDispatch(self._ctx, '.uno:ConfigureDialog')

@@ -22,7 +22,8 @@ def test_asyncgen_basics() -> None:
     async def example(cause: str) -> AsyncGenerator[int, None]:
         try:
             with contextlib.suppress(GeneratorExit):
-                yield 42
+                # we *want* to test what happens to delayed `await`
+                yield 42  # noqa: ASYNC119
             await _core.checkpoint()
         except _core.Cancelled:
             assert "exhausted" not in cause
@@ -221,13 +222,15 @@ def test_last_minute_gc_edge_case() -> None:
         saved.append(agen())
         await saved[-1].asend(None)
 
+    ATTEMPT_AMOUNT = 50
+
     # Actually running into the edge case requires that the run_sync_soon task
     # execute in between the system nursery's closure and the strong-ification
     # of runner.asyncgens. There's about a 25% chance that it doesn't
     # (if the run_sync_soon task runs before init on one tick and after init
     # on the next tick); if we try enough times, we can make the chance of
     # failure as small as we want.
-    for _attempt in range(50):
+    for _ in range(ATTEMPT_AMOUNT):
         needs_retry = False
         record.clear()
         saved.clear()
@@ -240,7 +243,7 @@ def test_last_minute_gc_edge_case() -> None:
     else:  # pragma: no cover
         pytest.fail(
             "Didn't manage to hit the trailing_finalizer_asyncgens case "
-            f"despite trying {_attempt} times",
+            f"despite trying {ATTEMPT_AMOUNT} times",
         )
 
 
@@ -275,14 +278,15 @@ async def test_fallback_when_no_hook_claims_it(
     async def well_behaved() -> AsyncGenerator[int, None]:
         yield 42
 
+    # these noqas are because we *want* to test delayed yield/await!
     async def yields_after_yield() -> AsyncGenerator[int, None]:
         with pytest.raises(GeneratorExit):
-            yield 42
+            yield 42  # noqa: ASYNC119
         yield 100
 
     async def awaits_after_yield() -> AsyncGenerator[int, None]:
         with pytest.raises(GeneratorExit):
-            yield 42
+            yield 42  # noqa: ASYNC119
         await _core.cancel_shielded_checkpoint()
 
     with restore_unraisablehook():
@@ -304,10 +308,12 @@ def test_delegation_to_existing_hooks() -> None:
 
     def my_firstiter(agen: AsyncGenerator[object, NoReturn]) -> None:
         assert isinstance(agen, AsyncGeneratorType)
+        assert agen.ag_frame is not None
         record.append("firstiter " + agen.ag_frame.f_locals["arg"])
 
     def my_finalizer(agen: AsyncGenerator[object, NoReturn]) -> None:
         assert isinstance(agen, AsyncGeneratorType)
+        assert agen.ag_frame is not None
         record.append("finalizer " + agen.ag_frame.f_locals["arg"])
 
     async def example(arg: str) -> AsyncGenerator[int, None]:

@@ -27,52 +27,41 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from ...unotool import getContainerWindow
-
-from ...configuration import g_identifier
-
 import traceback
 
 
 class OptionsView():
-    def __init__(self, ctx, window, handler, timeout, view, enabled):
-        self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'OptionDialog')
-        self._window.setVisible(True)
-        self._getTimeout().Value = timeout
-        self._getDatasource().Model.Enabled = enabled
-        self._setViewName(view, not enabled)
+    def __init__(self, window, update, links):
+        self._window = window
+        self._getSetup().Model.Enabled = update
+        for i, link in enumerate(links, start=1):
+            self._getLink(i).URL = link
 
-# OptionsView getter methods
-    def getWindow(self):
-        return self._window
+# OptionView getter methods
+    def getData(self):
+        return self.getSetup()
 
-    def getViewData(self):
-        return int(self._getTimeout().Value), self._getViewName().Text
+    def getSetup(self):
+        return self._getSetup().getSelectedItemPos()
 
-# OptionsView setter methods
-    def setTimeout(self, timeout):
-        self._getTimeout().Value = timeout
+# OptionView setter methods
+    def initView(self, setup, state):
+        self._setSetup(setup)
+        self.refreshView(state)
 
-    def setViewName(self, view):
-        self._getViewName().Text = view
+    def refreshView(self, state):
+        self._window.Model.Step = state.step
 
-# OptionsView private setter methods
-    def _setViewName(self, view, disabled):
-        self._getViewLabel().Model.Enabled = disabled
-        control = self._getViewName()
-        control.Model.Enabled = disabled
-        control.Text = view
+# OptionsView private methods
+    def _setSetup(self, setup):
+        control = self._getSetup()
+        if control.Model.Enabled:
+            control.selectItemPos(setup, True)
 
 # OptionsView private control methods
-    def _getTimeout(self):
-        return self._window.getControl('NumericField1')
+    def _getSetup(self):
+        return self._window.getControl('ListBox1')
 
-    def _getDatasource(self):
-        return self._window.getControl('CommandButton1')
-
-    def _getViewLabel(self):
-        return self._window.getControl('Label3')
-
-    def _getViewName(self):
-        return self._window.getControl('TextField1')
+    def _getLink(self, index):
+        return self._window.getControl(f'Hyperlink{index}')
 

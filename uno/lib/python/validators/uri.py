@@ -27,9 +27,9 @@ def uri(value: str, /):
 
     Examples:
         >>> uri('mailto:example@domain.com')
-        # Output: True
+        True
         >>> uri('file:path.txt')
-        # Output: ValidationError(func=uri, ...)
+        ValidationError(func=uri, args={'value': 'file:path.txt'})
 
     Args:
         value:
@@ -47,10 +47,20 @@ def uri(value: str, /):
     # url
     if any(
         # fmt: off
-        value.startswith(item) for item in {
-            "ftp", "ftps", "git", "http", "https",
-            "irc", "rtmp", "rtmps", "rtsp", "sftp",
-            "ssh", "telnet",
+        value.startswith(item)
+        for item in {
+            "ftp",
+            "ftps",
+            "git",
+            "http",
+            "https",
+            "irc",
+            "rtmp",
+            "rtmps",
+            "rtsp",
+            "sftp",
+            "ssh",
+            "telnet",
         }
         # fmt: on
     ):
@@ -58,7 +68,7 @@ def uri(value: str, /):
 
     # email
     if value.startswith("mailto:"):
-        return email(value.lstrip("mailto:"))
+        return email(value[len("mailto:") :])
 
     # file
     if value.startswith("file:"):

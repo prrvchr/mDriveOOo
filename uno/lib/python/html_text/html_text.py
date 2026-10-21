@@ -191,7 +191,7 @@ def selector_to_text(
     See html_text.extract_text docstring for description of the approach
     and options.
     """
-    import parsel
+    import parsel  # noqa: PLC0415
 
     if isinstance(sel, parsel.SelectorList):
         # if selecting a specific xpath
@@ -210,7 +210,7 @@ def selector_to_text(
 
 def cleaned_selector(html: lxml.html.HtmlElement | str) -> parsel.Selector:
     """Clean parsel.selector."""
-    import parsel
+    import parsel  # noqa: PLC0415
 
     try:
         tree = _cleaned_html_tree(html)

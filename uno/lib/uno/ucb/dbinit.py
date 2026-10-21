@@ -27,9 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
-
 from com.sun.star.sdbc.ColumnValue import NO_NULLS
 from com.sun.star.sdbc.ColumnValue import NULLABLE
 
@@ -41,75 +38,33 @@ from com.sun.star.sdbc import KeyRule
 from com.sun.star.sdbcx import CheckOption
 from com.sun.star.sdbcx import PrivilegeObject
 
-from .dbtool import createStaticTables
-from .dbtool import createStaticIndexes
-from .dbtool import createStaticForeignKeys
-from .dbtool import setStaticTable
-from .dbtool import createTables
-from .dbtool import createIndexes
-from .dbtool import createForeignKeys
-from .dbtool import createRoleAndPrivileges
-from .dbtool import createViews
-from .dbtool import executeQueries
-from .dbtool import getConnectionInfos
-from .dbtool import getDataBaseTables
-from .dbtool import getDataBaseIndexes
-from .dbtool import getDataBaseForeignKeys
-from .dbtool import getTableNames
-from .dbtool import getTables
+from .dbtool import getConnectionUrl
 from .dbtool import getTablePrivileges
-from .dbtool import getIndexes
-from .dbtool import getForeignKeys
 from .dbtool import getPrivileges
 
 from .dbqueries import getSqlQuery
 
+from .ucp import g_ucbseparator
+
 from .dbconfig import g_catalog
+from .dbconfig import g_folder
 from .dbconfig import g_schema
-from .dbconfig import g_csv
 from .dbconfig import g_role
 from .dbconfig import g_queries
 
-from collections import OrderedDict
+from .configuration import g_scheme
+
 import traceback
 
 
-def createDataBase(ctx, connection):
-    # XXX Creation order are very important here...
-    tables = connection.getTables()
-    statement = connection.createStatement()
-    statics = createStaticTables(g_catalog, g_schema, tables, **_getStaticTables())
-    createStaticIndexes(g_catalog, g_schema, tables)
-    createStaticForeignKeys(g_catalog, g_schema, tables, *_getForeignKeys())
-    setStaticTable(statement, statics, g_csv, True)
-    _createTables(connection, statement, tables)
-    _createIndexes(statement, tables)
-    _createForeignKeys(statement, tables)
-    groups = connection.getGroups()
-    _createRoleAndPrivileges(statement, tables, groups)
-    executeQueries(ctx, statement, _getFunctions(), 'create%s', g_queries)
-    createViews(connection.getViews(), _getItemCommands(ctx, _getViews(), 'get%sViewCommand', g_queries, CheckOption.CASCADE))
-    createRoleAndPrivileges(tables, groups, _getItemOptions(_getViews(), PrivilegeObject.TABLE, g_role, 1))
-    executeQueries(ctx, statement, _getProcedures(), 'create%s', g_queries)
-    statement.close()
+def getDataBaseUrl(ctx):
+    return getConnectionUrl(ctx, g_folder + g_ucbseparator + g_scheme)
 
-def _createTables(connection, statement, tables):
-    infos = getConnectionInfos(connection, 'AutoIncrementCreation', 'RowVersionCreation')
-    createTables(tables, getDataBaseTables(connection, statement, getTables(), getTableNames(), infos[0], infos[1]))
+def getDataSourceUrl(ctx):
+    return getConnectionUrl(ctx, g_folder + g_ucbseparator + g_scheme + '.odb')
 
-def _createIndexes(statement, tables):
-    createIndexes(tables, getDataBaseIndexes(statement, getIndexes()))
-
-def _createForeignKeys(statement, tables):
-    createForeignKeys(tables, getDataBaseForeignKeys(statement, getForeignKeys()))
-
-def _createRoleAndPrivileges(statement, tables, groups):
-    privileges = getTablePrivileges(statement, getPrivileges())
-    createRoleAndPrivileges(tables, groups, privileges)
-
-def _getStaticTables():
-    tables = OrderedDict()
-    tables['Privileges'] =   {'CatalogName': g_catalog,
+def getStaticTables():
+    yield 'Privileges',      {'CatalogName': g_catalog,
                               'SchemaName':  g_schema,
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Table',
@@ -130,35 +85,25 @@ def _getStaticTables():
                                            'TypeName': 'INTEGER',
                                            'Type': INTEGER,
                                            'IsNullable': NO_NULLS})}
-    return tables
 
-def _getForeignKeys():
-    return ((f'{g_catalog}.{g_schema}.Privileges', 'Table',  f'{g_catalog}.{g_schema}.Tables',  'Table',  KeyRule.CASCADE, KeyRule.CASCADE),
-            (f'{g_catalog}.{g_schema}.Privileges', 'Column', f'{g_catalog}.{g_schema}.Columns', 'Column', KeyRule.CASCADE, KeyRule.CASCADE))
+def getForeignKeys():
+    yield (f'{g_catalog}.{g_schema}.Privileges', 'Table',  f'{g_catalog}.{g_schema}.Tables',  'Table',  KeyRule.CASCADE, KeyRule.CASCADE)
+    yield (f'{g_catalog}.{g_schema}.Privileges', 'Column', f'{g_catalog}.{g_schema}.Columns', 'Column', KeyRule.CASCADE, KeyRule.CASCADE)
 
-def _getFunctions():
-    for name in ('GetIsFolder',
-                 'GetContentType',
-                 'GetUniqueName'):
+def getFunctions():
+    for name in ('GetIsFolder', 'GetContentType', 'GetUniqueName'):
         yield name
 
-def _getItemCommands(ctx, items, command, format, *option):
-    for catalog, schema, name in items:
-        yield catalog, schema, name, getSqlQuery(ctx, command % name, format), *option
+def getDefaultPrivileges(statement):
+    yield from getTablePrivileges(statement, getPrivileges())
 
-def _getItemOptions(items, *options):
-    for catalog, schema, name in items:
-        yield catalog, schema, name, *options
+def getViews(ctx, connection):
+    yield from _getViews(ctx, _getViewNames(), 'get%sViewCommand', g_queries, CheckOption.CASCADE)
 
-def _getViews(catalog=g_catalog, schema=g_schema):
-    for name in ('Child',
-                 'Twin',
-                 'Duplicate',
-                 'Path',
-                 'Children'):
-        yield catalog, schema, name
+def getViewPrivileges(statement):
+    yield from _getViewOptions(_getViewNames(), PrivilegeObject.TABLE, g_role, 1)
 
-def _getProcedures():
+def getProcedures():
     for name in ('GetItem',
                  'UpdatePushItems',
                  'GetPushItems',
@@ -169,4 +114,20 @@ def _getProcedures():
                  'InsertItem',
                  'UpdateNewItemId'):
         yield name
+
+def _getViews(ctx, items, command, format, *option):
+    for catalog, schema, name in items:
+        yield catalog, schema, name, getSqlQuery(ctx, command % name, format), *option
+
+def _getViewNames(catalog=g_catalog, schema=g_schema):
+    for name in ('Child',
+                 'Twin',
+                 'Duplicate',
+                 'Path',
+                 'Children'):
+        yield catalog, schema, name
+
+def _getViewOptions(items, *options):
+    for catalog, schema, name in items:
+        yield catalog, schema, name, *options
 

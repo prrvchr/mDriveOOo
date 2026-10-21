@@ -2,6 +2,8 @@
 Notation 3 (N3) RDF graph serializer for RDFLib.
 """
 
+import warnings
+
 from rdflib.graph import Graph
 from rdflib.namespace import OWL, Namespace
 from rdflib.plugins.serializers.turtle import OBJECT, SUBJECT, TurtleSerializer
@@ -12,6 +14,8 @@ SWAP_LOG = Namespace("http://www.w3.org/2000/10/swap/log#")
 
 
 class N3Serializer(TurtleSerializer):
+    """Notation 3 (N3) RDF graph serializer."""
+
     short_name = "n3"
 
     def __init__(self, store: Graph, parent=None):
@@ -45,13 +49,21 @@ class N3Serializer(TurtleSerializer):
             for t in triple[2]:
                 self.preprocessTriple(t)
 
-    def getQName(self, uri, gen_prefix=True):  # noqa: N802
+    def get_pname(self, uri, gen_prefix=True):
         qname = None
         if self.parent is not None:
-            qname = self.parent.getQName(uri, gen_prefix)
+            qname = self.parent.get_pname(uri, gen_prefix)
         if qname is None:
-            qname = super(N3Serializer, self).getQName(uri, gen_prefix)
+            qname = super(N3Serializer, self).get_pname(uri, gen_prefix)
         return qname
+
+    def getQName(self, uri, gen_prefix=True):  # noqa: N802
+        warnings.warn(
+            "N3Serializer.getQName is deprecated, use N3Serializer.get_pname instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.get_pname(uri, gen_prefix)
 
     def statement(self, subject):
         self.subjectDone(subject)

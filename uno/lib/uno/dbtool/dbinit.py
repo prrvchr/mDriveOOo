@@ -45,16 +45,14 @@ from collections import OrderedDict
 import traceback
 
 
-def createStaticTables(catalog, schema, tables, **kwargs):
-    items = _getStaticTables(catalog, schema, **kwargs)
-    createTables(tables, items.items())
-    return items.keys()
+def createStaticTables(catalog, schema, tables, statics=None):
+    return createTables(tables, _getTableItems(catalog, schema, statics))
 
 def createStaticIndexes(catalog, schema, tables, *args):
     createIndexes(tables, _getUniqueIndexes(catalog, schema, *args))
 
-def createStaticForeignKeys(catalog, schema, tables, *args):
-    createForeignKeys(tables, _getForeignKeys(catalog, schema, *args))
+def createStaticForeignKeys(catalog, schema, tables, foreignkeys):
+    createForeignKeys(tables, _getForeignKeyItems(catalog, schema, foreignkeys))
 
 def setStaticTable(statement, tables, csv, readonly=False):
     _setStaticTable(statement, tables, csv, readonly)
@@ -139,9 +137,13 @@ def _setStaticTable(statement, tables, csv, readonly):
         if readonly:
             statement.executeUpdate(_getTableReadOnly(table))
 
-def _getStaticTables(catalog, schema, **kwargs):
-    tables = OrderedDict()
-    tables['Tables'] =       {'CatalogName': catalog,
+def _getTableItems(catalog, schema, statics=None):
+    yield from _getStaticTables(catalog, schema)
+    if statics is not None:
+        yield from statics
+
+def _getStaticTables(catalog, schema):
+    yield 'Tables',          {'CatalogName': catalog,
                               'SchemaName':  schema,
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Table',
@@ -174,7 +176,7 @@ def _getStaticTables(catalog, schema, **kwargs):
                                            'IsNullable': NULLABLE,
                                            'DefaultValue': 'FALSE'}),
                               'PrimaryKeys': ('Table', )}
-    tables['Columns'] =      {'CatalogName': catalog,
+    yield 'Columns',         {'CatalogName': catalog,
                               'SchemaName':  schema,
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Column',
@@ -187,7 +189,7 @@ def _getStaticTables(catalog, schema, **kwargs):
                                            'Scale': 100,
                                            'IsNullable': NO_NULLS}),
                               'PrimaryKeys': ('Column', )}
-    tables['TableColumn'] =  {'CatalogName': catalog,
+    yield 'TableColumn',     {'CatalogName': catalog,
                               'SchemaName':  schema,
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Table',
@@ -239,7 +241,7 @@ def _getStaticTables(catalog, schema, **kwargs):
                                            'IsNullable': NULLABLE,
                                            'DefaultValue': 'NULL'}),
                               'PrimaryKeys': ('Table', 'Column')}
-    tables['ForeignKeys'] =  {'CatalogName': catalog,
+    yield 'ForeignKeys',     {'CatalogName': catalog,
                               'SchemaName':  schema,
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Table',
@@ -266,7 +268,7 @@ def _getStaticTables(catalog, schema, **kwargs):
                                            'TypeName': 'INTEGER',
                                            'Type': INTEGER,
                                            'IsNullable': NO_NULLS})}
-    tables['Indexes'] =      {'CatalogName': catalog,
+    yield 'Indexes',         {'CatalogName': catalog,
                               'SchemaName':  schema,
                               'Type':        'TEXT TABLE',
                               'Columns': ({'Name': 'Index',
@@ -286,9 +288,6 @@ def _getStaticTables(catalog, schema, **kwargs):
                                            'Type': BOOLEAN,
                                            'IsNullable': NO_NULLS,
                                            'DefaultValue': 'TRUE'})}
-    for name, value in kwargs.items():
-        tables[name] = value
-    return tables
 
 def _getUniqueIndexes(catalog, schema, *args):
     indexes = [(f'{catalog}.{schema}.Tables',  True, ('CatalogName', 'SchemaName', 'Name')),
@@ -297,16 +296,18 @@ def _getUniqueIndexes(catalog, schema, *args):
         indexes.append(index)
     return tuple(indexes)
 
-def _getForeignKeys(catalog, schema, *args):
-    foreignkeys = [(f'{catalog}.{schema}.TableColumn', 'Table',  f'{catalog}.{schema}.Tables',  'Table',  CASCADE, CASCADE),
-                   (f'{catalog}.{schema}.TableColumn', 'Column', f'{catalog}.{schema}.Columns', 'Column', CASCADE, CASCADE),
-                   (f'{catalog}.{schema}.ForeignKeys', 'Table',  f'{catalog}.{schema}.Tables',  'Table',  CASCADE, CASCADE),
-                   (f'{catalog}.{schema}.ForeignKeys', 'Column', f'{catalog}.{schema}.Columns', 'Column', CASCADE, CASCADE),
-                   (f'{catalog}.{schema}.Indexes',     'Table',  f'{catalog}.{schema}.Tables',  'Table',  CASCADE, CASCADE),
-                   (f'{catalog}.{schema}.Indexes',     'Column', f'{catalog}.{schema}.Columns', 'Column', CASCADE, CASCADE)]
-    for foreignkey in args:
-        foreignkeys.append(foreignkey)
-    return tuple(foreignkeys)
+def _getForeignKeyItems(catalog, schema, foreignkeys=None):
+    yield from _getForeignKeys(catalog, schema)
+    if foreignkeys is not None:
+        yield from foreignkeys
+
+def _getForeignKeys(catalog, schema):
+    yield (f'{catalog}.{schema}.TableColumn', 'Table',  f'{catalog}.{schema}.Tables',  'Table',  CASCADE, CASCADE)
+    yield (f'{catalog}.{schema}.TableColumn', 'Column', f'{catalog}.{schema}.Columns', 'Column', CASCADE, CASCADE)
+    yield (f'{catalog}.{schema}.ForeignKeys', 'Table',  f'{catalog}.{schema}.Tables',  'Table',  CASCADE, CASCADE)
+    yield (f'{catalog}.{schema}.ForeignKeys', 'Column', f'{catalog}.{schema}.Columns', 'Column', CASCADE, CASCADE)
+    yield (f'{catalog}.{schema}.Indexes',     'Table',  f'{catalog}.{schema}.Tables',  'Table',  CASCADE, CASCADE)
+    yield (f'{catalog}.{schema}.Indexes',     'Column', f'{catalog}.{schema}.Columns', 'Column', CASCADE, CASCADE)
 
 # Set Static Table Queries
 def _getTableSource(table, csv):

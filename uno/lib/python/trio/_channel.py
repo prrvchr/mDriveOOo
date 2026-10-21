@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import sys
 from collections import OrderedDict, deque
+from collections.abc import AsyncGenerator, Callable  # noqa: TC003  # Needed for Sphinx
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from functools import wraps
 from math import inf
 from typing import (
     TYPE_CHECKING,
@@ -13,18 +17,36 @@ from outcome import Error, Value
 import trio
 
 from ._abc import ReceiveChannel, ReceiveType, SendChannel, SendType, T
-from ._core import Abort, RaiseCancelT, Task, enable_ki_protection
-from ._util import NoPublicConstructor, final, generic_function
+from ._core import Abort, BrokenResourceError, RaiseCancelT, Task, enable_ki_protection
+from ._util import (
+    MultipleExceptionError,
+    NoPublicConstructor,
+    final,
+    raise_single_exception_from_group,
+)
+
+if sys.version_info < (3, 11):
+    from exceptiongroup import BaseExceptionGroup
 
 if TYPE_CHECKING:
     from types import TracebackType
 
-    from typing_extensions import Self
+    from typing_extensions import ParamSpec, Self
+
+    P = ParamSpec("P")
+elif "sphinx.ext.autodoc" in sys.modules:
+    # P needs to exist for Sphinx to parse the type hints successfully.
+    try:
+        from typing_extensions import ParamSpec
+    except ImportError:
+        P = ...  # This is valid in Callable, though not correct
+    else:
+        P = ParamSpec("P")
 
 
-def _open_memory_channel(
-    max_buffer_size: int | float,  # noqa: PYI041
-) -> tuple[MemorySendChannel[T], MemoryReceiveChannel[T]]:
+# written as a class so you can say open_memory_channel[int](5)
+@final
+class open_memory_channel(tuple["MemorySendChannel[T]", "MemoryReceiveChannel[T]"]):
     """Open a channel for passing objects between tasks within a process.
 
     Memory channels are lightweight, cheap to allocate, and entirely
@@ -74,48 +96,57 @@ def _open_memory_channel(
       channel (summing over all clones).
     * ``tasks_waiting_receive``: The number of tasks blocked in ``receive`` on
       this channel (summing over all clones).
-
+    * ``peak_buffer_used``: The largest number of items that have been in the
+      buffer at once since the channel was created.
     """
-    if max_buffer_size != inf and not isinstance(max_buffer_size, int):
-        raise TypeError("max_buffer_size must be an integer or math.inf")
-    if max_buffer_size < 0:
-        raise ValueError("max_buffer_size must be >= 0")
-    state: MemoryChannelState[T] = MemoryChannelState(max_buffer_size)
-    return (
-        MemorySendChannel[T]._create(state),
-        MemoryReceiveChannel[T]._create(state),
-    )
 
+    def __new__(  # type: ignore[misc]  # "must return a subtype"
+        cls,
+        max_buffer_size: int | float,  # noqa: PYI041
+    ) -> tuple[MemorySendChannel[T], MemoryReceiveChannel[T]]:
+        if max_buffer_size != inf and not isinstance(max_buffer_size, int):
+            raise TypeError("max_buffer_size must be an integer or math.inf")
+        if max_buffer_size < 0:
+            raise ValueError("max_buffer_size must be >= 0")
+        state: MemoryChannelState[T] = MemoryChannelState(max_buffer_size)
+        return (
+            MemorySendChannel[T]._create(state),
+            MemoryReceiveChannel[T]._create(state),
+        )
 
-# This workaround requires python3.9+, once older python versions are not supported
-# or there's a better way of achieving type-checking on a generic factory function,
-# it could replace the normal function header
-if TYPE_CHECKING:
-    # written as a class so you can say open_memory_channel[int](5)
-    class open_memory_channel(tuple["MemorySendChannel[T]", "MemoryReceiveChannel[T]"]):
-        def __new__(  # type: ignore[misc]  # "must return a subtype"
-            cls,
-            max_buffer_size: int | float,  # noqa: PYI041
-        ) -> tuple[MemorySendChannel[T], MemoryReceiveChannel[T]]:
-            return _open_memory_channel(max_buffer_size)
-
-        def __init__(self, max_buffer_size: int | float) -> None:  # noqa: PYI041
-            ...
-
-else:
-    # apply the generic_function decorator to make open_memory_channel indexable
-    # so it's valid to say e.g. ``open_memory_channel[bytes](5)`` at runtime
-    open_memory_channel = generic_function(_open_memory_channel)
+    def __init__(self, max_buffer_size: int | float) -> None:  # noqa: PYI041
+        ...
 
 
 @attrs.frozen
 class MemoryChannelStatistics:
+    """Statistics describing the current state of a memory channel.
+
+    Returned by :meth:`MemorySendChannel.statistics` and
+    :meth:`MemoryReceiveChannel.statistics`.
+    """
+
     current_buffer_used: int
+    """The number of items currently stored in the channel buffer."""
+
     max_buffer_size: int | float
+    """The maximum number of items that can be buffered in the channel."""
+
     open_send_channels: int
+    """The number of open :class:`MemorySendChannel` endpoints pointing to this channel."""
+
     open_receive_channels: int
+    """The number of open :class:`MemoryReceiveChannel` endpoints pointing to this channel."""
+
     tasks_waiting_send: int
+    """The number of tasks currently blocked waiting to send."""
+
     tasks_waiting_receive: int
+    """The number of tasks currently blocked waiting to receive."""
+
+    peak_buffer_used: int
+    """The largest number of items that have been in the buffer at once
+    since the channel was created."""
 
 
 @attrs.define
@@ -129,6 +160,8 @@ class MemoryChannelState(Generic[T]):
     send_tasks: OrderedDict[Task, T] = attrs.Factory(OrderedDict)
     # {task: None}
     receive_tasks: OrderedDict[Task, None] = attrs.Factory(OrderedDict)
+    # The largest len(self.data) has ever been
+    peak_buffer_used: int = 0
 
     def statistics(self) -> MemoryChannelStatistics:
         return MemoryChannelStatistics(
@@ -138,12 +171,19 @@ class MemoryChannelState(Generic[T]):
             open_receive_channels=self.open_receive_channels,
             tasks_waiting_send=len(self.send_tasks),
             tasks_waiting_receive=len(self.receive_tasks),
+            peak_buffer_used=self.peak_buffer_used,
         )
 
 
 @final
 @attrs.define(eq=False, repr=False, slots=False)
 class MemorySendChannel(SendChannel[SendType], metaclass=NoPublicConstructor):
+    """A memory channel endpoint for sending Python objects.
+
+    Instances of this class are created by
+    :func:`open_memory_channel` and cannot be instantiated directly.
+    """
+
     _state: MemoryChannelState[SendType]
     _closed: bool = False
     # This is just the tasks waiting on *this* object. As compared to
@@ -180,6 +220,10 @@ class MemorySendChannel(SendChannel[SendType], metaclass=NoPublicConstructor):
             trio.lowlevel.reschedule(task, Value(value))
         elif len(self._state.data) < self._state.max_buffer_size:
             self._state.data.append(value)
+            self._state.peak_buffer_used = max(
+                self._state.peak_buffer_used,
+                len(self._state.data),
+            )
         else:
             raise trio.WouldBlock
 
@@ -292,6 +336,12 @@ class MemorySendChannel(SendChannel[SendType], metaclass=NoPublicConstructor):
 @final
 @attrs.define(eq=False, repr=False, slots=False)
 class MemoryReceiveChannel(ReceiveChannel[ReceiveType], metaclass=NoPublicConstructor):
+    """A memory channel endpoint for receiving Python objects.
+
+    Instances of this class are created by
+    :func:`open_memory_channel` and cannot be instantiated directly.
+    """
+
     _state: MemoryChannelState[ReceiveType]
     _closed: bool = False
     _tasks: set[trio._core._run.Task] = attrs.Factory(set)
@@ -440,3 +490,163 @@ class MemoryReceiveChannel(ReceiveChannel[ReceiveType], metaclass=NoPublicConstr
         See `MemoryReceiveChannel.close`."""
         self.close()
         await trio.lowlevel.checkpoint()
+
+
+class RecvChanWrapper(ReceiveChannel[T]):
+    def __init__(
+        self, recv_chan: MemoryReceiveChannel[T], send_semaphore: trio.Semaphore
+    ) -> None:
+        self._recv_chan = recv_chan
+        self._send_semaphore = send_semaphore
+
+    async def receive(self) -> T:
+        self._send_semaphore.release()
+        return await self._recv_chan.receive()
+
+    async def aclose(self) -> None:
+        await self._recv_chan.aclose()
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        self._recv_chan.close()
+
+
+def as_safe_channel(
+    fn: Callable[P, AsyncGenerator[T, None]],
+) -> Callable[P, AbstractAsyncContextManager[ReceiveChannel[T]]]:
+    """Decorate an async generator function to make it cancellation-safe.
+
+    The ``yield`` keyword offers a very convenient way to write iterators...
+    which makes it really unfortunate that async generators are so difficult
+    to call correctly.  Yielding from the inside of a cancel scope or a nursery
+    to the outside `violates structured concurrency <https://xkcd.com/292/>`_
+    with consequences explained in :pep:`789`.  Even then, resource cleanup
+    errors remain common (:pep:`533`) unless you wrap every call in
+    :func:`~contextlib.aclosing`.
+
+    This decorator gives you the best of both worlds: with careful exception
+    handling and a background task we preserve structured concurrency by
+    offering only the safe interface, and you can still write your iterables
+    with the convenience of ``yield``.  For example::
+
+        @as_safe_channel
+        async def my_async_iterable(arg, *, kwarg=True):
+            while ...:
+                item = await ...
+                yield item
+
+        async with my_async_iterable(...) as recv_chan:
+            async for item in recv_chan:
+                ...
+
+    While the combined async-with-async-for can be inconvenient at first,
+    the context manager is indispensable for both correctness and for prompt
+    cleanup of resources.
+    """
+    # Perhaps a future PEP will adopt `async with for` syntax, like
+    # https://coconut.readthedocs.io/en/master/DOCS.html#async-with-for
+
+    @asynccontextmanager
+    @wraps(fn)
+    async def context_manager(
+        *args: P.args, **kwargs: P.kwargs
+    ) -> AsyncGenerator[trio._channel.RecvChanWrapper[T], None]:
+        send_chan, recv_chan = trio.open_memory_channel[T](0)
+        try:
+            async with trio.open_nursery(strict_exception_groups=True) as nursery:
+                agen = fn(*args, **kwargs)
+                send_semaphore = trio.Semaphore(0)
+                # `nursery.start` to make sure that we will clean up send_chan & agen
+                # If this errors we don't close `recv_chan`, but the caller
+                # never gets access to it, so that's not a problem.
+                await nursery.start(
+                    _move_elems_to_channel, agen, send_chan, send_semaphore
+                )
+                # `async with recv_chan` could eat exceptions, so use sync cm
+                with RecvChanWrapper(recv_chan, send_semaphore) as wrapped_recv_chan:
+                    yield wrapped_recv_chan
+                # User has exited context manager, cancel to immediately close the
+                # abandoned generator if it's still alive.
+                nursery.cancel_scope.cancel(
+                    "exited trio.as_safe_channel context manager"
+                )
+        except BaseExceptionGroup as eg:
+            try:
+                raise_single_exception_from_group(eg)
+            except MultipleExceptionError:
+                # In case user has except* we make it possible for them to handle the
+                # exceptions.
+                if sys.version_info >= (3, 11):
+                    eg.add_note(
+                        "Encountered exception during cleanup of generator object, as "
+                        "well as exception in the contextmanager body - unable to unwrap."
+                    )
+
+                raise eg from None
+
+    async def _move_elems_to_channel(
+        agen: AsyncGenerator[T, None],
+        send_chan: trio.MemorySendChannel[T],
+        send_semaphore: trio.Semaphore,
+        task_status: trio.TaskStatus,
+    ) -> None:
+        # `async with send_chan` will eat exceptions,
+        # see https://github.com/python-trio/trio/issues/1559
+        with send_chan:
+            # replace try-finally with contextlib.aclosing once python39 is
+            # dropped:
+            try:
+                task_status.started()
+                while True:
+                    # wait for receiver to call next on the aiter
+                    await send_semaphore.acquire()
+                    if not send_chan._state.open_receive_channels:
+                        # skip the possibly-expensive computation in the generator,
+                        # if we know it will be impossible to send the result.
+                        break
+                    try:
+                        value = await agen.__anext__()
+                    except StopAsyncIteration:
+                        return
+                    # Send the value to the channel
+                    try:
+                        await send_chan.send(value)
+                    except BrokenResourceError:
+                        break  # closed since we checked above
+            finally:
+                # work around `.aclose()` not suppressing GeneratorExit in an
+                # ExceptionGroup:
+                # TODO: make an issue on CPython about this
+                try:
+                    await agen.aclose()
+                except BaseExceptionGroup as exceptions:
+                    removed, narrowed_exceptions = exceptions.split(GeneratorExit)
+
+                    # TODO: extract a helper to flatten exception groups
+                    removed_exceptions: list[BaseException | None] = [removed]
+                    genexits_seen = 0
+                    for e in removed_exceptions:
+                        if isinstance(e, BaseExceptionGroup):
+                            removed_exceptions.extend(e.exceptions)  # noqa: B909
+                        else:
+                            genexits_seen += 1
+
+                    if genexits_seen > 1:
+                        exc = AssertionError("More than one GeneratorExit found.")
+                        if narrowed_exceptions is None:
+                            narrowed_exceptions = exceptions.derive([exc])
+                        else:
+                            narrowed_exceptions = narrowed_exceptions.derive(
+                                [*narrowed_exceptions.exceptions, exc]
+                            )
+                    if narrowed_exceptions is not None:
+                        raise narrowed_exceptions from None
+
+    return context_manager

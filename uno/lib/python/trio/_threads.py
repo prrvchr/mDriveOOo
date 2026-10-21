@@ -357,7 +357,7 @@ async def to_thread_run_sync(
     task_register: list[trio.lowlevel.Task | None] = [trio.lowlevel.current_task()]
     # Holds a reference to the raise_cancel function provided if a cancellation
     # is attempted against this task - or None if no such delivery has happened.
-    cancel_register: list[RaiseCancelT | None] = [None]  # type: ignore[assignment]
+    cancel_register: list[RaiseCancelT | None] = [None]
     name = f"trio.to_thread.run_sync-{next(_thread_counter)}"
     placeholder = ThreadPlaceholder(name)
 
@@ -430,6 +430,8 @@ async def to_thread_run_sync(
 
         def abort(raise_cancel: RaiseCancelT) -> trio.lowlevel.Abort:
             # fill so from_thread_check_cancelled can raise
+            # 'raise_cancel' will immediately delete its reason object, so we make
+            # a copy in each thread
             cancel_register[0] = raise_cancel
             if abandon_bool:
                 # empty so report_back_in_trio_thread_fn cannot reschedule

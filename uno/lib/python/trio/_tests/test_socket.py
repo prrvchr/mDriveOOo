@@ -8,20 +8,18 @@ import sys
 import tempfile
 from pathlib import Path
 from socket import AddressFamily, SocketKind
-from typing import TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING, TypeAlias, cast
 
 import attrs
 import pytest
 
 from .. import _core, socket as tsocket
-from .._core._tests.tutil import binds_ipv6, can_create_ipv6, creates_ipv6
+from .._core._tests.tutil import binds_ipv6, can_create_ipv6, creates_ipv6, slow
 from .._socket import _NUMERIC_ONLY, AddressFormat, SocketType, _SocketType, _try_sync
 from ..testing import assert_checkpoints, wait_all_tasks_blocked
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from typing_extensions import TypeAlias
 
     from .._highlevel_socket import SocketStream
 
@@ -30,12 +28,12 @@ if TYPE_CHECKING:
         SocketKind,
         int,
         str,
-        Union[tuple[str, int], tuple[str, int, int, int], tuple[int, bytes]],
+        tuple[str, int] | tuple[str, int, int, int] | tuple[int, bytes],
     ]
     GetAddrInfoResponse: TypeAlias = list[GaiTuple]
     GetAddrInfoArgs: TypeAlias = tuple[
-        Union[str, bytes, None],
-        Union[str, bytes, int, None],
+        str | bytes | None,
+        str | bytes | int | None,
         int,
         int,
         int,
@@ -469,12 +467,21 @@ def setsockopt_tests(sock: SocketType | SocketStream) -> None:
     if hasattr(tsocket, "SO_BINDTODEVICE"):
         try:
             sock.setsockopt(tsocket.SOL_SOCKET, tsocket.SO_BINDTODEVICE, None, 0)
-        except OSError as e:
-            # some versions of Python have the attribute yet can run on platforms
-            # that do not support it. For instance, MacOS 15 gained support for
-            # SO_BINDTODEVICE and CPython 3.13.1 was built on it (presumably), but
-            # our CI runners ran MacOS 14 and so failed.
-            assert e.errno == 42  # noqa: PT017
+        except (
+            OSError
+        ) as e:  # pragma: no cover  # all CI runners support SO_BINDTODEVICE
+            assert e.errno in [  # noqa: PT017
+                # some versions of Python have the attribute yet can run on
+                # platforms that do not support it. For instance, MacOS 15
+                # gained support for SO_BINDTODEVICE and CPython 3.13.1 was
+                # built on it (presumably), but our CI runners ran MacOS 14 and
+                # so failed.
+                42,
+                # Older Linux kernels (prior to patch
+                # https://lore.kernel.org/netdev/m37drhs1jn.fsf@bernat.ch/t/)
+                # do not support SO_BINDTODEVICE as an unprivileged user.
+                errno.EPERM,
+            ]
 
     # specifying value
     sock.setsockopt(tsocket.IPPROTO_TCP, tsocket.TCP_NODELAY, False)
@@ -660,7 +667,7 @@ async def test_SocketType_resolve(socket_type: AddressFamily, addrs: Addresses) 
                     local=local,  # noqa: B023  # local is not bound in function definition
                 )
                 assert isinstance(value, tuple)
-                return cast("tuple[Union[str, int], ...]", value)
+                return cast("tuple[str | int, ...]", value)
 
             assert_eq(await res((addrs.arbitrary, "http")), (addrs.arbitrary, 80))
             if v6:
@@ -829,6 +836,7 @@ async def test_SocketType_non_blocking_paths() -> None:
 
 
 # This tests the complicated paths through connect
+@slow
 async def test_SocketType_connect_paths() -> None:
     with tsocket.socket() as sock:
         with pytest.raises(
@@ -895,10 +903,14 @@ async def test_SocketType_connect_paths() -> None:
             # connect to fail. Really. Also if you use a non-routable
             # address. This way fails instantly though. As long as nothing
             # is listening on port 2.)
+
+            # Windows retries failed connections so this takes seconds
+            # (and that's why this is marked @slow)
             await sock.connect(("127.0.0.1", 2))
 
 
 # Fix issue #1810
+@slow
 async def test_address_in_socket_error() -> None:
     address = "127.0.0.1"
     with tsocket.socket() as sock:
@@ -906,6 +918,8 @@ async def test_address_in_socket_error() -> None:
             OSError,
             match=rf"^\[\w+ \d+\] Error connecting to \({address!r}, 2\): (Connection refused|Unknown error)$",
         ):
+            # Windows retries failed connections so this takes seconds
+            # (and that's why this is marked @slow)
             await sock.connect((address, 2))
 
 
@@ -961,7 +975,7 @@ async def test_send_recv_variants() -> None:
         # recvfrom + sendto, with and without names
         for target in targets:
             assert await a.sendto(b"xxx", target) == 3
-            (data, addr) = await b.recvfrom(10)
+            data, addr = await b.recvfrom(10)
             assert data == b"xxx"
             assert addr == a.getsockname()
 
@@ -977,21 +991,21 @@ async def test_send_recv_variants() -> None:
             await a.sendto(b"xxx", tsocket.MSG_MORE, b.getsockname())
             await a.sendto(b"yyy", tsocket.MSG_MORE, b.getsockname())
             await a.sendto(b"zzz", b.getsockname())
-            (data, addr) = await b.recvfrom(10)
+            data, addr = await b.recvfrom(10)
             assert data == b"xxxyyyzzz"
             assert addr == a.getsockname()
 
         # recvfrom_into
         assert await a.sendto(b"xxx", b.getsockname()) == 3
         buf = bytearray(10)
-        (nbytes, addr) = await b.recvfrom_into(buf)
+        nbytes, addr = await b.recvfrom_into(buf)
         assert nbytes == 3
         assert buf == b"xxx" + b"\x00" * 7
         assert addr == a.getsockname()
 
         if hasattr(b, "recvmsg"):
             assert await a.sendto(b"xxx", b.getsockname()) == 3
-            (data, ancdata, msg_flags, addr) = await b.recvmsg(10)
+            data, ancdata, msg_flags, addr = await b.recvmsg(10)
             assert data == b"xxx"
             assert ancdata == []
             assert msg_flags == 0
@@ -1002,7 +1016,7 @@ async def test_send_recv_variants() -> None:
             buf1 = bytearray(2)
             buf2 = bytearray(3)
             ret = await b.recvmsg_into([buf1, buf2])
-            (nbytes, ancdata, msg_flags, addr) = ret
+            nbytes, ancdata, msg_flags, addr = ret
             assert nbytes == 4
             assert buf1 == b"xy"
             assert buf2 == b"zw" + b"\x00"
@@ -1215,7 +1229,7 @@ async def test_interrupted_by_close() -> None:
 
 
 async def test_many_sockets() -> None:
-    total = 5000  # Must be more than MAX_AFD_GROUP_SIZE
+    total = 1000  # Must be more than MAX_AFD_GROUP_SIZE
     sockets = []
     # Open at most <total> socket pairs
     for opened in range(0, total, 2):

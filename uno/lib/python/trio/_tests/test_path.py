@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import pathlib
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -51,8 +51,8 @@ def test_magic() -> None:
     assert bytes(path) == b"test"
 
 
-EitherPathType = Union[type[trio.Path], type[pathlib.Path]]
-PathOrStrType = Union[EitherPathType, type[str]]
+EitherPathType = type[trio.Path] | type[pathlib.Path]
+PathOrStrType = EitherPathType | type[str]
 cls_pairs: list[tuple[EitherPathType, EitherPathType]] = [
     (trio.Path, pathlib.Path),
     (pathlib.Path, trio.Path),
@@ -168,10 +168,8 @@ def test_forward_properties_rewrap(path: trio.Path) -> None:
     assert isinstance(path.parent, trio.Path)
 
 
-async def test_forward_methods_without_rewrap(path: trio.Path) -> None:
-    path = await path.parent.resolve()
-
-    assert path.as_uri().startswith("file:///")
+def test_forward_methods_without_rewrap(path: trio.Path) -> None:
+    assert "totally-unique-path" in str(path.joinpath("totally-unique-path"))
 
 
 def test_repr() -> None:
@@ -212,16 +210,16 @@ async def test_globmethods(path: trio.Path) -> None:
     await (path / "bar.dat").write_bytes(b"")
 
     # Path.glob
-    for _pattern, _results in {
+    for pattern, results in {
         "*.txt": {"bar.txt"},
         "**/*.txt": {"_bar.txt", "bar.txt"},
     }.items():
         entries = set()
-        for entry in await path.glob(_pattern):
+        for entry in await path.glob(pattern):
             assert isinstance(entry, trio.Path)
             entries.add(entry.name)
 
-        assert entries == _results
+        assert entries == results
 
     # Path.rglob
     entries = set()
@@ -230,6 +228,12 @@ async def test_globmethods(path: trio.Path) -> None:
         entries.add(entry.name)
 
     assert entries == {"_bar.txt", "bar.txt"}
+
+
+async def test_as_uri(path: trio.Path) -> None:
+    path = await path.parent.resolve()
+
+    assert path.as_uri().startswith("file:///")
 
 
 async def test_iterdir(path: trio.Path) -> None:
@@ -250,7 +254,7 @@ async def test_classmethods() -> None:
     assert isinstance(await trio.Path.home(), trio.Path)
 
     # pathlib.Path has only two classmethods
-    assert str(await trio.Path.home()) == os.path.expanduser("~")
+    assert str(await trio.Path.home()) == os.path.expanduser("~")  # noqa: ASYNC240
     assert str(await trio.Path.cwd()) == os.getcwd()
 
     # Wrapped method has docstring

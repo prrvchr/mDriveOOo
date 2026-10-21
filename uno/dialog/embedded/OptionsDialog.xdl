@@ -25,15 +25,26 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 -->
 <!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
-<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="OptionsDialog" dlg:left="0" dlg:top="0" dlg:width="260" dlg:height="225" dlg:help-text="&amp;OptionsDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;OptionsDialog.Title" dlg:withtitlebar="false">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:id="OptionsDialog" dlg:page="1" dlg:left="0" dlg:top="0" dlg:width="260" dlg:height="225" dlg:help-text="&amp;OptionsDialog.HelpText" dlg:closeable="true" dlg:moveable="true" dlg:title="&amp;OptionsDialog.Title" dlg:withtitlebar="false">
   <dlg:styles>
     <dlg:style dlg:style-id="0" dlg:font-weight="150"/>
   </dlg:styles>
   <dlg:bulletinboard>
-    <dlg:text dlg:id="Label1" dlg:left="10" dlg:top="140" dlg:width="60" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label1.HelpText" dlg:value="&amp;OptionsDialog.Label1.Label" dlg:valign="center"/>
-    <dlg:text dlg:id="Label2" dlg:left="140" dlg:top="140" dlg:width="110" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label2.HelpText" dlg:value="&amp;OptionsDialog.Label2.Label" dlg:align="right" dlg:valign="center"/>
-    <dlg:text dlg:style-id="0" dlg:id="Label3" dlg:left="10" dlg:top="165" dlg:width="240" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label3.HelpText" dlg:value="&amp;OptionsDialog.Label3.Label" dlg:align="center" dlg:valign="center"/>
-    <dlg:linklabel dlg:style-id="0" dlg:id="Hyperlink1" dlg:tab-index="0" dlg:left="10" dlg:top="165" dlg:width="240" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Hyperlink1.HelpText" dlg:value="&amp;OptionsDialog.Hyperlink1.Label" dlg:align="center" dlg:valign="center"/>
+    <dlg:text dlg:id="Label1" dlg:left="125" dlg:top="140" dlg:width="50" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label1.HelpText" dlg:value="&amp;OptionsDialog.Label1.Label" dlg:valign="center"/>
+    <dlg:text dlg:id="Label2" dlg:left="180" dlg:top="140" dlg:width="70" dlg:height="15" dlg:help-text="&amp;OptionsDialog.Label2.HelpText" dlg:value="&amp;OptionsDialog.Label2.Label" dlg:align="right" dlg:valign="center"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label3" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label3.HelpText" dlg:value="&amp;OptionsDialog.Label3.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="2"/>
+    <dlg:linklabel dlg:style-id="0" dlg:id="Hyperlink1" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Hyperlink1.HelpText" dlg:value="&amp;OptionsDialog.Hyperlink1.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="3"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label4" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label4.HelpText" dlg:value="&amp;OptionsDialog.Label4.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="4"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label5" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label5.HelpText" dlg:value="&amp;OptionsDialog.Label5.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="5"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label6" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label6.HelpText" dlg:value="&amp;OptionsDialog.Label6.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="6"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label7" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label7.HelpText" dlg:value="&amp;OptionsDialog.Label7.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="7"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label8" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label8.HelpText" dlg:value="&amp;OptionsDialog.Label8.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="8"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label9" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label9.HelpText" dlg:value="&amp;OptionsDialog.Label9.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="9"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label10" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label10.HelpText" dlg:value="&amp;OptionsDialog.Label10.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="10"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label11" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label11.HelpText" dlg:value="&amp;OptionsDialog.Label11.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="11"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label12" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label12.HelpText" dlg:value="&amp;OptionsDialog.Label12.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="12"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label13" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label13.HelpText" dlg:value="&amp;OptionsDialog.Label13.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="13"/>
+    <dlg:text dlg:style-id="0" dlg:id="Label14" dlg:left="10" dlg:top="205" dlg:width="240" dlg:height="25" dlg:help-text="&amp;OptionsDialog.Label14.HelpText" dlg:value="&amp;OptionsDialog.Label14.Label" dlg:align="center" dlg:valign="center" dlg:multiline="true" dlg:page="14"/>
   </dlg:bulletinboard>
 </dlg:window>
 

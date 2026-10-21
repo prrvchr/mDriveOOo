@@ -29,5 +29,3 @@
 
 from .logmanager import LogManager
 
-from .loghandler import LoggerListener
-

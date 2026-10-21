@@ -32,16 +32,21 @@ import uno
 from ..unotool import createService
 from ..unotool import getExtensionVersion
 
-from .configuration import g_service
-from .configuration import g_identifier
+from ..configuration import State
+
 from .configuration import g_chunk
+from .configuration import g_identifier
+from .configuration import g_service
+try:
+    import ijson
+except ImportError as e:
+    State.restart = True
 
 from string import Formatter
 from string import Template
 from urllib import parse
 import base64
 import json
-import ijson
 
 
 def getRequest(ctx, url=None, name=None):

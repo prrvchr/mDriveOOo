@@ -31,198 +31,37 @@ import traceback
 
 
 class OptionsView():
-    def __init__(self, window, restart, url, instrumented, exist, hasfile, resumable, link):
+    def __init__(self, window, update, links):
         self._window = window
-        if exist:
-            self._disableShare()
-        self._getResetSync().Model.Enabled = exist
-        self._getResetFile().Model.Enabled = exist
-        self._getDatasource().Model.Enabled = exist
-        self._getFile().Model.Enabled = hasfile
-        self._getUpload().Model.Enabled = resumable
-        self._getLink().URL = link
-        control = self._getWarning()
-        control.URL = url
-        self._setWarning(control, restart, instrumented)
+        self._getSetup().Model.Enabled = update
+        for i, link in enumerate(links, start=1):
+            self._getLink(i).URL = link
 
 # OptionsView getter methods
     def getViewData(self):
-        reset = self._getResetSync().State
-        reset += self._getResetFile().State
-        share = bool(self._getShare().State)
-        name = self._getShareName().Text
-        index = self._getOptionIndex()
-        timeout = int(self._getTimeout().Value)
-        download = self._getSetting(0)
-        upload = self._getSetting(1)
-        macro = bool(self._getMacro().State)
-        return reset, share, name, index, timeout, download, upload, macro
+        return self.getSetup()
 
-    def getChunk(self, index):
-        return int(self._getChunk(index).Value)
+    def getSetup(self):
+        return self._getSetup().getSelectedItemPos()
 
-# OptionsView setter methods
-    def setWarning(self, restart, instrumented):
-        self._setWarning(self._getWarning(), restart, instrumented)
+# OptionView setter methods
+    def initView(self, setup, state):
+        self._setSetup(setup)
+        self.refreshView(state)
 
-    def setStep(self, step, restart, instrumented):
-        self._window.Model.Step = step
-        # XXX: If we change the step, we have to restore the visibility of the controls
-        # XXX: because it was lost (ie: after setting the new step everything is visible).
-        self.setWarning(restart, instrumented)
-
-    def setViewData(self, restart, instrumented, exist, reset, support, share, name, index, timeout, download, upload, macro):
-        self._getResetSync().State = int(reset != 0)
-        self._getResetFile().State = int(reset == 2)
-        self.enableResetFile(reset != 0)
-        if support:
-            self._getShare().State = int(share)
-            self._getShare().Model.Enabled = True
-            self._getShareName().Text = name
-            self.enableShare(share)
-        else:
-            self._getShare().State = 0
-            self._getShare().Model.Enabled = False
-            self._getShareName().Text = name
-            self.enableShare(False)
-        self._getOption(index).State = 1
-        self.enableSync(restart, instrumented, index != 3, exist)
-        self._getTimeout().Value = timeout
-        self._setSetting(download, 0)
-        self._setSetting(upload, 1)
-        self._getMacro().State = int(macro)
-        self.enableCustomize(macro)
-        self.setWarning(restart, instrumented)
-
-    def enableShare(self, enabled):
-        self._getShareName().Model.Enabled = enabled
-
-    def enableSync(self, restart, instrumented, enabled, exist):
-        self._getResetSync().Model.Enabled = enabled and exist
-        self._getTimeoutLabel().Model.Enabled = enabled
-        self._getTimeout().Model.Enabled = enabled
-        self._enableUpload(restart, instrumented, enabled)
-
-    def enableResetFile(self, enabled):
-        self._getResetFile().Model.Enabled = enabled
-        if not enabled:
-            self._getResetFile().State = 0
-
-    def enableCustomize(self, enabled):
-        self._getLink().Model.Enabled = enabled
-        self._getCustomize().Model.Enabled = enabled
-
-    def setChunk(self, index, chunk):
-        control = self._getChunk(index)
-        control.Value = chunk
-        self._getSpinUp(index).Model.Enabled = chunk < control.Max
-        enabled = chunk > control.Min
-        self._getSpinDown(index).Model.Enabled = enabled
-        if not enabled:
-            self._getSpinUp(index).setFocus()
-
-# OptionsView private getter methods
-    def _getOptionIndex(self):
-        for index in range(1,4):
-            if self._getOption(index).State:
-                return index
-
-    def _getSetting(self, index):
-        return {'Chunk': int(self._getChunk(index).Value),
-                'Delay': int(self._getDelay(index).Value),
-                'Retry': int(self._getRetry(index).Value)}
+    def refreshView(self, state):
+        self._window.Model.Step = state.step
 
 # OptionsView private setter methods
-    def _setWarning(self, control, restart, instrumented):
-        if restart:
-            control.setVisible(False)
-            self._getRestart().setVisible(True)
-        else:
-            self._getRestart().setVisible(False)
-            control.setVisible(not instrumented)
-
-    def _disableShare(self):
-        self._getShare().Model.Enabled = False
-        self._getShareName().Model.Enabled = False
-
-    def _setSetting(self, setting, index):
-        self.setChunk(index, setting.get('Chunk'))
-        self._getDelay(index).Value = setting.get('Delay')
-        self._getRetry(index).Value = setting.get('Retry')
-
-    def _enableUpload(self, restart, instrumented, enabled):
-        control = self._getUpload()
-        if not enabled and control.State:
-            self._getDownload().State = 1
-            self.setStep(1, restart, instrumented)
-        control.Model.Enabled = enabled
+    def _setSetup(self, setup):
+        control = self._getSetup()
+        if control.Model.Enabled:
+            control.selectItemPos(setup, True)
 
 # OptionsView private control methods
-    def _getResetSync(self):
-        return self._window.getControl('CheckBox1')
+    def _getSetup(self):
+        return self._window.getControl('ListBox1')
 
-    def _getResetFile(self):
-        return self._window.getControl('CheckBox2')
-
-    def _getShare(self):
-        return self._window.getControl('CheckBox3')
-
-    def _getShareName(self):
-        return self._window.getControl('TextField1')
-
-    def _getOption(self, index):
-        return self._window.getControl('OptionButton%s' % index)
-
-    def _getTimeoutLabel(self):
-        return self._window.getControl('Label3')
-
-    def _getTimeout(self):
-        return self._window.getControl('NumericField1')
-
-    def _getDatasource(self):
-        return self._window.getControl('CommandButton1')
-
-    def _getFile(self):
-        return self._window.getControl('CommandButton2')
-
-    def _getSpinUp(self, index):
-        index += 3
-        return self._window.getControl('CommandButton%s' % index)
-
-    def _getSpinDown(self, index):
-        index += 5
-        return self._window.getControl('CommandButton%s' % index)
-
-    def _getDownload(self):
-        return self._window.getControl('OptionButton4')
-
-    def _getUpload(self):
-        return self._window.getControl('OptionButton5')
-
-    def _getChunk(self, index):
-        index += 2
-        return self._window.getControl('NumericField%s' % index)
-
-    def _getDelay(self, index):
-        index += 4
-        return self._window.getControl('NumericField%s' % index)
-
-    def _getRetry(self, index):
-        index += 6
-        return self._window.getControl('NumericField%s' % index)
-
-    def _getMacro(self):
-        return self._window.getControl('CheckBox4')
-
-    def _getLink(self):
-        return self._window.getControl('Hyperlink1')
-
-    def _getCustomize(self):
-        return self._window.getControl('CommandButton7')
-
-    def _getRestart(self):
-        return self._window.getControl('Label8')
-
-    def _getWarning(self):
-        return self._window.getControl('Hyperlink2')
+    def _getLink(self, index):
+        return self._window.getControl(f'Hyperlink{index}')
 

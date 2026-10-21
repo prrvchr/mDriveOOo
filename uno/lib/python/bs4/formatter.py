@@ -168,7 +168,7 @@ class Formatter(EntitySubstitution):
         return self.substitute(value)
 
     def attributes(
-        self, tag: bs4.element.Tag
+        self, tag: bs4.element.Tag # type:ignore
     ) -> Iterable[Tuple[str, Optional[_AttributeValue]]]:
         """Reorder a tag's attributes however you want.
 

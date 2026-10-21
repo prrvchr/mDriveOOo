@@ -18,6 +18,7 @@ from lxml.includes cimport tree
 cimport lxml.includes.etreepublic as cetree
 cimport libc.string as cstring_h   # not to be confused with stdlib 'string'
 from libc.string cimport const_char
+from libc cimport limits
 
 __all__ = ['BoolElement', 'DataElement', 'E', 'Element', 'ElementMaker',
            'FloatElement', 'IntElement', 'NoneElement',
@@ -366,7 +367,7 @@ cdef class ObjectifiedElement(ElementBase):
         return _build_descendant_paths(self._c_node, prefix)
 
 
-cdef inline bint _tagMatches(tree.xmlNode* c_node, const_xmlChar* c_href, const_xmlChar* c_name):
+cdef inline bint _tagMatches(tree.xmlNode* c_node, const_xmlChar* c_href, const_xmlChar* c_name) noexcept:
     if c_node.name != c_name:
         return 0
     if c_href == NULL:
@@ -377,7 +378,7 @@ cdef inline bint _tagMatches(tree.xmlNode* c_node, const_xmlChar* c_href, const_
     return tree.xmlStrcmp(c_node_href, c_href) == 0
 
 
-cdef Py_ssize_t _countSiblings(tree.xmlNode* c_start_node):
+cdef Py_ssize_t _countSiblings(tree.xmlNode* c_start_node) noexcept:
     cdef tree.xmlNode* c_node
     cdef Py_ssize_t count
     c_tag  = c_start_node.name
@@ -399,8 +400,7 @@ cdef Py_ssize_t _countSiblings(tree.xmlNode* c_start_node):
 
 cdef tree.xmlNode* _findFollowingSibling(tree.xmlNode* c_node,
                                          const_xmlChar* href, const_xmlChar* name,
-                                         Py_ssize_t index):
-    cdef tree.xmlNode* (*next)(tree.xmlNode*)
+                                         Py_ssize_t index) noexcept:
     if index >= 0:
         next = cetree.nextElement
     else:
@@ -420,8 +420,11 @@ cdef object _lookupChild(_Element parent, tag):
     cdef tree.xmlNode* c_node
     c_node = parent._c_node
     ns, tag = cetree.getNsTagWithEmptyNs(tag)
+    c_tag_len = len(<bytes> tag)
+    if c_tag_len > limits.INT_MAX:
+        return None
     c_tag = tree.xmlDictExists(
-        c_node.doc.dict, _xcstr(tag), python.PyBytes_GET_SIZE(tag))
+        c_node.doc.dict, _xcstr(tag), <int> c_tag_len)
     if c_tag is NULL:
         return None # not in the hash map => not in the tree
     if ns is None:
@@ -1283,7 +1286,7 @@ cdef object _guessElementClass(tree.xmlNode* c_node):
         return None
     if value == '':
         return StringElement
-    
+
     for type_check, pytype in _TYPE_CHECKS:
         try:
             type_check(value)
@@ -1689,8 +1692,8 @@ def annotate(element_or_tree, *, ignore_old=True, ignore_xsi=False,
 
     If the 'ignore_xsi' keyword argument is False (the default), existing
     'xsi:type' attributes will be used for the type annotation, if they fit the
-    element text values. 
-    
+    element text values.
+
     Note that the mapping from Python types to XSI types is usually ambiguous.
     Currently, only the first XSI type name in the corresponding PyType
     definition will be used for annotation.  Thus, you should consider naming
@@ -1705,7 +1708,7 @@ def annotate(element_or_tree, *, ignore_old=True, ignore_xsi=False,
     elements.  Pass 'string', for example, to make string values the default.
 
     The keyword arguments 'annotate_xsi' (default: 0) and 'annotate_pytype'
-    (default: 1) control which kind(s) of annotation to use. 
+    (default: 1) control which kind(s) of annotation to use.
     """
     cdef _Element  element
     element = cetree.rootNodeOrRaise(element_or_tree)
@@ -1878,7 +1881,7 @@ def deannotate(element_or_tree, *, bint pytype=True, bint xsi=True,
     and/or 'xsi:type' attributes and/or 'xsi:nil' attributes.
 
     If the 'pytype' keyword argument is True (the default), 'py:pytype'
-    attributes will be removed. If the 'xsi' keyword argument is True (the 
+    attributes will be removed. If the 'xsi' keyword argument is True (the
     default), 'xsi:type' attributes will be removed.
     If the 'xsi_nil' keyword argument is True (default: False), 'xsi:nil'
     attributes will be removed.
@@ -2124,7 +2127,7 @@ def DataElement(_value, attrib=None, nsmap=None, *, _pytype=None, _xsi=None,
         stringify = unicode if py_type is None else py_type.stringify
         strval = stringify(_value)
 
-    if _pytype is not None: 
+    if _pytype is not None:
         if _pytype == "NoneType" or _pytype == "none":
             strval = None
             _attributes[XML_SCHEMA_INSTANCE_NIL_ATTR] = "true"
