@@ -86,15 +86,15 @@
     <dlg:text dlg:id="Label7" dlg:left="200" dlg:top="160" dlg:width="25" dlg:height="15" dlg:help-text="&amp;OptionDialog.Label7.HelpText" dlg:value="&amp;OptionDialog.Label7.Label" dlg:align="right" dlg:valign="center"/>
     <dlg:numericfield dlg:id="NumericField6" dlg:tab-index="18" dlg:page="1" dlg:left="230" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionDialog.NumericField6.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="10"/>
     <dlg:numericfield dlg:id="NumericField7" dlg:tab-index="19" dlg:page="2" dlg:left="230" dlg:top="160" dlg:width="20" dlg:height="15" dlg:help-text="&amp;OptionDialog.NumericField7.HelpText" dlg:decimal-accuracy="0" dlg:value-min="1" dlg:value-max="10"/>
-    <dlg:checkbox dlg:id="CheckBox3" dlg:tab-index="20" dlg:left="10" dlg:top="180" dlg:width="150" dlg:height="15" dlg:help-text="&amp;OptionDialog.CheckBox3.HelpText" dlg:value="&amp;OptionDialog.CheckBox3.Label" dlg:valign="center" dlg:checked="false">
+    <dlg:checkbox dlg:id="CheckBox3" dlg:disabled="true" dlg:tab-index="20" dlg:left="10" dlg:top="180" dlg:width="150" dlg:height="15" dlg:help-text="&amp;OptionDialog.CheckBox3.HelpText" dlg:value="&amp;OptionDialog.CheckBox3.Label" dlg:valign="center" dlg:checked="false">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableShare" script:language="UNO"/>
     </dlg:checkbox>
-    <dlg:textfield dlg:id="TextField1" dlg:tab-index="21" dlg:left="160" dlg:top="180" dlg:width="90" dlg:height="15" dlg:help-text="&amp;OptionDialog.TextField1.HelpText" dlg:value="&amp;OptionDialog.TextField1.Text"/>
+    <dlg:textfield dlg:id="TextField1" dlg:disabled="true" dlg:tab-index="21" dlg:left="160" dlg:top="180" dlg:width="90" dlg:height="15" dlg:help-text="&amp;OptionDialog.TextField1.HelpText" dlg:value="&amp;OptionDialog.TextField1.Text"/>
     <dlg:checkbox dlg:id="CheckBox4" dlg:tab-index="22" dlg:left="10" dlg:top="200" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionDialog.CheckBox4.HelpText" dlg:value="&amp;OptionDialog.CheckBox4.Label" dlg:valign="center" dlg:checked="false">
       <script:event script:event-name="on-itemstatechange" script:macro-name="vnd.sun.star.UNO:EnableMacro" script:language="UNO"/>
     </dlg:checkbox>
-    <dlg:linklabel dlg:style-id="0" dlg:id="Hyperlink1" dlg:tab-index="23" dlg:left="105" dlg:top="200" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionDialog.Hyperlink1.HelpText" dlg:value="&amp;OptionDialog.Hyperlink1.Label" dlg:valign="center" dlg:align="center"/>
-    <dlg:button dlg:id="CommandButton7" dlg:tab-index="24" dlg:left="195" dlg:top="200" dlg:width="55" dlg:height="15" dlg:help-text="&amp;OptionDialog.CommandButton7.HelpText" dlg:value="&amp;OptionDialog.CommandButton7.Label">
+    <dlg:linklabel dlg:style-id="0" dlg:id="Hyperlink1" dlg:disabled="true" dlg:tab-index="23" dlg:left="105" dlg:top="200" dlg:width="80" dlg:height="15" dlg:help-text="&amp;OptionDialog.Hyperlink1.HelpText" dlg:value="&amp;OptionDialog.Hyperlink1.Label" dlg:valign="center" dlg:align="center"/>
+    <dlg:button dlg:id="CommandButton7" dlg:disabled="true" dlg:tab-index="24" dlg:left="195" dlg:top="200" dlg:width="55" dlg:height="15" dlg:help-text="&amp;OptionDialog.CommandButton7.HelpText" dlg:value="&amp;OptionDialog.CommandButton7.Label">
       <script:event script:event-name="on-performaction" script:macro-name="vnd.sun.star.UNO:Customize" script:language="UNO"/>
     </dlg:button>
   </dlg:bulletinboard>
