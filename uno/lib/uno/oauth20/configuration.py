@@ -42,9 +42,13 @@ g_basename = 'OAuth2'
 g_defaultlog = 'OAuth2Logger'
 g_errorlog = 'OAuth2Error'
 
-g_wizard_page = 2 # -1 to disable
+g_wizard_page = 2  # -1 to disable
 g_wizard_paths = ((1, 2, 3, 4), (1, 4))
-g_refresh_overlap = 10 # must be positive, in second
+g_refresh_overlap = 10  # must be positive, in second
+
+# Setup frame and Job name
+g_setup = '%s.Setup' % g_extension
+
 
 class State:
     restart = False

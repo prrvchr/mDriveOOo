@@ -27,8 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
-
 from com.sun.star.logging.LogLevel import ALL
 
 from .loggerpool import LoggerPool
@@ -39,8 +37,6 @@ from ..unotool import getStringResourceWithLocation
 from ..configuration import g_extension
 from ..configuration import g_identifier
 from ..configuration import g_resource
-
-import traceback
 
 
 def getLogName(name):
@@ -53,7 +49,7 @@ class LogWrapper():
     def __init__(self, ctx, name, basename):
         self._ctx = ctx
         self._basename = basename
-        url , logger = self._getPoolLogger(name, basename)
+        url, logger = self._getPoolLogger(name, basename)
         self._url = url
         self._logger = logger
         self._level = ALL
@@ -66,6 +62,7 @@ class LogWrapper():
     @property
     def Level(self):
         return self._logger.Level
+
     @Level.setter
     def Level(self, value):
         self._logger.Level = value

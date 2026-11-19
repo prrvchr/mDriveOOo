@@ -54,14 +54,14 @@ from .dbconfig import g_queries
 
 from .configuration import g_scheme
 
-import traceback
-
 
 def getDataBaseUrl(ctx):
     return getConnectionUrl(ctx, g_folder + g_ucbseparator + g_scheme)
 
+
 def getDataSourceUrl(ctx):
     return getConnectionUrl(ctx, g_folder + g_ucbseparator + g_scheme + '.odb')
+
 
 def getStaticTables():
     yield 'Privileges',      {'CatalogName': g_catalog,
@@ -86,22 +86,28 @@ def getStaticTables():
                                            'Type': INTEGER,
                                            'IsNullable': NO_NULLS})}
 
+
 def getForeignKeys():
     yield (f'{g_catalog}.{g_schema}.Privileges', 'Table',  f'{g_catalog}.{g_schema}.Tables',  'Table',  KeyRule.CASCADE, KeyRule.CASCADE)
     yield (f'{g_catalog}.{g_schema}.Privileges', 'Column', f'{g_catalog}.{g_schema}.Columns', 'Column', KeyRule.CASCADE, KeyRule.CASCADE)
+
 
 def getFunctions():
     for name in ('GetIsFolder', 'GetContentType', 'GetUniqueName'):
         yield name
 
+
 def getDefaultPrivileges(statement):
     yield from getTablePrivileges(statement, getPrivileges())
+
 
 def getViews(ctx, connection):
     yield from _getViews(ctx, _getViewNames(), 'get%sViewCommand', g_queries, CheckOption.CASCADE)
 
+
 def getViewPrivileges(statement):
     yield from _getViewOptions(_getViewNames(), PrivilegeObject.TABLE, g_role, 1)
+
 
 def getProcedures():
     for name in ('GetItem',
@@ -115,9 +121,11 @@ def getProcedures():
                  'UpdateNewItemId'):
         yield name
 
-def _getViews(ctx, items, command, format, *option):
+
+def _getViews(ctx, items, command, options, *option):
     for catalog, schema, name in items:
-        yield catalog, schema, name, getSqlQuery(ctx, command % name, format), *option
+        yield catalog, schema, name, getSqlQuery(ctx, command % name, options), *option
+
 
 def _getViewNames(catalog=g_catalog, schema=g_schema):
     for name in ('Child',
@@ -127,7 +135,7 @@ def _getViewNames(catalog=g_catalog, schema=g_schema):
                  'Children'):
         yield catalog, schema, name
 
+
 def _getViewOptions(items, *options):
     for catalog, schema, name in items:
         yield catalog, schema, name, *options
-

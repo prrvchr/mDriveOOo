@@ -43,9 +43,8 @@ class DispatchListener(unohelper.Base,
     def dispatchFinished(self, notification):
         try:
             self._manager.dispatchFinished(notification)
-        except:
+        except Exception:
             print("DispatchListener.dispatchFinished() ERROR: %s" % traceback.format_exc())
 
     def disposing(self, source):
         pass
-

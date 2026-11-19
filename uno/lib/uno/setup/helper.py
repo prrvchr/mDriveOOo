@@ -38,10 +38,9 @@ from ..unotool import getExtensionVersion
 from ..unotool import getConfiguration
 from ..unotool import getPathSubstitution
 from ..unotool import getPropertyValueSet
-from ..unotool import getResourceLocation
-from ..unotool import hasInterface
 
 from ..configuration import g_extension
+from ..configuration import g_identifier
 
 import gzip
 import importlib
@@ -73,25 +72,28 @@ OPERATORS = {'==': operator.eq,
              '>':  operator.gt,
              '<':  operator.lt}
 
+
 def getOsLocation(url):
     return os.path.normpath(uno.fileUrlToSystemPath(url))
+
 
 def getRequirementsUrl(url):
     return url + '/requirements.txt'
 
+
 def getSetupUpdateMode(ctx, identifier):
     return getConfiguration(ctx, identifier).getByName('SetupUpdate')
 
-def canUpdatePackages():
-    return sys.version_info >= (3, 10)
 
-def showSetup(ctx, identifier, listener=None, /, **kwargs):
-    url = f'vnd.sun.star.job:service={identifier}.Setup'
+def showSetup(ctx, listener=None, /, **kwargs):
+    url = f'vnd.sun.star.job:service={g_identifier}.Setup'
     executeDesktopDispatch(ctx, url, listener, **kwargs)
+
 
 def checkExtension(ctx, identifier, _, minimum):
     version = getExtensionVersion(ctx, identifier)
     return version is not None and checkVersion(version, minimum)
+
 
 def getExtensionName(location, default):
     path = os.path.join(location, 'description.xml')
@@ -112,6 +114,7 @@ def getExtensionName(location, default):
         pass
     return default
 
+
 def getJavaStatus(ctx):
     service = 'com.sun.star.comp.stoc.JavaVirtualMachine'
     jvm = createService(ctx, service)
@@ -121,13 +124,14 @@ def getJavaStatus(ctx):
         return 0
     return 5
 
+
 def getJavaVersion(ctx, extension, java, script, error=False):
     results = 3, java
     try:
         service = 'com.sun.star.script.provider.MasterScriptProviderFactory'
         factory = createService(ctx, service)
         provider = factory.createScriptProvider('')
-        url = f'vnd.sun.star.script:{script}?language=Java&location=user:uno_packages/{extension}.oxt'
+        url = f'vnd.sun.star.script:{script}?language=Java&location=user:uno_packages/{extension}'
         macro = provider.getScript(url)
         if macro:
             result = macro.invoke((), (), ())[0]
@@ -140,8 +144,9 @@ def getJavaVersion(ctx, extension, java, script, error=False):
         if error:
             trace = traceback.format_exc()
             raise RunnerException(e, trace)
-        result = 4, java
+        results = 4, java
     return results
+
 
 def checkAgent(ctx, service, url, agent):
     driver = createService(ctx, service)
@@ -151,6 +156,7 @@ def checkAgent(ctx, service, url, agent):
             if info.Name == agent and info.Value != 'false':
                 return 0
     return 1
+
 
 def isLinuxDistribution(ctx):
     if sys.platform != 'linux':
@@ -165,6 +171,7 @@ def isLinuxDistribution(ctx):
         trace = traceback.format_exc()
         raise RunnerException(e, trace)
     return True
+
 
 def getInstalledPackages(location):
     packages = {}
@@ -202,6 +209,7 @@ def getInstalledPackages(location):
             continue
     return packages
 
+
 def getPackageVersionData(requirement, version):
     data = None
     url = f'https://pypi.org/pypi/{requirement.name}/{version}/json'
@@ -221,7 +229,8 @@ def getPackageVersionData(requirement, version):
         raise RunnerException(e, trace)
     return data
 
-def parsePackageVersionData(requirement, data):
+
+def parsePackageVersionData(_requirement, data):
     tags = set(pkg_tags.sys_tags())
     for f in data.get('urls', []):
         if f.get('filename', '').endswith('.whl'):
@@ -233,6 +242,7 @@ def parsePackageVersionData(requirement, data):
             if filetags.intersection(tags):
                 return str(version), f['url']
     return None, None
+
 
 def getPackageSimpleData(requirement):
     data = None
@@ -253,6 +263,7 @@ def getPackageSimpleData(requirement):
         trace = traceback.format_exc()
         raise RunnerException(e, trace)
     return data
+
 
 def parsePackageSimpleData(requirement, update, data):
     releases = []
@@ -306,6 +317,7 @@ def parsePackageSimpleData(requirement, update, data):
         except Exception:
             continue
     return None, None
+
 
 def uninstallPackage(package, url):
     try:
@@ -376,6 +388,7 @@ def uninstallPackage(package, url):
         trace = traceback.format_exc()
         raise RunnerException(e, trace)
 
+
 def installPackage(url, path):
     try:
         headers = {'User-Agent': f'LibreOffice {g_extension} Extension'}
@@ -389,6 +402,7 @@ def installPackage(url, path):
     except Exception as e:
         trace = traceback.format_exc()
         raise RunnerException(e, trace)
+
 
 def hasFaultySuffix():
     system = sys.platform
@@ -415,6 +429,7 @@ def hasFaultySuffix():
     else:
         return False
     return suffix != sysconfig.get_config_var('EXT_SUFFIX')
+
 
 def renamePackageSuffix(package, url):
     try:
@@ -449,6 +464,7 @@ def renamePackageSuffix(package, url):
         trace = traceback.format_exc()
         raise RunnerException(e, trace)
 
+
 def checkPython(url, requirements, mode):
     importlib.invalidate_caches()
     location = getOsLocation(url)
@@ -470,9 +486,10 @@ def checkPython(url, requirements, mode):
                     if not path.startswith(location):
                         if dist.version != version1:
                             return 3
-        except Exception as e:
+        except Exception:
             return 4
     return 0
+
 
 def parseRequirements(url):
     info = sys.version_info
@@ -482,8 +499,10 @@ def parseRequirements(url):
             continue
         yield requirement
 
+
 def parsePackageName(package):
     return package.lower().replace('-', '_')
+
 
 def getRequirementversion(requirement, update=0):
     if requirement.specifier:
@@ -499,6 +518,7 @@ def getRequirementversion(requirement, update=0):
         except Exception:
             pass
     return None
+
 
 def _getRequirementSpecs(requirement, strict):
     specs = []
@@ -518,18 +538,21 @@ def _getRequirementSpecs(requirement, strict):
             pass
     return specs
 
+
 def _parseVersionUrl(url):
     parsed = urlparse(url)
     if parsed.scheme == 'version':
         return parsed.netloc
     return None
 
+
 def _parseRequirements(url):
     for requirement in _iterRequirements(url):
         try:
             yield Requirement(requirement)
-        except Exception as e:
+        except Exception:
             continue
+
 
 def _iterRequirements(url):
     with open(uno.fileUrlToSystemPath(url), 'r', encoding='utf-8') as requirements:
@@ -540,6 +563,7 @@ def _iterRequirements(url):
             if '#' in line:
                 line = line.split('#')[0].strip()
             yield line
+
 
 def _parseJavaVersion(version):
     clean = version.replace('_', '.post')
@@ -555,6 +579,6 @@ def _parseJavaVersion(version):
                 clean = basenum
     return clean
 
+
 def _getBinaryExtension():
     return '.pyd' if sys.platform.startswith('win32') else '.so'
-

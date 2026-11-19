@@ -29,7 +29,13 @@
 
 import unohelper
 
-from com.sun.star.view.SelectionType import MULTI
+from com.sun.star.awt import Point
+
+from com.sun.star.awt.PosSize import POSSIZE
+
+from com.sun.star.util.MeasureUnit import APPFONT
+
+from ...unotool import Layout
 
 from ...unotool import getContainerWindow
 
@@ -37,21 +43,20 @@ from ...configuration import g_identifier
 
 
 class GridView(unohelper.Base):
-    def __init__(self, ctx, window, handler, model, selection, step=1):
+    def __init__(self, ctx, window, handler, model, size, selection, step=1):
         self._name = 'GridControl1'
-        self._gap = 20
-        self._margin = 10
         self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'GridWindow')
-        self._setWindowSize(window.Model, step)
+        self._offset = self._window.convertPointToPixel(Point(0, 20), APPFONT).Y
+        self._setWindowSize(size, step)
         self._createGrid(model, selection)
-        self._window.setVisible(True)
+        self._layout = Layout(self._window, **self._getLayouts())
 
 # GridView getter methods
-    def getWindow(self):
-        return self._window
-
     def getGrid(self):
         return self._getGrid()
+
+    def getLayout(self):
+        return self._layout
 
     def hasSelectedRows(self):
         return self._getGrid().hasSelectedRows()
@@ -86,9 +91,10 @@ class GridView(unohelper.Base):
     def showColumns(self, state):
         control = self._getGrid()
         control.setVisible(False)
-        self._setGridPosSize(control.Model, state, self._gap)
+        self._setGridPosSize(control, state)
         self._window.Model.Step = state + 1
         control.setVisible(True)
+        self._layout.updateControl(control)
 
     def enableColumnSelection(self, enabled):
         self._getColumn().Model.Enabled = enabled
@@ -124,10 +130,10 @@ class GridView(unohelper.Base):
                 control.Model.setItemImage(index, unselected)
 
 # GridView private setter methods
-    def _setGridPosSize(self, model, state, offset):
-        gap = offset if state else -offset
-        model.PositionY = model.PositionY + gap
-        model.Height = model.Height - gap
+    def _setGridPosSize(self, control, state):
+        pos = control.getPosSize()
+        gap = self._offset if state else -self._offset
+        control.setPosSize(pos.X, pos.Y + gap, pos.Width, pos.Height - gap, POSSIZE)
 
     def _initListBox(self, control, columns, image):
         control.Model.removeAllItems()
@@ -136,17 +142,18 @@ class GridView(unohelper.Base):
             control.Model.insertItem(index, title, image)
             control.Model.setItemData(index, identifier)
 
-    def _setWindowSize(self, window, step):
+    def _setWindowSize(self, size, step):
         model = self._window.Model
-        model.Height = window.Height
-        model.Width = window.Width
-        offset = self._setControlPosition(self._getColumn(), window.Width)
-        self._setControlPosition(self._getColumnLabel(), offset)
+        x = size.Width - model.Width
+        y = size.Height - model.Height
+        model.Width = size.Width
+        model.Height = size.Height
+        frame = self._getFrame().Model
+        frame.Width += x
+        frame.Height += y
+        self._getColumn().Model.PositionX += x
+        self._getColumnLabel().Model.PositionX += x
         model.Step = step
-
-    def _setControlPosition(self, control, offset):
-        control.Model.PositionX = offset - control.Model.Width
-        return control.Model.PositionX - self._margin
 
     def _createGrid(self, data, selection):
         model = self._getGridModel(data, selection)
@@ -172,14 +179,14 @@ class GridView(unohelper.Base):
         return 'column-1.png'
 
     def _getGridModel(self, data, selection):
-        margin = self._getToggle().Model.Width
         service = 'com.sun.star.awt.grid.UnoControlGridModel'
         model = self._window.Model.createInstance(service)
         model.Name = self._name
-        model.PositionX = margin
-        model.PositionY = 0
-        model.Height = self._window.Model.Height
-        model.Width = self._window.Model.Width - margin
+        frame = self._getFrame().Model
+        model.PositionX = frame.PositionX
+        model.PositionY = frame.PositionY
+        model.Width = frame.Width
+        model.Height = frame.Height
         model.GridDataModel = data
         model.SelectionModel = selection
         model.HScroll = True
@@ -188,7 +195,14 @@ class GridView(unohelper.Base):
         model.BackgroundColor = 16777215
         return model
 
+    def _getLayouts(self):
+        return {'controls': (self._getFrame(), self._getGrid(), ),
+                'tops':     (self._getColumnLabel(), self._getColumn())}
+
 # GridView private control methods
+    def _getFrame(self):
+        return self._window.getControl('FrameControl1')
+
     def _getGrid(self):
         return self._window.getControl(self._name)
 
@@ -200,4 +214,3 @@ class GridView(unohelper.Base):
 
     def _getColumn(self):
         return self._window.getControl('ListBox1')
-

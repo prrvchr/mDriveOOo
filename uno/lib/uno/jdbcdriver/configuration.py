@@ -46,5 +46,9 @@ g_basename = 'Driver'
 g_defaultlog = 'Driver'
 g_errorlog = 'jdbcDriverError'
 
+# Setup frame and Job name
+g_setup = '%s.Setup' % g_extension
+
+
 class State:
     restart = False

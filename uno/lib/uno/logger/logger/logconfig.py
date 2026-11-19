@@ -33,7 +33,6 @@ from ..unotool import createService
 from ..unotool import getConfiguration
 from ..unotool import getFileSequence
 
-import traceback
 
 # XXX: LogConfig allows access to the Logger configuration
 # XXX: it is used by ./dialog/LogModel and ./LogController
@@ -56,7 +55,7 @@ class LogConfig():
         return path.substituteVariables(url, True)
 
     def getLoggerContent(self, name, roller=False):
-        url, text, length = self.getLoggerData(name, roller)
+        _, text, length = self.getLoggerData(name, roller)
         return text, length
 
     def getLoggerData(self, name, roller=False):
@@ -78,4 +77,3 @@ class LogConfig():
 
     def _getLoggerUrl(self, name, roller=False):
         return getRollerHandlerUrl(self._ctx, name) if roller else self.getLoggerUrl(name)
-

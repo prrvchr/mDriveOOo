@@ -30,6 +30,7 @@
 import uno
 
 from ..unotool import createService
+from ..unotool import executeDesktopDispatch
 from ..unotool import getExtensionVersion
 
 from ..configuration import State
@@ -56,9 +57,16 @@ def getRequest(ctx, url=None, name=None):
         request = createService(ctx, g_service)
     return request
 
+
+def showOAuth2(ctx, listener=None, /, **kwargs):
+    url = 'vnd.sun.star.job:service=io.github.prrvchr.OAuth2OOo.OAuth2'
+    executeDesktopDispatch(ctx, url, listener, **kwargs)
+
+
 def getOAuth2Version(ctx):
     version = getExtensionVersion(ctx, g_identifier)
     return version
+
 
 def setResquestParameter(arguments, request, parameter):
     method = request.getByName('Method')
@@ -76,11 +84,13 @@ def setResquestParameter(arguments, request, parameter):
         setItemsIdentifier(items, arguments)
         parameter.fromJson(json.dumps(items))
 
+
 def setParametersArguments(parameters, arguments, key=None):
     for name in sorted(parameters.getElementNames()):
         parameter = parameters.getByName(name)
         key = _setParameterArguments(parameter, arguments)
     return key
+
 
 def getParserItems(request):
     keys = {}
@@ -89,7 +99,8 @@ def getParserItems(request):
     collectors = {}
     responses = request.getByName('Responses')
     if responses:
-        getKey = lambda x: (x[0], x[1], x[2] if len(x) > 2 else None)
+        def getKey(x):
+            return (x[0], x[1], x[2] if len(x) > 2 else None)
         for name in responses.getElementNames():
             response = responses.getByName(name)
             item = response.getByName('Item')
@@ -106,6 +117,7 @@ def getParserItems(request):
                             collectors[getKey(collector)] = name
     return keys, items, triggers, collectors
 
+
 def getResponseResults(items, response):
     results = {}
     events = ijson.sendable_list()
@@ -119,9 +131,11 @@ def getResponseResults(items, response):
     parser.close()
     return results
 
+
 def setItemsIdentifier(items, arguments, prefix='${', suffix='}'):
     identifiers = {prefix + k + suffix: k for k in arguments.keys()}
     _setItemsIdentifier(items, arguments, identifiers)
+
 
 def _setParameterArguments(parameter, arguments):
     key = parameter.getByName('Name')
@@ -163,14 +177,17 @@ def _setParameterArguments(parameter, arguments):
             arguments[key] = value.lstrip(_getArgumentCommand(command))
     return setParametersArguments(parameter.getByName('Parameters'), arguments, key)
 
+
 def _setArgumentTemplate(key, arguments, template):
     for identifier in Formatter().parse(template):
         if identifier[1] in arguments:
             arguments[key] = Template(template).safe_substitute(arguments)
             break
 
+
 def _getArgumentCommand(command, default=None, index=1):
     return command[index] if len(command) > index else default
+
 
 def _setItemsIdentifier(items, arguments, identifiers):
     for key, value in items.items():
@@ -181,6 +198,7 @@ def _setItemsIdentifier(items, arguments, identifiers):
         elif value in identifiers:
             items[key] = arguments[identifiers[value]]
 
+
 def _setItemsList(values, arguments, identifiers):
     for i, value in enumerate(values):
         if isinstance(value, dict):
@@ -189,4 +207,3 @@ def _setItemsList(values, arguments, identifiers):
             _setItemsList(value, arguments, identifiers)
         elif value in identifiers:
             values[i] = arguments[identifiers[value]]
-

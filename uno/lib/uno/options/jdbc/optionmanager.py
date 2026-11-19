@@ -33,27 +33,16 @@ from .optionview import OptionView
 
 from .optionhandler import OptionHandler
 
-from ...runner import DispatchListener
-
-from ...setup import SetupCheck
-
 from ..logger import LogManager
-
-from ...setup import showSetup
-
-from ...configuration import g_identifier
-
-import traceback
 
 
 class OptionManager():
-    def __init__(self, ctx, window, dispatch, logger, *loggers):
+    def __init__(self, ctx, window, logger, *loggers):
         self._ctx = ctx
-        self._dispatch = dispatch
         self._model = OptionModel(ctx)
-        self._logmanager = LogManager(ctx, window, 'requirements.txt', logger, *loggers)
+        self._view = OptionView(ctx, window, OptionHandler(self))
+        self._logmanager = LogManager(ctx, self._view.getFrame(), 'requirements.txt', logger, *loggers)
         self._logmanager.initView()
-        self._view = OptionView(ctx, window, OptionHandler(self), *self._model.getViewData())
 
     def init(self, state):
         self._view.initView(*self._model.getInitData(state))
@@ -67,16 +56,16 @@ class OptionManager():
         self._view.dispose()
 
 # OptionManager getter methods
+    def getLayout(self):
+        return self._view.getLayout().addLayout(self._logmanager.getLayout())
+
     def getConfigApiLevel(self):
         return self._model.getConfigApiLevel()
-
-    def getSetupMode(self):
-        return self._view.getSetup()
 
 # OptionManager setter methods
     def saveSetting(self):
         saved = self._logmanager.saveSetting()
-        saved |= self._model.saveSetting(self._view.getSetup())
+        saved |= self._model.saveSetting()
         return saved
 
     def loadSetting(self):
@@ -96,8 +85,3 @@ class OptionManager():
 
     def setSystemTable(self, state):
         self._model.setSystemTable(state)
-
-    def showSetup(self):
-        mode = self.getSetupMode()
-        showSetup(self._ctx, g_identifier, Dispatch=self._dispatch, Mode=mode)
-

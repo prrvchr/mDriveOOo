@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -33,11 +33,10 @@ from .jdbcdriver import g_extension as g_extension1
 from .jdbcdriver import g_identifier as g_identifier1
 from .jdbcdriver import g_version as g_version1
 
-import traceback
-
 
 def getExtensions():
     return {g_identifier1: (g_extension1, g_version1)}
+
 
 def getException(logger, source, code, exc, state, resource, *args):
     error = SQLException()
@@ -47,4 +46,3 @@ def getException(logger, source, code, exc, state, resource, *args):
     error.Message = logger.resolveString(resource, *args)
     error.Context = source
     return error
-

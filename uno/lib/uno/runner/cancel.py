@@ -31,13 +31,18 @@
 class Cancel():
     def __init__(self):
         self._cancel = False
+        self._disposed = False
 
     def isSet(self):
-        return self._cancel
-    
-    def set(self):
+        return self._cancel or self._disposed
+
+    def set(self, disposed=False):
         self._cancel = True
-    
+        self._disposed = disposed
+
     def reset(self):
         self._cancel = False
+        self._disposed = False
 
+    def isDisposed(self):
+        return self._disposed

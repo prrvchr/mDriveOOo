@@ -33,6 +33,8 @@ from com.sun.star.frame import XTerminateListener
 
 from com.sun.star.lang import XEventListener
 
+from com.sun.star.task import XJobListener
+
 
 import traceback
 
@@ -47,9 +49,8 @@ class EventListener(unohelper.Base,
         try:
             print("EventListener.disposing() ******************")
             self._datasource.closeConnection(event.Source)
-        except Exception as e:
-            msg = "EventListener Error: %s" % traceback.format_exc()
-            print(msg)
+        except Exception:
+            print("EventListener.disposing() Error: %s" % traceback.format_exc())
 
 
 class TerminateListener(unohelper.Base,
@@ -61,8 +62,8 @@ class TerminateListener(unohelper.Base,
     def queryTermination(self, event):
         try:
             self._replicator.dispose()
-        except Exception as e:
-            msg = "TerminateListener Error: %s" % traceback.format_exc()
+        except Exception:
+            msg = "TerminateListener.queryTermination() Error: %s" % traceback.format_exc()
             print(msg)
 
     def notifyTermination(self, event):
@@ -71,3 +72,18 @@ class TerminateListener(unohelper.Base,
     def disposing(self, source):
         pass
 
+
+class JobListener(unohelper.Base,
+                  XJobListener):
+    def __init__(self, caller):
+        self._caller = caller
+
+# XJobListener
+    def jobFinished(self, job, result):
+        try:
+            self._caller.jobFinished(job, result)
+        except Exception:
+            print("JobListener.jobFinished() Error: %s" % traceback.format_exc())
+
+    def disposing(self, source):
+        pass

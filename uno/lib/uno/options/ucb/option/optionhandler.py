@@ -40,7 +40,7 @@ class OptionHandler(unohelper.Base,
         self._manager = manager
 
     # XContainerWindowEventHandler
-    def callHandlerMethod(self, window, event, method):
+    def callHandlerMethod(self, _window, event, method):
         try:
             handled = False
             if method == 'EnableShare':
@@ -86,7 +86,7 @@ class OptionHandler(unohelper.Base,
                 self._manager.customizeMenu()
                 handled = True
             return handled
-        except:
+        except Exception:
             print("OptionHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
@@ -104,4 +104,3 @@ class OptionHandler(unohelper.Base,
                 'SpinDown2',
                 'EnableMacro',
                 'Customize')
-

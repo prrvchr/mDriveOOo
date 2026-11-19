@@ -47,9 +47,8 @@ class OptionHandler(unohelper.Base,
                 self._manager.viewData()
                 handled = True
             return handled
-        except:
+        except Exception:
             print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
         return ('ViewData', )
-

@@ -46,10 +46,6 @@ from ..unolib import PropertySet
 
 from ..unotool import getProperty
 
-from ..helper import getParametersRequest
-
-import traceback
-
 
 class CommandInfo(unohelper.Base,
                   XCommandInfo):
@@ -59,19 +55,23 @@ class CommandInfo(unohelper.Base,
     # XCommandInfo
     def getCommands(self):
         return tuple(self.commands.values())
+
     def getCommandInfoByName(self, name):
         if name in self.commands:
             return self.commands[name]
         msg = 'Cant getCommandInfoByName, UnsupportedCommandException: %s' % name
         raise UnsupportedCommandException(msg, self)
+
     def getCommandInfoByHandle(self, handle):
         for command in self.commands.values():
             if command.Handle == handle:
                 return command
         msg = 'Cant getCommandInfoByHandle, UnsupportedCommandException: %s' % handle
         raise UnsupportedCommandException(msg, self)
+
     def hasCommandByName(self, name):
         return name in self.commands
+
     def hasCommandByHandle(self, handle):
         for command in self.commands.values():
             if command.Handle == handle:
@@ -87,6 +87,7 @@ class CommandInfoChangeNotifier(unohelper.Base,
     # XCommandInfoChangeNotifier
     def addCommandInfoChangeListener(self, listener):
         self.commandInfoListeners.append(listener)
+
     def removeCommandInfoChangeListener(self, listener):
         if listener in self.commandInfoListeners:
             self.commandInfoListeners.remove(listener)
@@ -101,47 +102,66 @@ class Row(unohelper.Base,
     # XRow
     def wasNull(self):
         return self._isnull
+
     def getString(self, index):
         return self._getValue(index -1)
+
     def getBoolean(self, index):
         return self._getValue(index -1)
+
     def getByte(self, index):
         return self._getValue(index -1)
+
     def getShort(self, index):
         return self._getValue(index -1)
+
     def getInt(self, index):
         return self._getValue(index -1)
+
     def getLong(self, index):
         return self._getValue(index -1)
+
     def getFloat(self, index):
         return self._getValue(index -1)
+
     def getDouble(self, index):
         return self._getValue(index -1)
+
     def getBytes(self, index):
         return self._getValue(index -1)
+
     def getDate(self, index):
         return self._getValue(index -1)
+
     def getTime(self, index):
         return self._getValue(index -1)
+
     def getTimestamp(self, index):
         return self._getValue(index -1)
+
     def getBinaryStream(self, index):
         return self._getValue(index -1)
+
     def getCharacterStream(self, index):
         return self._getValue(index -1)
-    def getObject(self, index, map):
+
+    def getObject(self, index, _typmap):
         return self._getValue(index -1)
+
     def getRef(self, index):
         return self._getValue(index -1)
+
     def getBlob(self, index):
         return self._getValue(index -1)
+
     def getClob(self, index):
         return self._getValue(index -1)
+
     def getArray(self, index):
         return self._getValue(index -1)
 
     def _getValue(self, index):
-        value  = None
+        value = None
         self._isnull = True
         if 0 <= index < len(self._values):
             value = self._values[index].Value
@@ -160,10 +180,13 @@ class DynamicResultSet(unohelper.Base,
     # XDynamicResultSet
     def getStaticResultSet(self):
         return ContentResultSet(self._user, self._authority, self._call)
+
     def setListener(self, listener):
         pass
+
     def connectToCache(self, cache):
         pass
+
     def getCapabilities(self):
         return uno.getConstantByName('com.sun.star.ucb.ContentResultSetCapability.SORTED')
 
@@ -202,80 +225,116 @@ class ContentResultSet(unohelper.Base,
     # XResultSet
     def next(self):
         return self._result.next()
+
     def isBeforeFirst(self):
         return self._result.isBeforeFirst()
+
     def isAfterLast(self):
         return self._result.isAfterLast()
+
     def isFirst(self):
         return self._result.isFirst()
+
     def isLast(self):
         return self._result.isLast()
+
     def beforeFirst(self):
         self._result.beforeFirst()
+
     def afterLast(self):
         self._result.afterLast()
+
     def first(self):
         return self._result.first()
+
     def last(self):
         return self._result.last()
+
     def getRow(self):
         return self._result.getRow()
+
     def absolute(self, row):
         return self._result.absolute(row)
+
     def relative(self, row):
         return self._result.relative(row)
+
     def previous(self):
         return self._result.previous()
+
     def refreshRow(self):
         self._result.refreshRow()
+
     def rowUpdated(self):
         return self._result.rowUpdated()
+
     def rowInserted(self):
         return self._result.rowInserted()
+
     def rowDeleted(self):
         return self._result.rowDeleted()
+
     def getStatement(self):
         return self._result.getStatement()
 
     # XRow
     def wasNull(self):
         return self._result.wasNull()
+
     def getString(self, index):
         return self._result.getString(index)
+
     def getBoolean(self, index):
         return self._result.getBoolean(index)
+
     def getByte(self, index):
         return self._result.getByte(index)
+
     def getShort(self, index):
         return self._result.getShort(index)
+
     def getInt(self, index):
         return self._result.getInt(index)
+
     def getLong(self, index):
         return self._result.getLong(index)
+
     def getFloat(self, index):
         return self._result.getFloat(index)
+
     def getDouble(self, index):
         return self._result.getDouble(index)
+
     def getBytes(self, index):
         return self._result.getBytes(index)
+
     def getDate(self, index):
         return self._result.getDate(index)
+
     def getTime(self, index):
         return self._result.getTime(index)
+
     def getTimestamp(self, index):
         return self._result.getTimestamp(index)
+
     def getBinaryStream(self, index):
         return self._result.getBinaryStream(index)
+
     def getCharacterStream(self, index):
         return self._result.getCharacterStream(index)
-    def getObject(self, index, map):
-        return self._result.getObject(index, map)
+
+    def getObject(self, index, typmap):
+        return self._result.getObject(index, typmap)
+
     def getRef(self, index):
         return self._result.getRef(index)
+
     def getBlob(self, index):
         return self._result.getBlob(index)
+
     def getClob(self, index):
         return self._result.getClob(index)
+
     def getArray(self, index):
         return self._result.getArray(index)
 
@@ -285,9 +344,11 @@ class ContentResultSet(unohelper.Base,
 
     # XContentAccess
     def queryContentIdentifierString(self):
-        return  self._result.getString(self._result.findColumn('TargetURL'))
+        return self._result.getString(self._result.findColumn('TargetURL'))
+
     def queryContentIdentifier(self):
         return Identifier(self.queryContentIdentifierString())
+
     def queryContent(self):
         url = self.queryContentIdentifierString()
         return self._user.getContentByUrl(self._authority, url)
@@ -301,7 +362,6 @@ class ContentResultSet(unohelper.Base,
     def _getPropertySetInfo(self):
         properties = {}
         readonly = uno.getConstantByName('com.sun.star.beans.PropertyAttribute.READONLY')
-        properties['RowCount'] =        getProperty('RowCount',        'long',    readonly)
+        properties['RowCount'] = getProperty('RowCount', 'long',   readonly)
         properties['IsRowCountFinal'] = getProperty('IsRowCountFinal', 'boolean', readonly)
         return properties
-

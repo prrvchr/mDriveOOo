@@ -212,29 +212,29 @@ class LogModel():
                 msg = self._resolver.resolveString(137).format(name, e, traceback.format_exc())
                 level = SEVERE
             self._logger.logp(level, clazz, method, msg)
-    
+
     def _getMetadata(self, name):
         try:
             return metadata.metadata(name)
         except metadata.PackageNotFoundError:
             return None
-    
+
     def _getPackageMessage(self, requirement, name, data, ver):
         dver = data.get('Version')
         pver = data.get('Requires-Python')
         if pver is None:
             pver = '>=' + ver
-    
+
         location = None
         distfiles = metadata.files(name)
         if distfiles:
             location = str(distfiles[0].locate().parent.parent)
-    
+
         if location:
             req = Requirement('python' + pver)
             is_version_match = requirement.specifier.contains(dver)
             is_python_match = req.specifier.contains(ver)
-    
+
             rver = str(requirement.specifier) if requirement.specifier else ""
             if is_version_match:
                 if is_python_match:
@@ -249,6 +249,6 @@ class LogModel():
             rver = str(requirement.specifier) if requirement.specifier else ""
             msg = self._resolver.resolveString(135).format(name, dver, rver)
         return msg
-    
+
     def _getMissingMessage(self, name):
         return self._resolver.resolveString(136).format(name)

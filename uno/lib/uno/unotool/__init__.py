@@ -27,8 +27,21 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from .callback import CallBack
+
+from .layout import Layout
+
+from .linklistener import LinkListener
+
+from .sublayout import SubLayout
+
 from .transferable import Factory as Transferable
 
+from .indicator import Factory as Indicator
+
+from .resource import Resource
+
+from .unotool import canUpdatePackages
 from .unotool import checkInternet
 from .unotool import checkVersion
 from .unotool import createMessageBox
@@ -53,7 +66,6 @@ from .unotool import getDesktop
 from .unotool import getDialogPosSize
 from .unotool import getDispatcher
 from .unotool import getDialog
-from .unotool import getDialogPosition
 from .unotool import getDialogUrl
 from .unotool import getDocument
 from .unotool import getDriverManager
@@ -66,7 +78,6 @@ from .unotool import getInteractionHandler
 from .unotool import getInterfaceNames
 from .unotool import getInterfaceTypes
 from .unotool import getJobArguments
-from .unotool import getJobArgument
 from .unotool import getLastNamedParts
 from .unotool import getLibreOfficeInfo
 from .unotool import getLibreOfficeVersion
@@ -77,6 +88,7 @@ from .unotool import getNamedValue
 from .unotool import getNamedValueSet
 from .unotool import getPathSettings
 from .unotool import getPathSubstitution
+from .unotool import getParentWindow
 from .unotool import getProperty
 from .unotool import getPropertyValue
 from .unotool import getPropertyValueSet
@@ -93,11 +105,12 @@ from .unotool import getToolKit
 from .unotool import getTopWindow
 from .unotool import getTypeDetection
 from .unotool import getUriFactory
+from .unotool import getUriTranslator
 from .unotool import getUrl
 from .unotool import getUrlPresentation
 from .unotool import getUrlTransformer
 from .unotool import getWindowHeight
-from .unotool import getWindowPosition
+from .unotool import getWindowPosSize
 from .unotool import hasFrameInterface
 from .unotool import hasInterface
 from .unotool import hasService
@@ -106,10 +119,11 @@ from .unotool import notifyDispatch
 from .unotool import parseDateTime
 from .unotool import parseUrl
 from .unotool import registerStartupJob
-from .unotool import saveWindowPosition
+from .unotool import saveWindowPosSize
 from .unotool import setDialogPosition
 from .unotool import setProgress
 from .unotool import setWindowHeight
-from .unotool import setWindowPosition
+from .unotool import setWindowPosSize
+from .unotool import showMessageBox
 from .unotool import unparseDateTime
 from .unotool import unparseTimeStamp

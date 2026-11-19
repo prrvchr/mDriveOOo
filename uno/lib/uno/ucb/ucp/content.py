@@ -41,7 +41,6 @@ from com.sun.star.ucb.NameClash import OVERWRITE
 from com.sun.star.beans.PropertyAttribute import BOUND
 from com.sun.star.beans.PropertyAttribute import CONSTRAINED
 from com.sun.star.beans.PropertyAttribute import READONLY
-from com.sun.star.beans.PropertyAttribute import TRANSIENT
 
 from com.sun.star.container import XChild
 
@@ -51,35 +50,22 @@ from com.sun.star.lang import XComponent
 from com.sun.star.lang import XServiceInfo
 
 from com.sun.star.ucb import CommandAbortedException
-from com.sun.star.ucb import IllegalIdentifierException
 from com.sun.star.ucb import InteractiveBadTransferURLException
 from com.sun.star.ucb import UnsupportedCommandException
 from com.sun.star.ucb import XCommandProcessor2
 from com.sun.star.ucb import XContent
 from com.sun.star.ucb import XContentCreator
 
-from com.sun.star.ucb.ContentAction import INSERTED
-from com.sun.star.ucb.ContentAction import EXCHANGED
-
-from com.sun.star.ucb.ContentInfoAttribute import KIND_DOCUMENT
-from com.sun.star.ucb.ContentInfoAttribute import KIND_FOLDER
-from com.sun.star.ucb.ContentInfoAttribute import KIND_LINK
-
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
 from ..unolib import PropertySetInfo
 
-from ..unotool import createService
 from ..unotool import getNamedValue
 from ..unotool import getProperty
-from ..unotool import getPropertyValueSet
 from ..unotool import hasInterface
 
 from ..helper import getCommandInfo
-from ..helper import getContentEvent
-from ..helper import getContentInfo
-from ..helper import getInteractiveAugmentedIOException
 from ..helper import getMimeType
 
 from .contentlib import CommandInfo
@@ -87,9 +73,6 @@ from .contentlib import Row
 from .contentlib import DynamicResultSet
 
 from .identifier import Identifier
-
-from .configuration import g_ucbprefix
-from .configuration import g_ucbsuffix
 
 import traceback
 
@@ -122,48 +105,63 @@ class Content(unohelper.Base,
     @property
     def IsFolder(self):
         return self._metadata.get('IsFolder')
+
     @property
     def IsDocument(self):
         return self._metadata.get('IsDocument')
+
     @property
     def IsRoot(self):
         return self._metadata.get('IsRoot')
+
     @property
     def IsRenamed(self):
         return self._metadata.get('Name') != self.Title
+
     @property
     def CanRename(self):
         return self._metadata.get('CanRename') and not self.IsRenamed
+
     @property
     def CanAddChild(self):
         return self._metadata.get('CanAddChild')
+
     @property
     def Id(self):
         return self._metadata.get('Id')
+
     @property
     def ParentId(self):
         return self._metadata.get('ParentId')
+
     @property
     def Path(self):
         return self._metadata.get('Path')
+
     @property
     def Size(self):
         return self._metadata.get('Size')
+
     @property
     def Link(self):
         return self._metadata.get('Link')
+
     @property
     def Name(self):
         return self._metadata.get('Name')
+
     @property
     def Title(self):
         return self._metadata.get('Title')
+
     @property
     def MediaType(self):
         return self._metadata.get('MediaType', 'application/octet-stream')
+
     @property
     def ConnectionMode(self):
         return self._metadata.get('ConnectionMode')
+
     @ConnectionMode.setter
     def ConnectionMode(self, mode):
         self._metadata['ConnectionMode'] = mode
@@ -212,6 +210,7 @@ class Content(unohelper.Base,
             listeners = self._propertiesListener[name]
             if listener not in listeners:
                 listeners.append(listener)
+
     def removePropertiesChangeListener(self, names, listener):
         for name in names:
             if name in self._propertiesListener:
@@ -222,6 +221,7 @@ class Content(unohelper.Base,
     # XContentCreator
     def queryCreatableContentsInfo(self):
         return self._getCreatableContentsInfo()
+
     def createNewContent(self, info):
         self._logger.logprb(INFO, 'Content', 'createNewContent', 671, self._identifier)
         return self._user.createNewContent(self._authority, self.Id, self.Path, self.Title, info.Type)
@@ -282,14 +282,14 @@ class Content(unohelper.Base,
                 if not size:
                     msg = self._logger.resolveString(622, self._identifier)
                     raise CommandAbortedException(msg, self)
-                input = command.Argument.Sink
+                iput = command.Argument.Sink
                 isreadonly = self._metadata.get('IsReadOnly')
-                sink = hasInterface(input, 'com.sun.star.io.XActiveDataSink')
-                stream = hasInterface(input, 'com.sun.star.io.XActiveDataStreamer')
+                sink = hasInterface(iput, 'com.sun.star.io.XActiveDataSink')
+                stream = hasInterface(iput, 'com.sun.star.io.XActiveDataStreamer')
                 if not isreadonly and stream:
-                    input.setStream(sf.openFileReadWrite(url))
+                    iput.setStream(sf.openFileReadWrite(url))
                 elif sink:
-                    input.setInputStream(sf.openFileRead(url))
+                    iput.setInputStream(sf.openFileRead(url))
 
         elif command.Name == 'createNewContent' and self.IsFolder:
             return self.createNewContent(command.Argument)
@@ -338,7 +338,7 @@ class Content(unohelper.Base,
             if itemid is None or clash != OVERWRITE:
                 # ItemId could not be found: 'NewTitle' does not exist in the folder...
                 # or NewTitle exist but we don't have the OVERWRITE flag set...
-                # When saving a new document with (File save) or when creating 
+                # When saving a new document with (File save) or when creating
                 # a new document with (File Save As) we use commands:
                 # - createNewContent: for creating an empty new Content
                 # - Insert at new Content for committing change
@@ -358,14 +358,15 @@ class Content(unohelper.Base,
             self._user.updateContent(itemid, 'Size', size)
             if move:
                 # TODO: must delete object
-                pass 
+                pass
 
         elif command.Name == 'flush':
             pass
 
-    def abort(self, id):
+    def abort(self, identifier):
         pass
-    def releaseCommandIdentifier(self, id):
+
+    def releaseCommandIdentifier(self, identifier):
         pass
 
     def getContentListeners(self):
@@ -380,17 +381,17 @@ class Content(unohelper.Base,
 
     def _getPropertiesValues(self, properties):
         values = []
-        for property in properties:
+        for prop in properties:
             value = None
-            if (property.Name in self._propertySetInfo):
-                value, level, msg = self._getPropertyValue(property.Name)
+            if (prop.Name in self._propertySetInfo):
+                value, level, msg = self._getPropertyValue(prop.Name)
             else:
-                msg = "ERROR: Requested property: %s is not available" % property.Name
+                msg = "ERROR: Requested property: %s is not available" % prop.Name
                 print(msg)
                 level = SEVERE
             if msg:
                 self._logger.logp(level, 'Content', '_getPropertiesValues', msg)
-            values.append(getNamedValue(property.Name, value))
+            values.append(getNamedValue(prop.Name, value))
         return tuple(values)
 
     def _getPropertyValue(self, name):
@@ -413,11 +414,11 @@ class Content(unohelper.Base,
 
     def _setPropertiesValues(self, environment, properties):
         results = []
-        for property in properties:
-            if (property.Name in self._propertySetInfo):
-                result, level, msg = self._setPropertyValue(environment, property.Name, property.Value)
+        for prop in properties:
+            if (prop.Name in self._propertySetInfo):
+                result, level, msg = self._setPropertyValue(environment, prop.Name, prop.Value)
             else:
-                msg = "ERROR: Requested property: %s is not available" % property.Name
+                msg = "ERROR: Requested property: %s is not available" % prop.Name
                 print(msg)
                 level = SEVERE
                 error = UnknownPropertyException(msg, self)
@@ -516,42 +517,41 @@ class Content(unohelper.Base,
     def _getCommandInfo(self):
         commands = {}
         if self.CanAddChild:
-            commands['createNewContent'] =    getCommandInfo('createNewContent',   'com.sun.star.ucb.ContentInfo')
+            commands['createNewContent']    = getCommandInfo('createNewContent',   'com.sun.star.ucb.ContentInfo')
         if not self.IsRoot:
-            commands['delete'] =              getCommandInfo('delete',             'boolean')
-        commands['flush'] =                   getCommandInfo('flush')
-        commands['getCommandInfo'] =          getCommandInfo('getCommandInfo',     'com.sun.star.ucb.XCommandInfo')
-        commands['getPropertySetInfo'] =      getCommandInfo('getPropertySetInfo', 'com.sun.star.beans.XPropertySetInfo')
-        commands['getPropertyValues'] =       getCommandInfo('getPropertyValues',  '[]com.sun.star.beans.Property')
-        commands['insert'] =                  getCommandInfo('insert',             'com.sun.star.ucb.InsertCommandArgument2')
-        commands['open'] =                    getCommandInfo('open',               'com.sun.star.ucb.OpenCommandArgument3')
-        commands['setPropertyValues'] =       getCommandInfo('setPropertyValues',  '[]com.sun.star.beans.PropertyValue')
+            commands['delete']              = getCommandInfo('delete',             'boolean')
+        commands['flush']                   = getCommandInfo('flush')
+        commands['getCommandInfo']          = getCommandInfo('getCommandInfo',     'com.sun.star.ucb.XCommandInfo')
+        commands['getPropertySetInfo']      = getCommandInfo('getPropertySetInfo', 'com.sun.star.beans.XPropertySetInfo')
+        commands['getPropertyValues']       = getCommandInfo('getPropertyValues',  '[]com.sun.star.beans.Property')
+        commands['insert']                  = getCommandInfo('insert',             'com.sun.star.ucb.InsertCommandArgument2')
+        commands['open']                    = getCommandInfo('open',               'com.sun.star.ucb.OpenCommandArgument3')
+        commands['setPropertyValues']       = getCommandInfo('setPropertyValues',  '[]com.sun.star.beans.PropertyValue')
         if self.IsFolder:
-            commands['transfer'] =            getCommandInfo('transfer',           'com.sun.star.ucb.TransferInfo2')
+            commands['transfer']            = getCommandInfo('transfer',           'com.sun.star.ucb.TransferInfo2')
         return commands
 
     def _getPropertySetInfo(self):
         RO = 0 if self._isNew() else READONLY
         properties = {}
         # XXX: Although CasePreservingURL is not used, the presence of this property is necessary for LibreOffice to save files correctly.
-        properties['CasePreservingURL'] =     getProperty('CasePreservingURL',     'string',                               BOUND | RO)
-        properties['ConnectionMode'] =        getProperty('ConnectionMode',        'short',                                BOUND | READONLY)
-        properties['ContentType'] =           getProperty('ContentType',           'string',                               BOUND | RO)
+        properties['CasePreservingURL']     = getProperty('CasePreservingURL',     'string',                               BOUND | RO)
+        properties['ConnectionMode']        = getProperty('ConnectionMode',        'short',                                BOUND | READONLY)
+        properties['ContentType']           = getProperty('ContentType',           'string',                               BOUND | RO)
         properties['CreatableContentsInfo'] = getProperty('CreatableContentsInfo', '[]com.sun.star.ucb.ContentInfo',       BOUND | RO)
-        properties['DateCreated'] =           getProperty('DateCreated',           'com.sun.star.util.DateTime',           BOUND | READONLY)
-        properties['DateModified'] =          getProperty('DateModified',          'com.sun.star.util.DateTime',           BOUND | RO)
-        properties['IsCompactDisc'] =         getProperty('IsCompactDisc',         'boolean',                              BOUND | RO)
-        properties['IsDocument'] =            getProperty('IsDocument',            'boolean',                              BOUND | RO)
-        properties['IsFloppy'] =              getProperty('IsFloppy',              'boolean',                              BOUND | RO)
-        properties['IsFolder'] =              getProperty('IsFolder',              'boolean',                              BOUND | RO)
-        properties['IsHidden'] =              getProperty('IsHidden',              'boolean',                              BOUND | RO)
-        properties['IsReadOnly'] =            getProperty('IsReadOnly',            'boolean',                              BOUND | RO)
-        properties['IsRemote'] =              getProperty('IsRemote',              'boolean',                              BOUND | RO)
-        properties['IsRemoveable'] =          getProperty('IsRemoveable',          'boolean',                              BOUND | RO)
-        properties['IsVersionable'] =         getProperty('IsVersionable',         'boolean',                              BOUND | RO)
-        properties['IsVolume'] =              getProperty('IsVolume',              'boolean',                              BOUND | RO)
-        properties['MediaType'] =             getProperty('MediaType',             'string',                               BOUND | READONLY)
-        properties['Size'] =                  getProperty('Size',                  'hyper',                                BOUND | RO)
-        properties['Title'] =                 getProperty('Title',                 'string',                               BOUND | CONSTRAINED)
+        properties['DateCreated']           = getProperty('DateCreated',           'com.sun.star.util.DateTime',           BOUND | READONLY)
+        properties['DateModified']          = getProperty('DateModified',          'com.sun.star.util.DateTime',           BOUND | RO)
+        properties['IsCompactDisc']         = getProperty('IsCompactDisc',         'boolean',                              BOUND | RO)
+        properties['IsDocument']            = getProperty('IsDocument',            'boolean',                              BOUND | RO)
+        properties['IsFloppy']              = getProperty('IsFloppy',              'boolean',                              BOUND | RO)
+        properties['IsFolder']              = getProperty('IsFolder',              'boolean',                              BOUND | RO)
+        properties['IsHidden']              = getProperty('IsHidden',              'boolean',                              BOUND | RO)
+        properties['IsReadOnly']            = getProperty('IsReadOnly',            'boolean',                              BOUND | RO)
+        properties['IsRemote']              = getProperty('IsRemote',              'boolean',                              BOUND | RO)
+        properties['IsRemoveable']          = getProperty('IsRemoveable',          'boolean',                              BOUND | RO)
+        properties['IsVersionable']         = getProperty('IsVersionable',         'boolean',                              BOUND | RO)
+        properties['IsVolume']              = getProperty('IsVolume',              'boolean',                              BOUND | RO)
+        properties['MediaType']             = getProperty('MediaType',             'string',                               BOUND | READONLY)
+        properties['Size']                  = getProperty('Size',                  'hyper',                                BOUND | RO)
+        properties['Title']                 = getProperty('Title',                 'string',                               BOUND | CONSTRAINED)
         return properties
-

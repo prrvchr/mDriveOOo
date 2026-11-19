@@ -50,17 +50,17 @@ from ..configuration import g_identifier
 from ..configuration import g_resource
 
 from threading import Timer
-import traceback
 
 
 class SetupCheck(unohelper.Base,
                  XCallback):
-    def __init__(self, ctx, callback, /, database=None, java=None, agent=None, python=False, extensions=None, *, mode=None, progress=None):
+    def __init__(self, ctx, callback, /, database=None, java=None, agent=None, python=False, extensions=None, mode=None, progress=None, **kwargs):
         self._ctx = ctx
         self._callback = callback
         self._progress = progress
+        self._kwargs = kwargs
         self._resolver = getStringResource(ctx, g_identifier, g_resource, 'SetupCheck') if progress else None
-        self._asyncCall = getCallBack(ctx)
+        self._asyncCall = getCallBack(ctx) if callback else None
         self._state = SetupState()
         self._step = 0
         total = len(extensions) if extensions else 0
@@ -68,12 +68,13 @@ class SetupCheck(unohelper.Base,
         self._steps = self._getCheckStep(ctx, database, java, agent, python, extensions, mode)
 
     def start(self):
-        if self._progress:
-            self._progress.start(self._resolver.resolveString(10101), self._total)
         Timer(0.1, self._call).start()
 
-    def notify(self, data):
+    def notify(self, _data):
         try:
+            if self._progress and self._step == 0:
+                self._progress.start(self._resolver.resolveString(10101), self._total)
+
             resource, args, call, *kwargs = next(self._steps)
             call(*kwargs)
             if self._progress:
@@ -82,9 +83,9 @@ class SetupCheck(unohelper.Base,
                 self._progress.setValue(self._step)
             Timer(0.1, self._call).start()
         except StopIteration:
-            self._callback(self._state)
-        except Exception as e:
-            self._callback(SetupState(False))
+            self._callback(self._state, **self._kwargs)
+        except Exception:
+            self._callback(SetupState(False), **self._kwargs)
 
     def stepCheckExtension(self, ctx, identifier, name, version):
         self._state.extension &= checkExtension(ctx, identifier, name, version)
@@ -126,7 +127,7 @@ class SetupCheck(unohelper.Base,
             yield self._getStepCheckPython(ctx, mode)
 
     def _call(self):
-       self._asyncCall.addCallback(self, None)
+        self._asyncCall.addCallback(self, None)
 
     def _getStepCheckExtension(self, ctx, identifier, name, version):
         return 10201, (name, version), self.stepCheckExtension, ctx, identifier, name, version
@@ -150,31 +151,18 @@ class SetupCheck(unohelper.Base,
         return self._code == 0
 
     @classmethod
-    def isValid(cls, ctx, database=None, java=None, agent=None, python=False, extensions=None, mode=None):
-        code = None
-        if extensions:
-            for identifier, infos in extensions.items():
-                if not checkExtension(ctx, identifier, *infos):
-                    return False
-        if java:
-            code = getJavaStatus(ctx)
-            if code != 0:
-                return False
-            code, _ = getJavaVersion(ctx, *java)
-            if code != 0:
-                return False
-            if agent and checkAgent(ctx, *agent):
-                return False
-        if database and not getSimpleFile(ctx).exists(database):
-            return False
-        if python:
-            url = getResourceLocation(ctx, g_identifier)
-            requirements = getRequirementsUrl(url)
-            if getSimpleFile(self._ctx).exists(requirements):
-                if mode is None:
-                    mode = getSetupUpdateMode(ctx, g_identifier)
-                code = checkPython(url, requirements, mode)
-                if code != 0:
-                    return False
-        return True
+    def getState(cls, ctx, database=None, java=None, agent=None, python=False, extensions=None, mode=None) -> SetupState:
+        checker = cls(ctx, None, database=database, java=java, agent=agent,
+                      python=python, extensions=extensions, mode=mode)
+        try:
+            for _resource, _args, call, *args in checker._steps:
+                call(*args)
+                if not checker._state.runnable:
+                    break
+        except Exception:
+            return SetupState(False)
+        return checker._state
 
+    @classmethod
+    def isValid(cls, ctx, database=None, java=None, agent=None, python=False, extensions=None, mode=None) -> bool:
+        return cls.getState(ctx, database, java, agent, python, extensions, mode).runnable

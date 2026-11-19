@@ -28,7 +28,8 @@
 """
 
 from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
+
+from com.sun.star.sdbc import SQLException
 
 from com.sun.star.uno import Exception as UnoException
 
@@ -36,50 +37,51 @@ from .database import DataBase
 
 from .provider import Provider
 
-from .card import User
-
-from .card import Replicator
+from .setup import SetupCheck
 
 from .card import EventListener
-from .card import TerminateListener
+from .card import User
 
-from .unotool import getDesktop
+from .runner import DispatchListener
 
-from .helper import getSqlException
+from .card import getSqlException
+
+from .dbinit import getDataSourceUrl
+# from .setup import showSetup
+
+from .helper import getExtensions
+from .helper import startReplication
+
+from .jdbcdriver import g_agent
+from .jdbcdriver import g_java
+from .jdbcdriver import g_protocol
+from .jdbcdriver import g_script
+from .jdbcdriver import g_service
 
 from .configuration import g_extension
 
-from threading import Event
+import json
+
 
 class DataSource():
-    def __init__(self, ctx, source, logger, url):
+    def __init__(self, ctx, logger, source):
         self._cls = 'DataSource'
         mtd = '__init__'
         logger.logprb(INFO, self._cls, mtd, 1201)
         self._ctx = ctx
         self._maps = {}
-        database = DataBase(ctx, logger, url)
-        provider = Provider(ctx, source, database)
-        users = {}
-        sync = Event()
-        self._sync = sync
-        self._users = users
+        database = DataBase(ctx)
+        provider = Provider(ctx, database, source)
+        self._users = {}
         self._database = database
         self._provider = provider
-        self._replicator = Replicator(ctx, database, provider, users, sync)
         self._listener = EventListener(self)
-        getDesktop(ctx).addTerminateListener(TerminateListener(self._replicator))
+        self._checked = False
         logger.logprb(INFO, self._cls, mtd, 1202)
 
     @property
     def DataBase(self):
         return self._database
-
-    def isUptoDate(self):
-        return self._database.isUptoDate()
-
-    def getDataBaseVersion(self):
-        return self._database.Version
 
 # Procedures called by EventListener
     def closeConnection(self, connection):
@@ -88,18 +90,26 @@ class DataSource():
             user = self._users.get(name)
             user.removeSession(self._database.getSessionId(connection))
 
+# Procedures called by DispatchListener
+    def dispatchFinished(self, notification):
+        print("DataSource.dispatchFinished() state: %s - result: %s" % (notification.State, notification.Result))
+
 # Procedures called by Driver
-    def getConnection(self, source, logger, url, scheme, server, account, password=''):
+    def getConnection(self, source, logger, url, scheme, server, username, token=''):
+        print("DataSource.getConnection() 1")
+        if not self._checked:
+            self._checkSetup()
         mtd = 'getConnection'
-        uri = self._provider.getUserUri(server, account)
+        uri = self._provider.getUserUri(server, username)
         if uri in self._maps:
+            print("DataSource.getConnection() 2")
             name = self._maps.get(uri)
             user = self._users.get(name)
             if not user.Request.isAuthorized():
                 raise getSqlException(self._ctx, source, 1002, 1401, self._cls, mtd, name, g_extension)
         else:
-            user = User(self._ctx, source, logger, self._database,
-                        self._provider, url, scheme, server, account, password)
+            print("DataSource.getConnection() 3")
+            user = User(self._ctx, source, logger, self._database, self._provider, scheme, url, server, username, token)
             name = user.getName()
         if user.isOnLine():
             try:
@@ -108,15 +118,32 @@ class DataSource():
                 e = getSqlException(self._ctx, source, 1001, 1402, self._cls, mtd, name, g_extension)
                 e.NextException = ex
                 raise e
-        connection = self._database.getConnection(name, user.getPassword())
+        connection = self._database.getConnection(name)
         # XXX: New users are cached only if the connection is successful.
-        if not uri in self._maps:
+        if uri not in self._maps:
             self._users[name] = user
             self._maps[uri] = name
         user.addSession(self._database.getSessionId(connection))
         # User and/or AddressBooks has been initialized and the connection to the database is done...
         # We can start the database replication in a background task.
-        self._sync.set()
         connection.addEventListener(self._listener)
+        print("DataSource.getConnection() 4")
+        # showSetup(self._ctx, Dispatch=DispatchListener(self), Mode=0)
+        startReplication(self._ctx, Dispatch=DispatchListener(self), Args=self._getUserSessions())
+        print("DataSource.getConnection() 5")
         return connection
 
+    def _getUserSessions(self):
+        users = []
+        for user in self._users.values():
+            users.append({'url': user.Url, 'server': user.Server, 'name': user.Name, 'token': user.Token, 'new': user.New})
+        return json.dumps(users)
+
+    def _checkSetup(self):
+        java = g_extension, g_java, g_script
+        agent = g_service, g_protocol, g_agent
+        database = getDataSourceUrl(self._ctx)
+        state = SetupCheck.getState(self._ctx, database=database, java=java, agent=agent, python=True, extensions=getExtensions())
+        if not state.runnable:
+            raise SQLException(state.getMessage(self._ctx), self, '08001', state.step, None)
+        self._checked = True

@@ -27,21 +27,30 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from ...unotool import Layout
+from ...unotool import SubLayout
+
 from ...unotool import getContainerWindow
 
 from ...configuration import g_identifier
 
-import traceback
-
 
 class OptionView():
-    def __init__(self, ctx, window, handler):
+    def __init__(self, ctx, window, handler, title):
         self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'OptionDialog')
+        self._getTitle().Model.Label = title
+        self._layout = SubLayout(Layout(self._window, **self._getLayouts()))
         self._window.setVisible(True)
 
 # OptionView getter methods
+    def getLayout(self):
+        return self._layout
+
     def getWindow(self):
         return self._window
+
+    def getFrame(self):
+        return self._getFrame()
 
     def getViewData(self):
         return int(self._getTimeout().Value), self._getViewName().Text
@@ -56,7 +65,17 @@ class OptionView():
         self._getDatasource().Model.Enabled = state.database
         self._getViewName().Model.Enabled = not state.database
 
+    def _getLayouts(self):
+        return {'horizontals': (self._getFrame(), self._getTitle(), self._getViewName()),
+                'tops': (self._getTimeout(), self._getDatasource())}
+
 # OptionView private control methods
+    def _getFrame(self):
+        return self._window.getControl('FrameControl1')
+
+    def _getTitle(self):
+        return self._window.getControl('FixedLine1')
+
     def _getTimeout(self):
         return self._window.getControl('NumericField1')
 
@@ -68,4 +87,3 @@ class OptionView():
 
     def _getViewName(self):
         return self._window.getControl('TextField1')
-

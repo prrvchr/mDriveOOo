@@ -42,7 +42,6 @@ from .helper import getExtensions
 from .unotool import executeDispatch
 from .unotool import findFrame
 from .unotool import getJobArguments
-from .unotool import getJobArgument
 from .unotool import hasFrameInterface
 from .unotool import notifyDispatch
 
@@ -60,4 +59,3 @@ from .configuration import g_defaultlog
 from .configuration import g_extension
 from .configuration import g_scheme
 from .configuration import g_setup
-

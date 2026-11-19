@@ -40,7 +40,7 @@ class OptionHandler(unohelper.Base,
         self._manager = manager
 
     # XContainerWindowEventHandler
-    def callHandlerMethod(self, window, event, method):
+    def callHandlerMethod(self, _window, event, method):
         try:
             handled = False
             if method == 'Level0':
@@ -67,11 +67,8 @@ class OptionHandler(unohelper.Base,
             elif method == 'SystemTable':
                 self._manager.setSystemTable(event.Source.State)
                 handled = True
-            elif method == 'ShowSetup':
-                self._manager.showSetup()
-                handled = True
             return handled
-        except:
+        except Exception:
             print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
@@ -82,6 +79,4 @@ class OptionHandler(unohelper.Base,
                 'RowSet1',
                 'RowSet2',
                 "UseCache",
-                'SystemTable',
-                'ShowSetup')
-
+                'SystemTable')

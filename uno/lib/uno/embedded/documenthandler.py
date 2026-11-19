@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -32,7 +32,6 @@ import unohelper
 
 from com.sun.star.embed.ElementModes import SEEKABLEREAD
 from com.sun.star.embed.ElementModes import READWRITE
-from com.sun.star.embed.ElementModes import TRUNCATE
 
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
@@ -199,7 +198,7 @@ class DocumentHandler(unohelper.Base,
             self._logger.logprb(INFO, cls, method, resource, count)
             document.store()
             return True
-        except Exception as e:
+        except Exception:
             self._logger.logprb(SEVERE, cls, method, resource + 1, self._url, traceback.format_exc())
             return False
 
@@ -209,7 +208,7 @@ class DocumentHandler(unohelper.Base,
         url = g_protocol + path + g_shutdown
         try:
             self._driver.connect(url, ())
-        except Exception as e:
+        except Exception:
             pass
 
     # DocumentHandler private setter methods
@@ -236,9 +235,9 @@ class DocumentHandler(unohelper.Base,
             for name in source.getElementNames():
                 path = self._getPath(url, name)
                 if source.isStreamElement(name):
-                    input = source.openStreamElement(name, SEEKABLEREAD).getInputStream()
-                    sf.writeFile(path, input)
-                    input.closeInput()
+                    iput = source.openStreamElement(name, SEEKABLEREAD).getInputStream()
+                    sf.writeFile(path, iput)
+                    iput.closeInput()
                     count += 1
                 else:
                     sf.createFolder(path)
@@ -254,4 +253,3 @@ class DocumentHandler(unohelper.Base,
         sf = getSimpleFile(self._ctx)
         if sf.isFolder(url):
             sf.kill(url)
-

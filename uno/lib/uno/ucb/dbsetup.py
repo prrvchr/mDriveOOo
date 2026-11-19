@@ -27,7 +27,7 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .dbtool import DBCheck
+from .dbtool import DBTask
 
 from .dbinit import getDataBaseUrl
 from .dbinit import getDataSourceUrl
@@ -41,17 +41,15 @@ from .dbinit import getViewPrivileges
 
 from .dbconfig import g_queries
 
-import traceback
 
-
-class DBSetup(DBCheck):
+class DBSetup(DBTask):
     def __init__(self, ctx, user='', pwd=''):
         super().__init__(ctx, getDataSourceUrl(ctx), getDataBaseUrl(ctx))
-        self.steps = self._getSteps(ctx, user, pwd)
+        self.steps = self._getSetupSteps(ctx, user, pwd)
 
-    def _getSteps(self, ctx, user, pwd):
+    def _getSetupSteps(self, ctx, user, pwd):
         yield self._getStepGetConnection(ctx, user, pwd)
-        yield self._getStepCheckConnection(ctx)
+        yield self._getStepCheckConnection()
         if self._connection:
             self.total += 1
             yield self._getStepCreateStaticTables(getStaticTables())
@@ -69,4 +67,3 @@ class DBSetup(DBCheck):
                 yield self._getstepCreateRoleAndPrivileges(getViewPrivileges)
                 yield self._getStepCreateProcedures(ctx, getProcedures(), g_queries)
         yield self._getStepFinalize(True)
-

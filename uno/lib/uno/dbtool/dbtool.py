@@ -37,18 +37,12 @@ from com.sun.star.sdbcx import PrivilegeObject
 from com.sun.star.sdbcx.KeyType import PRIMARY
 from com.sun.star.sdbcx.KeyType import FOREIGN
 
-from com.sun.star.sdb.CommandType import TABLE
-
-from com.sun.star.sdbc.DataType2 import BIT
 from com.sun.star.sdbc.DataType2 import TINYINT
 from com.sun.star.sdbc.DataType2 import SMALLINT
 from com.sun.star.sdbc.DataType2 import INTEGER
 from com.sun.star.sdbc.DataType2 import BIGINT
 from com.sun.star.sdbc.DataType2 import FLOAT
-from com.sun.star.sdbc.DataType2 import REAL
 from com.sun.star.sdbc.DataType2 import DOUBLE
-from com.sun.star.sdbc.DataType2 import NUMERIC
-from com.sun.star.sdbc.DataType2 import DECIMAL
 from com.sun.star.sdbc.DataType2 import CHAR
 from com.sun.star.sdbc.DataType2 import VARCHAR
 from com.sun.star.sdbc.DataType2 import LONGVARCHAR
@@ -60,18 +54,9 @@ from com.sun.star.sdbc.DataType2 import TIMESTAMP_WITH_TIMEZONE
 from com.sun.star.sdbc.DataType2 import BINARY
 from com.sun.star.sdbc.DataType2 import VARBINARY
 from com.sun.star.sdbc.DataType2 import LONGVARBINARY
-from com.sun.star.sdbc.DataType2 import SQLNULL
-from com.sun.star.sdbc.DataType2 import OTHER
-from com.sun.star.sdbc.DataType2 import OBJECT
-from com.sun.star.sdbc.DataType2 import DISTINCT
-from com.sun.star.sdbc.DataType2 import STRUCT
 from com.sun.star.sdbc.DataType2 import ARRAY
-from com.sun.star.sdbc.DataType2 import BLOB
-from com.sun.star.sdbc.DataType2 import CLOB
-from com.sun.star.sdbc.DataType2 import REF
 from com.sun.star.sdbc.DataType2 import BOOLEAN
 
-from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
 from .object import Object
@@ -98,15 +83,16 @@ from ..logger import getLogger
 from ..configuration import g_errorlog
 from ..configuration import g_identifier
 
-g_basename = 'dbtool'
-
 import time
 from datetime import datetime
+
+g_basename = 'dbtool'
 
 
 def getConnectionUrl(ctx, path):
     location = getResourceLocation(ctx, g_identifier, path)
     return getUrlPresentation(ctx, location)
+
 
 def checkConnection(connection, version, minimum, new):
     if not checkVersion(version, minimum):
@@ -116,6 +102,7 @@ def checkConnection(connection, version, minimum, new):
     if new and not _checkConnectionApi(connection, service, interface):
         return False
     return True
+
 
 def getDataSourceConnection(ctx, path, name='', password='', url=None, infos=None, isolated=True):
     if url:
@@ -129,6 +116,7 @@ def getDataSourceConnection(ctx, path, name='', password='', url=None, infos=Non
         connection = datasource.getConnection(name, password)
     return connection
 
+
 def createDataSource(ctx, url, infos=None):
     service = 'com.sun.star.sdb.DatabaseContext'
     dbcontext = createService(ctx, service)
@@ -138,11 +126,13 @@ def createDataSource(ctx, url, infos=None):
         datasource.Info = infos
     return datasource
 
+
 def getDataSource(ctx, url):
     service = 'com.sun.star.sdb.DatabaseContext'
     dbcontext = createService(ctx, service)
     datasource = dbcontext.getByName(url)
     return datasource
+
 
 def getDataBaseConnection(ctx, url, info):
     service = 'com.sun.star.sdbc.DriverManager'
@@ -151,8 +141,10 @@ def getDataBaseConnection(ctx, url, info):
     connection = manager.getConnectionWithInfo(url, info)
     return connection
 
+
 def getDataBaseUrl(url):
     return g_protocol + url + g_options
+
 
 def getConnectionInfo(user, password, path):
     values = {'user': user,
@@ -161,16 +153,19 @@ def getConnectionInfo(user, password, path):
     info = getPropertyValueSet(values)
     return info
 
+
 def getDataSourceLocation(location, dbname, shutdown):
     url = '%s%s/%s%s' % (g_protocol, location, dbname, g_options)
     if shutdown:
         url += ';shutdown=true'
     return url
 
+
 def getDataSourceCall(ctx, connection, name, template=None):
     query = getSqlQuery(ctx, name, template)
     call = connection.prepareCall(query)
     return call
+
 
 def checkDataBase(ctx, connection):
     error = None
@@ -183,14 +178,17 @@ def checkDataBase(ctx, connection):
         error = getSqlException(state, 1112, msg)
     return version, error
 
+
 def executeQueries(ctx, statement, queries, name='%s', template=None):
     for item in queries:
         query = name % item
         statement.executeQuery(getSqlQuery(ctx, query, template))
 
+
 def getDataSourceClassPath(ctx, identifier):
     path = getResourceLocation(ctx, identifier, g_folder)
     return '%s/%s' % (path, g_jar)
+
 
 def getDataSourceJavaInfo(location):
     info = {}
@@ -198,9 +196,11 @@ def getDataSourceJavaInfo(location):
     info['JavaDriverClassPath'] = '%s/%s' % (location, g_jar)
     return getPropertyValueSet(info)
 
+
 def getDataSourceInfo():
     info = getDataBaseInfo()
     return getPropertyValueSet(info)
+
 
 def getDriverPropertyInfos():
     infos = []
@@ -214,6 +214,7 @@ def getDriverPropertyInfos():
     infos.append(info)
     return tuple(infos)
 
+
 def getDriverPropertyInfo(name, value, required=False, choices=()):
     info = uno.createUnoStruct('com.sun.star.sdbc.DriverPropertyInfo')
     info.Name = name
@@ -221,6 +222,7 @@ def getDriverPropertyInfo(name, value, required=False, choices=()):
     info.IsRequired = required
     info.Choices = choices
     return info
+
 
 def getDataBaseInfo():
     info = {}
@@ -230,10 +232,11 @@ def getDataBaseInfo():
     info['IsAutoRetrievingEnabled'] = True
     info['ParameterNameSubstitution'] = True
     # TODO: OpenOffice 4.2.0 dont accept following parameters
-    #info['DisplayVersionColumns'] = True
-    #info['GeneratedValues'] = True
-    #info['UseIndexDirectionKeyword'] = True
+    # info['DisplayVersionColumns'] = True
+    # info['GeneratedValues'] = True
+    # info['UseIndexDirectionKeyword'] = True
     return info
+
 
 def getDriverInfo():
     info = {}
@@ -287,15 +290,17 @@ def getDriverInfo():
     info['ViewAlterationServiceName'] = ''
     return info
 
+
 def registerDataSource(dbcontext, dbname, url):
     if not dbcontext.hasRegisteredDatabase(dbname):
         dbcontext.registerDatabaseLocation(dbname, url)
     elif dbcontext.getDatabaseLocation(dbname) != url:
         dbcontext.changeDatabaseLocation(dbname, url)
 
+
 def getDataFromResult(result, provider=None):
     data = {}
-    for i in range(1, result.MetaData.ColumnCount +1):
+    for i in range(1, result.MetaData.ColumnCount + 1):
         name = result.MetaData.getColumnLabel(i)
         value = getResultValue(result, i)
         if provider:
@@ -303,45 +308,50 @@ def getDataFromResult(result, provider=None):
         data[name] = value
     return data
 
+
 def getRowDict(result, default=None, count=None):
     row = {}
     if count is None:
-        count = result.MetaData.ColumnCount +1
+        count = result.MetaData.ColumnCount + 1
     for i in range(1, count):
         name = result.MetaData.getColumnLabel(i)
         value = getResultValue(result, i, default)
         row[name] = value
     return row
 
+
 def getDictSequenceFromResult(result, default=None):
     sequence = []
-    count = result.MetaData.ColumnCount +1
+    count = result.MetaData.ColumnCount + 1
     while result.next():
         data = getRowDict(result, default, count)
         sequence.append(data)
     return tuple(sequence)
 
+
 def getObjectFromResult(result, default=None, count=None):
     obj = Object()
     if count is None:
-        count = result.MetaData.ColumnCount +1
+        count = result.MetaData.ColumnCount + 1
     for i in range(1, count):
         name = result.MetaData.getColumnLabel(i)
         value = getResultValue(result, i, default)
         setattr(obj, name, value)
     return obj
 
+
 def getObjectSequenceFromResult(result, default=None):
     sequence = []
-    count = result.MetaData.ColumnCount +1
+    count = result.MetaData.ColumnCount + 1
     while result.next():
         obj = getObjectFromResult(result, default, count)
         sequence.append(obj)
     return sequence
 
+
 def getSequenceFromResult(result, index=1, default=None, transformer=None):
     sequence = []
-    #name = result.MetaData.getColumnName(index)
+    # name = result.MetaData.getColumnName(index)
     name = result.MetaData.getColumnLabel(index)
     while result.next():
         value = getResultValue(result, index, default)
@@ -350,9 +360,10 @@ def getSequenceFromResult(result, index=1, default=None, transformer=None):
         sequence.append(value)
     return tuple(sequence)
 
+
 def getDictFromResult(result):
     values = {}
-    index = range(1, result.MetaData.ColumnCount +1)
+    index = range(1, result.MetaData.ColumnCount + 1)
     while result.next():
         for i in index:
             if i == 1:
@@ -361,6 +372,7 @@ def getDictFromResult(result):
                 value = getResultValue(result, i)
         values[key] = value
     return values
+
 
 def getRowResult(result, index=(0,), separator=' '):
     sequence = []
@@ -374,13 +386,16 @@ def getRowResult(result, index=(0,), separator=' '):
             sequence.append(separator.join(values))
     return tuple(sequence)
 
+
 def getValueFromResult(result, index=1, default=None):
     dbtype = result.MetaData.getColumnType(index)
     return getRowValue(result, dbtype, index, default)
 
+
 def getResultValue(result, index=1, default=None):
     dbtype = result.MetaData.getColumnType(index)
     return getRowValue(result, dbtype, index, default)
+
 
 def getUnoType(dbtype):
     if dbtype == CHAR:
@@ -412,6 +427,7 @@ def getUnoType(dbtype):
     else:
         value = uno.getTypeByName('unknown')
     return value
+
 
 def getRowValue(row, dbtype, index=1, default=None):
     if dbtype == CHAR:
@@ -458,12 +474,15 @@ def getRowValue(row, dbtype, index=1, default=None):
         value = default
     return value
 
+
 def executeSqlQueries(statement, queries):
     for query in queries:
         statement.executeQuery(query)
 
+
 def getWarning(state, code, message, context=None, exception=None):
     return getSqlWarning(state, code, message, context, exception)
+
 
 def getSqlWarning(state, code, message, context=None, exception=None):
     warning = SQLWarning()
@@ -474,6 +493,7 @@ def getSqlWarning(state, code, message, context=None, exception=None):
     warning.Context = context
     return warning
 
+
 def getSqlException(state, code, message, context=None, exception=None):
     error = SQLException()
     error.SQLState = state
@@ -483,19 +503,23 @@ def getSqlException(state, code, message, context=None, exception=None):
     error.Context = context
     return error
 
+
 def currentDateTimeInTZ(utc=True):
     dtz = uno.createUnoStruct('com.sun.star.util.DateTimeWithTimezone')
     dtz.DateTimeInTZ = currentDateTime(utc)
     dtz.Timezone = 0 if utc else _getTimeZone()
     return dtz
 
+
 def currentDateTime(utc=True):
     now = datetime.utcnow() if utc else datetime.now()
     return _currentDateTime(now, utc)
 
+
 def currentUnoDateTime(utc=True):
     now = datetime.utcnow() if utc else datetime.now()
     return _getUnoDateTime(now, utc)
+
 
 def getDateTimeInTZToString(dtz, decimal=6):
     dt = dtz.DateTimeInTZ
@@ -505,9 +529,11 @@ def getDateTimeInTZToString(dtz, decimal=6):
     template += '%s'
     return template % (dt.Year, dt.Month, dt.Day, dt.Hours, dt.Minutes, dt.Seconds, fraction, dtz.Timezone)
 
-def getDateTimeToString(dt, decimal=6):
+
+def getDateTimeToString(dt, _decimal=6):
     template = '%04d-%02d-%02dT%02d:%02d:%02d.000Z'
     return template % (dt.Year, dt.Month, dt.Day, dt.Hours, dt.Minutes, dt.Seconds)
+
 
 def toUnoDateTime(dtz):
     dt = dtz.DateTimeInTZ
@@ -526,9 +552,11 @@ def toUnoDateTime(dtz):
         udt.IsUTC = dt.IsUTC
     return udt
 
+
 def getDateTimeFromString(dtstr, template, utc=False):
     now = datetime.strptime(dtstr, template)
     return _getUnoDateTime(now, utc)
+
 
 def _getUnoDateTime(now, utc):
     dt = uno.createUnoStruct('com.sun.star.util.DateTime')
@@ -546,6 +574,7 @@ def _getUnoDateTime(now, utc):
         dt.IsUTC = utc
     return dt
 
+
 def _currentDateTime(now, utc=True):
     dt = uno.createUnoStruct('com.sun.star.util.DateTime')
     dt.Year = now.year
@@ -558,9 +587,11 @@ def _currentDateTime(now, utc=True):
     dt.IsUTC = utc
     return dt
 
+
 def _getTimeZone():
     offset = time.timezone if time.localtime().tm_isdst else time.altzone
     return offset / 60 * -1
+
 
 def getConnectionInfos(connection, *options):
     infos = []
@@ -571,6 +602,7 @@ def getConnectionInfos(connection, *options):
                 infos.append(info.Value)
     return infos
 
+
 def createViews(views, items):
     for catalog, schema, name, command, option in items:
         view = views.createDataDescriptor()
@@ -580,6 +612,7 @@ def createViews(views, items):
         view.setPropertyValue('Command', command)
         view.setPropertyValue('CheckOption', option)
         views.appendByDescriptor(view)
+
 
 def createTables(tables, items):
     count = 0
@@ -603,6 +636,7 @@ def createTables(tables, items):
         names.append(name)
     return count == len(names), tuple(names)
 
+
 def createIndexes(tables, items):
     i = 1
     for name, unique, columns in items:
@@ -616,6 +650,7 @@ def createIndexes(tables, items):
         i += 1
         _addColums(index.getColumns(), columns)
         indexes.appendByDescriptor(index)
+
 
 def createForeignKeys(tables, items):
     i = 1
@@ -634,6 +669,7 @@ def createForeignKeys(tables, items):
         _addColum(key.getColumns(), column, relatedcolumn)
         keys.appendByDescriptor(key)
 
+
 def _createTableColumns(columns, items, catalog, schema):
     for item in items:
         column = columns.createDataDescriptor()
@@ -643,6 +679,7 @@ def _createTableColumns(columns, items, catalog, schema):
             column.setPropertyValue(name, value)
         columns.appendByDescriptor(column)
 
+
 def _createPrimaryKey(table, primarykeys):
     keys = table.getKeys()
     key = keys.createDataDescriptor()
@@ -650,6 +687,7 @@ def _createPrimaryKey(table, primarykeys):
     key.setPropertyValue("Type", PRIMARY)
     _addColums(key.getColumns(), primarykeys)
     keys.appendByDescriptor(key)
+
 
 def getDataBaseTables(connection, statement, query, sql, autoincrement, rowversion):
     call = connection.prepareCall(query)
@@ -661,11 +699,13 @@ def getDataBaseTables(connection, statement, query, sql, autoincrement, rowversi
         yield table, data
     call.close()
 
+
 def _getTableNames(statement, query):
     result = statement.executeQuery(query)
     while result.next():
         yield result.getString(1), result.getString(2), result.getString(3)
     result.close()
+
 
 def _getColumns(call, catalog, schema, table, autoincrement, rowversion):
     columns = []
@@ -710,6 +750,7 @@ def _getColumns(call, catalog, schema, table, autoincrement, rowversion):
     result.close()
     return columns, primarykeys
 
+
 def getDataBaseIndexes(statement, query):
     result = statement.executeQuery(query)
     while result.next():
@@ -730,6 +771,7 @@ def getDataBaseIndexes(statement, query):
             continue
         yield catalog + '.' + schema + '.' + name, unique, columns.getArray(None)
     result.close()
+
 
 def getDataBaseForeignKeys(statement, query):
     result = statement.executeQuery(query)
@@ -773,17 +815,20 @@ def getDataBaseForeignKeys(statement, query):
         yield table, column, referencedtable, relatedcolumn, updaterule, deleterule
     result.close()
 
+
 def _addColums(columns, items):
     column = columns.createDataDescriptor()
     for item in items:
         column.setPropertyValue('Name', item)
         columns.appendByDescriptor(column)
 
+
 def _addColum(columns, name, relatedcolumn):
     column = columns.createDataDescriptor()
     column.setPropertyValue('Name', name)
     column.setPropertyValue('RelatedColumn', relatedcolumn)
     columns.appendByDescriptor(column)
+
 
 def createRoleAndPrivileges(tables, groups, privileges):
     for catalog, schema, name, typ, role, privilege in privileges:
@@ -794,6 +839,7 @@ def createRoleAndPrivileges(tables, groups, privileges):
             _addRole(groups, role)
         group = groups.getByName(role)
         group.grantPrivileges(fullname, typ, privilege)
+
 
 def getTablePrivileges(statement, query):
     result = statement.executeQuery(query)
@@ -819,8 +865,10 @@ def getTablePrivileges(statement, query):
         yield catalog, schema, name, _getPrivilegeType(column), role, privilege
     result.close()
 
+
 def _getPrivilegeType(column):
     return PrivilegeObject.TABLE if column is None else PrivilegeObject.COLUMN
+
 
 def getDriverInfos(ctx, location, options):
     infos = {}
@@ -828,6 +876,7 @@ def getDriverInfos(ctx, location, options):
     for name, value in _getDriverPropertyInfo(ctx, location, properties, options):
         infos[name] = value
     return getPropertyValueSet(infos) if infos else None
+
 
 def _getDriverPropertyInfo(ctx, location, properties, options):
     url = g_protocol + location
@@ -841,6 +890,7 @@ def _getDriverPropertyInfo(ctx, location, properties, options):
                     yield info.Name, options[info.Name](info)
             break
 
+
 def createUser(connection, name, password='', role=None):
     users = connection.getUsers()
     if not users.hasByName(name):
@@ -852,6 +902,7 @@ def createUser(connection, name, password='', role=None):
             return _addGroup(users, name, role)
     return True
 
+
 def _addGroup(users, name, role):
     if users.hasByName(name):
         groups = users.getByName(name).getGroups()
@@ -859,12 +910,13 @@ def _addGroup(users, name, role):
         return True
     return False
 
+
 def _addRole(groups, role):
     if not groups.hasByName(role):
         group = groups.createDataDescriptor()
         group.setPropertyValue('Name', role)
         groups.appendByDescriptor(group)
 
+
 def _checkConnectionApi(connection, service, interface):
     return connection.supportsService(service) and hasInterface(connection, interface)
-

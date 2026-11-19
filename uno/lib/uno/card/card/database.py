@@ -27,9 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
-
 from com.sun.star.sdb.CommandType import QUERY
 
 from com.sun.star.sdbc.DataType import VARCHAR
@@ -47,20 +44,17 @@ from ..dbtool import getDataSourceConnection
 from ..dbtool import getSequenceFromResult
 from ..dbtool import getValueFromResult
 
-from ..unotool import checkVersion
 from ..unotool import getConfiguration
-from ..unotool import getSimpleFile
 
 from ..configuration import g_identifier
 from ..configuration import g_host
 
 from ..dbqueries import getSqlQuery
 
+from ..dbinit import getDataSourceUrl
+
 from ..dbconfig import g_catalog
 from ..dbconfig import g_schema
-from ..dbconfig import g_version
-
-from ..dbinit import getDataBaseConnection
 
 from collections import OrderedDict
 import json
@@ -68,14 +62,13 @@ import traceback
 
 
 class DataBase():
-    def __init__(self, ctx, logger, url, user='', pwd=''):
+    def __init__(self, ctx, _user='', _pwd=''):
         self._cls = 'DataBase'
-        mtd = '__init__'
         self._ctx = ctx
         self._statement = None
         self._fieldsMap = {}
         self._batchedCalls = OrderedDict()
-        self._url = url
+        self._url = getDataSourceUrl(ctx)
 
     @property
     def Connection(self):
@@ -87,12 +80,6 @@ class DataBase():
     @property
     def Url(self):
         return self._url
-    @property
-    def Version(self):
-        return self._version
-
-    def isUptoDate(self):
-        return checkVersion(self._version, g_version)
 
     def getConnection(self, user='', password=''):
         return getDataSourceConnection(self._ctx, self._url, user, password)
@@ -102,7 +89,7 @@ class DataBase():
             connection = self._statement.getConnection()
             self._statement.dispose()
             self._statement = None
-            #connection.getParent().dispose()
+            # connection.getParent().dispose()
             connection.close()
             print("gContact.DataBase.dispose() ***************** database: %s closed!!!" % g_host)
 
@@ -205,7 +192,7 @@ class DataBase():
                         'Server': server,
                         'Path': result.getString(4),
                         'Name': name}
-            
+
         result.close()
         call.close()
         if userid is not None:
@@ -251,8 +238,8 @@ class DataBase():
         call.execute()
         remove = json.loads(call.getString(4))
         add = json.loads(call.getString(5))
-        #toadd = {'User': user.Id, 'Book': book, 'Schema': user.getSchema(), 'Names': names}
-        #toremove = {'User': user.Id, 'Book': book, 'Schema': user.getSchema(), 'Names': remove}
+        # toadd = {'User': user.Id, 'Book': book, 'Schema': user.getSchema(), 'Names': names}
+        # toremove = {'User': user.Id, 'Book': book, 'Schema': user.getSchema(), 'Names': remove}
         call.close()
         return remove, add
 
@@ -545,6 +532,6 @@ class DataBase():
     def _getPreparedCall(self, name):
         # TODO: cannot use: call = self.Connection.prepareCommand(name, QUERY)
         # TODO: it trow a: java.lang.IncompatibleClassChangeError
-        #query = self.Connection.getQueries().getByName(name).Command
-        #self._CallsPool[name] = self.Connection.prepareCall(query)
+        # query = self.Connection.getQueries().getByName(name).Command
+        # self._CallsPool[name] = self.Connection.prepareCall(query)
         return self.Connection.prepareCommand(name, QUERY)

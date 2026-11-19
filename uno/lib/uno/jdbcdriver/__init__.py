@@ -36,4 +36,3 @@ from .configuration import g_script
 from .configuration import g_service
 from .configuration import g_services
 from .configuration import g_version
-

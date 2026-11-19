@@ -27,18 +27,13 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
-import unohelper
+from ..unotool import getStringResource
+from ..unotool import hasInterface
 
-from ...unotool import getStringResource
-from ...unotool import hasInterface
-
-from ...configuration import g_identifier
-
-import traceback
+from ..configuration import g_identifier
 
 
-class WizardModel(unohelper.Base):
+class WizardModel():
     def __init__(self, ctx):
         self._pages = {}
         self._currentPageId = -1
@@ -56,9 +51,8 @@ class WizardModel(unohelper.Base):
     def setRoadmapModel(self, model):
         self._roadmap = model
 
-    def setRoadmapSize(self, page):
-        self._roadmap.Height = page.Height
-        self._roadmap.Width = page.PositionX
+    def getRoadmap(self):
+        return self._roadmap
 
     def getRoadmapWidth(self):
         return self._roadmap.Width
@@ -143,7 +137,7 @@ class WizardModel(unohelper.Base):
         # TODO: Fixed: Roadmap item will be by default:
         # TODO: - Previous pages will be, if not explicitly disabled, enabled.
         # TODO: - Current page will be enabled, it's mandatory.
-        # TODO: - Subsequent pages will be, if not explicitly disabled, enabled 
+        # TODO: - Subsequent pages will be, if not explicitly disabled, enabled
         # TODO:   if the previous page can advance otherwise disabled.
         advance = True
         previous = -1

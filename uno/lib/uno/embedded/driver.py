@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -45,8 +45,6 @@ from .unotool import getPropertyValueSet
 from .unotool import getResourceLocation
 
 from .helper import getException
-
-from .logger import getLogger
 
 from .configuration import g_dbname
 from .configuration import g_identifier
@@ -120,14 +118,17 @@ class Driver(unohelper.Base,
 
     def getMajorVersion(self):
         return 1
+
     def getMinorVersion(self):
         return 0
 
     # XServiceInfo
     def supportsService(self, service):
         return service in self._services
+
     def getImplementationName(self):
         return self._implementation
+
     def getSupportedServiceNames(self):
         return self._services
 
@@ -196,4 +197,3 @@ class Driver(unohelper.Base,
 
     def _getException(self, code, exc, state, resource, *args):
         return getException(self._logger, self, code, exc, state, resource, *args)
-

@@ -29,7 +29,6 @@
 
 import uno
 
-from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.sdb.CommandType import QUERY
@@ -56,7 +55,6 @@ from .dbconfig import g_role
 from .configuration import g_defaultlog
 
 import os
-import traceback
 
 
 class DataBase():
@@ -82,9 +80,9 @@ class DataBase():
         if compact:
             query = getSqlQuery(self._ctx, 'shutdownCompact')
             self._statement.execute(query)
-        #else:
+        # else:
         #    query = getSqlQuery(self._ctx, 'shutdown')
-        #self._statement.execute(query)
+        # self._statement.execute(query)
         self.dispose()
 
     def dispose(self):
@@ -117,7 +115,7 @@ class DataBase():
         call.setTimestamp(6, user.get('DateCreated'))
         call.setTimestamp(7, user.get('DateModified'))
         call.setObject(8, timestamp)
-        result = call.executeQuery() 
+        result = call.executeQuery()
         if result.next():
             data = getDataFromResult(result)
         result.close()
@@ -126,12 +124,12 @@ class DataBase():
 
 # Procedures called by the Replicator
     # XXX: Replicator uses its own database connection
-    def getMetaData(self, userid, rootid, itemid):
-        if itemid == rootid:
+    def getMetaData(self, user, itemid):
+        if itemid == user.RootId:
             data = user.getRootMetaData()
         else:
-            data = self.getItem(userid, itemid, False)
-        data['AtRoot'] = data.get('ParentId') == rootid
+            data = self.getItem(user.Id, itemid, False)
+        data['AtRoot'] = data.get('ParentId') == user.RootId
         return data
 
     def updateNewItemId(self, userid, oldid, newid, created, modified):
@@ -160,8 +158,8 @@ class DataBase():
         return item
 
     def getChildren(self, userid, scheme, path, properties, mode):
-        #TODO: Can't have a ResultSet of type SCROLL_INSENSITIVE with a Procedure,
-        #TODO: as a workaround we use a simple quey...
+        # TODO: Can't have a ResultSet of type SCROLL_INSENSITIVE with a Procedure,
+        # TODO: as a workaround we use a simple quey...
         call = self._getCall('getChildren', self._getChildrenformat(properties))
         scroll = uno.getConstantByName('com.sun.star.sdbc.ResultSetType.SCROLL_INSENSITIVE')
         call.ResultSetType = scroll
@@ -170,7 +168,7 @@ class DataBase():
         #    'IsVolume', 'IsRemote', 'IsRemoveable', 'IsFloppy', 'IsCompactDisc']
         # "TargetURL" is done by: the given scheme + the database view Path + Title
         i = 1
-        if 'TargetURL' in (property.Name for property in properties):
+        if 'TargetURL' in (p.Name for p in properties):
             call.setString(i, scheme)
             i += 1
         call.setString(i, userid)
@@ -224,10 +222,10 @@ class DataBase():
         call.executeUpdate()
         call.close()
 
-    def updateContent(self, userid, itemid, property, value):
+    def updateContent(self, userid, itemid, prop, value):
         updated = clear = False
         timestamp = currentDateTimeInTZ()
-        if property == 'Name':
+        if prop == 'Name':
             update = self._getCall('updateName')
             update.setObject(1, timestamp)
             update.setString(2, value)
@@ -236,7 +234,7 @@ class DataBase():
             updated = update.execute() == 0
             update.close()
             clear = True
-        elif property == 'Size':
+        elif prop == 'Size':
             update = self._getCall('updateSize')
             # FIXME: If we update the Size, we need to update the DateModified too...
             update.setObject(1, timestamp)
@@ -246,7 +244,7 @@ class DataBase():
             update.setString(5, itemid)
             updated = update.execute() == 0
             update.close()
-        elif property == 'Trashed':
+        elif prop == 'Trashed':
             update = self._getCall('updateTrashed')
             update.setObject(1, timestamp)
             update.setBoolean(2, value)
@@ -460,16 +458,18 @@ class DataBase():
         call.setBoolean(16, item.get('IsVersionable'))
         call.setArray(17, Array('VARCHAR', item.get('Parents')))
         path = item.get('Path')
-        call.setNull(18, VARCHAR) if path is None else call.setString(18, path)
+        if path is None:
+            call.setNull(18, VARCHAR)
+        else:
+            call.setString(18, path)
         return 1
 
-    def _getCall(self, name, format=None):
-        return getDataSourceCall(self._ctx, self.Connection, name, format)
+    def _getCall(self, name, options=None):
+        return getDataSourceCall(self._ctx, self.Connection, name, options)
 
     def _getPreparedCall(self, name):
         # TODO: cannot use: call = self.Connection.prepareCommand(name, QUERY)
         # TODO: it trow a: java.lang.IncompatibleClassChangeError
-        #query = self.Connection.getQueries().getByName(name).Command
-        #self._CallsPool[name] = self.Connection.prepareCall(query)
+        # query = self.Connection.getQueries().getByName(name).Command
+        # self._CallsPool[name] = self.Connection.prepareCall(query)
         return self.Connection.prepareCommand(name, QUERY)
-

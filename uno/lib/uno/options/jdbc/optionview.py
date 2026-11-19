@@ -27,33 +27,35 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from ...unotool import Layout
+from ...unotool import SubLayout
+
 from ...unotool import getContainerWindow
 
 from ...configuration import g_identifier
 
-import traceback
-
 
 class OptionView():
-    def __init__(self, ctx, window, handler, label, update):
+    def __init__(self, ctx, window, handler):
         self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'OptionDialog')
-        self._getSetupLabel().Model.Label = label
-        self._getSetup().Model.Enabled = update
+        self._layout = SubLayout(Layout(self._window, **self._getLayouts()))
         self._window.setVisible(True)
 
 # OptionsView getter methods
-    def getSetup(self):
-        return self._getSetup().getSelectedItemPos()
+    def getLayout(self):
+        return self._layout
+
+    def getFrame(self):
+        return self._getFrame()
 
 # OptionView setter methods
     def dispose(self):
         self._window.dispose()
 
-    def initView(self, level, crs, system, rst, enabled, setup, state):
+    def initView(self, level, crs, system, rst, enabled, state):
         self._getApiLevel(level).State = 1
         self._getCachedRowSet().State = int(crs)
         self._getSytemTable().State = int(system)
-        self._setSetup(setup)
         self.refreshView(rst, enabled, state)
 
     def refreshView(self, rst, enabled, state):
@@ -71,12 +73,29 @@ class OptionView():
     def enableCachedRowSet(self, enabled):
         self._getCachedRowSet().Model.Enabled = enabled
 
-    def _setSetup(self, setup):
-        control = self._getSetup()
-        if control.Model.Enabled:
-            control.selectItemPos(setup, True)
+    def _getLayouts(self):
+        return {'horizontals': self._getHorizontals(),
+                'tops': self._getTops()}
+
+    def _getHorizontals(self):
+        yield self._getFrame()
+        yield self._getFixedLine()
+
+    def _getTops(self):
+        for index in range(1, 7):
+            yield self._getOptionButton(index)
+        yield self._getSytemTable()
 
 # OptionView private control methods
+    def _getFrame(self):
+        return self._window.getControl('FrameControl1')
+
+    def _getFixedLine(self):
+        return self._window.getControl('FixedLine1')
+
+    def _getOptionButton(self, index):
+        return self._window.getControl(f'OptionButton{index}')
+
     def _getApiLevel(self, index):
         return self._window.getControl('OptionButton%s' % (index + 1))
 
@@ -88,10 +107,3 @@ class OptionView():
 
     def _getSytemTable(self):
         return self._window.getControl('CheckBox2')
-
-    def _getSetupLabel(self):
-        return self._window.getControl('FixedLine2')
-
-    def _getSetup(self):
-        return self._window.getControl('ListBox1')
-

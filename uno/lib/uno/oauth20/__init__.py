@@ -39,6 +39,7 @@ from .oauth2tool import getResponseResults
 from .oauth2tool import setItemsIdentifier
 from .oauth2tool import setParametersArguments
 from .oauth2tool import setResquestParameter
+from .oauth2tool import showOAuth2
 
 from .oauth2core import getOAuth2UserName
 from .oauth2core import getOAuth2Token
@@ -48,4 +49,3 @@ from .configuration import g_identifier
 from .configuration import g_service
 from .configuration import g_token
 from .configuration import g_version
-

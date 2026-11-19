@@ -28,4 +28,3 @@
 """
 
 from .optionmanager import OptionManager
-

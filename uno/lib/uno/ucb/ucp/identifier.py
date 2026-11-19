@@ -33,8 +33,6 @@ from com.sun.star.ucb import XContentIdentifier
 
 from ..configuration import g_scheme
 
-import traceback
-
 
 class Identifier(unohelper.Base,
                  XContentIdentifier):
@@ -44,6 +42,6 @@ class Identifier(unohelper.Base,
     # XContentIdentifier
     def getContentIdentifier(self):
         return self._url
+
     def getContentProviderScheme(self):
         return g_scheme
-

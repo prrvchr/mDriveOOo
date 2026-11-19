@@ -45,8 +45,6 @@ from .unotool import hasInterface
 from ..configuration import g_identifier
 from ..configuration import g_resource
 
-import traceback
-
 
 class Factory():
     def __init__(self, ctx):
@@ -64,6 +62,7 @@ class Factory():
     @property
     def Encoding(self):
         return self._encoding
+
     @Encoding.setter
     def Encoding(self, encoding):
         self._encode = True
@@ -90,7 +89,7 @@ class Factory():
     def _create(self, key, value, data, stream=None, force=False):
         typemap = self._getTypeMap(self._encoding)
         descriptor = {key: value}
-        if stream: 
+        if stream:
             descriptor['InputStream'] = stream
         uiname, mimetype = self._getMimeValues(descriptor, self._uiname, self._mimetype)
         mimetype = self._getMimeType(mimetype, force)
@@ -119,9 +118,9 @@ class Factory():
 
     def _getFlavors(self, typemap, uiname, mimetype, typename):
         flavors = []
-        for input, output in typemap.keys():
-            if input == typename:
-                flavors.append(self._getFlavor(uiname, mimetype, output))
+        for iput, oput in typemap.keys():
+            if iput == typename:
+                flavors.append(self._getFlavor(uiname, mimetype, oput))
         return tuple(flavors)
 
     def _getFlavor(self, uiname, mimetype, typename):
@@ -176,4 +175,3 @@ class Transferable(unohelper.Base,
     def isDataFlavorSupported(self, flavor):
         return any(flavor.MimeType == f.MimeType and
                    flavor.DataType.typeName == f.DataType.typeName for f in self._flavors)
-

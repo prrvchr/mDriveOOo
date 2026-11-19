@@ -37,4 +37,3 @@ class RunnerException(Exception):
         super().__init__(str(cause))
         self.cause = cause.__class__.__name__
         self.trace = trace
-

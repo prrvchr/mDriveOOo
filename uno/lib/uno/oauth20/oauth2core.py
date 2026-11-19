@@ -44,12 +44,13 @@ def getOAuth2UserName(ctx, source, url, message='', parent=None, context=''):
         username = continuation.getUserName()
     return username
 
-def getOAuth2Token(ctx, source, url, user, format='', parent=None, context=''):
+
+def getOAuth2Token(ctx, source, url, user, options='', parent=None, context=''):
     token = ''
     handler = getInteractionHandler(ctx)
     if parent:
         handler.initialize(getPropertyValueSet({'Parent': parent, 'Context': context}))
-    interaction = InteractionRequest(source, url, user, format, '')
+    interaction = InteractionRequest(source, url, user, options, '')
     if handler.handleInteractionRequest(interaction):
         continuation = interaction.getContinuations()[-1]
         token = continuation.getToken()

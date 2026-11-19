@@ -31,7 +31,6 @@ import uno
 import unohelper
 
 from com.sun.star.sdbc import XArray
-import traceback
 
 
 class Array(unohelper.Base,
@@ -49,14 +48,14 @@ class Array(unohelper.Base,
     def getBaseType(self):
         return uno.getConstantByName("com.sun.star.sdbc.DataType.%s" % self._type)
 
-    def getArray(self, map):
+    def getArray(self, _map):
         return self._data
 
-    def getArrayAtIndex(self, index, count, map):
+    def getArrayAtIndex(self, _index, _count, _map):
         return self._data
 
-    def getResultSet(self, map):
+    def getResultSet(self, _map):
         return None
 
-    def getResultSetAtIndex(self, index, count, map):
+    def getResultSetAtIndex(self, _index, _count, _map):
         return None

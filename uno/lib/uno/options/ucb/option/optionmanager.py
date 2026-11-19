@@ -48,8 +48,6 @@ from ...unotool import getFilePicker
 from ...configuration import g_defaultlog
 from ...configuration import g_synclog
 
-import traceback
-
 
 class OptionManager():
     def __init__(self, ctx, source, logger, window, config):
@@ -58,9 +56,12 @@ class OptionManager():
         self._logger = logger
         self._model = OptionModel(ctx, config)
         self._view = OptionView(ctx, window, OptionHandler(self), *self._model.getViewData())
-        self._logmanager = LogManager(ctx, self._view.getWindow(), 'requirements.txt', g_defaultlog, g_synclog)
+        self._logmanager = LogManager(ctx, self._view.getFrame(), 'requirements.txt', g_defaultlog, g_synclog)
         self._logmanager.initView()
         self._logger.logprb(INFO, 'OptionsManager', '__init__', 151)
+
+    def getLayout(self):
+        return self._view.getLayout().addLayout(self._logmanager.getLayout())
 
     def init(self, state):
         self._view.initView(*self._model.getInitData(state))
@@ -82,7 +83,7 @@ class OptionManager():
         option = self._model.setViewData(*self._view.getViewData())
         changed = self._logmanager.saveSetting()
         self._logger.logprb(INFO, 'OptionsManager', 'saveSetting', 171, option, changed)
-        return changed 
+        return changed
 
     def enableShare(self, enabled):
         self._view.enableShare(enabled)
@@ -123,4 +124,3 @@ class OptionManager():
 
     def getDataSourceUrl(self):
         return self._model.getDatasourceUrl()
-

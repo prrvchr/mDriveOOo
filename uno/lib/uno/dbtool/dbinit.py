@@ -41,24 +41,26 @@ from .dbtool import createTables
 from .dbtool import createIndexes
 from .dbtool import createForeignKeys
 
-from collections import OrderedDict
-import traceback
-
 
 def createStaticTables(catalog, schema, tables, statics=None):
     return createTables(tables, _getTableItems(catalog, schema, statics))
 
+
 def createStaticIndexes(catalog, schema, tables, *args):
     createIndexes(tables, _getUniqueIndexes(catalog, schema, *args))
+
 
 def createStaticForeignKeys(catalog, schema, tables, foreignkeys):
     createForeignKeys(tables, _getForeignKeyItems(catalog, schema, foreignkeys))
 
+
 def setStaticTable(statement, tables, csv, readonly=False):
     _setStaticTable(statement, tables, csv, readonly)
 
+
 def getTableNames():
     return 'SELECT "CatalogName", "SchemaName", "Name" FROM "Tables" ORDER BY "Table";'
+
 
 def getTables():
     c1 = '"C"."Name"'
@@ -79,6 +81,7 @@ def getTables():
     s = (','.join(c), ' '.join(f), w)
     return 'SELECT %s FROM %s WHERE %s;' % s
 
+
 def getIndexes():
     c1 = '"T"."CatalogName"'
     c2 = '"T"."SchemaName"'
@@ -93,6 +96,7 @@ def getIndexes():
     g = '"T"."CatalogName", "T"."SchemaName", "T"."Name", "I"."Unique"'
     s = (','.join(c), ' '.join(f), g)
     return 'SELECT %s FROM %s GROUP BY %s;' % s
+
 
 def getForeignKeys():
     c1 = '"T"."CatalogName"'
@@ -115,6 +119,7 @@ def getForeignKeys():
     s = (','.join(c), ' '.join(f))
     return 'SELECT %s FROM %s;' % s
 
+
 def getPrivileges():
     c1 = '"T"."CatalogName"'
     c2 = '"T"."SchemaName"'
@@ -131,16 +136,19 @@ def getPrivileges():
     s = (','.join(c), ' '.join(f), g)
     return 'SELECT %s FROM %s GROUP BY %s;' % s
 
+
 def _setStaticTable(statement, tables, csv, readonly):
     for table in tables:
         statement.executeUpdate(_getTableSource(table, csv % table))
         if readonly:
             statement.executeUpdate(_getTableReadOnly(table))
 
+
 def _getTableItems(catalog, schema, statics=None):
     yield from _getStaticTables(catalog, schema)
     if statics is not None:
         yield from statics
+
 
 def _getStaticTables(catalog, schema):
     yield 'Tables',          {'CatalogName': catalog,
@@ -221,10 +229,10 @@ def _getStaticTables(catalog, schema):
                                            'DefaultValue': '0'},
                                           {'Name': 'DefaultValue',
                                            'TypeName': 'VARCHAR',
-                                            'Type': VARCHAR,
-                                            'Scale': 100,
-                                            'IsNullable': NULLABLE,
-                                            'DefaultValue': 'NULL'},
+                                           'Type': VARCHAR,
+                                           'Scale': 100,
+                                           'IsNullable': NULLABLE,
+                                           'DefaultValue': 'NULL'},
                                           {'Name': 'IsRowVersion',
                                            'TypeName': 'BOOLEAN',
                                            'Type': BOOLEAN,
@@ -289,6 +297,7 @@ def _getStaticTables(catalog, schema):
                                            'IsNullable': NO_NULLS,
                                            'DefaultValue': 'TRUE'})}
 
+
 def _getUniqueIndexes(catalog, schema, *args):
     indexes = [(f'{catalog}.{schema}.Tables',  True, ('CatalogName', 'SchemaName', 'Name')),
                (f'{catalog}.{schema}.Columns', True, ('Name', ))]
@@ -296,10 +305,12 @@ def _getUniqueIndexes(catalog, schema, *args):
         indexes.append(index)
     return tuple(indexes)
 
+
 def _getForeignKeyItems(catalog, schema, foreignkeys=None):
     yield from _getForeignKeys(catalog, schema)
     if foreignkeys is not None:
         yield from foreignkeys
+
 
 def _getForeignKeys(catalog, schema):
     yield (f'{catalog}.{schema}.TableColumn', 'Table',  f'{catalog}.{schema}.Tables',  'Table',  CASCADE, CASCADE)
@@ -309,13 +320,15 @@ def _getForeignKeys(catalog, schema):
     yield (f'{catalog}.{schema}.Indexes',     'Table',  f'{catalog}.{schema}.Tables',  'Table',  CASCADE, CASCADE)
     yield (f'{catalog}.{schema}.Indexes',     'Column', f'{catalog}.{schema}.Columns', 'Column', CASCADE, CASCADE)
 
+
 # Set Static Table Queries
 def _getTableSource(table, csv):
     return 'SET TABLE "%s" SOURCE "%s"' % (table, csv)
 
+
 def _getTableHeader(table):
     return 'SET TABLE "%s" SOURCE HEADER "%s"' % table
 
+
 def _getTableReadOnly(table):
     return 'SET TABLE "%s" READONLY TRUE' % table
-

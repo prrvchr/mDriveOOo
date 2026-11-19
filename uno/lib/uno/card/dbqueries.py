@@ -27,26 +27,25 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
 
-from .configuration import g_member
 from .configuration import g_errorlog
 
 from .logger import getLogger
+
 g_basename = 'dbqueries'
 
 
 def getSqlQuery(ctx, name, template=None):
 
-# Create User and Schema Query
+    # Create User and Schema Query
     if name == 'createUserSchema':
         query = 'CREATE SCHEMA "%(Schema)s" AUTHORIZATION "%(Name)s";' % template
 
     elif name == 'setUserSchema':
         query = 'ALTER USER "%(Name)s" SET INITIAL SCHEMA "%(Schema)s";' % template
 
-# Create Dynamic View Queries
+    # Create Dynamic View Queries
     elif name == 'getUserViewCommand':
         command = '''\
 SELECT V.*
@@ -91,7 +90,7 @@ SELECT V.*
         s7 = 'CONCAT(COALESCE("T"."Name",\'\'),COALESCE("TL"."View","L"."Name")) AS "View"'
         s8 = '"T2"."Name" AS "PrimaryTable"'
         s9 = '"C"."Name" AS "PrimaryColumn"'
-        s = (s1,s2,s3,s4,s5,s6,s7,s8,s9)
+        s = (s1, s2, s3, s4, s5, s6, s7, s8, s9)
         f1 = '"Tables" AS "T1", "Tables" AS "T2"'
         f2 = 'JOIN "TableLabel" AS "TL" ON "T1"."Table"="TL"."Table"'
         f3 = 'JOIN "Labels" AS "L" ON "TL"."Label"="L"."Label"'
@@ -105,10 +104,10 @@ SELECT V.*
 
     elif name == 'getFieldNames':
         query = '''\
-SELECT F."Name" FROM "Fields" AS F 
-  JOIN "Tables" AS T ON F."Column"=T."Table" AND F."Table"='Tables' 
-  WHERE T."View"=TRUE 
-UNION 
+SELECT F."Name" FROM "Fields" AS F
+  JOIN "Tables" AS T ON F."Column"=T."Table" AND F."Table"='Tables'
+  WHERE T."View"=TRUE
+UNION
 SELECT "Name" FROM "Fields" WHERE "Table"='Loop' AND "Column"=1;'''
 
 # Update Queries
@@ -204,15 +203,15 @@ CREATE PROCEDURE "MergeCardData"(IN Labels VARCHAR(60) ARRAY,
     DECLARE Index INTEGER DEFAULT 1;
     DECLARE ColumnId INTEGER DEFAULT 0;
     DECLARE Suffix VARCHAR(20) DEFAULT '';
-    WHILE Index <= CARDINALITY(Suffixes) DO 
+    WHILE Index <= CARDINALITY(Suffixes) DO
       SET Suffix = Suffix || Suffixes[Index];
       SET Index = Index + 1;
     END WHILE;
     SET ColumnId = POSITION_ARRAY(Prefix || Label || Suffix IN Labels);
     IF ColumnId > 0 THEN
-      MERGE INTO "CardValues" USING (VALUES(Card,ColumnId,Data,DateTime)) 
+      MERGE INTO "CardValues" USING (VALUES(Card,ColumnId,Data,DateTime))
         AS vals(w,x,y,z) ON "CardValues"."Card"=vals.w AND "CardValues"."Column"=vals.x
-          WHEN MATCHED THEN UPDATE SET "Value"=vals.y, "Modified"=vals.z 
+          WHEN MATCHED THEN UPDATE SET "Value"=vals.y, "Modified"=vals.z
           WHEN NOT MATCHED THEN INSERT ("Card","Column","Value","Created","Modified")
              VALUES vals.w,vals.x,vals.y,vals.z,vals.z;
     END IF;
@@ -450,15 +449,15 @@ CREATE PROCEDURE "SelectCardProperties"()
   BEGIN ATOMIC
     DECLARE RSLT CURSOR WITH RETURN FOR
       SELECT
-        R."Name" AS "PropertyName", 
-        R."Path" AS "PropertyGetter", 
-        R."View" IS NULL AS "IsGroup", 
+        R."Name" AS "PropertyName",
+        R."Path" AS "PropertyGetter",
+        R."View" IS NULL AS "IsGroup",
         PT."Property" IS NOT NULL AS "IsTyped",
         ARRAY_AGG(DISTINCT JSON_OBJECT(P."Path": P."Name"))
-      FROM "Resources" AS R 
-      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource" 
-      LEFT JOIN "PropertyType" AS PT ON P."Property" = PT."Property" 
-      GROUP BY R."Name", R."Path", "IsGroup", "IsTyped" 
+      FROM "Resources" AS R
+      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource"
+      LEFT JOIN "PropertyType" AS PT ON P."Property" = PT."Property"
+      GROUP BY R."Name", R."Path", "IsGroup", "IsTyped"
       FOR READ ONLY;
     OPEN RSLT;
   END"""
@@ -471,14 +470,14 @@ CREATE PROCEDURE "SelectColumnIds"()
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT ARRAY_AGG(R."Name" || P."Path" || COALESCE(T."Path",'') 
+    DECLARE Rslt CURSOR WITH RETURN FOR
+      SELECT ARRAY_AGG(R."Name" || P."Path" || COALESCE(T."Path",'')
                        ORDER BY R."Resource", P."Property", T."Type")
-      FROM "Resources" AS R 
-      INNER JOIN "Properties" AS P ON R."Resource"=P."Resource" 
-      LEFT JOIN "PropertyType" AS PT ON P."Property"=PT."Property" 
-      LEFT JOIN "Types" AS T ON PT."Type"=T."Type" 
-      WHERE P."Name" IS NOT NULL 
+      FROM "Resources" AS R
+      INNER JOIN "Properties" AS P ON R."Resource"=P."Resource"
+      LEFT JOIN "PropertyType" AS PT ON P."Property"=PT."Property"
+      LEFT JOIN "Types" AS T ON PT."Type"=T."Type"
+      WHERE P."Name" IS NOT NULL
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -491,16 +490,16 @@ CREATE PROCEDURE "SelectColumns"()
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT ROWNUM() AS "ColumnId", 
-        COALESCE(T."Name",'') || P."Name" AS "ColumnName", 
-        R."View" AS "ViewName" 
-      FROM "Resources" AS R 
-      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource" 
-      LEFT JOIN "PropertyType" AS PT ON P."Property" = PT."Property" 
-      LEFT JOIN "Types" AS T ON PT."Type" = T."Type" 
-      WHERE P."Name" IS NOT NULL 
-      ORDER BY R."Resource", P."Property", T."Type" 
+    DECLARE Rslt CURSOR WITH RETURN FOR
+      SELECT ROWNUM() AS "ColumnId",
+        COALESCE(T."Name",'') || P."Name" AS "ColumnName",
+        R."View" AS "ViewName"
+      FROM "Resources" AS R
+      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource"
+      LEFT JOIN "PropertyType" AS PT ON P."Property" = PT."Property"
+      LEFT JOIN "Types" AS T ON PT."Type" = T."Type"
+      WHERE P."Name" IS NOT NULL
+      ORDER BY R."Resource", P."Property", T."Type"
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -513,12 +512,12 @@ CREATE PROCEDURE "SelectPaths"()
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT R."Path", R."Name", P."Path", P."Name" 
-      FROM "Resources" AS R 
-      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource" 
-      LEFT JOIN "PropertyType" AS PT ON P."Property" = PT."Property" 
-      WHERE PT."Property" IS NULL AND P."Name" IS NOT NULL 
+    DECLARE Rslt CURSOR WITH RETURN FOR
+      SELECT R."Path", R."Name", P."Path", P."Name"
+      FROM "Resources" AS R
+      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource"
+      LEFT JOIN "PropertyType" AS PT ON P."Property" = PT."Property"
+      WHERE PT."Property" IS NULL AND P."Name" IS NOT NULL
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -531,10 +530,10 @@ CREATE PROCEDURE "SelectLists"()
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT R."Path", R."Name", R."Name" 
+    DECLARE Rslt CURSOR WITH RETURN FOR
+      SELECT R."Path", R."Name", R."Name"
       FROM "Resources" AS R
-      WHERE R."View" IS NULL 
+      WHERE R."View" IS NULL
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -547,12 +546,12 @@ CREATE PROCEDURE "SelectMaps"()
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT R."Path", R."Name", 
-        ARRAY_AGG(DISTINCT P."Path") 
-      FROM "Resources" AS R 
-      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource" 
-      INNER JOIN "PropertyType" AS PT ON P."Property" = PT."Property" 
+    DECLARE Rslt CURSOR WITH RETURN FOR
+      SELECT R."Path", R."Name",
+        ARRAY_AGG(DISTINCT P."Path")
+      FROM "Resources" AS R
+      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource"
+      INNER JOIN "PropertyType" AS PT ON P."Property" = PT."Property"
       GROUP BY R."Path", R."Name"
       FOR READ ONLY;
     OPEN Rslt;
@@ -566,21 +565,21 @@ CREATE PROCEDURE "SelectTypes"(IN COMPOSE BOOLEAN)
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT R."Path", R."Name", P."Path", 
-      CASE WHEN COMPOSE THEN 
-        ARRAY_AGG(JSON_OBJECT(T."Path" || P2."Path": COALESCE(T."Name", '') || P2."Name")) 
+    DECLARE Rslt CURSOR WITH RETURN FOR
+      SELECT R."Path", R."Name", P."Path",
+      CASE WHEN COMPOSE THEN
+        ARRAY_AGG(JSON_OBJECT(T."Path" || P2."Path": COALESCE(T."Name", '') || P2."Name"))
       ELSE
-        ARRAY_AGG(JSON_OBJECT(T."Path": COALESCE(T."Name", '') || P2."Name")) 
+        ARRAY_AGG(JSON_OBJECT(T."Path": COALESCE(T."Name", '') || P2."Name"))
       END
-      FROM "Resources" AS R 
-      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource" 
-      INNER JOIN "Resources" AS R2 ON R."Resource" = R2."Resource" 
-      INNER JOIN "Properties" AS P2 ON R2."Resource" = P2."Resource" 
-      INNER JOIN "PropertyType" AS PT ON P2."Property" = PT."Property" 
-      INNER JOIN "Types" AS T ON PT."Type" = T."Type" 
-      WHERE P."Name" IS NULL AND P2."Name" IS NOT NULL 
-      GROUP BY R."Path", R."Name", P."Path" 
+      FROM "Resources" AS R
+      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource"
+      INNER JOIN "Resources" AS R2 ON R."Resource" = R2."Resource"
+      INNER JOIN "Properties" AS P2 ON R2."Resource" = P2."Resource"
+      INNER JOIN "PropertyType" AS PT ON P2."Property" = PT."Property"
+      INNER JOIN "Types" AS T ON PT."Type" = T."Type"
+      WHERE P."Name" IS NULL AND P2."Name" IS NOT NULL
+      GROUP BY R."Path", R."Name", P."Path"
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -593,12 +592,12 @@ CREATE PROCEDURE "SelectTmps"()
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
+    DECLARE Rslt CURSOR WITH RETURN FOR
       SELECT R."Path", R."Name", P."Path"
-      FROM "Resources" AS R 
-      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource" 
-      INNER JOIN "PropertyType" AS PT ON P."Property" = PT."Property" 
-      GROUP BY R."Path", R."Name", P."Path" 
+      FROM "Resources" AS R
+      INNER JOIN "Properties" AS P ON R."Resource" = P."Resource"
+      INNER JOIN "PropertyType" AS PT ON P."Property" = PT."Property"
+      GROUP BY R."Path", R."Name", P."Path"
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -610,10 +609,10 @@ CREATE PROCEDURE "SelectFields"()
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT COALESCE(R."Name", P."Path") 
-      FROM "Resources" AS R 
-      LEFT JOIN "Properties" AS P ON R."Resource" = P."Resource" AND R."Name" IS NULL 
+    DECLARE Rslt CURSOR WITH RETURN FOR
+      SELECT COALESCE(R."Name", P."Path")
+      FROM "Resources" AS R
+      LEFT JOIN "Properties" AS P ON R."Resource" = P."Resource" AND R."Name" IS NULL
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -625,8 +624,8 @@ CREATE PROCEDURE "SelectGroups"(IN BOOKID INTEGER)
   READS SQL DATA
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
-    DECLARE Rslt CURSOR WITH RETURN FOR 
-      SELECT "Group", "Uri" FROM "Groups" WHERE "Book" = BOOKID ORDER BY "Group" 
+    DECLARE Rslt CURSOR WITH RETURN FOR
+      SELECT "Group", "Uri" FROM "Groups" WHERE "Book" = BOOKID ORDER BY "Group"
       FOR READ ONLY;
     OPEN Rslt;
   END"""
@@ -663,8 +662,8 @@ CREATE PROCEDURE "MergeGroupMembers"(IN GROUPID INTEGER,
   BEGIN ATOMIC
     DECLARE INDEX INTEGER DEFAULT 1;
     DECLARE CARDID INTEGER DEFAULT NULL;
-    DELETE FROM "GroupCards" WHERE "Group" = GROUPID; 
-    WHILE INDEX <= CARDINALITY(MEMBERS) DO 
+    DELETE FROM "GroupCards" WHERE "Group" = GROUPID;
+    WHILE INDEX <= CARDINALITY(MEMBERS) DO
       SELECT "Card" INTO CARDID FROM "Cards" WHERE "Uri" = MEMBERS[INDEX];
       IF CARDID IS NOT NULL THEN
         MERGE INTO "GroupCards" USING (VALUES(GROUPID, CARDID, DATETIME))
@@ -700,13 +699,13 @@ CREATE PROCEDURE "SelectCardGroup"()
   DYNAMIC RESULT SETS 1
   BEGIN ATOMIC
     DECLARE RSLT CURSOR WITH RETURN FOR
-      SELECT U."User", 
-        ARRAY_AGG(JSON_OBJECT(G."Name": G."Group")) 
-      FROM "Users" AS U 
-      INNER JOIN "Books" AS B ON U."User" = B."User" 
-      INNER JOIN "Groups" AS G ON B."Book" = G."Book" 
-      WHERE U."User" != 0 
-      GROUP BY U."User" 
+      SELECT U."User",
+        ARRAY_AGG(JSON_OBJECT(G."Name": G."Group"))
+      FROM "Users" AS U
+      INNER JOIN "Books" AS B ON U."User" = B."User"
+      INNER JOIN "Groups" AS G ON B."Book" = G."Book"
+      WHERE U."User" != 0
+      GROUP BY U."User"
       FOR READ ONLY;
     OPEN RSLT;
   END"""
@@ -727,7 +726,7 @@ CREATE PROCEDURE "InitGroups"(IN Book INTEGER,
     SELECT JSON_ARRAYAGG(JSON_OBJECT('OldName': "Name")) INTO TmpToRemove FROM "Groups" WHERE "Book" = Book AND "Uri" NOT IN(UNNEST(Uris));
     DELETE FROM "Groups" WHERE "Book" = Book AND "Uri" NOT IN(UNNEST(Uris));
     WHILE Index <= CARDINALITY(Uris) DO
-      MERGE INTO "Groups" USING (VALUES(Book,Uris[Index],Names[Index])) 
+      MERGE INTO "Groups" USING (VALUES(Book,Uris[Index],Names[Index]))
         AS vals(x,y,z) ON "Groups"."Book" = vals.x AND "Groups"."Uri" = vals.y
           WHEN NOT MATCHED THEN INSERT ("Book","Uri","Name")
              VALUES vals.x,vals.y,vals.z;

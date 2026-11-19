@@ -26,33 +26,42 @@
 ║                                                                                    ║
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
+import traceback
 
-from .driver import Driver
+try:
+    from .driver import Driver
 
-from .options import OptionsManager
+    from .options import OptionsManager
 
-from .setup import SetupManager
+    from .runner import Cancel
 
-from .dbsetup import DBSetup
+    from .setup import SetupManager
 
-from .helper import getExtensions
+    from .dbsetup import DBSetup
 
-from .unotool import findFrame
-from .unotool import getJobArguments
-from .unotool import getJobArgument
-from .unotool import notifyDispatch
+    from .replicator import showReplicator
 
-from .logger import getLogger
+    from .helper import getExtensions
 
-from .jdbcdriver import g_agent
-from .jdbcdriver import g_java
-from .jdbcdriver import g_protocol
-from .jdbcdriver import g_script
-from .jdbcdriver import g_service
+    from .unotool import findFrame
+    from .unotool import getConfiguration
+    from .unotool import getJobArguments
+    from .unotool import notifyDispatch
 
-from .configuration import g_basename
-from .configuration import g_defaultlog
-from .configuration import g_extension
-from .configuration import g_identifier
-from .configuration import g_setup
+    from .logger import getLogger
 
+    from .jdbcdriver import g_agent
+    from .jdbcdriver import g_java
+    from .jdbcdriver import g_protocol
+    from .jdbcdriver import g_script
+    from .jdbcdriver import g_service
+
+    from .configuration import g_basename
+    from .configuration import g_defaultlog
+    from .configuration import g_extension
+    from .configuration import g_identifier
+    from .configuration import g_replicator
+    from .configuration import g_setup
+    from .configuration import g_synclog
+except Exception:
+    print("gcontact.__init__() ERROR: %s" % traceback.format_exc())

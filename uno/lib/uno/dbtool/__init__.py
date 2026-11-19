@@ -30,7 +30,7 @@
 
 from .array import Array
 
-from .dbcheck import DBCheck
+from .dbtask import DBTask
 
 from .dbtool import checkConnection
 from .dbtool import checkDataBase

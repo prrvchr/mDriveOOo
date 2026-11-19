@@ -27,13 +27,13 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
+from com.sun.star.awt import Rectangle
 
-from ..runner import Conflict
-from ..runner import Extension
-from ..runner import Java
-from ..runner import Pypi
-from ..runner import Python
+from ..task import Conflict
+from ..task import Extension
+from ..task import Java
+from ..task import Pypi
+from ..task import Python
 
 from ...configuration import State
 
@@ -42,12 +42,10 @@ from ...runner import Runner
 from ...unotool import deregisterStartupJob
 from ...unotool import getConfiguration
 from ...unotool import getStringResource
-from ...unotool import saveWindowPosition
+from ...unotool import saveWindowPosSize
 
 from ...configuration import g_extension
 from ...configuration import g_identifier
-
-import traceback
 
 
 class SetupModel():
@@ -64,14 +62,14 @@ class SetupModel():
         self._url = None
         self._mode = mode
         self._reports = []
-        self._position = 'SetupPosition'
+        self._possize = 'SetupPosSize'
         self._config = getConfiguration(ctx, g_identifier, True)
         self._resolver = getStringResource(ctx, g_identifier, 'dialogs', 'SetupWindow')
         self._resources = {'Title': 'SetupWindow.Title',
                            'Header': 'SetupWindow.Label1.Label.%s'}
 
-    def savePosition(self, position):
-        saveWindowPosition(self._config, position, self._position)
+    def savePosSize(self, possize):
+        saveWindowPosSize(self._config, possize, self._possize)
 
     def getCancel(self):
         return self._cancel
@@ -119,8 +117,8 @@ class SetupModel():
     def setCheckConflict(self, callback):
         self._check = Conflict(self._ctx, callback, self._packages, self._url)
 
-    def startCheck(self, progress, cancel):
-        runner = Runner(self._ctx, self._check, progress, cancel)
+    def startCheck(self, cancel, indicator):
+        runner = Runner(self._ctx, self._check, cancel, indicator)
         runner.start()
 
     def hasDataBase(self):
@@ -133,7 +131,7 @@ class SetupModel():
         deregisterStartupJob(self._ctx, self._name)
 
     def _getDialogPosition(self):
-        return uno.createUnoStruct('com.sun.star.awt.Point', *self._config.getByName(self._position))
+        return Rectangle(*self._config.getByName(self._possize))
 
 # SetupModel StringRessoure methods
     def _getTitle(self):
@@ -142,4 +140,3 @@ class SetupModel():
     def _getHeader(self, code, **kwargs):
         resource = self._resources.get('Header') % code
         return self._resolver.resolveString(resource).format(**kwargs)
-

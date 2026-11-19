@@ -30,10 +30,6 @@
 from com.sun.star.beans.PropertyAttribute import BOUND
 
 from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
-
-from com.sun.star.ucb.ConnectionMode import OFFLINE
-from com.sun.star.ucb.ConnectionMode import ONLINE
 
 from com.sun.star.ucb.ContentInfoAttribute import KIND_DOCUMENT
 from com.sun.star.ucb.ContentInfoAttribute import KIND_FOLDER
@@ -67,8 +63,6 @@ from ..configuration import g_ucpfolder
 from ..configuration import g_scheme
 
 from threading import Event
-import binascii
-import traceback
 
 
 class User():
@@ -78,7 +72,7 @@ class User():
         self._sync = sync
         self._expired = None
         self.Provider = provider
-        #self.CanAddChild = not self.Provider.GenerateIds
+        # self.CanAddChild = not self.Provider.GenerateIds
         self.CanAddChild = True
         self._logger = logger
         self._factory = None
@@ -129,34 +123,44 @@ class User():
     @property
     def Name(self):
         return self._metadata.get('UserName')
+
     @property
     def Id(self):
         return self._metadata.get('UserId')
+
     @property
     def RootId(self):
         return self._metadata.get('RootId')
+
     @property
     def ShareId(self):
         return self._metadata.get('ShareId')
+
     @property
     def Token(self):
         return self._metadata.get('Token')
+
     @Token.setter
     def Token(self, token):
         self._metadata['Token'] = token
         self.DataBase.updateToken(self.Id, token)
+
     @property
     def SessionMode(self):
         return self.Request.getSessionMode(self.Provider.Host)
+
     @property
     def DateCreated(self):
         return self._metadata.get('DateCreated')
+
     @property
     def DateModified(self):
         return self._metadata.get('DateModified')
+
     @property
     def TimeStamp(self):
         return self._metadata.get('TimeStamp')
+
     @TimeStamp.setter
     def TimeStamp(self, timestamp):
         self._metadata['TimeStamp'] = timestamp
@@ -205,12 +209,12 @@ class User():
             properties = (getProperty('Title', 'string', BOUND), )
             content.append(getContentInfo(g_ucbfolder, KIND_FOLDER, properties))
             content.append(getContentInfo(g_ucbfile, KIND_DOCUMENT, properties))
-            #if self.Provider.hasProprietaryFormat:
-            #    content.append(getContentInfo(self.Provider.ProprietaryFormat, KIND_DOCUMENT, properties))
+            # if self.Provider.hasProprietaryFormat:
+            #     content.append(getContentInfo(self.Provider.ProprietaryFormat, KIND_DOCUMENT, properties))
         return tuple(content)
 
-    def updateContent(self, itemid, property, value):
-        updated, clear = self.DataBase.updateContent(self.Id, itemid, property, value)
+    def updateContent(self, itemid, prop, value):
+        updated, clear = self.DataBase.updateContent(self.Id, itemid, prop, value)
         if clear:
             # if Title as been changed then we need to clear paths cache
             self._paths = {}
@@ -221,7 +225,7 @@ class User():
     def insertNewContent(self, authority, content):
         timestamp = currentDateTimeInTZ()
         inserted = self.DataBase.insertNewContent(self.Id, content, timestamp)
-        if inserted :
+        if inserted:
             # Start Replicator for pushing changes…
             self._sync.set()
         return inserted
@@ -295,11 +299,11 @@ class User():
                 'Trashed':              False,
                 'IsRoot':               isroot,
                 'IsFolder':             isfolder,
-                'IsDocument':           not isfolder,
+                'IsDocument':           (not isfolder),
                 'CanAddChild':          isfolder,
-                'CanRename':            not isroot,
+                'CanRename':            (not isroot),
                 'IsReadOnly':           False,
-                'IsVersionable':        not isfolder,
+                'IsVersionable':        (not isfolder),
                 'ConnectionMode':       1,
                 'IsHidden':             False,
                 'IsVolume':             False,
@@ -322,4 +326,3 @@ class User():
 
     def _getExceptionMessage(self, code, *args):
         return getExceptionMessage(self._logger, code, g_extension, *args)
-

@@ -27,33 +27,21 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from ...setup import canUpdatePackages
-
 from ...unotool import getConfiguration
-from ...unotool import getStringResource
 
-from ...configuration import g_extension
 from ...configuration import g_identifier
-
-import traceback
 
 
 class OptionModel():
     def __init__(self, ctx):
         self._rebootkeys = ('ApiLevel', )
-        configkeys = ('ResultSetType', 'ShowSystemTable', 'SetupUpdate', 'UseCachedRowSet')
+        configkeys = ('ResultSetType', 'ShowSystemTable', 'UseCachedRowSet')
         self._keys = self._rebootkeys + configkeys
-        self._update = canUpdatePackages()
         self._config = getConfiguration(ctx, g_identifier, True)
         self._settings = self._getSettings()
         self._java = False
-        self._resolver = getStringResource(ctx, g_identifier, 'dialogs', 'OptionDialog')
-        self._resources = {'SetupLabel': 'OptionDialog.FixedLine2.Label'}
 
 # OptionModel getter methods
-    def getViewData(self):
-        return self._getSetupLabel(), self._update
-
     def getInitData(self, state):
         self._settings = self._getSettings()
         level = self._settings.get('ApiLevel')
@@ -61,9 +49,8 @@ class OptionModel():
         system = self._settings.get('ShowSystemTable')
         rst = self._settings.get('ResultSetType')
         enabled = self._isRowSetEnabled(level)
-        setup = self._settings.get('SetupUpdate')
         self._java = state.java
-        return level, crs, system, rst, enabled, setup, state
+        return level, crs, system, rst, enabled, state
 
     def getRefreshData(self, state):
         level = self._settings.get('ApiLevel')
@@ -90,9 +77,7 @@ class OptionModel():
     def setSystemTable(self, state):
         self._settings['ShowSystemTable'] = bool(state)
 
-    def saveSetting(self, setup):
-        if self._update:
-            self._settings['SetupUpdate'] = setup
+    def saveSetting(self):
         reboot = False
         for key in self._keys:
             if key != 'ResultSetType' or self._java:
@@ -114,8 +99,3 @@ class OptionModel():
 
     def _isRowSetEnabled(self, level):
         return level != 0
-
-    def _getSetupLabel(self):
-        resource = self._resources.get('SetupLabel')
-        return self._resolver.resolveString(resource).format(extension=g_extension)
-

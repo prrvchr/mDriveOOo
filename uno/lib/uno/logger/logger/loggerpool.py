@@ -37,7 +37,6 @@ from .logger import Logger
 from ..unotool import getStringResourceWithLocation
 
 from threading import Lock
-import traceback
 
 
 class LoggerPool(unohelper.Base,
@@ -48,7 +47,7 @@ class LoggerPool(unohelper.Base,
         self._pool = ctx.getByName('/singletons/com.sun.star.logging.LoggerPool')
 
     # FIXME: for the LoggerPool, the modify listener is global
-    _listeners = []
+    _listeners = set()
     # FIXME: for the Logger, the modify listener is global
     _loggers = {}
     _resolvers = {}
@@ -61,7 +60,7 @@ class LoggerPool(unohelper.Base,
         return Logger(self._ctx, logger, listeners)
 
     def getDefaultLogger(self):
-        return getNamedLogger(self._default)
+        return self.getNamedLogger(self._default)
 
     # XLoggerPool2
     def getLocalizedLogger(self, name, url, basename):
@@ -77,26 +76,25 @@ class LoggerPool(unohelper.Base,
     def getLoggerNames(self):
         return tuple(LoggerPool._loggers.keys())
 
-    def getFilteredLoggerNames(self, filter):
+    def getFilteredLoggerNames(self, fltr):
         names = []
-        start = len(filter) +1
+        start = len(fltr) + 1
         for name in LoggerPool._loggers:
-            if name.startswith(filter):
+            if name.startswith(fltr):
                 names.append(name[start:])
         return tuple(names)
 
     def addModifyListener(self, listener):
-        LoggerPool._listeners.append(listener)
+        LoggerPool._listeners.add(listener)
 
     def removeModifyListener(self, listener):
-        if listener in LoggerPool._listeners:
-            LoggerPool._listeners.remove(listener)
+        LoggerPool._listeners.discard(listener)
 
     def _getNamedLogger(self, name):
         with LoggerPool._lock:
             toadd = name not in LoggerPool._loggers
             if toadd:
-                LoggerPool._loggers[name] = []
+                LoggerPool._loggers[name] = set()
         logger = self._pool.getNamedLogger(name)
         if toadd:
             self._notifyListener()
@@ -105,6 +103,5 @@ class LoggerPool(unohelper.Base,
     def _notifyListener(self):
         event = uno.createUnoStruct('com.sun.star.lang.EventObject')
         event.Source = self
-        for listener in LoggerPool._listeners:
+        for listener in list(LoggerPool._listeners):
             listener.modified(event)
-

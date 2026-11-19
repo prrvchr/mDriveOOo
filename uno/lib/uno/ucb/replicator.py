@@ -53,10 +53,10 @@ from .logger import getLogger
 from .configuration import g_identifier
 from .configuration import g_synclog
 
-g_cls = 'Replicator'
-
 from threading import Thread
 import traceback
+
+g_cls = 'Replicator'
 
 
 class Replicator(Thread):
@@ -197,7 +197,7 @@ class Replicator(Thread):
 
     def _pushUser(self, user, end):
         mtd = '_pushUser'
-        # This procedure corresponds to the push of changes for the entire database 
+        # This procedure corresponds to the push of changes for the entire database
         # for a user, in chronological order, from 'start' to 'end'...
         try:
             if self._canceled:
@@ -208,7 +208,7 @@ class Replicator(Thread):
             for item in self._database.getPushItems(user.Id, start, end):
                 if self._canceled:
                     break
-                metadata = self._database.getMetaData(user.Id, user.RootId, item.get('Id'))
+                metadata = self._database.getMetaData(user, item.get('Id'))
                 pushed = self._pushItem(user, item, metadata, start, end)
                 if pushed is None:
                     modified = getDateTimeToString(metadata.get('DateModified'))
@@ -249,9 +249,9 @@ class Replicator(Thread):
                     self._logger.logprb(INFO, g_cls, mtd, *args)
             # UPDATE procedures, only a few properties are synchronized: Title and content(ie: Size or DateModified)
             elif action & UPDATE:
-                for property in self._database.getPushProperties(user.Id, itemid, start, end):
-                    properties = property.get('Properties')
-                    timestamp = property.get('TimeStamp')
+                for prop in self._database.getPushProperties(user.Id, itemid, start, end):
+                    properties = prop.get('Properties')
+                    timestamp = prop.get('TimeStamp')
                     modified = getDateTimeToString(metadata.get('DateModified'))
                     if properties & TITLE:
                         newid = self._provider.updateName(user.Request, itemid, metadata)
@@ -289,7 +289,7 @@ class Replicator(Thread):
         try:
             return uno.getConstantByName('com.sun.star.ucb.SynchronizePolicy.%s' % policy)
         # FIXME: LibreOffice raise exception on uno.getConstantByName() on Enum...
-        except:
+        except Exception:
             return uno.Enum('com.sun.star.ucb.SynchronizePolicy', policy)
 
     def _getResetSetting(self):
@@ -307,4 +307,3 @@ class Replicator(Thread):
 
     def _getShareSetting(self):
         return self._config.getByName('SharedDocuments')
-

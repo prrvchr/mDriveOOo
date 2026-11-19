@@ -41,9 +41,12 @@ from com.sun.star.frame.DispatchResultState import SUCCESS
 from com.sun.star.frame.DispatchResultState import FAILURE
 
 from .unotool import createService
+from .unotool import getConfiguration
 from .unotool import getDesktop
+from .unotool import getLastNamedParts
 
-import traceback
+from .configuration import g_identifier
+from .configuration import g_sep
 
 
 class Dispatch(unohelper.Base,
@@ -52,10 +55,9 @@ class Dispatch(unohelper.Base,
         self._ctx = ctx
         self._frame = frame
         self._listeners = []
+        self._config = getConfiguration(ctx, g_identifier, True)
+        self._path = self._config.getByName('DisplayDirectory')
         self._service = 'com.sun.star.ui.dialogs.OfficeFilePicker'
-        self._sep = '/'
-
-    _path = ''
 
 # XNotifyingDispatch
     def dispatchWithNotification(self, url, arguments, listener):
@@ -82,11 +84,11 @@ class Dispatch(unohelper.Base,
         state = FeatureStateEvent()
         state.FeatureURL = url
         state.IsEnabled = True
-        #state.State = True
+        # state.State = True
         listener.statusChanged(state)
-        self._listeners.append(listener);
+        self._listeners.append(listener)
 
-    def removeStatusListener(self, listener, url):
+    def removeStatusListener(self, listener, _url):
         if listener in self._listeners:
             self._listeners.remove(listener)
 
@@ -94,12 +96,12 @@ class Dispatch(unohelper.Base,
     def _open(self):
         state = FAILURE
         fp = createService(self._ctx, self._service, FILEOPEN_SIMPLE)
-        fp.setDisplayDirectory(Dispatch._path)
+        fp.setDisplayDirectory(self._path)
         fp.setMultiSelectionMode(True)
         urls = ()
         if fp.execute():
+            self._setPath(fp.getDisplayDirectory())
             urls = fp.getSelectedFiles()
-            Dispatch._path = fp.getDisplayDirectory()
             state = SUCCESS
         fp.dispose()
         return urls, state
@@ -107,13 +109,13 @@ class Dispatch(unohelper.Base,
     def _saveAs(self, document):
         state = FAILURE
         source = document.getURL()
-        path, _, name = source.rpartition(self._sep)
+        path, name = getLastNamedParts(source, g_sep)
         fp = createService(self._ctx, self._service, FILESAVE_SIMPLE)
-        fp.setDisplayDirectory(path + self._sep)
+        fp.setDisplayDirectory(path + g_sep)
         fp.setDefaultName(name)
         if fp.execute():
+            self._setPath(fp.getDisplayDirectory())
             target = fp.getSelectedFiles()[0]
-            Dispatch._path = fp.getDisplayDirectory()
             if source != target:
                 document.storeAsURL(target, ())
             else:
@@ -122,3 +124,9 @@ class Dispatch(unohelper.Base,
         fp.dispose()
         return state
 
+    def _setPath(self, path):
+        if path != self._path:
+            self._config.replaceByName('DisplayDirectory', path)
+            self._path = path
+        if self._config.hasPendingChanges():
+            self._config.commitChanges()

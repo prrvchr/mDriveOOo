@@ -27,7 +27,7 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from .dbtool import DBCheck
+from .dbtool import DBTask
 
 from .dbinit import getDataBaseUrl
 from .dbinit import getDataSourceUrl
@@ -36,17 +36,15 @@ from .dbinit import getProcedures
 from .dbinit import getStaticTables
 from .dbinit import getViews
 
-import traceback
 
-
-class DBSetup(DBCheck):
+class DBSetup(DBTask):
     def __init__(self, ctx, user='', pwd=''):
         super().__init__(ctx, getDataSourceUrl(ctx), getDataBaseUrl(ctx))
-        self.steps = self._getSteps(ctx, user, pwd)
+        self.steps = self._getSetupSteps(ctx, user, pwd)
 
-    def _getSteps(self, ctx, user, pwd):
+    def _getSetupSteps(self, ctx, user, pwd):
         yield self._getStepGetConnection(ctx, user, pwd)
-        yield self._getStepCheckConnection(ctx)
+        yield self._getStepCheckConnection()
         if self._connection:
             self.total += 1
             yield self._getStepCreateStaticTables(getStaticTables())
@@ -61,4 +59,3 @@ class DBSetup(DBCheck):
                 yield self._getStepCreateProcedures(ctx, getProcedures())
                 yield self._getStepCreateViews(ctx, getViews)
         yield self._getStepFinalize(True)
-

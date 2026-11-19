@@ -36,11 +36,8 @@ from com.sun.star.lang import XServiceInfo
 
 from com.sun.star.uno import Exception as UnoException
 
-from com.sun.star.sdbc import SQLException
-
 from com.sun.star.ucb import XContentIdentifierFactory
 from com.sun.star.ucb import XContentProvider
-from com.sun.star.ucb import XParameterizedContentProvider
 from com.sun.star.ucb import IllegalIdentifierException
 
 from .ucp import Identifier
@@ -48,9 +45,7 @@ from .ucp import Identifier
 from .datasource import DataSource
 
 from .unotool import getUrlTransformer
-from .unotool import parseUrl
 
-from .helper import getExceptionMessage
 from .helper import getPresentationUrl
 
 import traceback
@@ -120,15 +115,13 @@ class ContentProvider(unohelper.Base,
     # XServiceInfo
     def supportsService(self, service):
         return service in self._services
+
     def getImplementationName(self):
         return self._implementation
+
     def getSupportedServiceNames(self):
         return self._services
 
     # Private methods
     def _getPresentationUrl(self, url):
         return getPresentationUrl(self._transformer, url)
-
-    def _getExceptionMessage(self, extension, *args):
-        return getExceptionMessage(self._logger, code, extension, *args)
-

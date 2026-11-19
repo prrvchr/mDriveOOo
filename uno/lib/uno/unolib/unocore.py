@@ -27,7 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import uno
 import unohelper
 
 from com.sun.star.beans import XPropertyContainer
@@ -43,9 +42,10 @@ class PropertyContainer(unohelper.Base,
     # XPropertyContainer
     def addProperty(self, name, attributes, default):
         print("PropertyContainer.addProperty() *********************************************")
-        property = getProperty(name, default.type, attributes)
-        self._propertySetInfo.update({name: property})
+        prop = getProperty(name, default.type, attributes)
+        self._propertySetInfo.update({name: prop})
         setattr(self, name, default.value)
+
     def removeProperty(self, name):
         print("PropertyContainer.removeProperty() ******************************************")
         self._propertySetInfo.pop(name, None)

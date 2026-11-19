@@ -34,8 +34,6 @@ from com.sun.star.awt.grid import XMutableGridDataModel
 
 from ...unotool import hasInterface
 
-import traceback
-
 
 class GridModel(unohelper.Base,
                 XMutableGridDataModel):
@@ -46,6 +44,7 @@ class GridModel(unohelper.Base,
     @property
     def RowCount(self):
         raise NotImplementedError('Need to be implemented!')
+
     @property
     def ColumnCount(self):
         raise NotImplementedError('Need to be implemented!')
@@ -73,27 +72,34 @@ class GridModel(unohelper.Base,
 # XMutableGridDataModel
     def addRow(self, heading, data):
         pass
+
     def addRows(self, headings, data):
         pass
 
     def insertRow(self, index, heading, data):
         pass
+
     def insertRows(self, index, headings, data):
         pass
 
     def removeRow(self, index):
         pass
+
     def removeAllRows(self):
         pass
 
     def updateCellData(self, column, row, value):
         pass
+
     def updateRowData(self, indexes, rows, values):
         pass
+
     def updateRowHeading(self, index, heading):
         pass
+
     def updateCellToolTip(self, column, row, value):
         pass
+
     def updateRowToolTip(self, row, value):
         pass
 
@@ -117,9 +123,11 @@ class GridModel(unohelper.Base,
         event.Source = self
         for listener in self._events:
             listener.disposing(event)
+
     def addEventListener(self, listener):
         if listener not in self._events:
             self._events.append(listener)
+
     def removeEventListener(self, listener):
         if listener in self._events:
             self._events.remove(listener)
@@ -155,4 +163,3 @@ class GridModel(unohelper.Base,
         event.FirstRow = first
         event.LastRow = last
         return event
-

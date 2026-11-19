@@ -28,7 +28,6 @@
 """
 
 from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
 
 from .logmodel import LogModel
 
@@ -52,6 +51,10 @@ class LogManager():
         self._dialog = None
         self._model.addPoolListener(LoggerListener(self.updateLoggers))
         self._update = True
+
+# LogManager getter methods
+    def getLayout(self):
+        return self._view.getLayout()
 
 # LogManager setter methods
     def initView(self):

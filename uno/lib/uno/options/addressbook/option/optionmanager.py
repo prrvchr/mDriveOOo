@@ -28,7 +28,6 @@
 """
 
 from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
 
 from .optionmodel import OptionModel
 
@@ -48,12 +47,18 @@ class OptionManager():
     def __init__(self, ctx, logger, window, config):
         self._ctx = ctx
         self._model = OptionModel(ctx, config)
-        self._view = OptionView(ctx, window, OptionHandler(self))
-        self._logmanager = LogManager(ctx, self._view.getWindow(), 'requirements.txt', g_defaultlog, g_synclog)
+        self._view = OptionView(ctx, window, OptionHandler(self), self._model.getViewData())
+        self._logmanager = LogManager(ctx, self._view.getFrame(), 'requirements.txt', g_defaultlog, g_synclog)
         self._logmanager.initView()
         self._logger = logger
         self._logger.logprb(INFO, 'OptionManager', '__init__()', 301)
         self._model.loadDriver()
+
+    def getLayout(self):
+        return self._view.getLayout().addLayout(self._logmanager.getLayout())
+
+    def getDataSourceUrl(self):
+        return self._model.getDataSourceUrl()
 
     def init(self, state):
         self._view.initView(*self._model.getInitData(state))
@@ -71,7 +76,3 @@ class OptionManager():
 
     def viewData(self):
         getDesktop(self._ctx).loadComponentFromURL(self.getDataSourceUrl(), '_default', 0, ())
-
-    def getDataSourceUrl(self):
-        return self._model.getDataSourceUrl()
-

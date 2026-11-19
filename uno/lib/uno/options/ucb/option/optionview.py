@@ -27,6 +27,10 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
+from ...unotool import Layout
+from ...unotool import LinkListener
+from ...unotool import SubLayout
+
 from ...unotool import getContainerWindow
 
 from ...configuration import g_identifier
@@ -35,17 +39,22 @@ import traceback
 
 
 class OptionView():
-    def __init__(self, ctx, window, handler, hasfile, resumable, links):
+    def __init__(self, ctx, window, handler, title, url, hasfile, resumable):
         self._window = getContainerWindow(ctx, window.getPeer(), handler, g_identifier, 'OptionDialog')
-        self._window.setVisible(True)
+        self._getTitle().Model.Label = title
         self._getFile().Model.Enabled = hasfile
         self._getUpload().Model.Enabled = resumable
-        for i, link in enumerate(links, start=1):
-            self._getLink(i).URL = link
+        self._link = LinkListener(ctx, self._getLabel())
+        self._link.setUrl(url)
+        self._layout = SubLayout(Layout(self._window, **self._getLayouts()))
+        self._window.setVisible(True)
 
 # OptionsView getter methods
-    def getWindow(self):
-        return self._window
+    def getLayout(self):
+        return self._layout
+
+    def getFrame(self):
+        return self._getFrame()
 
     def getViewData(self):
         reset = self._getResetSync().State
@@ -86,7 +95,7 @@ class OptionView():
             self._getMacro().State = int(macro)
             self.enableCustomize(macro)
             self.refreshView(state)
-        except Exception as e:
+        except Exception:
             print("OptionView.initView() ERROR: %s" % traceback.format_exc())
 
     def refreshView(self, state):
@@ -114,7 +123,7 @@ class OptionView():
             self._getResetFile().State = 0
 
     def enableCustomize(self, enabled):
-        self._getLink(1).Model.Enabled = enabled
+        self._getLabel().Model.Enabled = enabled
         self._getCustomize().Model.Enabled = enabled
 
     def setChunk(self, index, chunk):
@@ -128,7 +137,7 @@ class OptionView():
 
 # OptionsView private getter methods
     def _getOptionIndex(self):
-        for index in range(1,4):
+        for index in range(1, 4):
             if self._getOption(index).State:
                 return index
 
@@ -154,7 +163,41 @@ class OptionView():
             self.setStep(1)
         control.Model.Enabled = enabled
 
+    def _getLayouts(self):
+        return {'horizontals': self._getHorizontals(),
+                'rows': self._getRows(),
+                'links': self._getLinks(),
+                'tops': self._getTops()}
+
+    def _getHorizontals(self):
+        yield self._getFrame()
+        yield self._getTitle()
+        yield self._getShareName()
+
+    def _getRows(self):
+        yield self._getOption(2), self._getOption(3)
+        yield self._getResetFile(), self._getTimeoutLabel()
+        yield self._getLabel(), self._getCustomize()
+        yield tuple(self._getLabels(index) for index in range(6, 8))
+        yield self._getDownload(), self._getUpload()
+
+    def _getLinks(self):
+        yield (self._getNumericField(1), self._getLabels(3))
+        for index in range(4, 6):
+            yield (self._getNumericField(index), self._getLabels(6))
+        for index in range(6, 8):
+            yield (self._getNumericField(index), self._getLabels(7))
+
+    def _getTops(self):
+        yield self._getButtons(2)
+
 # OptionsView private control methods
+    def _getFrame(self):
+        return self._window.getControl('FrameControl1')
+
+    def _getTitle(self):
+        return self._window.getControl('FixedLine1')
+
     def _getResetSync(self):
         return self._window.getControl('CheckBox1')
 
@@ -190,6 +233,9 @@ class OptionView():
         index += 5
         return self._window.getControl('CommandButton%s' % index)
 
+    def _getButtons(self, index):
+        return self._window.getControl('CommandButton%s' % index)
+
     def _getDownload(self):
         return self._window.getControl('OptionButton4')
 
@@ -208,12 +254,17 @@ class OptionView():
         index += 6
         return self._window.getControl('NumericField%s' % index)
 
+    def _getNumericField(self, index):
+        return self._window.getControl('NumericField%s' % index)
+
     def _getMacro(self):
         return self._window.getControl('CheckBox4')
 
     def _getCustomize(self):
         return self._window.getControl('CommandButton7')
 
-    def _getLink(self, index):
-        return self._window.getControl(f'Hyperlink{index}')
+    def _getLabel(self):
+        return self._window.getControl('Label8')
 
+    def _getLabels(self, index):
+        return self._window.getControl(f'Label{index}')

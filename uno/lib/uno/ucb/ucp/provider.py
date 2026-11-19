@@ -30,18 +30,9 @@
 import uno
 
 from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.ucb.ConnectionMode import OFFLINE
 from com.sun.star.ucb.ConnectionMode import ONLINE
-
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_RETRIEVED
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_CREATED
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_FOLDER
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_FILE
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_RENAMED
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_REWRITED
-from com.sun.star.ucb.RestDataSourceSyncMode import SYNC_TRASHED
 
 from com.sun.star.ucb import IllegalIdentifierException
 
@@ -52,16 +43,12 @@ from ..unotool import getSimpleFile
 
 from ..dbtool import currentDateTimeInTZ
 
-from ..logger import getLogger
-
 from ..configuration import g_identifier
 from ..configuration import g_scheme
-from ..configuration import g_chunk
 
 from .configuration import g_ucbseparator
 
 from dateutil import parser, tz
-import traceback
 
 
 class Provider():
@@ -82,12 +69,15 @@ class Provider():
     @property
     def BaseUrl(self):
         raise NotImplementedError
+
     @property
     def Host(self):
         raise NotImplementedError
+
     @property
     def Name(self):
         raise NotImplementedError
+
     @property
     def UploadUrl(self):
         raise NotImplementedError
@@ -130,12 +120,15 @@ class Provider():
     @property
     def IdentifierRange(self):
         return (0, 0)
+
     @property
     def GenerateIds(self):
         return all(self.IdentifierRange)
+
     @property
     def SupportSharedDocuments(self):
         return self._config.getByName('SupportShare') and self._config.getByName('SharedDocuments')
+
     @property
     def SharedFolderName(self):
         return self._config.getByName('SharedFolderName')
@@ -164,7 +157,7 @@ class Provider():
         mode = 1 if data.get('ConnectionMode') > 0 else -1
         parameter = self.getRequestParameter(user.Request, 'getFolderContent', data)
         items = self.parseFolder(user, data, parameter)
-        for item in user.DataBase.mergeItems(user.Id, user.RootId, datetime, items, mode):
+        for _ in user.DataBase.mergeItems(user.Id, user.RootId, datetime, items, mode):
             count += 1
         return count
 
@@ -271,7 +264,7 @@ class Provider():
             return self.downloadFile(user, item, url)
         return False
 
-    def raiseIllegalIdentifierException(self, source, code, parameter, reponse):
+    def raiseIllegalIdentifierException(self, source, code, parameter, response):
         msg = self._logger.resolveString(code, parameter.Name, response.StatusCode, response.Text)
         response.close()
         raise IllegalIdentifierException(msg, source)
@@ -314,4 +307,3 @@ class Provider():
     def _getDownloadSetting(self):
         config = self._config.getByHierarchicalName('Settings/Download')
         return config.getByName('Chunk'), config.getByName('Retry'), config.getByName('Delay')
-

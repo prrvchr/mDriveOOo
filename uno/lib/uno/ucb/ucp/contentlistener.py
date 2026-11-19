@@ -44,10 +44,9 @@ class ContentListener(unohelper.Base,
         try:
             print("ContentListener.contentEvent()")
             self._user.updateIdentifier(event)
-        except Exception as e:
+        except Exception:
             msg = "Error: %s" % traceback.print_exc()
             print(msg)
 
     def disposing(self, event):
         pass
-

@@ -27,10 +27,6 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from com.sun.star.ucb.SynchronizePolicy import SERVER_IS_MASTER
-from com.sun.star.ucb.SynchronizePolicy import CLIENT_IS_MASTER
-from com.sun.star.ucb.SynchronizePolicy import NONE_IS_MASTER
-
 from ...setup import SetupState
 
 from ...dbinit import getDataSourceUrl
@@ -42,10 +38,9 @@ from ...unotool import getStringResource
 
 from ...ucp import g_ucbseparator
 
+from ...configuration import g_extension
 from ...configuration import g_identifier
 from ...configuration import g_scheme
-
-import traceback
 
 
 class OptionModel():
@@ -60,39 +55,49 @@ class OptionModel():
         self._state = SetupState(False)
         self._hasfile = sf.exists(self.getFileUrl())
         self._resolver = getStringResource(ctx, g_identifier, 'dialogs', 'OptionDialog')
-        self._resources = {'Links': 'OptionDialog.Hyperlink%s.Url'}
+        self._resources = {'Title': 'OptionDialog.FixedLine1.Label',
+                           'Link':  'OptionDialog.Label8.Url'}
 
     @property
     def _ResetSync(self):
         return self._config.getByName('ResetSync')
+
     @property
     def _IsShared(self):
         return self._config.getByName('SharedDocuments')
+
     @property
     def _ShareName(self):
         return self._config.getByName('SharedFolderName')
+
     @property
     def _Policy(self):
         policy = self._config.getByName('SynchronizePolicy')
         return self._policies.get(policy)
+
     @property
     def _Timeout(self):
         timeout = self._config.getByName('ReplicateTimeout')
         return timeout // self._factors['Timeout']
+
     @property
     def _Download(self):
         config = self._config.getByHierarchicalName('Settings/Download')
         return self._getSetting(config)
+
     @property
     def _Upload(self):
         config = self._config.getByHierarchicalName('Settings/Upload')
         return self._getSetting(config)
+
     @property
     def _SupportShare(self):
         return self._config.getByName('SupportShare')
+
     @property
     def _Macro(self):
         return self._common.getByHierarchicalName('Misc/UseSystemFileDialog')
+
     @property
     def _Setup(self):
         return self._config.getByName('SetupUpdate')
@@ -100,11 +105,10 @@ class OptionModel():
 # OptionsModel getter methods
     def getViewData(self):
         resumable = self._config.getByName('ResumableUpload')
-        return self._hasfile, resumable, self._getLinks()
+        return self._getTitle(), self._getLink(), self._hasfile, resumable
 
     def getInitData(self, state):
-        self._state = state
-        return *self._getViewData(), state
+        return *self._getViewData(), self.getRefreshData(state)
 
     def getRefreshData(self, state):
         self._state = state
@@ -202,9 +206,10 @@ class OptionModel():
         if enabled != self._Macro:
             self._common.replaceByHierarchicalName('Misc/UseSystemFileDialog', enabled)
 
-    def _getLinks(self):
-        links = []
-        for i in range(1, 2):
-            resource = self._resources.get('Links') % i
-            links.append(self._resolver.resolveString(resource))
-        return tuple(links)
+    def _getTitle(self):
+        resource = self._resources.get('Title')
+        return self._resolver.resolveString(resource).format(extension=g_extension)
+
+    def _getLink(self):
+        resource = self._resources.get('Link')
+        return self._resolver.resolveString(resource).format(extension=g_extension)

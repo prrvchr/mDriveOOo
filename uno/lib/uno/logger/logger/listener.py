@@ -40,12 +40,11 @@ class LoggerListener(unohelper.Base,
         self._callback = callback
 
     # XModifyListener
-    def modified(self, event):
+    def modified(self, _event):
         try:
             self._callback()
-        except:
+        except Exception:
             print("LoggerListener.modified() ERROR: %s" % traceback.format_exc())
 
     def disposing(self, event):
         pass
-

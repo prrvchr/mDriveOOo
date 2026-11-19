@@ -29,20 +29,16 @@
 
 import uno
 
-from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
-
-from ..helper import getSqlException
+from .helper import getSqlException
 
 from ..oauth20 import getRequest
 
 from dateutil import parser
 from dateutil import tz
 
-import traceback
 
 class Provider():
-    def __init__(self, ctx, src):
+    def __init__(self, ctx, src=None):
         self._cls = 'Provider'
         self._ctx = ctx
         self._src = src
@@ -76,7 +72,6 @@ class Provider():
     # This main method call Request with OAuth2 mode
     def getRequest(self, url, name):
         return getRequest(self._ctx, url, name)
-
 
     # Method called from User.__init__()
     def insertUser(self, database, request, scheme, server, name, pwd):
@@ -158,6 +153,5 @@ class Provider():
         return ['Provider', mtd, 201, parameter.Name, status, user, parameter.Url, msg]
 
     # Can be overwritten method
-    def syncGroups(self, database, user, book, pages, count):
+    def syncGroups(self, _database, _user, _book, pages, count):
         return pages, count, None
-

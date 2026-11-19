@@ -36,14 +36,11 @@ from .logwrapper import LogWrapper
 from .logconfig import LogConfig
 
 from .loghandler import RollerHandler
-from .loghandler import getRollerHandlerUrl
 
-from ..unotool import getSimpleFile
 from ..unotool import getStringResourceWithLocation
 
 from ..configuration import g_basename
 
-import traceback
 
 # XXX: This LogController allows to use a deletable log file as used in eMailerOOo
 class LogController(LogWrapper):
@@ -91,4 +88,3 @@ class LogController(LogWrapper):
 
     def removeModifyListener(self, listener):
         self._logger.removeModifyListener(listener)
-

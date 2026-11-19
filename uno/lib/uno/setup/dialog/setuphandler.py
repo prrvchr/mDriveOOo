@@ -42,7 +42,7 @@ class WindowHandler(unohelper.Base,
         self._manager = manager
 
 # XContainerWindowEventHandler
-    def callHandlerMethod(self, dialog, event, method):
+    def callHandlerMethod(self, _dialog, _event, method):
         try:
             handled = False
             if method == 'Cancel':
@@ -55,7 +55,7 @@ class WindowHandler(unohelper.Base,
                 self._manager.next()
                 handled = True
             return handled
-        except:
+        except Exception:
             print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
@@ -78,4 +78,3 @@ class CloseListener(unohelper.Base,
 
     def disposing(self, event):
         pass
-

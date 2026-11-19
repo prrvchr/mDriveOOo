@@ -51,9 +51,6 @@ from ..jdbcdriver import g_service
 
 from ..configuration import State
 from ..configuration import g_extension
-from ..configuration import g_identifier
-
-import traceback
 
 
 class OptionsManager():
@@ -63,23 +60,24 @@ class OptionsManager():
         self._java = g_extension, g_java, g_script
         self._agent = g_service, g_protocol, g_agent
         self._model = OptionsModel(ctx)
-        self._view = OptionsView(window, *self._model.getViewData())
-        self._manager = OptionManager(ctx, logger, window, self._model.getConfig())
+        self._view = OptionsView(ctx, window, *self._model.getViewData())
+        self._manager = OptionManager(ctx, logger, self._view.getFrame(), self._model.getConfig())
         window.addEventListener(OptionsListener(self))
         self._loadView(self.init)
+        self._view.getLayout().addLayout(self._manager.getLayout())
 
     def init(self, state):
         if not self._disposed:
             self._manager.init(state)
-            self._view.initView(*self._model.getInitData(state))
+            self._view.refreshView(*self._model.getRefreshData(state))
 
     def refresh(self, state):
         if not self._disposed:
             self._manager.refresh(state)
-            self._view.refreshView(state)
+            self._view.refreshView(*self._model.getRefreshData(state))
 
     def saveSetting(self):
-        self._model.saveData(self._view.getData())
+        self._model.saveData(self._view.getSetupMode())
         if self._manager.saveSetting():
             State.restart = True
             self._loadView(self.refresh)
@@ -91,16 +89,15 @@ class OptionsManager():
         self._disposed = True
 
     def showSetup(self):
-        mode = self._view.getSetup()
-        showSetup(self._ctx, g_identifier, Dispatch=DispatchListener(self), Mode=mode)
+        mode = self._view.getSetupMode()
+        showSetup(self._ctx, Dispatch=DispatchListener(self), Mode=mode)
 
-    def dispatchFinished(self, notification):
+    def dispatchFinished(self, _notification):
         if not self._disposed:
             self._loadView(self.refresh)
 
     def _loadView(self, callback):
-        mode = self._view.getSetup()
+        mode = self._view.getSetupMode()
         database = self._manager.getDataSourceUrl()
         setup = SetupCheck(self._ctx, callback, database=database, java=self._java, agent=self._agent, python=True, extensions=getExtensions(), mode=mode)
         setup.start()
-

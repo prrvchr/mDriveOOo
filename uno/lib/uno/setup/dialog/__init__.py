@@ -28,4 +28,3 @@
 """
 
 from .setupmanager import SetupManager
-

@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -42,7 +42,6 @@ from .logger import getLogger
 
 from .unotool import findFrame
 from .unotool import getJobArguments
-from .unotool import getJobArgument
 from .unotool import notifyDispatch
 
 from .jdbcdriver import g_agent
@@ -58,4 +57,3 @@ from .configuration import g_extension
 from .configuration import g_identifier
 from .configuration import g_memory
 from .configuration import g_setup
-

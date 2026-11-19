@@ -87,8 +87,8 @@ class InteractionUserName(unohelper.Base,
 
 class InteractionRequest(unohelper.Base,
                          XInteractionRequest):
-    def __init__(self, source, url, user, format, message):
-        self._request = self._getRequest(source, url, user, format, message)
+    def __init__(self, source, url, user, options, message):
+        self._request = self._getRequest(source, url, user, options, message)
         self._abort = InteractionAbort()
         self._continue = InteractionUserName()
 
@@ -99,14 +99,14 @@ class InteractionRequest(unohelper.Base,
     def getContinuations(self):
         return (self._abort, self._continue)
 
-    def _getRequest(self, context, url, user, format, message):
+    def _getRequest(self, context, url, user, options, message):
         request = OAuth2Request()
         classification = 'com.sun.star.task.InteractionClassification'
         request.Classification = uno.Enum(classification, 'QUERY')
         request.Context = context
         request.ResourceUrl = url
         request.UserName = user
-        request.Format = format
+        request.Format = options
         request.Message = message
         return request
 
@@ -147,4 +147,3 @@ class CustomParser():
             results[item] = self._values
             del self._collectors[(prefix, event, value)]
             self._values = None
-

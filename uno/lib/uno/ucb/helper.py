@@ -30,11 +30,9 @@
 import uno
 
 from com.sun.star.ucb.ContentAction import INSERTED
-from com.sun.star.ucb.ContentAction import REMOVED
 from com.sun.star.ucb.ContentAction import DELETED
 from com.sun.star.ucb.ContentAction import EXCHANGED
 
-from com.sun.star.ucb import IllegalIdentifierException
 from com.sun.star.ucb import InteractiveAugmentedIOException
 
 from com.sun.star.sdb import ParametersRequest
@@ -42,7 +40,6 @@ from com.sun.star.sdb import ParametersRequest
 from .unotool import createMessageBox
 from .unotool import getProperty
 from .unotool import getPropertyValue
-from .unotool import getSimpleFile
 from .unotool import parseUrl
 
 from .oauth20 import g_identifier as g_identifier1
@@ -53,12 +50,11 @@ from .jdbcdriver import g_identifier as g_identifier2
 from .jdbcdriver import g_extension as g_extension2
 from .jdbcdriver import g_version as g_version2
 
-import traceback
-
 
 def getExtensions():
     return {g_identifier1: (g_extension1, g_version1),
             g_identifier2: (g_extension2, g_version2)}
+
 
 def getPresentationUrl(transformer, url):
     # FIXME: Sometimes the url can end with a dot, it must be removed
@@ -68,11 +64,13 @@ def getPresentationUrl(transformer, url):
         url = transformer.getPresentation(uri, True)
     return url
 
+
 def propertyChange(source, name, oldvalue, newvalue):
     if name in source.propertiesListener:
         events = (_getPropertyChangeEvent(source, name, oldvalue, newvalue), )
         for listener in source.propertiesListener[name]:
             listener.propertiesChange(events)
+
 
 def setContentData(content, call, properties, index=1):
     row = _getContentProperties(content, properties)
@@ -92,19 +90,23 @@ def setContentData(content, call, properties, index=1):
         index += 1
     return index
 
+
 def getPump(ctx):
     return ctx.ServiceManager.createInstance('com.sun.star.io.Pump')
+
 
 def getPipe(ctx):
     return ctx.ServiceManager.createInstance('com.sun.star.io.Pipe')
 
-def getContentEvent(source, action, content, id):
+
+def getContentEvent(source, action, content, identifier):
     event = uno.createUnoStruct('com.sun.star.ucb.ContentEvent')
     event.Source = source
     event.Action = action
     event.Content = content
-    event.Id = id
+    event.Id = identifier
     return event
+
 
 def getCommand(name, argument, handle=-1):
     command = uno.createUnoStruct('com.sun.star.ucb.Command')
@@ -112,6 +114,7 @@ def getCommand(name, argument, handle=-1):
     command.Handle = handle
     command.Argument = argument
     return command
+
 
 def getCommandInfo(name, typename='', handle=-1):
     command = uno.createUnoStruct('com.sun.star.ucb.CommandInfo')
@@ -121,6 +124,7 @@ def getCommandInfo(name, typename='', handle=-1):
     command.Handle = handle
     return command
 
+
 def getContentInfo(ctype, attributes=0, properties=()):
     info = uno.createUnoStruct('com.sun.star.ucb.ContentInfo')
     info.Type = ctype
@@ -128,17 +132,19 @@ def getContentInfo(ctype, attributes=0, properties=()):
     info.Properties = properties
     return info
 
+
 def getMimeType(ctx, stream):
     mimetype = 'application/octet-stream'
     detection = ctx.ServiceManager.createInstance('com.sun.star.document.TypeDetection')
     descriptor = (getPropertyValue('InputStream', stream), )
-    format, dummy = detection.queryTypeByDescriptor(descriptor, True)
-    if detection.hasByName(format):
-        properties = detection.getByName(format)
-        for property in properties:
-            if property.Name == "MediaType":
-                mimetype = property.Value
+    mtype, _ = detection.queryTypeByDescriptor(descriptor, True)
+    if detection.hasByName(mtype):
+        properties = detection.getByName(mtype)
+        for prop in properties:
+            if prop.Name == "MediaType":
+                mimetype = prop.Value
     return mimetype
+
 
 def getParametersRequest(source, connection, message):
     r = ParametersRequest()
@@ -148,6 +154,7 @@ def getParametersRequest(source, connection, message):
     r.Connection = connection
     return r
 
+
 def getInteractiveAugmentedIOException(message, source, classification, code, arguments):
     e = InteractiveAugmentedIOException()
     e.Message = message
@@ -156,6 +163,7 @@ def getInteractiveAugmentedIOException(message, source, classification, code, ar
     e.Code = uno.Enum('com.sun.star.ucb.IOErrorCode', code)
     e.Arguments = arguments
     return e
+
 
 def notifyContentListener(ctx, content, action, identifier=None):
     if action == INSERTED:
@@ -168,19 +176,23 @@ def notifyContentListener(ctx, content, action, identifier=None):
     elif action == EXCHANGED:
         content.notify(getContentEvent(action, content, identifier))
 
+
 def executeContentCommand(content, name, argument, environment):
     command = getCommand(name, argument)
     return content.execute(command, 0, environment)
+
 
 def getExceptionMessage(logger, code, extension, *args):
     title = logger.resolveString(code, extension)
     message = logger.resolveString(code + 1, *args)
     return title, message
 
+
 def showWarning(ctx, title, message):
     msgbox = createMessageBox(ctx, title, message)
     msgbox.execute()
     msgbox.dispose()
+
 
 # Private method
 def _getContentProperties(content, properties):
@@ -189,6 +201,7 @@ def _getContentProperties(content, properties):
         namedvalues.append(getProperty(name))
     command = getCommand('getPropertyValues', tuple(namedvalues))
     return content.execute(command, 0, None)
+
 
 def _getPropertyChangeEvent(source, name, oldvalue, newvalue, further=False, handle=-1):
     event = uno.createUnoStruct('com.sun.star.beans.PropertyChangeEvent')
@@ -199,4 +212,3 @@ def _getPropertyChangeEvent(source, name, oldvalue, newvalue, further=False, han
     event.OldValue = oldvalue
     event.NewValue = newvalue
     return event
-

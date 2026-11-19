@@ -45,11 +45,10 @@ from ...configuration import g_identifier
 
 import json
 from collections import OrderedDict
-import traceback
 
 
 class GridManager():
-    def __init__(self, ctx, url, model, window, setting, selection, resources=None, maxi=None, multi=False, factor=5):
+    def __init__(self, ctx, url, model, window, size, setting, selection, resources=None, maxi=None, multi=False, factor=5):
         self._factor = factor
         self._datasource = None
         self._table = None
@@ -73,16 +72,20 @@ class GridManager():
         grid = createService(ctx, 'com.sun.star.awt.grid.SortableGridDataModel')
         grid.initialize((model, ))
         self._model = model
-        self._view = GridView(ctx, window, WindowHandler(self), grid, selection)
+        self._view = GridView(ctx, window, WindowHandler(self), grid, size, selection)
 
     @property
     def Model(self):
         return self._view.getGrid().Model.GridDataModel
+
     @property
     def Column(self):
         return self._view.getGrid().Model.ColumnModel
 
 # GridManager getter methods
+    def getLayout(self):
+        return self._view.getLayout()
+
     def getGridWidth(self):
         return self._view.getGrid().Model.Width
 
@@ -121,12 +124,12 @@ class GridManager():
     def getGridData(self, columns, quote, default=None):
         values = {}
         for row in (range(self._model.RowCount)):
-            filter = self._getRowFilter(row, quote)
+            fltr = self._getRowFilter(row, quote)
             for column in columns:
                 if column in self._headers:
                     value = self._getColumnValue(row, column, default)
                     if value:
-                        values[filter] = value
+                        values[fltr] = value
                         break
         return values
 
@@ -153,8 +156,8 @@ class GridManager():
         for identifier in self._indexes:
             column = self._getQuotedIdentifier(identifier, quote)
             value = self._getQuotedValue(identifier, row)
-            filter = '%s = %s' % (column, value)
-            filters.append(filter)
+            fltr = '%s = %s' % (column, value)
+            filters.append(fltr)
         return ' AND '.join(filters)
 
     def _getRowStructuredFilter(self, index):
@@ -162,8 +165,8 @@ class GridManager():
         row = self.Model.getRowHeading(index)
         for identifier in self._indexes:
             value = self._getQuotedValue(identifier, row)
-            filter = getPropertyValue(identifier, value, 0, EQUAL)
-            filters.append(filter)
+            fltr = getPropertyValue(identifier, value, 0, EQUAL)
+            filters.append(fltr)
         return tuple(filters)
 
     def _getQuotedValue(self, identifier, row):
@@ -244,7 +247,7 @@ class GridManager():
 
 # GridManager private methods
     def _initColumnModel(self, datasource, table=None):
-        # TODO: ColumnWidth should be assigned after all columns have 
+        # TODO: ColumnWidth should be assigned after all columns have
         # TODO: been added to the GridColumnModel
         self._removeColumns()
         widths = self._getSavedWidths(datasource, table)
@@ -339,7 +342,7 @@ class GridManager():
         return identifiers
 
     def _removeColumns(self):
-        for index in range(self.Column.getColumnCount() -1, -1, -1):
+        for index in range(self.Column.getColumnCount() - 1, - 1, - 1):
             self.Column.removeColumn(index)
 
     def _createColumn(self, identifier):
@@ -351,15 +354,15 @@ class GridManager():
             indexes = tuple(self._headers.keys())
             column.DataColumnIndex = indexes.index(identifier)
             if identifier in self._properties:
-                for property in self._properties[identifier]:
-                    setattr(column, property.Name, property.Value)
+                for p in self._properties[identifier]:
+                    setattr(column, p.Name, p.Value)
             self.Column.addColumn(column)
             created = True
         return created
 
     def _removeIdentifier(self, identifier):
         removed = False
-        for index in range(self.Column.getColumnCount() -1, -1, -1):
+        for index in range(self.Column.getColumnCount() - 1, - 1, - 1):
             column = self.Column.getColumn(index)
             if column.Identifier == identifier:
                 self.Column.removeColumn(index)

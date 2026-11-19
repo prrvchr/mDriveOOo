@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -29,12 +29,9 @@
 
 from ..driver import Driver as DriverBase
 
-import traceback
-
 
 class Driver(DriverBase):
 
     def __init__(self, ctx, lock, logger, service, implementation):
         services = ('com.sun.star.sdbc.Driver', )
         DriverBase.__init__(self, ctx, lock, logger, service, implementation, services)
-

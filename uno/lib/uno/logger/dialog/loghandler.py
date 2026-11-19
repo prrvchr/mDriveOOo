@@ -41,7 +41,7 @@ class WindowHandler(unohelper.Base,
         self._manager = manager
 
     # XContainerWindowEventHandler
-    def callHandlerMethod(self, dialog, event, method):
+    def callHandlerMethod(self, _dialog, event, method):
         try:
             handled = False
             if method == 'SetLogger':
@@ -63,7 +63,7 @@ class WindowHandler(unohelper.Base,
                 self._manager.setLevel(event.Source.getSelectedItemPos())
                 handled = True
             return handled
-        except:
+        except Exception:
             print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
@@ -81,16 +81,15 @@ class DialogHandler(unohelper.Base,
         self._manager = manager
 
     # XDialogEventHandler
-    def callHandlerMethod(self, dialog, event, method):
+    def callHandlerMethod(self, _dialog, _event, method):
         try:
             handled = False
             if method == 'LogInfo':
                 self._manager.logInfos()
                 handled = True
             return handled
-        except:
+        except Exception:
             print("DialogHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
         return ('LogInfo', )
-

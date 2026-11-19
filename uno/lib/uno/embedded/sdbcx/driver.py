@@ -1,5 +1,5 @@
 #!
-# -*- coding: utf_8 -*-
+# -*- coding: utf-8 -*-
 
 """
 ╔════════════════════════════════════════════════════════════════════════════════════╗
@@ -29,6 +29,8 @@
 
 from com.sun.star.logging.LogLevel import INFO
 from com.sun.star.logging.LogLevel import SEVERE
+
+from com.sun.star.sdbc import SQLException
 
 from com.sun.star.sdbcx import XDataDefinitionSupplier
 from com.sun.star.sdbcx import XCreateCatalog
@@ -74,4 +76,3 @@ class Driver(DriverBase,
     # XDropCatalog
     def dropCatalog(self, name, info):
         self._logger.logprb(INFO, 'Driver', 'dropCatalog()', 181, name)
-

@@ -32,7 +32,6 @@ import unohelper
 from com.sun.star.lang import XServiceInfo
 
 from com.sun.star.logging.LogLevel import INFO
-from com.sun.star.logging.LogLevel import SEVERE
 
 from com.sun.star.sdbc import SQLException
 from com.sun.star.sdbc import XDriver
@@ -43,13 +42,9 @@ from com.sun.star.sdbcx import XDropCatalog
 
 from .datasource import DataSource
 
-from .helper import getLogException
+from .card import getLogException
 
 from .dbtool import getDriverPropertyInfos
-
-from .logger import getLogger
-
-from .dbinit import getDataSourceUrl
 
 from .configuration import g_protocol
 from .configuration import g_scheme
@@ -78,8 +73,7 @@ class Driver(unohelper.Base,
     @property
     def DataSource(self):
         if self._datasource is None:
-            url = getDataSourceUrl(self._ctx)
-            self._datasource = DataSource(self._ctx, self, self._logger, url)
+            self._datasource = DataSource(self._ctx, self._logger, self)
         return self._datasource
 
 # XCreateCatalog
@@ -94,8 +88,9 @@ class Driver(unohelper.Base,
         return self.connect(url, infos)
 
 # XDriver
-    def connect(self, url, infos):
+    def connect(self, url, _infos):
         try:
+            print("Driver.connect() 1")
             mtd = 'connect'
             self._logger.logprb(INFO, self._cls, mtd, 1111, url)
             protocols = url.strip().split(':')
@@ -104,7 +99,9 @@ class Driver(unohelper.Base,
             username = protocols[3]
             if not validators.email(username):
                 raise getLogException(self._logger, self, 1001, 1114, self._cls, mtd, username)
+            print("Driver.connect() 2")
             connection = self.DataSource.getConnection(self, self._logger, g_scope, g_scheme, g_host, username)
+            print("Driver.connect() 3")
             metadata = connection.getMetaData()
             self._logger.logprb(INFO, self._cls, mtd, 1115, metadata.getDriverVersion(), metadata.getUserName())
             return connection
@@ -117,7 +114,7 @@ class Driver(unohelper.Base,
         accept = url.startswith(self._supportedProtocol)
         return accept
 
-    def getPropertyInfo(self, url, infos):
+    def getPropertyInfo(self, url, _infos):
         properties = ()
         if self.acceptsURL(url):
             properties = getDriverPropertyInfos()
@@ -142,4 +139,3 @@ class Driver(unohelper.Base,
 
     def getSupportedServiceNames(self):
         return self._services
-

@@ -29,6 +29,7 @@
 
 #include <com/sun/star/logging/XLogger.idl>
 #include <com/sun/star/util/XModifyListener.idl>
+#include <com/sun/star/resource/XStringResourceResolver.idl>
 
 
 module com { module sun { module star { module logging {
@@ -108,6 +109,9 @@ interface XLogger2 : com::sun::star::logging::XLogger
             the listener which will be removed from the logger
     */
     void removeModifyListener([in] com::sun::star::util::XModifyListener Listener);
+
+    /** provides access to the string resource resolver used by logrb and logprb. */
+    [attribute, readonly] com::sun::star::resource::XStringResourceResolver ResourceResolver;
 
 };
 

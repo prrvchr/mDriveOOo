@@ -1,0 +1,19 @@
+<!ELEMENT parcel (script*)>
+<!ATTLIST parcel language CDATA #REQUIRED>
+<!ELEMENT script (locale*, functionname, logicalname, languagedepprops?)>
+<!ATTLIST script textname CDATA #IMPLIED>
+<!ATTLIST script language CDATA #IMPLIED>
+<!ELEMENT locale (displayname, description?)>
+<!ATTLIST locale lang CDATA #REQUIRED>
+<!ELEMENT displayname EMPTY>
+<!ATTLIST displayname value CDATA #REQUIRED>
+<!ELEMENT description EMPTY>
+<!ATTLIST description value CDATA #REQUIRED>
+<!ELEMENT functionname EMPTY>
+<!ATTLIST functionname value CDATA #REQUIRED>
+<!ELEMENT logicalname EMPTY>
+<!ATTLIST logicalname value CDATA #REQUIRED>
+<!ELEMENT languagedepprops (prop*)>
+<!ELEMENT prop EMPTY>
+<!ATTLIST prop name CDATA #REQUIRED>
+<!ATTLIST prop value CDATA #REQUIRED>

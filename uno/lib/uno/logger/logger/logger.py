@@ -32,15 +32,13 @@ import unohelper
 
 from com.sun.star.logging import XLogger2
 
-import traceback
-
 
 class Logger(unohelper.Base,
              XLogger2):
-    def __init__(self, ctx, logger, listener, resolver=None):
+    def __init__(self, ctx, logger, listeners, resolver=None):
         self._ctx = ctx
         self._logger = logger
-        self._listeners = listener
+        self._listeners = listeners
         self._resolver = resolver
 
     # XLogger
@@ -51,6 +49,7 @@ class Logger(unohelper.Base,
     @property
     def Level(self):
         return self._logger.Level
+
     @Level.setter
     def Level(self, value):
         self._logger.Level = value
@@ -73,6 +72,10 @@ class Logger(unohelper.Base,
             self._logp(level, clazz, method, message)
 
     # XLogger2
+    @property
+    def ResourceResolver(self):
+        return self._resolver
+
     def hasEntryForId(self, resource):
         if self._resolver is None:
             return False
@@ -98,11 +101,10 @@ class Logger(unohelper.Base,
             self._logp(level, clazz, method, message)
 
     def addModifyListener(self, listener):
-        self._listeners.append(listener)
+        self._listeners.add(listener)
 
     def removeModifyListener(self, listener):
-        if listener in self._listeners:
-            self._listeners.remove(listener)
+        self._listeners.discard(listener)
 
     def _log(self, level, message):
         self._logger.log(level, message)
@@ -115,6 +117,5 @@ class Logger(unohelper.Base,
     def _notifyListener(self):
         if self._listeners:
             event = uno.createUnoStruct('com.sun.star.lang.EventObject', self)
-            for listener in self._listeners:
+            for listener in list(self._listeners):
                 listener.modified(event)
-

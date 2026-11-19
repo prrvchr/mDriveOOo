@@ -42,7 +42,7 @@ class WindowHandler(unohelper.Base,
         self._manager = manager
 
 # XContainerWindowEventHandler
-    def callHandlerMethod(self, window, event, method):
+    def callHandlerMethod(self, _window, event, method):
         try:
             handled = False
             if method == 'ShowColumns':
@@ -52,7 +52,7 @@ class WindowHandler(unohelper.Base,
                 self._manager.setColumn(event.Source.getSelectedItemPos())
                 handled = True
             return handled
-        except:
+        except Exception:
             print("WindowHandler.callHandlerMethod() ERROR: %s" % traceback.format_exc())
 
     def getSupportedMethodNames(self):
@@ -66,16 +66,16 @@ class GridDataListener(unohelper.Base,
         self._manager = manager
 
     # XGridDataListener
-    def rowsInserted(self, event):
+    def rowsInserted(self, _event):
         try:
             self._manager.dataGridChanged()
-        except:
+        except Exception:
             print("GridDataListener.rowsInserted() ERROR: %s" % traceback.format_exc())
 
-    def rowsRemoved(self, event):
+    def rowsRemoved(self, _event):
         try:
             self._manager.dataGridChanged()
-        except:
+        except Exception:
             print("GridDataListener.rowsRemoved() ERROR: %s" % traceback.format_exc())
 
     def dataChanged(self, event):
@@ -100,9 +100,8 @@ class GridSelectionListener(unohelper.Base,
             control = event.Source
             index = control.getSelectedRows()[-1] if control.hasSelectedRows() else -1
             self._manager.changeGridSelection(index, self._grid)
-        except:
+        except Exception:
             print("GridSelectionListener.selectionChanged() ERROR: %s" % traceback.format_exc())
 
     def disposing(self, event):
         pass
-

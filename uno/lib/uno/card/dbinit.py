@@ -53,22 +53,25 @@ from .configuration import g_host
 from .configuration import g_sep
 
 from collections import OrderedDict
-import traceback
 
 
 def getDataBaseUrl(ctx):
     return getConnectionUrl(ctx, g_folder + g_sep + g_host)
 
+
 def getDataSourceUrl(ctx):
     return getConnectionUrl(ctx, g_folder + g_sep + g_host + '.odb')
+
 
 def getDataBaseConnection(ctx, path, url, user, pwd, new, infos=None):
     if new:
         infos = getDriverInfos(ctx, url, g_drvinfos)
     return getDataSourceConnection(ctx, path, url, user, pwd, new, infos)
 
+
 def getViews(ctx, connection):
     yield from _getViews(ctx, connection, g_catalog, g_schema, 'CardView', g_view, CheckOption.CASCADE)
+
 
 def getProcedures():
     for name in ('SelectUser', 'SelectBooks', 'InsertUser', 'InsertBook', 'UpdateBookName',
@@ -81,6 +84,7 @@ def getProcedures():
                  'MergeCardGroups', 'SelectChangedBooks', 'SelectChangedGroups',
                  'UpdateBookSync', 'UpdateGroupSync', 'SelectCardProperties'):
         yield name
+
 
 def getStaticTables():
     yield 'Resources',      {'CatalogName': g_catalog,
@@ -120,21 +124,21 @@ def getStaticTables():
                                           'TypeName': 'INTEGER',
                                           'Type': INTEGER,
                                           'IsNullable': NO_NULLS},
-                                          {'Name': 'Resource',
-                                           'TypeName': 'INTEGER',
-                                           'Type': INTEGER,
-                                           'IsNullable': NO_NULLS},
-                                          {'Name': 'Path',
-                                           'TypeName': 'VARCHAR',
-                                           'Type': VARCHAR,
-                                           'Scale': 100,
-                                           'IsNullable': NO_NULLS},
-                                          {'Name': 'Name',
-                                           'TypeName': 'VARCHAR',
-                                           'Type': VARCHAR,
-                                           'Scale': 100,
-                                           'IsNullable': NULLABLE,
-                                           'DefaultValue': 'NULL'}),
+                                         {'Name': 'Resource',
+                                          'TypeName': 'INTEGER',
+                                          'Type': INTEGER,
+                                          'IsNullable': NO_NULLS},
+                                         {'Name': 'Path',
+                                          'TypeName': 'VARCHAR',
+                                          'Type': VARCHAR,
+                                          'Scale': 100,
+                                          'IsNullable': NO_NULLS},
+                                         {'Name': 'Name',
+                                          'TypeName': 'VARCHAR',
+                                          'Type': VARCHAR,
+                                          'Scale': 100,
+                                          'IsNullable': NULLABLE,
+                                          'DefaultValue': 'NULL'}),
                              'PrimaryKeys': ('Property', )}
     yield 'Types',          {'CatalogName': g_catalog,
                              'SchemaName':  g_schema,
@@ -167,12 +171,14 @@ def getStaticTables():
                                           'Type': 4,
                                           'IsNullable': NO_NULLS})}
 
+
 def getForeignKeys():
     yield (f'{g_catalog}.{g_schema}.Properties',   'Resource', f'{g_catalog}.{g_schema}.Resources',  'Resource', KeyRule.CASCADE, KeyRule.CASCADE)
     yield (f'{g_catalog}.{g_schema}.PropertyType', 'Property', f'{g_catalog}.{g_schema}.Properties', 'Property', KeyRule.CASCADE, KeyRule.CASCADE)
     yield (f'{g_catalog}.{g_schema}.PropertyType', 'Type',     f'{g_catalog}.{g_schema}.Types',      'Type',     KeyRule.CASCADE, KeyRule.CASCADE)
 
-def _getViews(ctx, connection, catalog, schema, name, format, option):
+
+def _getViews(ctx, connection, catalog, schema, name, options, option):
     sel1 = []
     tab1 = []
     query = 'SELECT %(ViewSelect)s FROM %(CardTable)s %(ViewTable)s'
@@ -189,30 +195,30 @@ def _getViews(ctx, connection, catalog, schema, name, format, option):
 
     for view, columns in _getAddressbookColumns(ctx, connection):
         i = 1
-        col2 = columns.keys()
         sel2 = []
         tab2 = []
-        format['ViewName'] = f'{catalog}.{schema}."{view}"'
+        options['ViewName'] = f'{catalog}.{schema}."{view}"'
         for column, index in columns.items():
-            format['ColumnName'] = column
-            format['ColumnId'] = index
-            format['AliasNum'] = 'T%s' % i
-            sel1.append(s1 % format)
-            tab2.append(t2 % format)
-            sel2.append(s2 % format)
+            options['ColumnName'] = column
+            options['ColumnId'] = index
+            options['AliasNum'] = 'T%s' % i
+            sel1.append(s1 % options)
+            tab2.append(t2 % options)
+            sel2.append(s2 % options)
             i += 1
-        sel2.append(s3 % format)
-        format['ViewSelect'] = ', '.join(sel2)
-        format['ViewTable'] = ' '.join(tab2)
-        tab1.append(t1 % format)
-        yield catalog, schema, view, query % format, option
-    sel1.append(s3 % format)
-    sel1.append(s4 % format)
-    sel1.append(s5 % format)
-    format['ViewName'] = f'{catalog}.{schema}."{name}"'
-    format['ViewSelect'] = ', '.join(sel1)
-    format['ViewTable'] = ' '.join(tab1)
-    yield catalog, schema, name, query % format, option
+        sel2.append(s3 % options)
+        options['ViewSelect'] = ', '.join(sel2)
+        options['ViewTable'] = ' '.join(tab2)
+        tab1.append(t1 % options)
+        yield catalog, schema, view, query % options, option
+    sel1.append(s3 % options)
+    sel1.append(s4 % options)
+    sel1.append(s5 % options)
+    options['ViewName'] = f'{catalog}.{schema}."{name}"'
+    options['ViewSelect'] = ', '.join(sel1)
+    options['ViewTable'] = ' '.join(tab1)
+    yield catalog, schema, name, query % options, option
+
 
 def _getAddressbookColumns(ctx, connection):
     view = None
@@ -233,4 +239,3 @@ def _getAddressbookColumns(ctx, connection):
         yield view, columns
     result.close()
     call.close()
-

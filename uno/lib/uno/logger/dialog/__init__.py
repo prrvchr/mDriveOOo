@@ -28,4 +28,3 @@
 """
 
 from .logmanager import LogManager
-

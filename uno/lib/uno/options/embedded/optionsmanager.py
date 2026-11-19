@@ -37,6 +37,7 @@ from .option import OptionManager as Manager
 
 from ..runner import DispatchListener
 
+from ..setup import showSetup
 from ..setup import SetupCheck
 
 from ..helper import getExtensions
@@ -52,8 +53,6 @@ from ..configuration import g_extension
 
 from ..configuration import g_defaultlog
 
-import traceback
-
 
 class OptionsManager():
     def __init__(self, ctx, logger, window, url=None):
@@ -63,15 +62,16 @@ class OptionsManager():
         self._agent = g_service, g_protocol, g_agent
         self._extensions = getExtensions()
         self._model = OptionsModel(ctx, logger, url)
-        self._manager = Manager(ctx, window, DispatchListener(self), g_defaultlog)
-        self._view = OptionsView(window, self._model.getViewData())
+        self._view = OptionsView(ctx, window, self._model.getViewData())
+        self._manager = Manager(ctx, self._view.getFrame(), g_defaultlog)
         window.addEventListener(OptionsListener(self))
+        self._view.getLayout().addLayout(self._manager.getLayout())
         self._loadView(self.init)
 
     def init(self, state):
         if not self._disposed:
             self._manager.init(state)
-            self._view.refreshView(state)
+            self._view.initView(*self._model.getInitData(state))
             if state.java:
                 version = self._model.getDriverVersion(self._getConfigApiLevel())
                 self._view.setDriverVersion(version)
@@ -79,23 +79,27 @@ class OptionsManager():
     def refresh(self, state):
         if not self._disposed:
             self._manager.refresh(state)
-            self._view.refreshView(state)
+            self._view.refreshView(*self._model.getRefreshData(state))
 
     def dispose(self):
         self._disposed = True
         self._manager.dispose()
 
 # OptionsManager setter methods
+    def showSetup(self):
+        mode = self._view.getSetupMode()
+        showSetup(self._ctx, Dispatch=DispatchListener(self), Mode=mode)
+
     def saveSetting(self):
+        self._model.saveSetting(self._view.getSetupMode())
         if self._manager.saveSetting():
             State.restart = True
             self._loadView(self.refresh)
 
     def loadSetting(self):
-        self._manager.loadSetting()
         self._loadView(self.init)
 
-    def dispatchFinished(self, notification):
+    def dispatchFinished(self, _notification):
         if not self._disposed:
             self._loadView(self.refresh)
 
@@ -105,7 +109,6 @@ class OptionsManager():
 
 # OptionsManager private setter methods
     def _loadView(self, callback):
-        mode = self._manager.getSetupMode()
+        mode = self._view.getSetupMode()
         setup = SetupCheck(self._ctx, callback, java=self._java, agent=self._agent, python=True, extensions=self._extensions, mode=mode)
         setup.start()
-

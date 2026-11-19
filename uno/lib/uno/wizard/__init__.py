@@ -28,4 +28,3 @@
 """
 
 from .wizard import Wizard
-

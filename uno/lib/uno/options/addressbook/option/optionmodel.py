@@ -28,9 +28,11 @@
 """
 
 from ...unotool import createService
+from ...unotool import getStringResource
 
 from ...dbinit import getDataSourceUrl
 
+from ...configuration import g_extension
 from ...configuration import g_identifier
 from ...configuration import g_implementation
 
@@ -41,10 +43,12 @@ class OptionModel():
         self._config = config
         self._url = getDataSourceUrl(ctx)
         self._factor = 60
+        self._resolver = getStringResource(ctx, g_identifier, 'dialogs', 'OptionDialog')
+        self._resources = {'Title': 'OptionDialog.FixedLine1.Label'}
 
     @property
     def _Timeout(self):
-        timeout = self._config.getByName('ReplicateTimeout')
+        timeout = self._config.getByName('ReplicatorTimeout')
         return timeout // self._factor
 
     @property
@@ -52,6 +56,9 @@ class OptionModel():
         return self._config.getByName('AddressBookName')
 
 # OptionModel getter methods
+    def getViewData(self):
+        return self._getTitle()
+
     def getInitData(self, state):
         return self._Timeout, self._ViewName, state
 
@@ -61,15 +68,15 @@ class OptionModel():
 # OptionModel setter methods
     def loadDriver(self):
         try:
-            driver = createService(self._ctx, g_implementation)
-        except:
+            _ = createService(self._ctx, g_implementation)
+        except Exception:
             # Nothing to do the error is already logged
             pass
 
-# OptionsModel getter methods
+# OptionModel getter methods
     def setViewData(self, timeout, view):
         if timeout != self._Timeout:
-            self._config.replaceByName('ReplicateTimeout', timeout * self._factor)
+            self._config.replaceByName('ReplicatorTimeout', timeout * self._factor)
         if view != self._ViewName:
             self._config.replaceByName('AddressBookName', view)
         if self._config.hasPendingChanges():
@@ -77,3 +84,7 @@ class OptionModel():
             return True
         return False
 
+# OptionModel private methods
+    def _getTitle(self):
+        resource = self._resources.get('Title')
+        return self._resolver.resolveString(resource).format(extension=g_extension)

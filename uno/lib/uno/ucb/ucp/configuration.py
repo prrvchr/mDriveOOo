@@ -28,8 +28,8 @@
 """
 
 g_ucbseparator = '/'
-g_ucbprefix =    ' ~'
-g_ucbsuffix =    ''
+g_ucbprefix    = ' ~'
+g_ucbsuffix    = ''
 
 g_ucboffice = 'application/vnd.oasis.opendocument'
 

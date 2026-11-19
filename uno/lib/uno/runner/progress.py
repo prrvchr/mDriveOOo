@@ -27,21 +27,22 @@
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-import traceback
-
 
 class Progress():
-    def __init__(self, progress, label):
+    def __init__(self, progress, label, /, start=True, finish=True):
         self._progress = progress
         self._label = label
+        self._start = start
+        self._finish = finish
 
     def start(self, text, value):
-        if self._progress:
-            self._progress.ProgressValue = 0
-            self._progress.ProgressValueMax = int(value)
-            
-        if self._label:
-            self._label.Text = text
+        if self._start:
+            if self._progress:
+                self._progress.ProgressValue = 0
+                self._progress.ProgressValueMax = int(value)
+
+            if self._label:
+                self._label.Text = text
 
     def setValue(self, value):
         if self._progress:
@@ -52,8 +53,8 @@ class Progress():
             self._label.Text = text
 
     def end(self):
-        if self._progress:
-            self._progress.ProgressValue = 0
-        if self._label:
-            self._label.Text = ''
-
+        if self._finish:
+            if self._progress:
+                self._progress.ProgressValue = 0
+            if self._label:
+                self._label.Text = ''

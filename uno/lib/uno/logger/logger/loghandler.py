@@ -49,31 +49,27 @@ def getRollerHandlerUrl(ctx, name):
     return getResourceLocation(ctx, g_identifier, path)
 
 
-class RollerHandler(unohelper.Base,
-                    XLogHandler):
-    def __init__(self, ctx, name, level=ALL):
-        encoding = 'UTF-8'
-        self._encoding = encoding
+class BaseHandler(unohelper.Base,
+                  XLogHandler):
+    def __init__(self, ctx, level=ALL):
+        self._encoding = 'UTF-8'
         self._formatter = createService(ctx, 'com.sun.star.logging.PlainTextFormatter')
-        self._url = getRollerHandlerUrl(ctx, name)
-        self._sf = getSimpleFile(ctx)
-        self._out = createService(ctx, 'com.sun.star.io.TextOutputStream')
-        self._out.setEncoding(encoding)
         self._level = level
-        self._listeners = []
+        self._listeners = set()
 
-# XLogHandler
+    # XLogHandler
     @property
     def Encoding(self):
         return self._encoding
+
     @Encoding.setter
     def Encoding(self, value):
         self._encoding = value
-        self._out.setEncoding(value)
 
     @property
     def Formatter(self):
         return self._formatter
+
     @Formatter.setter
     def Formatter(self, value):
         self._formatter = value
@@ -81,6 +77,7 @@ class RollerHandler(unohelper.Base,
     @property
     def Level(self):
         return self._level
+
     @Level.setter
     def Level(self, value):
         self._level = value
@@ -88,25 +85,41 @@ class RollerHandler(unohelper.Base,
     def flush(self):
         pass
 
+    def publish(self, _record):
+        return False
+
+    # XComponent
+    def dispose(self):
+        event = uno.createUnoStruct('com.sun.star.lang.EventObject', self)
+        for listener in list(self._listeners):
+            listener.disposing(event)
+
+    def addEventListener(self, listener):
+        self._listeners.add(listener)
+
+    def removeEventListener(self, listener):
+        self._listeners.discard(listener)
+
+
+class RollerHandler(BaseHandler):
+    def __init__(self, ctx, name, level=ALL):
+        super().__init__(ctx, level)
+        self._url = getRollerHandlerUrl(ctx, name)
+        self._sf = getSimpleFile(ctx)
+        self._out = createService(ctx, 'com.sun.star.io.TextOutputStream')
+        self._out.setEncoding(self._encoding)
+
+# XLogHandler
+    @BaseHandler.Encoding.setter
+    def Encoding(self, value):
+        self._encoding = value
+        self._out.setEncoding(value)
+
     def publish(self, record):
         if self._level <= record.Level < OFF:
             self._publishRecord(record)
             return True
         return False
-
-# XComponent <- XLogHandler
-    def dispose(self):
-        event = uno.createUnoStruct('com.sun.star.lang.EventObject')
-        event.Source = self
-        for listener in self._listeners:
-            listener.disposing(event)
-
-    def addEventListener(self, listener):
-        self._listeners.append(listener)
-
-    def removeEventListener(self, listener):
-        if listener in self._listeners:
-            self._listeners.remove(listener)
 
     def clearLogger(self):
         if self._sf.exists(self._url):
@@ -127,3 +140,19 @@ class RollerHandler(unohelper.Base,
         self._out.getOutputStream().flush()
         self._out.getOutputStream().closeOutput()
 
+
+class ViewHandler(BaseHandler):
+    def __init__(self, ctx, callback, level=ALL):
+        super().__init__(ctx, level)
+        self._callback = callback
+
+    def publish(self, record):
+        if self._level <= record.Level < OFF and self._callback:
+            msg = self._formatter.format(record)
+            self._callback(msg)
+            return True
+        return False
+
+    def dispose(self):
+        self._callback = None
+        super().dispose()
